@@ -62,3 +62,10 @@ Run `npm run lint` after every code change. ESLint config extends `eslint-config
 ## Development Environment
 
 This project uses **VSCode Dev Containers**. Open in the dev container before starting development.
+
+## Active Technologies
+- TypeScript 5.x / Node.js 22 LTS (001-integrated-todo-management)
+- PostgreSQL 16 (Prisma ORM経由) (001-integrated-todo-management)
+
+## Recent Changes
+- 001-integrated-todo-management: Added TypeScript 5.x / Node.js 22 LTS
