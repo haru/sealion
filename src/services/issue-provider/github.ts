@@ -14,8 +14,13 @@ interface GitHubRepo {
   full_name: string;
 }
 
+interface GitHubUser {
+  login: string;
+}
+
 export class GitHubAdapter implements IssueProviderAdapter {
   private readonly client;
+  private loginCache: string | null = null;
 
   constructor(token: string) {
     this.client = axios.create({
@@ -26,6 +31,13 @@ export class GitHubAdapter implements IssueProviderAdapter {
         "X-GitHub-Api-Version": "2022-11-28",
       },
     });
+  }
+
+  private async getLogin(): Promise<string> {
+    if (this.loginCache) return this.loginCache;
+    const { data } = await this.client.get<GitHubUser>("/user");
+    this.loginCache = data.login;
+    return this.loginCache;
   }
 
   async testConnection(): Promise<void> {
@@ -50,13 +62,14 @@ export class GitHubAdapter implements IssueProviderAdapter {
 
   async fetchAssignedIssues(projectExternalId: string): Promise<NormalizedIssue[]> {
     const [owner, repo] = projectExternalId.split("/");
+    const assignee = await this.getLogin();
     const issues: GitHubIssue[] = [];
     let page = 1;
 
     while (true) {
       const { data } = await this.client.get<GitHubIssue[]>(
         `/repos/${owner}/${repo}/issues`,
-        { params: { state: "open", assignee: "@me", per_page: 100, page } }
+        { params: { state: "open", assignee, per_page: 100, page } }
       );
       issues.push(...data);
       if (data.length < 100) break;

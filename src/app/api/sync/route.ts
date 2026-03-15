@@ -29,6 +29,7 @@ export async function GET() {
           displayName: true,
           lastSyncedAt: true,
           isEnabled: true,
+          syncError: true,
         },
       },
     },

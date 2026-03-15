@@ -28,6 +28,7 @@ interface SyncProject {
   displayName: string;
   lastSyncedAt: string | null;
   isEnabled: boolean;
+  syncError: string | null;
 }
 
 interface SyncProvider {
@@ -77,7 +78,6 @@ export default function DashboardPage() {
         const since = syncStartedAtRef.current;
         if (since && allEnabledProjectsSynced(providers, since)) {
           setIsSyncing(false);
-          return;
         }
       }
 

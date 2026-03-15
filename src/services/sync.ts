@@ -77,6 +77,8 @@ export async function syncProviders(userId: string): Promise<void> {
                   err instanceof Error &&
                   (err.message.includes("rate limit") || err.message.includes("429"));
 
+                console.error(`[sync] project ${project.externalId} failed:`, err);
+
                 await prisma.project.update({
                   where: { id: project.id },
                   data: {
