@@ -16,7 +16,10 @@
 		"vscode": {
 			"extensions": [
 				"ms-azuretools.vscode-docker",
-				"docker.docker"
+				"docker.docker",
+				"donjayamanne.git-extension-pack",
+				"Serhioromano.vscode-gitflow",
+				"cweijan.vscode-postgresql-client2"
 			]
 		}
 	},
