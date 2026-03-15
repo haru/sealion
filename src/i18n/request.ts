@@ -1,12 +1,11 @@
 import { getRequestConfig } from "next-intl/server";
-import { routing } from "./routing";
+import { headers } from "next/headers";
 
-export default getRequestConfig(async ({ requestLocale }) => {
-  let locale = await requestLocale;
+export default getRequestConfig(async () => {
+  const acceptLanguage = (await headers()).get("accept-language") ?? "";
 
-  if (!locale || !routing.locales.includes(locale as "en" | "ja")) {
-    locale = routing.defaultLocale;
-  }
+  // Pick "ja" if the browser prefers Japanese, otherwise "en"
+  const locale = acceptLanguage.toLowerCase().includes("ja") ? "ja" : "en";
 
   return {
     locale,
