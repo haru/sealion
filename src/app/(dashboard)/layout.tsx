@@ -24,9 +24,11 @@ export default async function DashboardLayout({
     <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
       <AppBar position="static">
         <Toolbar>
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            Sealion
-          </Typography>
+          <Link href="/" style={{ flexGrow: 1, color: "inherit", textDecoration: "none" }}>
+            <Typography variant="h6" sx={{ color: "inherit" }}>
+              Sealion
+            </Typography>
+          </Link>
           <Typography variant="body2" sx={{ mr: 2 }}>
             {session.user.email}
           </Typography>
