@@ -70,10 +70,13 @@
     "connectionSuccess": "接続に成功しました",
     "connectionFailed": "接続に失敗しました。認証情報を確認してください。",
     "deleteConfirm": "この接続を削除しますか？関連するissueも削除されます。",
+    "deleteProvider": "接続を削除",
     "projects": {
       "title": "プロジェクトを選択",
       "subtitle": "監視対象のプロジェクトを選択してください",
-      "noProjects": "プロジェクトが見つかりません"
+      "noProjects": "プロジェクトが見つかりません",
+      "manage": "プロジェクトを管理",
+      "search": "プロジェクトを検索..."
     }
   },
   "admin": {
@@ -103,6 +106,7 @@
     "FORBIDDEN": "この操作を実行する権限がありません",
     "NOT_FOUND": "リソースが見つかりません",
     "EXTERNAL_UPDATE_FAILED": "外部のissue管理システムでのステータス更新に失敗しました",
+    "SYNC_FAILED": "一部のプロジェクトの同期に失敗しました。認証情報とリポジトリへのアクセス権を確認してください。",
     "RATE_LIMITED": "APIのレート制限に達しました。しばらくしてから再試行してください。",
     "CONNECTION_TEST_FAILED": "issue管理システムに接続できませんでした。認証情報を確認してください。",
     "EMAIL_ALREADY_EXISTS": "このメールアドレスはすでに登録されています",

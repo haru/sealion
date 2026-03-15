@@ -70,17 +70,20 @@ export async function syncProviders(userId: string): Promise<void> {
 
                 await prisma.project.update({
                   where: { id: project.id },
-                  data: { lastSyncedAt: now },
+                  data: { lastSyncedAt: now, syncError: null },
                 });
               } catch (err) {
                 const isRateLimit =
                   err instanceof Error &&
                   (err.message.includes("rate limit") || err.message.includes("429"));
 
+                console.error(`[sync] project ${project.externalId} failed:`, err);
+
                 await prisma.project.update({
                   where: { id: project.id },
                   data: {
                     syncError: isRateLimit ? "RATE_LIMITED" : "SYNC_FAILED",
+                    lastSyncedAt: new Date(),
                   },
                 });
               }

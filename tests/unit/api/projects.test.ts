@@ -105,4 +105,26 @@ describe("PUT /api/providers/[id]/projects", () => {
     );
     expect(res.status).toBe(403);
   });
+
+  it("returns 400 when body is not valid JSON", async () => {
+    mockFindFirst.mockResolvedValue({ id: "p1", userId: "user-1" });
+
+    const req = new NextRequest("http://localhost/api/providers/p1/projects", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: "not-json",
+    });
+    const res = await PUT(req, { params: Promise.resolve({ id: "p1" }) });
+    expect(res.status).toBe(400);
+  });
+
+  it("returns 400 when projects field is not an array", async () => {
+    mockFindFirst.mockResolvedValue({ id: "p1", userId: "user-1" });
+
+    const res = await PUT(
+      makeRequest("PUT", { projects: "wrong" }),
+      { params: Promise.resolve({ id: "p1" }) }
+    );
+    expect(res.status).toBe(400);
+  });
 });

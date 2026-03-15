@@ -70,10 +70,13 @@
     "connectionSuccess": "Connection successful",
     "connectionFailed": "Connection failed. Please check your credentials.",
     "deleteConfirm": "Delete this connection? All associated issues will be removed.",
+    "deleteProvider": "Delete connection",
     "projects": {
       "title": "Select Projects",
       "subtitle": "Choose which projects to monitor",
-      "noProjects": "No projects found"
+      "noProjects": "No projects found",
+      "manage": "Manage projects",
+      "search": "Search projects..."
     }
   },
   "admin": {
@@ -103,6 +106,7 @@
     "FORBIDDEN": "You do not have permission to perform this action",
     "NOT_FOUND": "Resource not found",
     "EXTERNAL_UPDATE_FAILED": "Failed to update the issue in the external tracker",
+    "SYNC_FAILED": "Sync failed for one or more projects. Check your credentials and repository access.",
     "RATE_LIMITED": "API rate limit reached. Please try again later.",
     "CONNECTION_TEST_FAILED": "Could not connect to the issue tracker. Please check your credentials.",
     "EMAIL_ALREADY_EXISTS": "This email address is already registered",

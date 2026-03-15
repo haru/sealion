@@ -49,10 +49,37 @@ UI text must support i18n from the start. First release targets **English** (def
 ### ESLint
 Run `npm run lint` after every code change. ESLint config extends `eslint-config-next/core-web-vitals` and `eslint-config-next/typescript`.
 
-### TDD
-- Write tests before implementation (RED → GREEN → REFACTOR)
-- Target **95% line coverage** (stricter than the default 80%)
-- No feature code without a failing test first
+### TDD — MANDATORY, NO EXCEPTIONS
+
+> **This rule has been violated repeatedly. It is non-negotiable.**
+
+**STOP. Before touching any implementation file, ask yourself: "Does a failing test exist for this change?"**
+If the answer is no — write the test first. Only then write or modify implementation code.
+
+The strict order is:
+
+1. **Write the test** — it must fail (`npm test` should show RED)
+2. **Write the minimal implementation** to make it pass (GREEN)
+3. **Refactor** if needed, keeping tests green
+
+**Concrete rules:**
+- Adding a new function → write a failing test for it first
+- Changing a function's interface (adding/removing parameters, changing types) → update the test first, confirm RED, then change the implementation
+- Fixing a bug → write a failing test that reproduces the bug first
+- Reviewing external feedback (e.g. Copilot suggestions) → update tests first, then apply the fix
+
+**Never do this:**
+```
+❌ Change implementation → tests break → fix tests
+```
+
+**Always do this:**
+```
+✅ Update/add tests → confirm RED → change implementation → confirm GREEN
+```
+
+- Target **95% line coverage**
+- Run `npm test` after every change and confirm all tests pass before moving on
 
 ### Security
 - Authorization must be enforced on **both** the UI and API sides — never rely on client-side checks alone

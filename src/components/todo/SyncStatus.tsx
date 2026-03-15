@@ -4,6 +4,7 @@ import { Box, Chip, Snackbar, Alert, Tooltip } from "@mui/material";
 import SyncIcon from "@mui/icons-material/Sync";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import ErrorIcon from "@mui/icons-material/Error";
+import WarningIcon from "@mui/icons-material/Warning";
 import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
@@ -11,6 +12,8 @@ interface Project {
   id: string;
   displayName: string;
   lastSyncedAt: string | null;
+  isEnabled: boolean;
+  syncError: string | null;
 }
 
 interface ProviderStatus {
@@ -23,29 +26,28 @@ interface ProviderStatus {
 interface SyncStatusProps {
   providers: ProviderStatus[];
   isSyncing: boolean;
-  showRateLimit?: boolean;
-  onRateLimitClose?: () => void;
 }
 
-export default function SyncStatus({
-  providers,
-  isSyncing,
-  showRateLimit,
-  onRateLimitClose,
-}: SyncStatusProps) {
+export default function SyncStatus({ providers, isSyncing }: SyncStatusProps) {
   const t = useTranslations("todo");
   const tErrors = useTranslations("errors");
-  const [open, setOpen] = useState(false);
+
+  const [openRateLimit, setOpenRateLimit] = useState(false);
+  const [openSyncFailed, setOpenSyncFailed] = useState(false);
+
+  const enabledProjects = providers.flatMap((p) => p.projects.filter((proj) => proj.isEnabled));
+  const hasRateLimit = enabledProjects.some((p) => p.syncError === "RATE_LIMITED");
+  const hasSyncFailed = enabledProjects.some((p) => p.syncError === "SYNC_FAILED");
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (showRateLimit) setOpen(true);
-  }, [showRateLimit]);
+    if (!isSyncing && hasRateLimit) setOpenRateLimit(true);
+  }, [isSyncing, hasRateLimit]);
 
-  function handleClose() {
-    setOpen(false);
-    onRateLimitClose?.();
-  }
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (!isSyncing && hasSyncFailed) setOpenSyncFailed(true);
+  }, [isSyncing, hasSyncFailed]);
 
   if (providers.length === 0) return null;
 
@@ -53,7 +55,11 @@ export default function SyncStatus({
     <>
       <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", mb: 2 }}>
         {providers.map((provider) => {
-          const lastSynced = provider.projects
+          const enabled = provider.projects.filter((p) => p.isEnabled);
+          if (enabled.length === 0) return null;
+
+          const hasError = enabled.some((p) => p.syncError !== null);
+          const lastSynced = enabled
             .map((p) => p.lastSyncedAt)
             .filter(Boolean)
             .sort()
@@ -62,9 +68,7 @@ export default function SyncStatus({
           const label = isSyncing
             ? t("syncInProgress")
             : lastSynced
-              ? t("lastSynced", {
-                  time: new Date(lastSynced).toLocaleTimeString(),
-                })
+              ? t("lastSynced", { time: new Date(lastSynced).toLocaleTimeString() })
               : provider.displayName;
 
           const icon = isSyncing ? (
@@ -77,10 +81,12 @@ export default function SyncStatus({
                 },
               }}
             />
+          ) : hasError ? (
+            <ErrorIcon color="error" />
           ) : lastSynced ? (
             <CheckCircleIcon color="success" />
           ) : (
-            <ErrorIcon color="warning" />
+            <WarningIcon color="warning" />
           );
 
           return (
@@ -92,13 +98,24 @@ export default function SyncStatus({
       </Box>
 
       <Snackbar
-        open={open}
+        open={openRateLimit}
         autoHideDuration={6000}
-        onClose={handleClose}
+        onClose={() => setOpenRateLimit(false)}
         anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       >
-        <Alert onClose={handleClose} severity="warning" sx={{ width: "100%" }}>
+        <Alert onClose={() => setOpenRateLimit(false)} severity="warning" sx={{ width: "100%" }}>
           {tErrors("RATE_LIMITED")}
+        </Alert>
+      </Snackbar>
+
+      <Snackbar
+        open={openSyncFailed}
+        autoHideDuration={8000}
+        onClose={() => setOpenSyncFailed(false)}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert onClose={() => setOpenSyncFailed(false)} severity="error" sx={{ width: "100%" }}>
+          {tErrors("SYNC_FAILED")}
         </Alert>
       </Snackbar>
     </>

@@ -53,7 +53,7 @@ describe("GET /api/sync", () => {
         id: "p1",
         displayName: "My GitHub",
         type: "GITHUB",
-        projects: [{ id: "proj1", displayName: "repo", lastSyncedAt: new Date() }],
+        projects: [{ id: "proj1", displayName: "repo", lastSyncedAt: new Date(), isEnabled: true }],
       },
     ]);
 
@@ -62,6 +62,27 @@ describe("GET /api/sync", () => {
 
     expect(res.status).toBe(200);
     expect(json.data).toHaveLength(1);
+  });
+
+  it("includes isEnabled in each project", async () => {
+    mockAuth.mockResolvedValue(SESSION);
+    mockFindMany.mockResolvedValue([
+      {
+        id: "p1",
+        displayName: "My GitHub",
+        type: "GITHUB",
+        projects: [
+          { id: "proj1", displayName: "active-repo", lastSyncedAt: new Date(), isEnabled: true },
+          { id: "proj2", displayName: "inactive-repo", lastSyncedAt: null, isEnabled: false },
+        ],
+      },
+    ]);
+
+    const res = await GET(makeRequest("GET"));
+    const json = await res.json();
+
+    expect(json.data[0].projects[0].isEnabled).toBe(true);
+    expect(json.data[0].projects[1].isEnabled).toBe(false);
   });
 
   it("returns 401 when not authenticated", async () => {

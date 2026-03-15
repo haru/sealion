@@ -72,6 +72,9 @@ describe("GitHubAdapter", () => {
 
   describe("fetchAssignedIssues", () => {
     it("normalizes GitHub issues", async () => {
+      // First call: GET /user to resolve login
+      mockAxiosInstance.get.mockResolvedValueOnce({ data: { login: "testuser" } });
+      // Second call: GET /repos/owner/repo/issues
       mockAxiosInstance.get.mockResolvedValueOnce({
         data: [
           {
@@ -95,7 +98,34 @@ describe("GitHubAdapter", () => {
       expect(issues[0].dueDate).toBeInstanceOf(Date);
     });
 
+    it("uses authenticated user login as assignee filter", async () => {
+      mockAxiosInstance.get.mockResolvedValueOnce({ data: { login: "myuser" } });
+      mockAxiosInstance.get.mockResolvedValueOnce({ data: [] });
+
+      await adapter.fetchAssignedIssues("owner/repo");
+
+      expect(mockAxiosInstance.get).toHaveBeenNthCalledWith(
+        2,
+        "/repos/owner/repo/issues",
+        expect.objectContaining({ params: expect.objectContaining({ assignee: "myuser" }) })
+      );
+    });
+
+    it("caches the login and does not call /user twice", async () => {
+      mockAxiosInstance.get.mockResolvedValueOnce({ data: { login: "myuser" } });
+      mockAxiosInstance.get.mockResolvedValue({ data: [] });
+
+      await adapter.fetchAssignedIssues("owner/repo1");
+      await adapter.fetchAssignedIssues("owner/repo2");
+
+      const userCalls = (mockAxiosInstance.get as jest.Mock).mock.calls.filter(
+        ([url]: [string]) => url === "/user"
+      );
+      expect(userCalls).toHaveLength(1);
+    });
+
     it("maps closed state correctly", async () => {
+      mockAxiosInstance.get.mockResolvedValueOnce({ data: { login: "testuser" } });
       mockAxiosInstance.get.mockResolvedValueOnce({
         data: [{ number: 1, title: "Closed", state: "closed", html_url: "https://gh.com/1" }],
       });
