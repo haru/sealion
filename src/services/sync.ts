@@ -70,7 +70,7 @@ export async function syncProviders(userId: string): Promise<void> {
 
                 await prisma.project.update({
                   where: { id: project.id },
-                  data: { lastSyncedAt: now },
+                  data: { lastSyncedAt: now, syncError: null },
                 });
               } catch (err) {
                 const isRateLimit =

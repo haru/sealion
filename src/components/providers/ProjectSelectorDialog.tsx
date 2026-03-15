@@ -9,7 +9,7 @@ import {
   DialogActions,
   Button,
   List,
-  ListItem,
+  ListItemButton,
   ListItemText,
   Checkbox,
   CircularProgress,
@@ -50,13 +50,18 @@ export default function ProjectSelectorDialog({
   useEffect(() => {
     if (!providerId) return;
 
+    const controller = new AbortController();
+
     setProjects([]);
     setFilter("");
     setError(null);
     setLoading(true);
 
-    fetch(`/api/providers/${providerId}/projects`)
-      .then((res) => res.json())
+    fetch(`/api/providers/${providerId}/projects`, { signal: controller.signal })
+      .then((res) => {
+        if (!res.ok) throw new Error("fetch failed");
+        return res.json();
+      })
       .then((json) => {
         if (Array.isArray(json.data)) {
           setProjects(json.data as ExternalProject[]);
@@ -64,8 +69,13 @@ export default function ProjectSelectorDialog({
           setError(tCommon("error"));
         }
       })
-      .catch(() => setError(tCommon("error")))
+      .catch((err: unknown) => {
+        if (err instanceof Error && err.name === "AbortError") return;
+        setError(tCommon("error"));
+      })
       .finally(() => setLoading(false));
+
+    return () => controller.abort();
   }, [providerId, tCommon]);
 
   function toggleProject(externalId: string) {
@@ -138,11 +148,10 @@ export default function ProjectSelectorDialog({
             {projects.filter((p) =>
               p.displayName.toLowerCase().includes(filter.toLowerCase())
             ).map((project) => (
-              <ListItem
+              <ListItemButton
                 key={project.externalId}
                 disableGutters
                 onClick={() => toggleProject(project.externalId)}
-                sx={{ cursor: "pointer" }}
               >
                 <Checkbox
                   checked={project.isEnabled}
@@ -150,7 +159,7 @@ export default function ProjectSelectorDialog({
                   readOnly
                 />
                 <ListItemText primary={project.displayName} />
-              </ListItem>
+              </ListItemButton>
             ))}
           </List>
           </>

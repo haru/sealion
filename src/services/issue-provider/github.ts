@@ -20,7 +20,7 @@ interface GitHubUser {
 
 export class GitHubAdapter implements IssueProviderAdapter {
   private readonly client;
-  private loginCache: string | null = null;
+  private loginPromise: Promise<string> | null = null;
 
   constructor(token: string) {
     this.client = axios.create({
@@ -33,11 +33,13 @@ export class GitHubAdapter implements IssueProviderAdapter {
     });
   }
 
-  private async getLogin(): Promise<string> {
-    if (this.loginCache) return this.loginCache;
-    const { data } = await this.client.get<GitHubUser>("/user");
-    this.loginCache = data.login;
-    return this.loginCache;
+  private getLogin(): Promise<string> {
+    if (!this.loginPromise) {
+      this.loginPromise = this.client
+        .get<GitHubUser>("/user")
+        .then(({ data }) => data.login);
+    }
+    return this.loginPromise;
   }
 
   async testConnection(): Promise<void> {

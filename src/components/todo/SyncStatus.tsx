@@ -56,6 +56,8 @@ export default function SyncStatus({ providers, isSyncing }: SyncStatusProps) {
       <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", mb: 2 }}>
         {providers.map((provider) => {
           const enabled = provider.projects.filter((p) => p.isEnabled);
+          if (enabled.length === 0) return null;
+
           const hasError = enabled.some((p) => p.syncError !== null);
           const lastSynced = enabled
             .map((p) => p.lastSyncedAt)

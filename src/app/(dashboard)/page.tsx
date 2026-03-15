@@ -64,13 +64,19 @@ export default function DashboardPage() {
     await fetch("/api/sync", { method: "POST" });
   }, []);
 
-  // Poll sync status every 5s while syncing; stops when all enabled projects are synced
+  // Poll sync status every 5s while syncing; stops when all enabled projects are synced.
+  // Uses self-scheduling setTimeout to avoid overlapping requests.
   useEffect(() => {
     if (!isSyncing) return;
 
-    const poll = setInterval(async () => {
+    let cancelled = false;
+    let pollTimeout: ReturnType<typeof setTimeout>;
+
+    async function poll() {
+      if (cancelled) return;
+
       const syncRes = await fetch("/api/sync");
-      if (syncRes.ok) {
+      if (!cancelled && syncRes.ok) {
         const json = await syncRes.json();
         const providers: SyncProvider[] = json.data;
         setSyncProviders(providers);
@@ -78,25 +84,36 @@ export default function DashboardPage() {
         const since = syncStartedAtRef.current;
         if (since && allEnabledProjectsSynced(providers, since)) {
           setIsSyncing(false);
+          return;
         }
       }
 
-      const issueRes = await fetch(`/api/issues?page=${page}&limit=20`);
-      if (issueRes.ok) {
-        const json = await issueRes.json();
-        setIssues(json.data.items);
-        setTotal(json.data.total);
+      if (!cancelled) {
+        const issueRes = await fetch(`/api/issues?page=${page}&limit=20`);
+        if (!cancelled && issueRes.ok) {
+          const json = await issueRes.json();
+          setIssues(json.data.items);
+          setTotal(json.data.total);
+        }
       }
-    }, 5000);
+
+      if (!cancelled) {
+        pollTimeout = setTimeout(poll, 5000);
+      }
+    }
+
+    pollTimeout = setTimeout(poll, 5000);
 
     // Safety timeout: stop polling after 2 minutes
-    const timeout = setTimeout(() => {
+    const safetyTimeout = setTimeout(() => {
+      cancelled = true;
       setIsSyncing(false);
     }, 120000);
 
     return () => {
-      clearInterval(poll);
-      clearTimeout(timeout);
+      cancelled = true;
+      clearTimeout(pollTimeout);
+      clearTimeout(safetyTimeout);
     };
   }, [isSyncing, page]);
 
