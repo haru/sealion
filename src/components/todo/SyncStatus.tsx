@@ -68,7 +68,15 @@ export default function SyncStatus({
               : provider.displayName;
 
           const icon = isSyncing ? (
-            <SyncIcon sx={{ animation: "spin 1s linear infinite" }} />
+            <SyncIcon
+              sx={{
+                animation: "spin 1s linear infinite",
+                "@keyframes spin": {
+                  "0%": { transform: "rotate(0deg)" },
+                  "100%": { transform: "rotate(360deg)" },
+                },
+              }}
+            />
           ) : lastSynced ? (
             <CheckCircleIcon color="success" />
           ) : (

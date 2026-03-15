@@ -38,7 +38,6 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncProviders, setSyncProviders] = useState<SyncProvider[]>([]);
-  const [showRateLimit, setShowRateLimit] = useState(false);
 
   const fetchIssues = useCallback(async (p: number) => {
     const res = await fetch(`/api/issues?page=${p}&limit=20`);
@@ -60,8 +59,12 @@ export default function DashboardPage() {
   const startSync = useCallback(async () => {
     setIsSyncing(true);
     await fetch("/api/sync", { method: "POST" });
+  }, []);
 
-    // Poll sync status every 5s while syncing
+  // Poll sync status every 5s while syncing; cleans up on unmount or when syncing stops
+  useEffect(() => {
+    if (!isSyncing) return;
+
     const poll = setInterval(async () => {
       await fetchSyncStatus();
       const res = await fetch(`/api/issues?page=${page}&limit=20`);
@@ -73,11 +76,15 @@ export default function DashboardPage() {
     }, 5000);
 
     // Stop polling after 2 minutes
-    setTimeout(() => {
-      clearInterval(poll);
+    const timeout = setTimeout(() => {
       setIsSyncing(false);
     }, 120000);
-  }, [fetchSyncStatus, page]);
+
+    return () => {
+      clearInterval(poll);
+      clearTimeout(timeout);
+    };
+  }, [isSyncing, fetchSyncStatus, page]);
 
   useEffect(() => {
     async function init() {
@@ -124,12 +131,7 @@ export default function DashboardPage() {
         {t("title")}
       </Typography>
 
-      <SyncStatus
-        providers={syncProviders}
-        isSyncing={isSyncing}
-        showRateLimit={showRateLimit}
-        onRateLimitClose={() => setShowRateLimit(false)}
-      />
+      <SyncStatus providers={syncProviders} isSyncing={isSyncing} />
 
       <Box sx={{ mt: 2 }}>
         <TodoList

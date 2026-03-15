@@ -13,6 +13,14 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
 import { NextRequest } from "next/server";
 
+// Helper to import the providers route with a mocked Prisma client.
+async function importProvidersRouteWithPrisma(prisma: unknown) {
+  jest.resetModules();
+  jest.doMock("@/lib/db", () => ({ prisma }));
+  // Import the route handler after setting up the mock.
+  return await import("@/app/api/providers/route");
+}
+
 const TEST_USER_ID = "integration-test-user";
 const VALID_KEY = "a".repeat(64);
 
@@ -76,10 +84,7 @@ describe("Provider registration cycle (Integration)", () => {
   it("POST → GET → DELETE cycle with real Prisma", async () => {
     if (skipIfNoDB()) return;
 
-    // Override db module to use our test prisma instance
-    jest.mock("@/lib/db", () => ({ prisma }));
-
-    const { GET, POST } = await import("@/app/api/providers/route");
+    const { GET, POST } = await importProvidersRouteWithPrisma(prisma);
     const { DELETE } = await import("@/app/api/providers/[id]/route");
 
     // POST: Create provider

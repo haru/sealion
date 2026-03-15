@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
     prisma.issue.findMany({
       where,
       orderBy: [
-        { status: "asc" },      // CLOSED sorts after OPEN alphabetically
+        { status: "asc" },      // OPEN sorts before CLOSED (enum definition order)
         { dueDate: "asc" },     // nulls last
         { priority: "desc" },   // CRITICAL > HIGH > MEDIUM > LOW
       ],

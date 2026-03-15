@@ -24,7 +24,7 @@ npm run start    # Start production server
 npm run lint     # Run ESLint — run this after every code change
 ```
 
-No test runner is configured yet. When adding one, use the TDD rules below.
+Tests are configured with Jest (see `jest.config.ts` / `jest.setup.ts`). Run tests using the npm test scripts defined in `package.json`, and follow the TDD rules below when adding or updating tests.
 
 ## Project Structure
 

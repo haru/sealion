@@ -70,6 +70,7 @@ model Project {
   displayName     String
   isEnabled       Boolean   @default(true)
   lastSyncedAt    DateTime?
+  syncError       String?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 

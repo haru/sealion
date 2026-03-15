@@ -15,7 +15,7 @@ An integrated personal TODO management app that aggregates issues from multiple 
 ## Tech Stack
 
 - **Framework**: Next.js 16 + TypeScript (App Router)
-- **UI**: MUI (Material UI) v6 + Material Icons
+- **UI**: MUI (Material UI) v7 + Material Icons
 - **Auth**: Auth.js v5 (NextAuth)
 - **Database**: PostgreSQL via Prisma 7
 - **Encryption**: AES-256-GCM for stored credentials

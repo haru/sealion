@@ -14,6 +14,7 @@ import Link from "next/link";
 
 export default function SignupPage() {
   const t = useTranslations("auth");
+  const tErrors = useTranslations("errors");
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -51,7 +52,7 @@ export default function SignupPage() {
 
         {error && (
           <Alert severity="error" sx={{ mb: 2 }}>
-            {t(error as Parameters<typeof t>[0]) ?? error}
+            {tErrors(error as Parameters<typeof tErrors>[0])}
           </Alert>
         )}
 

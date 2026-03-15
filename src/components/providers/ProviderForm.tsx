@@ -163,10 +163,10 @@ export default function ProviderForm({ onSubmit }: ProviderFormProps) {
         {error && <Alert severity="error">{error}</Alert>}
 
         <FormControl fullWidth required>
-          <InputLabel>{t("type.GITHUB").replace("GitHub", "Type")}</InputLabel>
+          <InputLabel>{t("fields.type")}</InputLabel>
           <Select
             value={type}
-            label="Type"
+            label={t("fields.type")}
             onChange={(e) => handleTypeChange(e.target.value as ProviderType)}
           >
             {PROVIDER_TYPES.map((pt) => (

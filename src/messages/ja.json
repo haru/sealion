@@ -58,6 +58,7 @@
       "REDMINE": "Redmine"
     },
     "fields": {
+      "type": "タイプ",
       "displayName": "表示名",
       "baseUrl": "サーバーURL",
       "token": "Personal Access Token",
@@ -84,7 +85,18 @@
       "USER": "一般ユーザー",
       "ADMIN": "管理者"
     },
-    "cannotDeactivateSelf": "自分のアカウントを無効化することはできません"
+    "cannotDeactivateSelf": "自分のアカウントを無効化することはできません",
+    "columns": {
+      "email": "メールアドレス",
+      "role": "ロール",
+      "status": "ステータス",
+      "actions": "操作"
+    },
+    "fields": {
+      "email": "メールアドレス",
+      "password": "パスワード",
+      "role": "ロール"
+    }
   },
   "errors": {
     "UNAUTHORIZED": "続けるにはログインしてください",
@@ -93,6 +105,9 @@
     "EXTERNAL_UPDATE_FAILED": "外部のissue管理システムでのステータス更新に失敗しました",
     "RATE_LIMITED": "APIのレート制限に達しました。しばらくしてから再試行してください。",
     "CONNECTION_TEST_FAILED": "issue管理システムに接続できませんでした。認証情報を確認してください。",
-    "EMAIL_ALREADY_EXISTS": "このメールアドレスはすでに登録されています"
+    "EMAIL_ALREADY_EXISTS": "このメールアドレスはすでに登録されています",
+    "INVALID_EMAIL": "有効なメールアドレスを入力してください",
+    "PASSWORD_TOO_SHORT": "パスワードは8文字以上で入力してください",
+    "INVALID_INPUT": "入力値が正しくありません"
   }
 }

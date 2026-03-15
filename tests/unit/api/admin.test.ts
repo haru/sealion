@@ -21,7 +21,6 @@ import { prisma } from "@/lib/db";
 
 const mockAuth = auth as jest.Mock;
 const mockFindMany = prisma.user.findMany as jest.Mock;
-prisma.user.create as jest.Mock;
 const mockFindUnique = prisma.user.findUnique as jest.Mock;
 const mockUpdate = prisma.user.update as jest.Mock;
 

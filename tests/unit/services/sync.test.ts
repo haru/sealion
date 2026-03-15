@@ -5,17 +5,15 @@ jest.mock("@/lib/db", () => ({
   prisma: {
     issueProvider: {
       findMany: jest.fn(),
+      update: jest.fn(),
     },
     issue: {
       upsert: jest.fn(),
     },
-    issueProvider: {
-      findMany: jest.fn(),
-      update: jest.fn(),
-    },
     project: {
       update: jest.fn(),
     },
+    $transaction: jest.fn().mockImplementation((ops: Promise<unknown>[]) => Promise.all(ops)),
   },
 }));
 

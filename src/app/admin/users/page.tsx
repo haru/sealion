@@ -125,10 +125,10 @@ export default function AdminUsersPage() {
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>Email</TableCell>
-              <TableCell>Role</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell>Actions</TableCell>
+              <TableCell>{t("columns.email")}</TableCell>
+              <TableCell>{t("columns.role")}</TableCell>
+              <TableCell>{t("columns.status")}</TableCell>
+              <TableCell>{t("columns.actions")}</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -168,7 +168,7 @@ export default function AdminUsersPage() {
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
             <TextField
-              label="Email"
+              label={t("fields.email")}
               type="email"
               value={newEmail}
               onChange={(e) => setNewEmail(e.target.value)}
@@ -176,7 +176,7 @@ export default function AdminUsersPage() {
               required
             />
             <TextField
-              label="Password"
+              label={t("fields.password")}
               type="password"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
@@ -184,10 +184,10 @@ export default function AdminUsersPage() {
               required
             />
             <FormControl fullWidth>
-              <InputLabel>Role</InputLabel>
+              <InputLabel>{t("fields.role")}</InputLabel>
               <Select
                 value={newRole}
-                label="Role"
+                label={t("fields.role")}
                 onChange={(e) => setNewRole(e.target.value as "USER" | "ADMIN")}
               >
                 <MenuItem value="USER">{t("role.USER")}</MenuItem>

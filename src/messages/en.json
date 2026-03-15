@@ -58,6 +58,7 @@
       "REDMINE": "Redmine"
     },
     "fields": {
+      "type": "Type",
       "displayName": "Display Name",
       "baseUrl": "Server URL",
       "token": "Personal Access Token",
@@ -84,7 +85,18 @@
       "USER": "User",
       "ADMIN": "Administrator"
     },
-    "cannotDeactivateSelf": "You cannot deactivate your own account"
+    "cannotDeactivateSelf": "You cannot deactivate your own account",
+    "columns": {
+      "email": "Email",
+      "role": "Role",
+      "status": "Status",
+      "actions": "Actions"
+    },
+    "fields": {
+      "email": "Email",
+      "password": "Password",
+      "role": "Role"
+    }
   },
   "errors": {
     "UNAUTHORIZED": "Please log in to continue",
@@ -93,6 +105,9 @@
     "EXTERNAL_UPDATE_FAILED": "Failed to update the issue in the external tracker",
     "RATE_LIMITED": "API rate limit reached. Please try again later.",
     "CONNECTION_TEST_FAILED": "Could not connect to the issue tracker. Please check your credentials.",
-    "EMAIL_ALREADY_EXISTS": "This email address is already registered"
+    "EMAIL_ALREADY_EXISTS": "This email address is already registered",
+    "INVALID_EMAIL": "Please enter a valid email address",
+    "PASSWORD_TOO_SHORT": "Password must be at least 8 characters",
+    "INVALID_INPUT": "Invalid input"
   }
 }
