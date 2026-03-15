@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
     const adapter = createAdapter(type as ProviderType, credentials as never);
     await adapter.testConnection();
   } catch {
-    return fail("CONNECTION_FAILED", 422);
+    return fail("CONNECTION_TEST_FAILED", 422);
   }
 
   const encryptedCredentials = encrypt(JSON.stringify(credentials));

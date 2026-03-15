@@ -42,6 +42,7 @@ export async function syncProviders(userId: string): Promise<void> {
                     priority: issue.priority,
                     dueDate: issue.dueDate,
                     externalUrl: issue.externalUrl,
+                    lastSyncedAt: new Date(),
                   },
                   create: {
                     projectId: project.id,
@@ -51,6 +52,7 @@ export async function syncProviders(userId: string): Promise<void> {
                     priority: issue.priority,
                     dueDate: issue.dueDate,
                     externalUrl: issue.externalUrl,
+                    lastSyncedAt: new Date(),
                   },
                 })
               )
