@@ -6,7 +6,7 @@ import { ok, fail } from "@/lib/api-response";
 import { createAdapter } from "@/services/issue-provider/factory";
 import { ProviderType } from "@prisma/client";
 
-export async function GET(_req: NextRequest) {
+export async function GET() {
   const session = await auth();
   if (!session) return fail("UNAUTHORIZED", 401);
 

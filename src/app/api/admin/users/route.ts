@@ -12,7 +12,7 @@ async function requireAdmin() {
   return { error: null, session };
 }
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   const { error } = await requireAdmin();
   if (error) return error;
 

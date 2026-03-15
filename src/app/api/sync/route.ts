@@ -1,10 +1,9 @@
-import { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { ok, fail } from "@/lib/api-response";
 import { syncProviders } from "@/services/sync";
 
-export async function POST(_req: NextRequest) {
+export async function POST() {
   const session = await auth();
   if (!session) return fail("UNAUTHORIZED", 401);
 
@@ -14,7 +13,7 @@ export async function POST(_req: NextRequest) {
   return ok({ syncing: true }, 202);
 }
 
-export async function GET(_req: NextRequest) {
+export async function GET() {
   const session = await auth();
   if (!session) return fail("UNAUTHORIZED", 401);
 
