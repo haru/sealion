@@ -70,10 +70,13 @@
     "connectionSuccess": "Connection successful",
     "connectionFailed": "Connection failed. Please check your credentials.",
     "deleteConfirm": "Delete this connection? All associated issues will be removed.",
+    "deleteProvider": "Delete connection",
     "projects": {
       "title": "Select Projects",
       "subtitle": "Choose which projects to monitor",
-      "noProjects": "No projects found"
+      "noProjects": "No projects found",
+      "manage": "Manage projects",
+      "search": "Search projects..."
     }
   },
   "admin": {

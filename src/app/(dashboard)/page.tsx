@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Box, Container, Typography } from "@mui/material";
 import { useTranslations } from "next-intl";
 import TodoList from "@/components/todo/TodoList";
 import SyncStatus from "@/components/todo/SyncStatus";
+import { allEnabledProjectsSynced } from "@/lib/sync-utils";
 
 type Priority = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
 type Status = "OPEN" | "CLOSED";
@@ -22,11 +23,18 @@ interface Issue {
   };
 }
 
+interface SyncProject {
+  id: string;
+  displayName: string;
+  lastSyncedAt: string | null;
+  isEnabled: boolean;
+}
+
 interface SyncProvider {
   id: string;
   displayName: string;
   type: string;
-  projects: { id: string; displayName: string; lastSyncedAt: string | null }[];
+  projects: SyncProject[];
 }
 
 export default function DashboardPage() {
@@ -38,6 +46,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncProviders, setSyncProviders] = useState<SyncProvider[]>([]);
+  const syncStartedAtRef = useRef<Date | null>(null);
 
   const fetchIssues = useCallback(async (p: number) => {
     const res = await fetch(`/api/issues?page=${p}&limit=20`);
@@ -48,34 +57,39 @@ export default function DashboardPage() {
     }
   }, []);
 
-  const fetchSyncStatus = useCallback(async () => {
-    const res = await fetch("/api/sync");
-    if (res.ok) {
-      const json = await res.json();
-      setSyncProviders(json.data);
-    }
-  }, []);
-
   const startSync = useCallback(async () => {
+    syncStartedAtRef.current = new Date();
     setIsSyncing(true);
     await fetch("/api/sync", { method: "POST" });
   }, []);
 
-  // Poll sync status every 5s while syncing; cleans up on unmount or when syncing stops
+  // Poll sync status every 5s while syncing; stops when all enabled projects are synced
   useEffect(() => {
     if (!isSyncing) return;
 
     const poll = setInterval(async () => {
-      await fetchSyncStatus();
-      const res = await fetch(`/api/issues?page=${page}&limit=20`);
-      if (res.ok) {
-        const json = await res.json();
+      const syncRes = await fetch("/api/sync");
+      if (syncRes.ok) {
+        const json = await syncRes.json();
+        const providers: SyncProvider[] = json.data;
+        setSyncProviders(providers);
+
+        const since = syncStartedAtRef.current;
+        if (since && allEnabledProjectsSynced(providers, since)) {
+          setIsSyncing(false);
+          return;
+        }
+      }
+
+      const issueRes = await fetch(`/api/issues?page=${page}&limit=20`);
+      if (issueRes.ok) {
+        const json = await issueRes.json();
         setIssues(json.data.items);
         setTotal(json.data.total);
       }
     }, 5000);
 
-    // Stop polling after 2 minutes
+    // Safety timeout: stop polling after 2 minutes
     const timeout = setTimeout(() => {
       setIsSyncing(false);
     }, 120000);
@@ -84,17 +98,19 @@ export default function DashboardPage() {
       clearInterval(poll);
       clearTimeout(timeout);
     };
-  }, [isSyncing, fetchSyncStatus, page]);
+  }, [isSyncing, page]);
 
   useEffect(() => {
     async function init() {
       setLoading(true);
-      await Promise.all([fetchIssues(1), fetchSyncStatus()]);
+      await Promise.all([fetchIssues(1), fetch("/api/sync").then(async (res) => {
+        if (res.ok) setSyncProviders((await res.json()).data);
+      })]);
       setLoading(false);
-      startSync();
+      void startSync();
     }
-    init();
-  }, [fetchIssues, fetchSyncStatus, startSync]);
+    void init();
+  }, [fetchIssues, startSync]);
 
   async function handlePageChange(newPage: number) {
     setPage(newPage);
