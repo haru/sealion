@@ -1,0 +1,98 @@
+{
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "success": "Success"
+  },
+  "auth": {
+    "login": "Log In",
+    "signup": "Sign Up",
+    "logout": "Log Out",
+    "email": "Email",
+    "password": "Password",
+    "loginTitle": "Welcome back",
+    "signupTitle": "Create your account",
+    "noAccount": "Don't have an account?",
+    "hasAccount": "Already have an account?",
+    "invalidCredentials": "Invalid email or password",
+    "emailAlreadyExists": "This email is already registered"
+  },
+  "todo": {
+    "title": "My TODO List",
+    "noIssues": "No issues assigned to you yet.",
+    "goToSettings": "Go to Settings to connect your issue trackers.",
+    "syncInProgress": "Syncing...",
+    "lastSynced": "Last synced: {time}",
+    "openInTracker": "Open in issue tracker",
+    "markComplete": "Mark as complete",
+    "markIncomplete": "Mark as incomplete",
+    "priority": {
+      "LOW": "Low",
+      "MEDIUM": "Medium",
+      "HIGH": "High",
+      "CRITICAL": "Critical"
+    },
+    "status": {
+      "OPEN": "Open",
+      "CLOSED": "Closed"
+    },
+    "source": {
+      "GITHUB": "GitHub",
+      "JIRA": "Jira",
+      "REDMINE": "Redmine"
+    },
+    "dueDate": "Due: {date}",
+    "noDueDate": "No due date"
+  },
+  "providers": {
+    "title": "Issue Tracker Settings",
+    "addProvider": "Add Issue Tracker",
+    "noProviders": "No issue trackers connected yet.",
+    "type": {
+      "GITHUB": "GitHub",
+      "JIRA": "Jira",
+      "REDMINE": "Redmine"
+    },
+    "fields": {
+      "displayName": "Display Name",
+      "baseUrl": "Server URL",
+      "token": "Personal Access Token",
+      "email": "Email",
+      "apiToken": "API Token",
+      "apiKey": "API Key"
+    },
+    "testConnection": "Test Connection",
+    "connectionSuccess": "Connection successful",
+    "connectionFailed": "Connection failed. Please check your credentials.",
+    "deleteConfirm": "Delete this connection? All associated issues will be removed.",
+    "projects": {
+      "title": "Select Projects",
+      "subtitle": "Choose which projects to monitor",
+      "noProjects": "No projects found"
+    }
+  },
+  "admin": {
+    "userManagement": "User Management",
+    "createUser": "Create User",
+    "enableUser": "Enable",
+    "disableUser": "Disable",
+    "role": {
+      "USER": "User",
+      "ADMIN": "Administrator"
+    },
+    "cannotDeactivateSelf": "You cannot deactivate your own account"
+  },
+  "errors": {
+    "UNAUTHORIZED": "Please log in to continue",
+    "FORBIDDEN": "You do not have permission to perform this action",
+    "NOT_FOUND": "Resource not found",
+    "EXTERNAL_UPDATE_FAILED": "Failed to update the issue in the external tracker",
+    "RATE_LIMITED": "API rate limit reached. Please try again later.",
+    "CONNECTION_TEST_FAILED": "Could not connect to the issue tracker. Please check your credentials.",
+    "EMAIL_ALREADY_EXISTS": "This email address is already registered"
+  }
+}

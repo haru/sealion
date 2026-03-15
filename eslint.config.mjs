@@ -12,6 +12,13 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Plugin cache and non-source directories
+    ".claude/**",
+    ".specify/**",
+    "specs/**",
+    "tests/**",
+    "prisma/**",
+    "coverage/**",
   ]),
 ]);
 

@@ -1,0 +1,98 @@
+{
+  "common": {
+    "save": "保存",
+    "cancel": "キャンセル",
+    "delete": "削除",
+    "edit": "編集",
+    "loading": "読み込み中...",
+    "error": "エラーが発生しました",
+    "success": "成功"
+  },
+  "auth": {
+    "login": "ログイン",
+    "signup": "サインアップ",
+    "logout": "ログアウト",
+    "email": "メールアドレス",
+    "password": "パスワード",
+    "loginTitle": "おかえりなさい",
+    "signupTitle": "アカウントを作成",
+    "noAccount": "アカウントをお持ちでない方は",
+    "hasAccount": "すでにアカウントをお持ちの方は",
+    "invalidCredentials": "メールアドレスまたはパスワードが正しくありません",
+    "emailAlreadyExists": "このメールアドレスはすでに登録されています"
+  },
+  "todo": {
+    "title": "マイTODOリスト",
+    "noIssues": "担当issueはありません。",
+    "goToSettings": "設定画面でissue管理システムを接続してください。",
+    "syncInProgress": "同期中...",
+    "lastSynced": "最終同期: {time}",
+    "openInTracker": "issue管理システムで開く",
+    "markComplete": "完了にする",
+    "markIncomplete": "未完了に戻す",
+    "priority": {
+      "LOW": "低",
+      "MEDIUM": "中",
+      "HIGH": "高",
+      "CRITICAL": "緊急"
+    },
+    "status": {
+      "OPEN": "未完了",
+      "CLOSED": "完了"
+    },
+    "source": {
+      "GITHUB": "GitHub",
+      "JIRA": "Jira",
+      "REDMINE": "Redmine"
+    },
+    "dueDate": "期限: {date}",
+    "noDueDate": "期限なし"
+  },
+  "providers": {
+    "title": "issue管理システム設定",
+    "addProvider": "issue管理システムを追加",
+    "noProviders": "まだissue管理システムが接続されていません。",
+    "type": {
+      "GITHUB": "GitHub",
+      "JIRA": "Jira",
+      "REDMINE": "Redmine"
+    },
+    "fields": {
+      "displayName": "表示名",
+      "baseUrl": "サーバーURL",
+      "token": "Personal Access Token",
+      "email": "メールアドレス",
+      "apiToken": "APIトークン",
+      "apiKey": "APIキー"
+    },
+    "testConnection": "接続テスト",
+    "connectionSuccess": "接続に成功しました",
+    "connectionFailed": "接続に失敗しました。認証情報を確認してください。",
+    "deleteConfirm": "この接続を削除しますか？関連するissueも削除されます。",
+    "projects": {
+      "title": "プロジェクトを選択",
+      "subtitle": "監視対象のプロジェクトを選択してください",
+      "noProjects": "プロジェクトが見つかりません"
+    }
+  },
+  "admin": {
+    "userManagement": "ユーザー管理",
+    "createUser": "ユーザーを作成",
+    "enableUser": "有効化",
+    "disableUser": "無効化",
+    "role": {
+      "USER": "一般ユーザー",
+      "ADMIN": "管理者"
+    },
+    "cannotDeactivateSelf": "自分のアカウントを無効化することはできません"
+  },
+  "errors": {
+    "UNAUTHORIZED": "続けるにはログインしてください",
+    "FORBIDDEN": "この操作を実行する権限がありません",
+    "NOT_FOUND": "リソースが見つかりません",
+    "EXTERNAL_UPDATE_FAILED": "外部のissue管理システムでのステータス更新に失敗しました",
+    "RATE_LIMITED": "APIのレート制限に達しました。しばらくしてから再試行してください。",
+    "CONNECTION_TEST_FAILED": "issue管理システムに接続できませんでした。認証情報を確認してください。",
+    "EMAIL_ALREADY_EXISTS": "このメールアドレスはすでに登録されています"
+  }
+}
