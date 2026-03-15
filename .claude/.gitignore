@@ -3,3 +3,4 @@ cache/
 projects/
 history.jsonl
 ide/
+settings.local.json
