@@ -1,0 +1,174 @@
+{
+  "schemaVersion": "ecc.install.v1",
+  "installedAt": "2026-03-15T05:49:58.283Z",
+  "target": {
+    "id": "claude-home",
+    "target": "claude",
+    "kind": "home",
+    "root": "/home/node/.claude",
+    "installStatePath": "/home/node/.claude/ecc/install-state.json"
+  },
+  "request": {
+    "profile": null,
+    "modules": [],
+    "includeComponents": [],
+    "excludeComponents": [],
+    "legacyLanguages": [
+      "typescript"
+    ],
+    "legacyMode": true
+  },
+  "resolution": {
+    "selectedModules": [
+      "legacy-claude-rules"
+    ],
+    "skippedModules": []
+  },
+  "source": {
+    "repoVersion": "1.8.0",
+    "repoCommit": "2b2777915e4057a1ee5fd63cf35d61843058b521",
+    "manifestVersion": 1
+  },
+  "operations": [
+    {
+      "kind": "copy-file",
+      "moduleId": "legacy-claude-rules",
+      "sourcePath": "/workspaces/sealion/everything-claude-code/rules/common/agents.md",
+      "sourceRelativePath": "rules/common/agents.md",
+      "destinationPath": "/home/node/.claude/rules/common/agents.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "legacy-claude-rules",
+      "sourcePath": "/workspaces/sealion/everything-claude-code/rules/common/coding-style.md",
+      "sourceRelativePath": "rules/common/coding-style.md",
+      "destinationPath": "/home/node/.claude/rules/common/coding-style.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "legacy-claude-rules",
+      "sourcePath": "/workspaces/sealion/everything-claude-code/rules/common/development-workflow.md",
+      "sourceRelativePath": "rules/common/development-workflow.md",
+      "destinationPath": "/home/node/.claude/rules/common/development-workflow.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "legacy-claude-rules",
+      "sourcePath": "/workspaces/sealion/everything-claude-code/rules/common/git-workflow.md",
+      "sourceRelativePath": "rules/common/git-workflow.md",
+      "destinationPath": "/home/node/.claude/rules/common/git-workflow.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "legacy-claude-rules",
+      "sourcePath": "/workspaces/sealion/everything-claude-code/rules/common/hooks.md",
+      "sourceRelativePath": "rules/common/hooks.md",
+      "destinationPath": "/home/node/.claude/rules/common/hooks.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "legacy-claude-rules",
+      "sourcePath": "/workspaces/sealion/everything-claude-code/rules/common/patterns.md",
+      "sourceRelativePath": "rules/common/patterns.md",
+      "destinationPath": "/home/node/.claude/rules/common/patterns.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "legacy-claude-rules",
+      "sourcePath": "/workspaces/sealion/everything-claude-code/rules/common/performance.md",
+      "sourceRelativePath": "rules/common/performance.md",
+      "destinationPath": "/home/node/.claude/rules/common/performance.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "legacy-claude-rules",
+      "sourcePath": "/workspaces/sealion/everything-claude-code/rules/common/security.md",
+      "sourceRelativePath": "rules/common/security.md",
+      "destinationPath": "/home/node/.claude/rules/common/security.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "legacy-claude-rules",
+      "sourcePath": "/workspaces/sealion/everything-claude-code/rules/common/testing.md",
+      "sourceRelativePath": "rules/common/testing.md",
+      "destinationPath": "/home/node/.claude/rules/common/testing.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "legacy-claude-rules",
+      "sourcePath": "/workspaces/sealion/everything-claude-code/rules/typescript/coding-style.md",
+      "sourceRelativePath": "rules/typescript/coding-style.md",
+      "destinationPath": "/home/node/.claude/rules/typescript/coding-style.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "legacy-claude-rules",
+      "sourcePath": "/workspaces/sealion/everything-claude-code/rules/typescript/hooks.md",
+      "sourceRelativePath": "rules/typescript/hooks.md",
+      "destinationPath": "/home/node/.claude/rules/typescript/hooks.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "legacy-claude-rules",
+      "sourcePath": "/workspaces/sealion/everything-claude-code/rules/typescript/patterns.md",
+      "sourceRelativePath": "rules/typescript/patterns.md",
+      "destinationPath": "/home/node/.claude/rules/typescript/patterns.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "legacy-claude-rules",
+      "sourcePath": "/workspaces/sealion/everything-claude-code/rules/typescript/security.md",
+      "sourceRelativePath": "rules/typescript/security.md",
+      "destinationPath": "/home/node/.claude/rules/typescript/security.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "legacy-claude-rules",
+      "sourcePath": "/workspaces/sealion/everything-claude-code/rules/typescript/testing.md",
+      "sourceRelativePath": "rules/typescript/testing.md",
+      "destinationPath": "/home/node/.claude/rules/typescript/testing.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    }
+  ]
+}
