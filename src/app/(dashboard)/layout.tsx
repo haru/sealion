@@ -31,9 +31,11 @@ export default async function DashboardLayout({
           <Typography variant="body2" sx={{ mr: 2 }}>
             {session.user.email}
           </Typography>
-          <IconButton color="inherit" component={Link} href="/settings/providers" aria-label="settings">
-            <SettingsIcon />
-          </IconButton>
+          <Link href="/settings/providers">
+            <IconButton color="inherit" aria-label="settings">
+              <SettingsIcon />
+            </IconButton>
+          </Link>
           <SignOutButton label={t("logout")} />
         </Toolbar>
       </AppBar>
