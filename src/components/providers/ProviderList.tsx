@@ -60,6 +60,7 @@ export default function ProviderList({ providers, onDelete }: ProviderListProps)
               primary={provider.displayName}
               secondary={
                 <Chip
+                  component="span"
                   label={t(`type.${provider.type}`)}
                   size="small"
                   variant="outlined"
