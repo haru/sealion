@@ -147,7 +147,10 @@ describe("syncProviders", () => {
 
     expect(mockProjectUpdate).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: expect.objectContaining({ syncError: "SYNC_FAILED" }),
+        data: expect.objectContaining({
+          syncError: "SYNC_FAILED",
+          lastSyncedAt: expect.any(Date),
+        }),
       })
     );
   });
@@ -174,7 +177,10 @@ describe("syncProviders", () => {
 
     expect(mockProjectUpdate).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: expect.objectContaining({ syncError: "RATE_LIMITED" }),
+        data: expect.objectContaining({
+          syncError: "RATE_LIMITED",
+          lastSyncedAt: expect.any(Date),
+        }),
       })
     );
   });

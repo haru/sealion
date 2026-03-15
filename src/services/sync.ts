@@ -81,6 +81,7 @@ export async function syncProviders(userId: string): Promise<void> {
                   where: { id: project.id },
                   data: {
                     syncError: isRateLimit ? "RATE_LIMITED" : "SYNC_FAILED",
+                    lastSyncedAt: new Date(),
                   },
                 });
               }
