@@ -53,6 +53,7 @@ function ProviderIcon({ type }: { type: Provider["type"] }) {
 export default function AddProjectDialog({ open, onClose }: AddProjectDialogProps) {
   const t = useTranslations("projects");
   const tCommon = useTranslations("common");
+  const tErrors = useTranslations("errors");
 
   const [step, setStep] = useState<"provider" | "projects">("provider");
   const [providers, setProviders] = useState<Provider[]>([]);
@@ -124,7 +125,7 @@ export default function AddProjectDialog({ open, onClose }: AddProjectDialogProp
     setError(null);
     try {
       const toAdd = externalProjects.filter((p) => selected.has(p.externalId));
-      await Promise.all(
+      const results = await Promise.all(
         toAdd.map((p) =>
           fetch("/api/projects", {
             method: "POST",
@@ -137,6 +138,12 @@ export default function AddProjectDialog({ open, onClose }: AddProjectDialogProp
           })
         )
       );
+      const failed = results.filter((res) => !res.ok);
+      if (failed.length > 0) {
+        const json = await failed[0].json().catch(() => ({}));
+        setError(json?.error ? tErrors(json.error) : tCommon("error"));
+        return;
+      }
       onClose(true);
     } catch {
       setError(tCommon("error"));
@@ -271,7 +278,7 @@ export default function AddProjectDialog({ open, onClose }: AddProjectDialogProp
             variant="contained"
             disabled={!selectedProvider || loadingProviders}
           >
-            {tCommon("next") ?? "Next"}
+            {tCommon("next")}
           </Button>
         )}
         {step === "projects" && (

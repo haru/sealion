@@ -67,14 +67,16 @@ export default function DashboardShell({ email, children }: DashboardShellProps)
         component="main"
         sx={{
           flexGrow: 1,
-          py: 3,
+          p: 3,
           mt: "64px",
           minHeight: "100vh",
-          pr: { md: "240px" },
         }}
       >
         {children}
       </Box>
+
+      {/* Spacer that mirrors sidebar width to center content on the full viewport */}
+      <Box sx={{ display: { xs: "none", md: "block" }, width: 240, flexShrink: 0 }} />
     </Box>
   );
 }

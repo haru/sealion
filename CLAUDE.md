@@ -72,7 +72,7 @@ src/app/
 | `db.ts` | Singleton Prisma client |
 | `encryption.ts` | AES-256-GCM encrypt/decrypt for credentials |
 | `api-response.ts` | `ok(data)` / `fail(msg, status)` helpers for consistent API envelope `{ data, error }` |
-| `sync-utils.ts` | Pure utility: `allEnabledProjectsSynced()` |
+| `sync-utils.ts` | Pure utility: `allProjectsSynced()` |
 | `types.ts` | Shared TypeScript types including `IssueProviderAdapter` interface |
 
 ### Middleware (`middleware.ts`)
@@ -110,6 +110,11 @@ Strict order:
 - Users must never read or modify another user's data (enforce at API layer with session userId)
 - External credentials stored encrypted (`encrypt()`/`decrypt()`) — never store plaintext tokens
 - Admin routes protected in middleware and re-verified inside route handlers
+
+### Git — NEVER commit or push without explicit instruction
+
+**Never run `git commit` or `git push` (or any variant) unless the user explicitly asks.**
+This rule has no exceptions — do not commit "just to save progress" or as part of a workflow.
 
 ### ESLint
 Run `npm run lint` after every code change. Config extends `eslint-config-next/core-web-vitals` and `eslint-config-next/typescript`.

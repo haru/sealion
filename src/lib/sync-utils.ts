@@ -12,7 +12,7 @@ interface SyncProvider {
  * (i.e. lastSyncedAt >= since AND syncError is null).
  * Also returns true when there are no projects (nothing to sync).
  */
-export function allEnabledProjectsSynced(providers: SyncProvider[], since: Date): boolean {
+export function allProjectsSynced(providers: SyncProvider[], since: Date): boolean {
   const projects = providers.flatMap((p) => p.projects);
   if (projects.length === 0) return true;
   return projects.every(

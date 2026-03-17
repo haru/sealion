@@ -60,7 +60,7 @@ Path alias: `@/*` maps to `./src/*` (configured in tsconfig.json).
 ```
 User (email, passwordHash, role: ADMIN | USER)
 └── IssueProvider (type: GITHUB | JIRA | REDMINE, encryptedCredentials)
-    └── Project (externalId, displayName, isEnabled, lastSyncedAt, syncError)
+    └── Project (externalId, displayName, lastSyncedAt, syncError)
         └── Issue (externalId, title, status: OPEN | CLOSED,
                    priority: LOW | MEDIUM | HIGH | CRITICAL, dueDate, externalUrl)
 ```

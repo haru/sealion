@@ -5,7 +5,7 @@ import { Box, Container, Typography } from "@mui/material";
 import { useTranslations } from "next-intl";
 import TodoList from "@/components/todo/TodoList";
 import SyncStatus from "@/components/todo/SyncStatus";
-import { allEnabledProjectsSynced } from "@/lib/sync-utils";
+import { allProjectsSynced } from "@/lib/sync-utils";
 
 type Priority = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
 type Status = "OPEN" | "CLOSED";
@@ -81,7 +81,7 @@ export default function DashboardPage() {
         setSyncProviders(providers);
 
         const since = syncStartedAtRef.current;
-        if (since && allEnabledProjectsSynced(providers, since)) {
+        if (since && allProjectsSynced(providers, since)) {
           setIsSyncing(false);
           return;
         }

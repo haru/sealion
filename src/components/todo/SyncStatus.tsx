@@ -54,11 +54,11 @@ export default function SyncStatus({ providers, isSyncing }: SyncStatusProps) {
     <>
       <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", mb: 2 }}>
         {providers.map((provider) => {
-          const enabled = provider.projects;
-          if (enabled.length === 0) return null;
+          const projects = provider.projects;
+          if (projects.length === 0) return null;
 
-          const hasError = enabled.some((p) => p.syncError !== null);
-          const lastSynced = enabled
+          const hasError = projects.some((p) => p.syncError !== null);
+          const lastSynced = projects
             .map((p) => p.lastSyncedAt)
             .filter(Boolean)
             .sort()

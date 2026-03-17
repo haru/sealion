@@ -1,16 +1,16 @@
-import { allEnabledProjectsSynced } from "@/lib/sync-utils";
+import { allProjectsSynced } from "@/lib/sync-utils";
 
 const PAST = new Date("2026-01-01T00:00:00Z");
 const SYNC_START = new Date("2026-03-15T10:00:00Z");
 const AFTER = new Date("2026-03-15T10:01:00Z");
 
-describe("allEnabledProjectsSynced", () => {
+describe("allProjectsSynced", () => {
   it("returns true when there are no providers", () => {
-    expect(allEnabledProjectsSynced([], SYNC_START)).toBe(true);
+    expect(allProjectsSynced([], SYNC_START)).toBe(true);
   });
 
   it("returns true when all providers have no projects", () => {
-    expect(allEnabledProjectsSynced([{ projects: [] }], SYNC_START)).toBe(true);
+    expect(allProjectsSynced([{ projects: [] }], SYNC_START)).toBe(true);
   });
 
   it("returns true when all projects were synced after since", () => {
@@ -21,14 +21,14 @@ describe("allEnabledProjectsSynced", () => {
         ],
       },
     ];
-    expect(allEnabledProjectsSynced(providers, SYNC_START)).toBe(true);
+    expect(allProjectsSynced(providers, SYNC_START)).toBe(true);
   });
 
   it("returns true when lastSyncedAt equals since exactly", () => {
     const providers = [
       { projects: [{ lastSyncedAt: SYNC_START.toISOString(), syncError: null }] },
     ];
-    expect(allEnabledProjectsSynced(providers, SYNC_START)).toBe(true);
+    expect(allProjectsSynced(providers, SYNC_START)).toBe(true);
   });
 
   it("returns true when multiple projects across providers are all synced", () => {
@@ -36,21 +36,21 @@ describe("allEnabledProjectsSynced", () => {
       { projects: [{ lastSyncedAt: AFTER.toISOString(), syncError: null }] },
       { projects: [{ lastSyncedAt: AFTER.toISOString(), syncError: null }] },
     ];
-    expect(allEnabledProjectsSynced(providers, SYNC_START)).toBe(true);
+    expect(allProjectsSynced(providers, SYNC_START)).toBe(true);
   });
 
   it("returns false when a project has never been synced", () => {
     const providers = [
       { projects: [{ lastSyncedAt: null, syncError: null }] },
     ];
-    expect(allEnabledProjectsSynced(providers, SYNC_START)).toBe(false);
+    expect(allProjectsSynced(providers, SYNC_START)).toBe(false);
   });
 
   it("returns false when a project was synced before since", () => {
     const providers = [
       { projects: [{ lastSyncedAt: PAST.toISOString(), syncError: null }] },
     ];
-    expect(allEnabledProjectsSynced(providers, SYNC_START)).toBe(false);
+    expect(allProjectsSynced(providers, SYNC_START)).toBe(false);
   });
 
   it("returns false when only some projects are synced", () => {
@@ -62,7 +62,7 @@ describe("allEnabledProjectsSynced", () => {
         ],
       },
     ];
-    expect(allEnabledProjectsSynced(providers, SYNC_START)).toBe(false);
+    expect(allProjectsSynced(providers, SYNC_START)).toBe(false);
   });
 
   it("checks across multiple providers", () => {
@@ -70,7 +70,7 @@ describe("allEnabledProjectsSynced", () => {
       { projects: [{ lastSyncedAt: AFTER.toISOString(), syncError: null }] },
       { projects: [{ lastSyncedAt: PAST.toISOString(), syncError: null }] },
     ];
-    expect(allEnabledProjectsSynced(providers, SYNC_START)).toBe(false);
+    expect(allProjectsSynced(providers, SYNC_START)).toBe(false);
   });
 
   it("returns false when a project has a syncError even if lastSyncedAt is after since", () => {
@@ -81,7 +81,7 @@ describe("allEnabledProjectsSynced", () => {
         ],
       },
     ];
-    expect(allEnabledProjectsSynced(providers, SYNC_START)).toBe(false);
+    expect(allProjectsSynced(providers, SYNC_START)).toBe(false);
   });
 
   it("returns false when a project has RATE_LIMITED error", () => {
@@ -92,6 +92,6 @@ describe("allEnabledProjectsSynced", () => {
         ],
       },
     ];
-    expect(allEnabledProjectsSynced(providers, SYNC_START)).toBe(false);
+    expect(allProjectsSynced(providers, SYNC_START)).toBe(false);
   });
 });
