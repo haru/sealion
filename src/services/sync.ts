@@ -15,7 +15,6 @@ export async function syncProviders(userId: string): Promise<void> {
     where: { userId },
     include: {
       projects: {
-        where: { isEnabled: true },
         select: { id: true, externalId: true },
       },
     },

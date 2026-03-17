@@ -68,7 +68,6 @@ model Project {
   issueProviderId String
   externalId      String
   displayName     String
-  isEnabled       Boolean   @default(true)
   lastSyncedAt    DateTime?
   syncError       String?
   createdAt       DateTime  @default(now())

@@ -53,7 +53,7 @@ describe("GET /api/sync", () => {
         id: "p1",
         displayName: "My GitHub",
         type: "GITHUB",
-        projects: [{ id: "proj1", displayName: "repo", lastSyncedAt: new Date(), isEnabled: true }],
+        projects: [{ id: "proj1", displayName: "repo", lastSyncedAt: new Date(), syncError: null }],
       },
     ]);
 
@@ -64,7 +64,7 @@ describe("GET /api/sync", () => {
     expect(json.data).toHaveLength(1);
   });
 
-  it("includes isEnabled in each project", async () => {
+  it("returns projects with lastSyncedAt and syncError", async () => {
     mockAuth.mockResolvedValue(SESSION);
     mockFindMany.mockResolvedValue([
       {
@@ -72,8 +72,8 @@ describe("GET /api/sync", () => {
         displayName: "My GitHub",
         type: "GITHUB",
         projects: [
-          { id: "proj1", displayName: "active-repo", lastSyncedAt: new Date(), isEnabled: true },
-          { id: "proj2", displayName: "inactive-repo", lastSyncedAt: null, isEnabled: false },
+          { id: "proj1", displayName: "repo-a", lastSyncedAt: new Date(), syncError: null },
+          { id: "proj2", displayName: "repo-b", lastSyncedAt: null, syncError: "SYNC_FAILED" },
         ],
       },
     ]);
@@ -81,8 +81,9 @@ describe("GET /api/sync", () => {
     const res = await GET(makeRequest("GET"));
     const json = await res.json();
 
-    expect(json.data[0].projects[0].isEnabled).toBe(true);
-    expect(json.data[0].projects[1].isEnabled).toBe(false);
+    expect(json.data[0].projects).toHaveLength(2);
+    expect(json.data[0].projects[0].syncError).toBeNull();
+    expect(json.data[0].projects[1].syncError).toBe("SYNC_FAILED");
   });
 
   it("returns 401 when not authenticated", async () => {
