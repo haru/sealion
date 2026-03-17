@@ -6,7 +6,8 @@
     "edit": "Edit",
     "loading": "Loading...",
     "error": "An error occurred",
-    "success": "Success"
+    "success": "Success",
+    "next": "Next"
   },
   "auth": {
     "login": "Log In",
@@ -79,6 +80,25 @@
       "search": "Search projects..."
     }
   },
+  "sidebar": {
+    "projectManagement": "Project Management"
+  },
+  "projects": {
+    "title": "Projects",
+    "noProjects": "No projects yet. Add a project to get started.",
+    "addProject": "Add Project",
+    "projectName": "Project",
+    "provider": "Issue Tracker",
+    "deleteProject": "Delete project",
+    "deleteConfirm": "Delete this project? All associated issues will be removed.",
+    "selectProvider": "Select Issue Tracker",
+    "selectProviderSubtitle": "Choose which issue tracker to add a project from",
+    "noProviders": "No issue trackers configured. Please add one first.",
+    "goToProviders": "Go to Issue Tracker Settings",
+    "alreadyRegistered": "Already added",
+    "add": "Add Selected",
+    "searchProjects": "Search projects..."
+  },
   "admin": {
     "userManagement": "User Management",
     "createUser": "Create User",
@@ -112,6 +132,7 @@
     "EMAIL_ALREADY_EXISTS": "This email address is already registered",
     "INVALID_EMAIL": "Please enter a valid email address",
     "PASSWORD_TOO_SHORT": "Password must be at least 8 characters",
-    "INVALID_INPUT": "Invalid input"
+    "INVALID_INPUT": "Invalid input",
+    "CONFLICT": "This project is already registered"
   }
 }

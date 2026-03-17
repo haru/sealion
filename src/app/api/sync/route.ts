@@ -28,7 +28,6 @@ export async function GET() {
           id: true,
           displayName: true,
           lastSyncedAt: true,
-          isEnabled: true,
           syncError: true,
         },
       },

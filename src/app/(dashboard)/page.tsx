@@ -27,7 +27,6 @@ interface SyncProject {
   id: string;
   displayName: string;
   lastSyncedAt: string | null;
-  isEnabled: boolean;
   syncError: string | null;
 }
 
