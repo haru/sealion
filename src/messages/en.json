@@ -72,6 +72,10 @@
     "connectionFailed": "Connection failed. Please check your credentials.",
     "deleteConfirm": "Delete this connection? All associated issues will be removed.",
     "deleteProvider": "Delete connection",
+    "editProvider": "Edit connection",
+    "updateProvider": "Update",
+    "changeCredentials": "Change credentials",
+    "updateSuccess": "Updated successfully",
     "projects": {
       "title": "Select Projects",
       "subtitle": "Choose which projects to monitor",

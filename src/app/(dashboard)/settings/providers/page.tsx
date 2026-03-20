@@ -22,6 +22,7 @@ interface Provider {
   id: string;
   type: "GITHUB" | "JIRA" | "REDMINE";
   displayName: string;
+  baseUrl: string | null;
 }
 
 export default function ProvidersPage() {
@@ -91,7 +92,13 @@ export default function ProvidersPage() {
       )}
 
       <Paper sx={{ p: 3, mb: 3 }}>
-        <ProviderList providers={providers} onDelete={(id) => setDeleteId(id)} />
+        <ProviderList
+          providers={providers}
+          onDelete={(id) => setDeleteId(id)}
+          onUpdated={(updated) =>
+            setProviders((prev) => prev.map((p) => (p.id === updated.id ? updated : p)))
+          }
+        />
       </Paper>
 
       <Paper sx={{ p: 3 }}>

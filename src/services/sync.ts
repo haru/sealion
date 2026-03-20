@@ -26,7 +26,8 @@ export async function syncProviders(userId: string): Promise<void> {
   await Promise.all(
     providers.map((provider) =>
       providerLimit(async () => {
-        const credentials = JSON.parse(decrypt(provider.encryptedCredentials));
+        const decryptedCredentials = JSON.parse(decrypt(provider.encryptedCredentials));
+        const credentials = { ...decryptedCredentials, ...(provider.baseUrl ? { baseUrl: provider.baseUrl } : {}) };
         const adapter = createAdapter(provider.type, credentials);
 
         await Promise.all(

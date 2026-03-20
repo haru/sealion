@@ -21,6 +21,13 @@ async function importProvidersRouteWithPrisma(prisma: unknown) {
   return await import("@/app/api/providers/route");
 }
 
+// Helper to import the [id] route with a mocked Prisma client.
+async function importProviderIdRouteWithPrisma(prisma: unknown) {
+  jest.resetModules();
+  jest.doMock("@/lib/db", () => ({ prisma }));
+  return await import("@/app/api/providers/[id]/route");
+}
+
 const TEST_USER_ID = "integration-test-user";
 const VALID_KEY = "a".repeat(64);
 
@@ -34,9 +41,21 @@ jest.mock("@/lib/auth", () => ({
   }),
 }));
 
-// Mock the GitHub adapter to avoid real network calls
+// Mock adapters to avoid real network calls
 jest.mock("@/services/issue-provider/github", () => ({
   GitHubAdapter: jest.fn().mockImplementation(() => ({
+    testConnection: jest.fn().mockResolvedValue(undefined),
+  })),
+}));
+
+jest.mock("@/services/issue-provider/jira", () => ({
+  JiraAdapter: jest.fn().mockImplementation(() => ({
+    testConnection: jest.fn().mockResolvedValue(undefined),
+  })),
+}));
+
+jest.mock("@/services/issue-provider/redmine", () => ({
+  RedmineAdapter: jest.fn().mockImplementation(() => ({
     testConnection: jest.fn().mockResolvedValue(undefined),
   })),
 }));
@@ -131,5 +150,125 @@ describe("Provider registration cycle (Integration)", () => {
     const afterDeleteRes = await GET(new NextRequest("http://localhost/api/providers"));
     const afterDeleteJson = await afterDeleteRes.json();
     expect(afterDeleteJson.data.some((p: { id: string }) => p.id === providerId)).toBe(false);
+  });
+
+  // T004: POST baseUrl storage — Jira baseUrl is stored in DB field, not in encryptedCredentials
+  it("T004: POST Jira stores baseUrl in DB field with real Prisma", async () => {
+    if (skipIfNoDB()) return;
+
+    const { GET, POST } = await importProvidersRouteWithPrisma(prisma);
+
+    const postReq = new NextRequest("http://localhost/api/providers", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type: "JIRA",
+        displayName: "Integration Test Jira",
+        credentials: {
+          baseUrl: "https://integration-test.atlassian.net",
+          email: "user@example.com",
+          apiToken: "test-token",
+        },
+      }),
+    });
+
+    const postRes = await POST(postReq);
+    expect(postRes.status).toBe(201);
+    const postJson = await postRes.json();
+    const providerId = postJson.data.id;
+
+    // Verify DB state directly
+    const dbProvider = await prisma.issueProvider.findUnique({ where: { id: providerId } });
+    expect(dbProvider?.baseUrl).toBe("https://integration-test.atlassian.net");
+
+    // encryptedCredentials must not contain baseUrl
+    const { decrypt } = await import("@/lib/encryption");
+    const decrypted = JSON.parse(decrypt(dbProvider!.encryptedCredentials));
+    expect(decrypted).not.toHaveProperty("baseUrl");
+    expect(decrypted).toHaveProperty("email", "user@example.com");
+
+    // GET response also includes baseUrl
+    const getRes = await GET(new NextRequest("http://localhost/api/providers"));
+    const getJson = await getRes.json();
+    const found = getJson.data.find((p: { id: string }) => p.id === providerId);
+    expect(found?.baseUrl).toBe("https://integration-test.atlassian.net");
+
+    // Cleanup
+    await prisma.issueProvider.delete({ where: { id: providerId } });
+  });
+
+  // T009: PATCH update cycle with real Prisma
+  it("T009: PATCH updates provider name and URL", async () => {
+    if (skipIfNoDB()) return;
+
+    const { POST } = await importProvidersRouteWithPrisma(prisma);
+
+    // Create a GitHub provider first
+    const postReq = new NextRequest("http://localhost/api/providers", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type: "GITHUB",
+        displayName: "PATCH Test GitHub",
+        credentials: { token: "ghp_patch_test" },
+      }),
+    });
+    const postRes = await POST(postReq);
+    expect(postRes.status).toBe(201);
+    const providerId = (await postRes.json()).data.id;
+
+    // PATCH: update displayName
+    const { PATCH } = await importProviderIdRouteWithPrisma(prisma);
+    const patchReq = new NextRequest(`http://localhost/api/providers/${providerId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ displayName: "Updated GitHub", changeCredentials: false }),
+    });
+    const patchRes = await PATCH(patchReq, { params: Promise.resolve({ id: providerId }) });
+    expect(patchRes.status).toBe(200);
+    const patchJson = await patchRes.json();
+    expect(patchJson.data.displayName).toBe("Updated GitHub");
+
+    // Verify in DB
+    const dbProvider = await prisma.issueProvider.findUnique({ where: { id: providerId } });
+    expect(dbProvider?.displayName).toBe("Updated GitHub");
+
+    // Cleanup
+    await prisma.issueProvider.delete({ where: { id: providerId } });
+  });
+
+  // T014: GET returns baseUrl
+  it("T014: GET /api/providers returns baseUrl field", async () => {
+    if (skipIfNoDB()) return;
+
+    const { GET, POST } = await importProvidersRouteWithPrisma(prisma);
+
+    // Create Jira provider
+    const postReq = new NextRequest("http://localhost/api/providers", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type: "JIRA",
+        displayName: "GET baseUrl Test Jira",
+        credentials: {
+          baseUrl: "https://get-test.atlassian.net",
+          email: "user@example.com",
+          apiToken: "test-token",
+        },
+      }),
+    });
+    const postRes = await POST(postReq);
+    expect(postRes.status).toBe(201);
+    const providerId = (await postRes.json()).data.id;
+
+    // GET: verify baseUrl is in response
+    const getRes = await GET(new NextRequest("http://localhost/api/providers"));
+    const getJson = await getRes.json();
+    const found = getJson.data.find((p: { id: string }) => p.id === providerId);
+    expect(found).toBeDefined();
+    expect(found?.baseUrl).toBe("https://get-test.atlassian.net");
+
+    // Cleanup
+    await prisma.issueProvider.delete({ where: { id: providerId } });
   });
 });

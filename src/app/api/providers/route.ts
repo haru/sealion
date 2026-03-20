@@ -12,7 +12,7 @@ export async function GET() {
 
   const providers = await prisma.issueProvider.findMany({
     where: { userId: session.user.id },
-    select: { id: true, type: true, displayName: true, createdAt: true },
+    select: { id: true, type: true, displayName: true, baseUrl: true, createdAt: true },
     orderBy: { createdAt: "asc" },
   });
 
@@ -40,7 +40,10 @@ export async function POST(req: NextRequest) {
     return fail("INVALID_PROVIDER_TYPE", 400);
   }
 
-  // Test connection before saving
+  // Extract baseUrl from credentials for Jira/Redmine (stored separately in DB)
+  const { baseUrl, ...credentialsWithoutUrl } = credentials as Record<string, string>;
+
+  // Test connection before saving (pass full credentials including baseUrl to adapter)
   try {
     const adapter = createAdapter(type as ProviderType, credentials as never);
     await adapter.testConnection();
@@ -48,16 +51,17 @@ export async function POST(req: NextRequest) {
     return fail("CONNECTION_TEST_FAILED", 422);
   }
 
-  const encryptedCredentials = encrypt(JSON.stringify(credentials));
+  const encryptedCredentials = encrypt(JSON.stringify(credentialsWithoutUrl));
 
   const provider = await prisma.issueProvider.create({
     data: {
       type: type as ProviderType,
       displayName,
       encryptedCredentials,
+      ...(baseUrl ? { baseUrl } : {}),
       userId: session.user.id,
     },
-    select: { id: true, type: true, displayName: true, createdAt: true },
+    select: { id: true, type: true, displayName: true, baseUrl: true, createdAt: true },
   });
 
   return ok(provider, 201);

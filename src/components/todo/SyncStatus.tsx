@@ -1,6 +1,6 @@
 "use client";
 
-import { Box, Chip, Snackbar, Alert, Tooltip } from "@mui/material";
+import { Box, Chip, Snackbar, Alert } from "@mui/material";
 import SyncIcon from "@mui/icons-material/Sync";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import ErrorIcon from "@mui/icons-material/Error";
@@ -50,50 +50,42 @@ export default function SyncStatus({ providers, isSyncing }: SyncStatusProps) {
 
   if (providers.length === 0) return null;
 
+  const lastSynced = allProjects
+    .map((p) => p.lastSyncedAt)
+    .filter(Boolean)
+    .sort()
+    .at(-1);
+
+  const hasError = allProjects.some((p) => p.syncError !== null);
+
+  const icon = isSyncing ? (
+    <SyncIcon
+      sx={{
+        animation: "spin 1s linear infinite",
+        "@keyframes spin": {
+          "0%": { transform: "rotate(0deg)" },
+          "100%": { transform: "rotate(360deg)" },
+        },
+      }}
+    />
+  ) : hasError ? (
+    <ErrorIcon color="error" />
+  ) : lastSynced ? (
+    <CheckCircleIcon color="success" />
+  ) : (
+    <WarningIcon color="warning" />
+  );
+
+  const label = isSyncing
+    ? t("syncInProgress")
+    : lastSynced
+      ? t("lastSynced", { time: new Date(lastSynced).toLocaleTimeString() })
+      : "";
+
   return (
     <>
       <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", mb: 2 }}>
-        {providers.map((provider) => {
-          const projects = provider.projects;
-          if (projects.length === 0) return null;
-
-          const hasError = projects.some((p) => p.syncError !== null);
-          const lastSynced = projects
-            .map((p) => p.lastSyncedAt)
-            .filter(Boolean)
-            .sort()
-            .at(-1);
-
-          const label = isSyncing
-            ? t("syncInProgress")
-            : lastSynced
-              ? t("lastSynced", { time: new Date(lastSynced).toLocaleTimeString() })
-              : provider.displayName;
-
-          const icon = isSyncing ? (
-            <SyncIcon
-              sx={{
-                animation: "spin 1s linear infinite",
-                "@keyframes spin": {
-                  "0%": { transform: "rotate(0deg)" },
-                  "100%": { transform: "rotate(360deg)" },
-                },
-              }}
-            />
-          ) : hasError ? (
-            <ErrorIcon color="error" />
-          ) : lastSynced ? (
-            <CheckCircleIcon color="success" />
-          ) : (
-            <WarningIcon color="warning" />
-          );
-
-          return (
-            <Tooltip key={provider.id} title={provider.displayName}>
-              <Chip icon={icon} label={label} size="small" variant="outlined" />
-            </Tooltip>
-          );
-        })}
+        <Chip icon={icon} label={label} size="small" variant="outlined" />
       </Box>
 
       <Snackbar
