@@ -1,0 +1,14 @@
+node_modules/
+.next/
+.git/
+specs/
+tests/
+coverage/
+.devcontainer/
+.specify/
+.env
+.env.*
+!.env.example
+docker/.env
+docker/.env.*
+!docker/.env.example

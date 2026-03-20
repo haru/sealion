@@ -10,8 +10,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - **Framework**: Next.js 16 + TypeScript (App Router)
 - **UI**: MUI (Material UI) + Material Icons
-- **Auth**: Auth.js
-- **Database**: PostgreSQL
+- **Auth**: Auth.js (next-auth v5) with Prisma adapter — credentials-based (email/password)
+- **Database**: PostgreSQL 16 via Prisma ORM
+- **i18n**: next-intl — locales: `en` (default), `ja`; locale prefix: never (no `/en/` in URLs)
 - **LLM** (future): LangChain
 
 ## Commands
@@ -20,79 +21,120 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 npm run dev      # Start development server on http://localhost:3000
 npm run build    # Production build
 npm run start    # Start production server
-npm run lint     # Run ESLint — run this after every code change
+npm run lint     # Run ESLint — run after every code change
+npm test         # Run Jest (unit + integration tests)
+npm test -- --coverage          # Run with coverage report
+npm test -- --testPathPattern=<path>  # Run a single test file
+npx playwright test             # Run E2E tests (requires dev server running)
+npx prisma migrate dev          # Apply schema migrations
+npx prisma db seed              # Seed the database
 ```
 
-No test runner is configured yet. When adding one, follow the TDD rules below.
+Coverage threshold is **95% lines** (enforced by Jest). Pages, layouts, React components, and i18n files are excluded from coverage — they are covered by E2E tests instead.
 
-## Domain Architecture
+## Architecture
 
-The core domain model uses inheritance to support multiple issue providers:
+### Domain Model (Prisma schema)
 
 ```
 User
-└── IssueProvider (GithubProvider | RedmineProvider | JiraProvider)
-    └── Project (GithubProject | RedmineProject | JiraProject)
-        └── Issue (GithubIssue | RedmineIssue | JiraIssue)
+└── IssueProvider  (type: GITHUB | JIRA | REDMINE)
+    └── Project    (externalId maps to repo/project in the provider)
+        └── Issue  (normalized TODO unit; status: OPEN | CLOSED; priority: LOW | MEDIUM | HIGH | CRITICAL)
 ```
 
-Each `IssueProvider` holds connection settings (URL, credentials). Each `Project` maps to a repo/project within that provider. `Issue` is the normalized TODO unit displayed to the user.
+`IssueProvider.encryptedCredentials` stores provider API tokens/keys encrypted with AES-256-GCM (`src/lib/encryption.ts`). The key is read from `CREDENTIALS_ENCRYPTION_KEY` (64-char hex = 32 bytes).
+
+### App Router layout
+
+```
+src/app/
+  (auth)/           # Login and signup pages (public)
+  (dashboard)/      # Authenticated shell: issue list + settings/providers
+  admin/            # Admin-only: user management
+  api/
+    auth/           # Auth.js handlers + /signup
+    issues/         # GET /api/issues, PATCH/DELETE /api/issues/[id]
+    providers/      # CRUD for IssueProviders + GET projects per provider
+    sync/           # POST /api/sync — trigger issue sync
+    admin/users/    # Admin user management API
+```
+
+### Issue Provider Adapters (`src/services/issue-provider/`)
+
+`IssueProviderAdapter` interface (in `src/lib/types.ts`) is implemented by `GitHubAdapter`, `JiraAdapter`, and `RedmineAdapter`. `factory.ts` creates the right adapter from a `ProviderType` + decrypted credentials. The sync flow calls the adapter to fetch remote issues and upserts them into the database.
+
+### Key library files (`src/lib/`)
+
+| File | Purpose |
+|------|---------|
+| `auth.ts` / `auth.config.ts` | Auth.js configuration (session, callbacks) |
+| `db.ts` | Singleton Prisma client |
+| `encryption.ts` | AES-256-GCM encrypt/decrypt for credentials |
+| `api-response.ts` | `ok(data)` / `fail(msg, status)` helpers for consistent API envelope `{ data, error }` |
+| `sync-utils.ts` | Pure utility: `allProjectsSynced()` |
+| `types.ts` | Shared TypeScript types including `IssueProviderAdapter` interface |
+
+### Middleware (`middleware.ts`)
+
+Runs on every non-static request. Enforces:
+1. Admin-only access to `/api/admin/**` (checks `role === "ADMIN"` on session)
+2. next-intl locale detection on all non-API routes
+
+### i18n
+
+All UI strings live in `src/messages/en.json` and `src/messages/ja.json`. Use `next-intl`'s `useTranslations` / `getTranslations` — never hardcode display strings.
 
 ## Development Rules
 
 ### Language
-All source code, comments, commit messages, and documentation (including this file) must be written in **English**. The project is intended to be open-source.
-
-### Internationalization
-UI text must support i18n from the start. First release targets **English** (default) and **Japanese**. Use an i18n library; never hardcode display strings.
-
-### ESLint
-Run `npm run lint` after every code change. ESLint config extends `eslint-config-next/core-web-vitals` and `eslint-config-next/typescript`.
+All source code, comments, commit messages, and documentation must be in **English**.
 
 ### TDD — MANDATORY, NO EXCEPTIONS
 
 > **This rule has been violated repeatedly. It is non-negotiable.**
 
-**STOP. Before touching any implementation file, ask yourself: "Does a failing test exist for this change?"**
-If the answer is no — write the test first. Only then write or modify implementation code.
+**STOP. Before touching any implementation file, ask: "Does a failing test exist for this change?"**
 
-The strict order is:
+Strict order:
+1. Write the test → confirm **RED**
+2. Write minimal implementation → confirm **GREEN**
+3. Refactor if needed, keeping tests green
 
-1. **Write the test** — it must fail (`npm test` should show RED)
-2. **Write the minimal implementation** to make it pass (GREEN)
-3. **Refactor** if needed, keeping tests green
-
-**Concrete rules:**
-- Adding a new function → write a failing test for it first
-- Changing a function's interface (adding/removing parameters, changing types) → update the test first, confirm RED, then change the implementation
-- Fixing a bug → write a failing test that reproduces the bug first
-- Reviewing external feedback (e.g. Copilot suggestions) → update tests first, then apply the fix
-
-**Never do this:**
-```
-❌ Change implementation → tests break → fix tests
-```
-
-**Always do this:**
-```
-✅ Update/add tests → confirm RED → change implementation → confirm GREEN
-```
-
-- Target **95% line coverage**
-- Run `npm test` after every change and confirm all tests pass before moving on
+- Tests go in `tests/unit/` or `tests/integration/` (Jest) or `tests/e2e/` (Playwright)
+- Pages, layouts, and components are tested via E2E, not Jest
+- Run `npm test` after every change; all tests must pass before moving on
 
 ### Security
-- Authorization must be enforced on **both** the UI and API sides — never rely on client-side checks alone
-- Users must never be able to read or modify another user's data
-- Credentials for external services (GitHub tokens, Jira API keys, etc.) must be stored encrypted and scoped per user
+- Authorization enforced on **both** UI and API — never rely on client-side checks alone
+- Users must never read or modify another user's data (enforce at API layer with session userId)
+- External credentials stored encrypted (`encrypt()`/`decrypt()`) — never store plaintext tokens
+- Admin routes protected in middleware and re-verified inside route handlers
+
+### Git — NEVER commit or push without explicit instruction
+
+**Never run `git commit` or `git push` (or any variant) unless the user explicitly asks.**
+This rule has no exceptions — do not commit "just to save progress" or as part of a workflow.
+
+### ESLint
+Run `npm run lint` after every code change. Config extends `eslint-config-next/core-web-vitals` and `eslint-config-next/typescript`.
+
+## Environment Variables
+
+Required at runtime:
+```
+DATABASE_URL                  # PostgreSQL connection string
+AUTH_SECRET                   # Auth.js v5 secret
+CREDENTIALS_ENCRYPTION_KEY    # 64-char hex string (32 bytes) for AES-256-GCM
+```
 
 ## Development Environment
 
-This project uses **VSCode Dev Containers**. Open in the dev container before starting development.
+Uses **VSCode Dev Containers**. Open in the container before starting development.
 
 ## Active Technologies
-- TypeScript 5.x / Node.js 22 LTS (001-integrated-todo-management)
-- PostgreSQL 16 (Prisma ORM経由) (001-integrated-todo-management)
+- TypeScript 5 / Node.js 20 (LTS) + Next.js 16.1.6, Prisma 7.5, PostgreSQL 16, next-intl 4, Auth.js v5 (003-docker-container-build)
+- PostgreSQL 16 (via Prisma ORM) (003-docker-container-build)
 
 ## Recent Changes
-- 001-integrated-todo-management: Added TypeScript 5.x / Node.js 22 LTS
+- 003-docker-container-build: Added TypeScript 5 / Node.js 20 (LTS) + Next.js 16.1.6, Prisma 7.5, PostgreSQL 16, next-intl 4, Auth.js v5

@@ -12,7 +12,6 @@ interface Project {
   id: string;
   displayName: string;
   lastSyncedAt: string | null;
-  isEnabled: boolean;
   syncError: string | null;
 }
 
@@ -35,9 +34,9 @@ export default function SyncStatus({ providers, isSyncing }: SyncStatusProps) {
   const [openRateLimit, setOpenRateLimit] = useState(false);
   const [openSyncFailed, setOpenSyncFailed] = useState(false);
 
-  const enabledProjects = providers.flatMap((p) => p.projects.filter((proj) => proj.isEnabled));
-  const hasRateLimit = enabledProjects.some((p) => p.syncError === "RATE_LIMITED");
-  const hasSyncFailed = enabledProjects.some((p) => p.syncError === "SYNC_FAILED");
+  const allProjects = providers.flatMap((p) => p.projects);
+  const hasRateLimit = allProjects.some((p) => p.syncError === "RATE_LIMITED");
+  const hasSyncFailed = allProjects.some((p) => p.syncError === "SYNC_FAILED");
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -55,11 +54,11 @@ export default function SyncStatus({ providers, isSyncing }: SyncStatusProps) {
     <>
       <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", mb: 2 }}>
         {providers.map((provider) => {
-          const enabled = provider.projects.filter((p) => p.isEnabled);
-          if (enabled.length === 0) return null;
+          const projects = provider.projects;
+          if (projects.length === 0) return null;
 
-          const hasError = enabled.some((p) => p.syncError !== null);
-          const lastSynced = enabled
+          const hasError = projects.some((p) => p.syncError !== null);
+          const lastSynced = projects
             .map((p) => p.lastSyncedAt)
             .filter(Boolean)
             .sort()

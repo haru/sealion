@@ -1,0 +1,8 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "/^cd /workspaces/sealion && bash -n \\.devcontainer/post-create\\.sh$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
+}

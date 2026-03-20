@@ -4,14 +4,13 @@
 
 **Sealion** is an integrated personal TODO management app that aggregates issues from multiple issue trackers (GitHub, Jira, Redmine) into a unified list. Future versions will use LLM (via LangChain) to summarize issues and auto-assign priorities.
 
-**Current state:** Early-stage scaffolding — Next.js default template with dev container and database configured. No domain models or feature code yet.
-
 ## Tech Stack
 
 - **Framework:** Next.js 16 + TypeScript (App Router)
 - **UI:** MUI (Material UI) + Material Icons
-- **Auth:** Auth.js
-- **Database:** PostgreSQL (via dev container docker-compose)
+- **Auth:** Auth.js (next-auth v5) with Prisma adapter — credentials-based (email/password)
+- **Database:** PostgreSQL 16 via Prisma ORM
+- **i18n:** next-intl — locales: `en` (default), `ja`; locale prefix: never (no `/en/` in URLs)
 - **LLM (future):** LangChain
 - **Dev environment:** VSCode Dev Containers
 
@@ -21,35 +20,78 @@
 npm run dev      # Start development server on http://localhost:3000
 npm run build    # Production build
 npm run start    # Start production server
-npm run lint     # Run ESLint — run this after every code change
+npm run lint     # Run ESLint — run after every code change
+npm test         # Run Jest (unit + integration tests)
+npm test -- --coverage          # Run with coverage report
+npm test -- --testPathPattern=<path>  # Run a single test file
+npx playwright test             # Run E2E tests (requires dev server running)
+npx prisma migrate dev          # Apply schema migrations
+npx prisma db seed              # Seed the database
 ```
-
-Tests are configured with Jest (see `jest.config.ts` / `jest.setup.ts`). Run tests using the npm test scripts defined in `package.json`, and follow the TDD rules below when adding or updating tests.
 
 ## Project Structure
 
 ```
 src/
-  app/              # Next.js App Router pages and layouts
-docs/
-  requirement.md    # Full project requirements (Japanese)
-  rules.md          # Development rules (Japanese)
-public/             # Static assets
-.devcontainer/      # Dev container config (Dockerfile, docker-compose, post-create.sh)
+  app/                    # Next.js App Router pages and layouts
+    (auth)/               # Public: login, signup
+    (dashboard)/          # Protected: issue list, settings/providers
+    admin/                # Admin-only: user management
+    api/                  # API routes (auth, issues, providers, sync, admin)
+  components/             # React components (providers/, todo/, ui/)
+  i18n/                   # next-intl config (request.ts, routing.ts)
+  lib/                    # Shared utilities (auth, db, encryption, types)
+  messages/               # i18n strings (en.json, ja.json)
+  services/               # Business logic (sync.ts, issue-provider/)
+  types/                  # Type augmentations (next-auth.d.ts)
+tests/
+  unit/                   # Jest unit tests
+  integration/            # Jest integration tests (API endpoints)
+  e2e/                    # Playwright E2E tests
+prisma/                   # Schema, migrations, seed
+specs/                    # Feature specs and implementation plans
+docs/                     # Requirements and rules (Japanese)
 ```
 
 Path alias: `@/*` maps to `./src/*` (configured in tsconfig.json).
 
-## Domain Architecture
+## Domain Architecture (Prisma)
 
 ```
-User
-└── IssueProvider (GithubProvider | RedmineProvider | JiraProvider)
-    └── Project (GithubProject | RedmineProject | JiraProject)
-        └── Issue (GithubIssue | RedmineIssue | JiraIssue)
+User (email, passwordHash, role: ADMIN | USER)
+└── IssueProvider (type: GITHUB | JIRA | REDMINE, encryptedCredentials)
+    └── Project (externalId, displayName, lastSyncedAt, syncError)
+        └── Issue (externalId, title, status: OPEN | CLOSED,
+                   priority: LOW | MEDIUM | HIGH | CRITICAL, dueDate, externalUrl)
 ```
 
-Each `IssueProvider` holds connection settings (URL, credentials). Each `Project` maps to a repo/project within that provider. `Issue` is the normalized TODO unit displayed to the user.
+Each `IssueProvider` holds connection settings (URL, encrypted credentials). Each `Project` maps to a repo/project within that provider. `Issue` is the normalized TODO unit displayed to the user.
+
+## Key Architecture
+
+### Issue Provider Adapter Pattern (`src/services/issue-provider/`)
+
+Interface `IssueProviderAdapter` (defined in `src/lib/types.ts`) is implemented by `GitHubAdapter`, `JiraAdapter`, `RedmineAdapter`. `factory.ts` creates the right adapter from `ProviderType` + decrypted credentials. Methods: `testConnection()`, `listProjects()`, `fetchAssignedIssues()`, `closeIssue()`, `reopenIssue()`.
+
+### Sync Service (`src/services/sync.ts`)
+
+Concurrency-controlled syncing using `p-limit` (3 providers, 5 projects). External service is source of truth — upserts all returned issues. Handles rate limit errors; stores sync timestamps and error messages per project.
+
+### API Response Envelope (`src/lib/api-response.ts`)
+
+All API routes return `{ data: T | null, error: string | null }` using `ok(data)` / `fail(error, status)` helpers.
+
+### Credential Encryption (`src/lib/encryption.ts`)
+
+AES-256-GCM with format `iv:authTag:ciphertext` (base64). Key from `CREDENTIALS_ENCRYPTION_KEY` env var (64-char hex = 32 bytes).
+
+### Middleware (`middleware.ts`)
+
+Enforces admin-only access to `/api/admin/**` (checks `role === "ADMIN"`), i18n locale detection on non-API routes, and authentication for protected pages.
+
+### Auth (`src/lib/auth.ts` + `src/lib/auth.config.ts`)
+
+Credentials-based with bcryptjs password hashing, JWT sessions (30-day max age), session callbacks attach `user.id` and `user.role`.
 
 ## Coding Conventions
 
@@ -81,7 +123,7 @@ Always create new objects — never mutate existing ones. Use spread operators a
 
 ## Internationalization (i18n)
 
-UI text must support i18n from the start. First release targets **English** (default) and **Japanese**. Use an i18n library; never hardcode display strings.
+All UI strings live in `src/messages/en.json` and `src/messages/ja.json`. Use `useTranslations` (client) or `getTranslations` (server) from next-intl — never hardcode display strings.
 
 ## Testing
 
@@ -93,21 +135,37 @@ UI text must support i18n from the start. First release targets **English** (def
 5. Refactor (IMPROVE)
 6. Verify coverage
 
-**Target: 95% line coverage** (project-specific, stricter than default 80%).
+**Target: 95% line coverage** (enforced by Jest). Pages, layouts, components, and i18n files are excluded from Jest coverage — they are covered by E2E tests instead.
 
-### Required Test Types
-- **Unit tests** — individual functions, utilities, components
-- **Integration tests** — API endpoints, database operations
-- **E2E tests** — critical user flows (Playwright)
+### Test Placement
+- **Unit tests** (`tests/unit/`) — functions, utilities, services
+- **Integration tests** (`tests/integration/`) — API endpoints with real database
+- **E2E tests** (`tests/e2e/`) — critical user flows (Playwright, uses `browserless` container)
+
+### Integration Test Patterns
+- Use real Prisma + test database (same dev container PostgreSQL)
+- Mock session via `jest.mock` on `@/lib/auth`
+- Mock external adapters (GitHub, Jira, Redmine APIs)
+- Create test user in `beforeAll`, clean up in `afterAll`
 
 ## Security
 
-- Authorization must be enforced on **both** UI and API sides — never rely on client-side checks alone
-- Users must never be able to read or modify another user's data
-- Credentials for external services (GitHub tokens, Jira API keys, etc.) must be stored encrypted and scoped per user
-- Never hardcode secrets — always use environment variables or a secret manager
-- Parameterized queries only (no string-concatenated SQL)
+- Authorization enforced on **both** UI and API — never rely on client-side checks alone
+- Users must never read or modify another user's data (enforce at API layer with session userId)
+- External credentials stored encrypted (`encrypt()`/`decrypt()`) — never store plaintext tokens
+- Admin routes protected in middleware **and** re-verified inside route handlers
+- Never hardcode secrets — use environment variables or a secret manager
+- Parameterized queries only (Prisma handles this)
 - Sanitize all user-facing output (XSS prevention)
+
+## Environment Variables
+
+Required at runtime:
+```
+DATABASE_URL                  # PostgreSQL connection string
+NEXTAUTH_SECRET               # Auth.js secret
+CREDENTIALS_ENCRYPTION_KEY    # 64-char hex string (32 bytes) for AES-256-GCM
+```
 
 ## ESLint
 
@@ -124,9 +182,10 @@ Run `npm run lint` after every code change. Config extends `eslint-config-next/c
 |---------|---------|
 | `app` | Node.js + TypeScript dev environment |
 | `db` | PostgreSQL (user: `postgres`, password: `postgres`, db: `postgres`) |
-| `browserless` | Headless Chrome for E2E testing |
+| `browserless` | Headless Chrome for E2E testing (Playwright) |
 
 ## Design Patterns
 
-- **Repository Pattern** for data access (findAll, findById, create, update, delete)
-- **Consistent API response envelope** with success indicator, data payload, error message, and pagination metadata
+- **Adapter / Factory Pattern** for issue providers — add new providers by implementing `IssueProviderAdapter` and registering in `factory.ts`
+- **Consistent API response envelope** — all routes use `ok(data)` / `fail(error, status)` from `src/lib/api-response.ts`
+- **Singleton Prisma client** — `src/lib/db.ts` with dev-mode query logging

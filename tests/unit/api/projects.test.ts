@@ -1,12 +1,12 @@
 /** @jest-environment node */
-import { GET, PUT } from "@/app/api/providers/[id]/projects/route";
+import { GET } from "@/app/api/providers/[id]/projects/route";
 import { NextRequest } from "next/server";
 
 jest.mock("@/lib/auth", () => ({ auth: jest.fn() }));
 jest.mock("@/lib/db", () => ({
   prisma: {
     issueProvider: { findFirst: jest.fn() },
-    project: { upsert: jest.fn() },
+    project: { findMany: jest.fn() },
   },
 }));
 jest.mock("@/lib/encryption", () => ({
@@ -25,7 +25,7 @@ import { prisma } from "@/lib/db";
 
 const mockAuth = auth as jest.Mock;
 const mockFindFirst = prisma.issueProvider.findFirst as jest.Mock;
-const mockUpsert = prisma.project.upsert as jest.Mock;
+const mockProjectFindMany = prisma.project.findMany as jest.Mock;
 
 const SESSION = { user: { id: "user-1", email: "u@ex.com", role: "USER" } };
 const PROVIDER = {
@@ -33,15 +33,10 @@ const PROVIDER = {
   type: "GITHUB",
   encryptedCredentials: "encrypted",
   userId: "user-1",
-  projects: [{ externalId: "owner/repo", isEnabled: true }],
 };
 
-function makeRequest(method: string, body?: object): NextRequest {
-  return new NextRequest("http://localhost/api/providers/p1/projects", {
-    method,
-    headers: body ? { "Content-Type": "application/json" } : {},
-    body: body ? JSON.stringify(body) : undefined,
-  });
+function makeRequest(method: string): NextRequest {
+  return new NextRequest("http://localhost/api/providers/p1/projects", { method });
 }
 
 describe("GET /api/providers/[id]/projects", () => {
@@ -50,8 +45,9 @@ describe("GET /api/providers/[id]/projects", () => {
     mockAuth.mockResolvedValue(SESSION);
   });
 
-  it("returns 200 with projects including isEnabled flag", async () => {
+  it("returns 200 with projects including isRegistered flag", async () => {
     mockFindFirst.mockResolvedValue(PROVIDER);
+    mockProjectFindMany.mockResolvedValue([{ externalId: "owner/repo" }]);
 
     const res = await GET(makeRequest("GET"), { params: Promise.resolve({ id: "p1" }) });
     const json = await res.json();
@@ -59,7 +55,21 @@ describe("GET /api/providers/[id]/projects", () => {
     expect(res.status).toBe(200);
     expect(json.data[0]).toMatchObject({
       externalId: "owner/repo",
-      isEnabled: true,
+      isRegistered: true,
+    });
+  });
+
+  it("returns isRegistered: false for unregistered projects", async () => {
+    mockFindFirst.mockResolvedValue(PROVIDER);
+    mockProjectFindMany.mockResolvedValue([]); // no registered projects
+
+    const res = await GET(makeRequest("GET"), { params: Promise.resolve({ id: "p1" }) });
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(json.data[0]).toMatchObject({
+      externalId: "owner/repo",
+      isRegistered: false,
     });
   });
 
@@ -73,58 +83,5 @@ describe("GET /api/providers/[id]/projects", () => {
     mockFindFirst.mockResolvedValue(null);
     const res = await GET(makeRequest("GET"), { params: Promise.resolve({ id: "p1" }) });
     expect(res.status).toBe(403);
-  });
-});
-
-describe("PUT /api/providers/[id]/projects", () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-    mockAuth.mockResolvedValue(SESSION);
-  });
-
-  it("returns 200 and upserts projects", async () => {
-    mockFindFirst.mockResolvedValue({ id: "p1", userId: "user-1" });
-    mockUpsert.mockResolvedValue({});
-
-    const res = await PUT(
-      makeRequest("PUT", {
-        projects: [{ externalId: "owner/repo", displayName: "owner/repo", isEnabled: true }],
-      }),
-      { params: Promise.resolve({ id: "p1" }) }
-    );
-
-    expect(res.status).toBe(200);
-    expect(mockUpsert).toHaveBeenCalledTimes(1);
-  });
-
-  it("returns 403 when provider not owned by user", async () => {
-    mockFindFirst.mockResolvedValue(null);
-    const res = await PUT(
-      makeRequest("PUT", { projects: [] }),
-      { params: Promise.resolve({ id: "p1" }) }
-    );
-    expect(res.status).toBe(403);
-  });
-
-  it("returns 400 when body is not valid JSON", async () => {
-    mockFindFirst.mockResolvedValue({ id: "p1", userId: "user-1" });
-
-    const req = new NextRequest("http://localhost/api/providers/p1/projects", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: "not-json",
-    });
-    const res = await PUT(req, { params: Promise.resolve({ id: "p1" }) });
-    expect(res.status).toBe(400);
-  });
-
-  it("returns 400 when projects field is not an array", async () => {
-    mockFindFirst.mockResolvedValue({ id: "p1", userId: "user-1" });
-
-    const res = await PUT(
-      makeRequest("PUT", { projects: "wrong" }),
-      { params: Promise.resolve({ id: "p1" }) }
-    );
-    expect(res.status).toBe(400);
   });
 });
