@@ -17,19 +17,74 @@ An integrated personal TODO management app that aggregates issues from multiple 
 - **Framework**: Next.js 16 + TypeScript (App Router)
 - **UI**: MUI (Material UI) v7 + Material Icons
 - **Auth**: Auth.js v5 (NextAuth)
-- **Database**: PostgreSQL via Prisma 7
+- **Database**: PostgreSQL 16 via Prisma 7
 - **Encryption**: AES-256-GCM for stored credentials
-- **HTTP**: axios (adapter layer)
 - **i18n**: next-intl v4
 - **Testing**: Jest + Playwright
 
-## Prerequisites
+---
+
+## Quick Start — Docker Compose
+
+The fastest way to run the app with no local setup required.
+
+### Prerequisites
+
+- Docker Desktop (or Docker Engine + Docker Compose plugin)
+
+### 1. Clone and configure
+
+```bash
+git clone https://github.com/your-org/sealion.git
+cd sealion
+
+cp docker/.env.example docker/.env
+```
+
+Generate the required secrets in your shell:
+
+```bash
+openssl rand -base64 32
+# → paste this output as AUTH_SECRET
+
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+# → paste this output as CREDENTIALS_ENCRYPTION_KEY
+```
+
+Then edit `docker/.env` with the generated values:
+
+```dotenv
+DATABASE_URL="postgresql://postgres:password@db:5432/sealion_dev"
+AUTH_SECRET="<paste openssl output here>"
+CREDENTIALS_ENCRYPTION_KEY="<paste node output here>"
+NEXTAUTH_URL="http://localhost:3000"
+```
+
+### 2. Build and start
+
+```bash
+docker compose -f docker/docker-compose.yml up --build
+```
+
+Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+### 3. Stop
+
+```bash
+docker compose -f docker/docker-compose.yml down
+```
+
+> **Note**: `docker/.env` is for Docker only. The workspace root `.env` is used for local development without Docker — the two files are independent.
+
+---
+
+## Local Development
+
+### Prerequisites
 
 - Node.js 20+
-- PostgreSQL database
-- (Optional) Docker / VSCode Dev Container
-
-## Getting Started
+- PostgreSQL 16
+- (Recommended) VSCode with Dev Containers extension
 
 ### 1. Clone and install
 
@@ -39,19 +94,29 @@ cd sealion
 npm install
 ```
 
-### 2. Configure environment variables
+### 2. Configure environment
 
-Create a `.env.local` file:
+```bash
+cp .env.example .env
+```
 
-```env
-# Database
-DATABASE_URL=postgresql://user:password@localhost:5432/sealion
+Generate the required secrets in your shell:
 
-# Auth.js
-AUTH_SECRET=<generate with: openssl rand -base64 32>
+```bash
+openssl rand -base64 32
+# → paste this output as AUTH_SECRET
 
-# Credentials encryption (must be 64 hex chars = 32 bytes)
-CREDENTIALS_ENCRYPTION_KEY=<generate with: openssl rand -hex 32>
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+# → paste this output as CREDENTIALS_ENCRYPTION_KEY
+```
+
+Then edit `.env` with the generated values:
+
+```dotenv
+DATABASE_URL="postgresql://postgres:password@localhost:5432/sealion_dev"
+AUTH_SECRET="<paste openssl output here>"
+CREDENTIALS_ENCRYPTION_KEY="<paste node output here>"
+NEXTAUTH_URL="http://localhost:3000"
 ```
 
 ### 3. Run database migrations
@@ -74,65 +139,66 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-## Development
+---
 
-### Commands
+## Development Commands
 
 ```bash
-npm run dev      # Start development server
+npm run dev      # Start development server (Turbopack)
 npm run build    # Production build
 npm run start    # Start production server
 npm run lint     # Run ESLint
-npx jest --coverage          # Run unit & integration tests
-npx playwright test          # Run E2E tests
+npm test         # Run unit & integration tests
+npm test -- --coverage          # With coverage report (target: 95% line)
+npm test -- --testPathPattern=<path>  # Single test file
+npx playwright test             # Run E2E tests (requires dev server running)
 ```
 
-### Project Structure
+---
+
+## Project Structure
 
 ```
+docker/
+├── Dockerfile          # Production image
+├── docker-compose.yml  # Local full-stack orchestration
+├── entrypoint.sh       # DB wait + migrate + app start
+└── .env.example        # Docker env template
+
 src/
-├── app/                    # Next.js App Router pages & API routes
-│   ├── (auth)/             # Login/signup pages
-│   ├── (dashboard)/        # Main app pages (TODO list, settings)
-│   ├── admin/              # Admin-only pages
-│   └── api/                # REST API route handlers
-├── components/             # Reusable React components
-│   ├── providers/          # Provider list & form components
-│   ├── todo/               # TODO list & item components
-│   └── ui/                 # Generic UI components
-├── lib/                    # Shared utilities (auth, db, encryption)
-├── messages/               # i18n strings (en.json, ja.json)
-└── services/               # Business logic
-    ├── issue-provider/     # GitHub, Jira, Redmine adapters
-    └── sync.ts             # Issue sync service
+├── app/                # Next.js App Router pages & API routes
+│   ├── (auth)/         # Login/signup pages
+│   ├── (dashboard)/    # Main app pages (TODO list, settings)
+│   ├── admin/          # Admin-only pages
+│   └── api/            # REST API route handlers
+├── components/         # Reusable React components
+├── lib/                # Shared utilities (auth, db, encryption)
+├── messages/           # i18n strings (en.json, ja.json)
+└── services/           # Business logic
+    ├── issue-provider/ # GitHub, Jira, Redmine adapters
+    └── sync.ts         # Issue sync service
 ```
 
 ### Domain Model
 
 ```
 User
-└── IssueProvider (GithubProvider | JiraProvider | RedmineProvider)
-    └── Project (repo / Jira project / Redmine project)
+└── IssueProvider (GitHub | Jira | Redmine)
+    └── Project
         └── Issue (normalized TODO unit)
 ```
 
-### Adding a New Issue Provider
-
-1. Implement the `IssueProviderAdapter` interface in `src/lib/types.ts`
-2. Add the adapter to `src/services/issue-provider/` (e.g., `gitlab.ts`)
-3. Register it in `src/services/issue-provider/factory.ts`
-4. Add the new `ProviderType` enum value to the Prisma schema
-5. Add credential fields to `ProviderForm` component and i18n messages
+---
 
 ## Testing
 
 ### Unit & Integration Tests
 
 ```bash
-npx jest                    # Run all tests
-npx jest --coverage         # With coverage report (target: 95% line)
-npx jest tests/unit/        # Unit tests only
-npx jest tests/integration/ # Integration tests (requires DATABASE_URL)
+npm test                              # Run all tests
+npm test -- --coverage                # With coverage report
+npm test -- --testPathPattern=unit    # Unit tests only
+npm test -- --testPathPattern=integration  # Integration tests (requires DATABASE_URL)
 ```
 
 ### E2E Tests
@@ -143,27 +209,37 @@ npx playwright test         # Run all E2E tests
 npx playwright test --ui    # Interactive UI mode
 ```
 
-E2E tests use environment variables for credentials:
+---
 
-```env
-E2E_USER_EMAIL=user@example.com
-E2E_USER_PASSWORD=password123
-E2E_ADMIN_EMAIL=admin@example.com
-E2E_ADMIN_PASSWORD=password123
+## CI/CD
+
+Pushing a Git tag triggers GitHub Actions to build and publish multi-architecture images (amd64 + arm64) to DockerHub:
+
+```bash
+git tag v1.0.0
+git push origin v1.0.0
 ```
+
+Required repository secrets: `DOCKER_USERNAME`, `DOCKER_PASSWORD` (DockerHub access token).
+
+See [`docker/docker-compose.yml`](docker/docker-compose.yml) and [`.github/workflows/container.yml`](.github/workflows/container.yml) for details.
+
+---
 
 ## Security
 
 - Credentials for external services are stored encrypted (AES-256-GCM) in the database
 - API routes enforce session-based authorization — users can only access their own data
-- Admin routes require `ADMIN` role
-- Passwords are hashed with bcrypt
+- Admin routes require `ADMIN` role, enforced in middleware and route handlers
+- Passwords hashed with bcrypt
+
+---
 
 ## Contributing
 
 1. Fork the repository and create a feature branch
 2. Follow TDD: write tests before implementation (RED → GREEN → REFACTOR)
-3. Run `npm run lint` and `npx jest --coverage` before submitting
+3. Run `npm run lint` and `npm test` before submitting
 4. Open a pull request with a clear description of changes
 
 ## License

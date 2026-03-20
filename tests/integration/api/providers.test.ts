@@ -42,30 +42,39 @@ jest.mock("@/services/issue-provider/github", () => ({
 }));
 
 let prisma: PrismaClient;
+let dbAvailable = false;
 
 beforeAll(async () => {
   if (!process.env.DATABASE_URL) {
     console.warn("DATABASE_URL not set — skipping integration tests");
     return;
   }
-  const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
-  prisma = new PrismaClient({ adapter });
+  try {
+    const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
+    prisma = new PrismaClient({ adapter });
 
-  // Create test user if it doesn't exist
-  await prisma.user.upsert({
-    where: { id: TEST_USER_ID },
-    update: {},
-    create: {
-      id: TEST_USER_ID,
-      email: "test@integration.com",
-      passwordHash: "hashed",
-      role: "USER",
-    },
-  });
+    // Create test user if it doesn't exist
+    await prisma.user.upsert({
+      where: { id: TEST_USER_ID },
+      update: {},
+      create: {
+        id: TEST_USER_ID,
+        email: "test@integration.com",
+        passwordHash: "hashed",
+        role: "USER",
+      },
+    });
+    dbAvailable = true;
+  } catch {
+    console.warn("Database unavailable — skipping integration tests");
+    if (prisma) {
+      await prisma.$disconnect().catch(() => {});
+    }
+  }
 });
 
 afterAll(async () => {
-  if (!prisma) return;
+  if (!prisma || !dbAvailable) return;
   // Clean up test data
   await prisma.issueProvider.deleteMany({ where: { userId: TEST_USER_ID } });
   await prisma.user.deleteMany({ where: { id: TEST_USER_ID } });
@@ -74,8 +83,8 @@ afterAll(async () => {
 
 describe("Provider registration cycle (Integration)", () => {
   const skipIfNoDB = () => {
-    if (!process.env.DATABASE_URL) {
-      console.warn("Skipping: DATABASE_URL not set");
+    if (!dbAvailable) {
+      console.warn("Skipping: database unavailable");
       return true;
     }
     return false;
