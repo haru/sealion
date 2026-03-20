@@ -446,4 +446,53 @@ describe("PATCH /api/providers/[id]", () => {
 
     expect(res.status).toBe(422);
   });
+
+  it("strips baseUrl from credentials before encrypting on PATCH (Jira)", async () => {
+    const { JiraAdapter } = jest.requireMock("@/services/issue-provider/jira");
+    JiraAdapter.mockImplementationOnce(() => ({
+      testConnection: jest.fn().mockResolvedValue(undefined),
+    }));
+
+    mockFindFirst.mockResolvedValue({ id: "p1", userId: "user-1", type: "JIRA", encryptedCredentials: "enc", baseUrl: "https://old.atlassian.net" });
+    mockUpdate.mockResolvedValue({ id: "p1", type: "JIRA", displayName: "Updated Jira", baseUrl: "https://new.atlassian.net", createdAt: new Date() });
+
+    const req = makeRequest("PATCH", {
+      displayName: "Updated Jira",
+      baseUrl: "https://new.atlassian.net",
+      changeCredentials: true,
+      credentials: { email: "u@example.com", apiToken: "tok", baseUrl: "https://new.atlassian.net" },
+    }, "http://localhost/api/providers/p1");
+    const res = await PATCH(req, { params: Promise.resolve({ id: "p1" }) });
+
+    expect(res.status).toBe(200);
+    // encrypt must be called with credentials that do NOT contain baseUrl
+    const encryptedArg = mockEncrypt.mock.calls[0][0];
+    const parsed = JSON.parse(encryptedArg);
+    expect(parsed).not.toHaveProperty("baseUrl");
+    expect(parsed).toEqual({ email: "u@example.com", apiToken: "tok" });
+  });
+
+  it("strips baseUrl from credentials before encrypting on PATCH (Redmine)", async () => {
+    const { RedmineAdapter } = jest.requireMock("@/services/issue-provider/redmine");
+    RedmineAdapter.mockImplementationOnce(() => ({
+      testConnection: jest.fn().mockResolvedValue(undefined),
+    }));
+
+    mockFindFirst.mockResolvedValue({ id: "p1", userId: "user-1", type: "REDMINE", encryptedCredentials: "enc", baseUrl: "https://old.redmine.org" });
+    mockUpdate.mockResolvedValue({ id: "p1", type: "REDMINE", displayName: "Updated Redmine", baseUrl: "https://new.redmine.org", createdAt: new Date() });
+
+    const req = makeRequest("PATCH", {
+      displayName: "Updated Redmine",
+      baseUrl: "https://new.redmine.org",
+      changeCredentials: true,
+      credentials: { apiKey: "key123", baseUrl: "https://new.redmine.org" },
+    }, "http://localhost/api/providers/p1");
+    const res = await PATCH(req, { params: Promise.resolve({ id: "p1" }) });
+
+    expect(res.status).toBe(200);
+    const encryptedArg = mockEncrypt.mock.calls[0][0];
+    const parsed = JSON.parse(encryptedArg);
+    expect(parsed).not.toHaveProperty("baseUrl");
+    expect(parsed).toEqual({ apiKey: "key123" });
+  });
 });

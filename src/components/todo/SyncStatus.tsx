@@ -80,7 +80,7 @@ export default function SyncStatus({ providers, isSyncing }: SyncStatusProps) {
     ? t("syncInProgress")
     : lastSynced
       ? t("lastSynced", { time: new Date(lastSynced).toLocaleTimeString() })
-      : "";
+      : t("notSyncedYet");
 
   return (
     <>

@@ -66,7 +66,11 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
     if (provider.type === ProviderType.REDMINE && !credentials.apiKey) return fail("MISSING_FIELDS", 400);
 
     effectiveCredentials = { ...credentials, ...(baseUrl ? { baseUrl } : {}) };
-    encryptedToStore = encrypt(JSON.stringify(credentials));
+    // Strip baseUrl from credentials before encrypting (stored separately in DB column)
+    const credentialsWithoutUrl = Object.fromEntries(
+      Object.entries(credentials).filter(([key]) => key !== "baseUrl")
+    );
+    encryptedToStore = encrypt(JSON.stringify(credentialsWithoutUrl));
   } else {
     const existingCreds = JSON.parse(decrypt(provider.encryptedCredentials));
     effectiveCredentials = { ...existingCreds, ...(baseUrl ? { baseUrl } : provider.baseUrl ? { baseUrl: provider.baseUrl } : {}) };

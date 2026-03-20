@@ -23,15 +23,17 @@ test.describe("Provider settings", () => {
     await page.selectOption('select, [role="combobox"]', "JIRA");
     await page.fill('input[type="text"][required]', "Test Jira");
 
-    // Fill Jira-specific fields
-    const inputs = page.locator('input');
-    // baseUrl, email, apiToken fields
-    const textInputs = inputs.filter({ hasNotText: "" });
-    // Use placeholder-based selection as a more robust approach
+    // Fill Jira-specific fields using placeholder-based selection
     const baseUrlInput = page.locator('input[placeholder*="atlassian"]');
     if (await baseUrlInput.count() > 0) {
       await baseUrlInput.fill("https://test.atlassian.net");
     }
+
+    // Submit the provider form
+    await page.click('button[type="submit"]');
+
+    // Verify that the Jira URL appears in the providers list
+    await expect(page.getByText("https://test.atlassian.net")).toBeVisible();
   });
 
   test("edit button is visible on provider rows", async ({ page }) => {

@@ -28,6 +28,7 @@
     "goToSettings": "設定画面でissue管理システムを接続してください。",
     "syncInProgress": "同期中...",
     "lastSynced": "最終同期: {time}",
+    "notSyncedYet": "未同期",
     "openInTracker": "issue管理システムで開く",
     "markComplete": "完了にする",
     "markIncomplete": "未完了に戻す",

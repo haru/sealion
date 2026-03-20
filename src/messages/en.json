@@ -28,6 +28,7 @@
     "goToSettings": "Go to Settings to connect your issue trackers.",
     "syncInProgress": "Syncing...",
     "lastSynced": "Last synced: {time}",
+    "notSyncedYet": "Not synced yet",
     "openInTracker": "Open in issue tracker",
     "markComplete": "Mark as complete",
     "markIncomplete": "Mark as incomplete",
