@@ -131,3 +131,10 @@ CREDENTIALS_ENCRYPTION_KEY    # 64-char hex string (32 bytes) for AES-256-GCM
 ## Development Environment
 
 Uses **VSCode Dev Containers**. Open in the container before starting development.
+
+## Active Technologies
+- TypeScript 5 / Node.js 20 (LTS) + Next.js 16.1.6, Prisma 7.5, PostgreSQL 16, next-intl 4, Auth.js v5 (003-docker-container-build)
+- PostgreSQL 16 (via Prisma ORM) (003-docker-container-build)
+
+## Recent Changes
+- 003-docker-container-build: Added TypeScript 5 / Node.js 20 (LTS) + Next.js 16.1.6, Prisma 7.5, PostgreSQL 16, next-intl 4, Auth.js v5
