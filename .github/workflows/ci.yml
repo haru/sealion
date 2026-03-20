@@ -14,6 +14,9 @@ on:
       - ".devcontainer/**"
       - ".vscode/**"
 
+permissions:
+  contents: read
+
 jobs:
   ci:
     name: Lint / Test / Build
