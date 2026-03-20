@@ -3,8 +3,16 @@ name: CI
 on:
   push:
     branches: ["**"]
+    paths-ignore:
+      - "docker/**"
+      - ".devcontainer/**"
+      - ".vscode/**"
   pull_request:
     branches: ["**"]
+    paths-ignore:
+      - "docker/**"
+      - ".devcontainer/**"
+      - ".vscode/**"
 
 jobs:
   ci:
