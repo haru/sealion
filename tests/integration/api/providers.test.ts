@@ -67,6 +67,9 @@ beforeAll(async () => {
     dbAvailable = true;
   } catch {
     console.warn("Database unavailable — skipping integration tests");
+    if (prisma) {
+      await prisma.$disconnect().catch(() => {});
+    }
   }
 });
 

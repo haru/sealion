@@ -14,6 +14,12 @@ export default auth(function middleware(req: NextRequest & { auth: { user?: unkn
     if (role !== "ADMIN") {
       return NextResponse.json({ data: null, error: "FORBIDDEN" }, { status: 403 });
     }
+    return NextResponse.next();
+  }
+
+  // Skip auth processing for all other API routes
+  if (pathname.startsWith("/api/")) {
+    return NextResponse.next();
   }
 
   return NextResponse.next();

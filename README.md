@@ -41,12 +41,22 @@ cd sealion
 cp docker/.env.example docker/.env
 ```
 
-Edit `docker/.env` with your secrets:
+Generate the required secrets in your shell:
+
+```bash
+openssl rand -base64 32
+# → paste this output as AUTH_SECRET
+
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+# → paste this output as CREDENTIALS_ENCRYPTION_KEY
+```
+
+Then edit `docker/.env` with the generated values:
 
 ```dotenv
 DATABASE_URL="postgresql://postgres:password@db:5432/sealion_dev"
-AUTH_SECRET="$(openssl rand -base64 32)"
-CREDENTIALS_ENCRYPTION_KEY="$(node -e "console.log(require('crypto').randomBytes(32).toString('hex'))")"
+AUTH_SECRET="<paste openssl output here>"
+CREDENTIALS_ENCRYPTION_KEY="<paste node output here>"
 NEXTAUTH_URL="http://localhost:3000"
 ```
 
@@ -90,12 +100,22 @@ npm install
 cp .env.example .env
 ```
 
-Edit `.env`:
+Generate the required secrets in your shell:
+
+```bash
+openssl rand -base64 32
+# → paste this output as AUTH_SECRET
+
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+# → paste this output as CREDENTIALS_ENCRYPTION_KEY
+```
+
+Then edit `.env` with the generated values:
 
 ```dotenv
 DATABASE_URL="postgresql://postgres:password@localhost:5432/sealion_dev"
-AUTH_SECRET="$(openssl rand -base64 32)"
-CREDENTIALS_ENCRYPTION_KEY="$(node -e "console.log(require('crypto').randomBytes(32).toString('hex'))")"
+AUTH_SECRET="<paste openssl output here>"
+CREDENTIALS_ENCRYPTION_KEY="<paste node output here>"
 NEXTAUTH_URL="http://localhost:3000"
 ```
 

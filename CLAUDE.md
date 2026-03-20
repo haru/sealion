@@ -124,7 +124,7 @@ Run `npm run lint` after every code change. Config extends `eslint-config-next/c
 Required at runtime:
 ```
 DATABASE_URL                  # PostgreSQL connection string
-NEXTAUTH_SECRET               # Auth.js secret
+AUTH_SECRET                   # Auth.js v5 secret
 CREDENTIALS_ENCRYPTION_KEY    # 64-char hex string (32 bytes) for AES-256-GCM
 ```
 

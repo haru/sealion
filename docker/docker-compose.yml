@@ -3,10 +3,11 @@ name: sealion
 services:
   db:
     image: postgres:16-alpine
+    env_file: .env
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: sealion_dev
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      POSTGRES_DB: ${POSTGRES_DB:-sealion_dev}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
