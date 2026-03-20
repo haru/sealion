@@ -19,7 +19,8 @@ export async function GET(req: NextRequest, { params }: Params) {
 
   if (!provider) return fail("FORBIDDEN", 403);
 
-  const credentials = JSON.parse(decrypt(provider.encryptedCredentials));
+  const decryptedCredentials = JSON.parse(decrypt(provider.encryptedCredentials));
+  const credentials = { ...decryptedCredentials, ...(provider.baseUrl ? { baseUrl: provider.baseUrl } : {}) };
   const adapter = createAdapter(provider.type, credentials);
 
   const externalProjects = await adapter.listProjects();

@@ -28,6 +28,7 @@
     "goToSettings": "Go to Settings to connect your issue trackers.",
     "syncInProgress": "Syncing...",
     "lastSynced": "Last synced: {time}",
+    "notSyncedYet": "Not synced yet",
     "openInTracker": "Open in issue tracker",
     "markComplete": "Mark as complete",
     "markIncomplete": "Mark as incomplete",
@@ -72,6 +73,10 @@
     "connectionFailed": "Connection failed. Please check your credentials.",
     "deleteConfirm": "Delete this connection? All associated issues will be removed.",
     "deleteProvider": "Delete connection",
+    "editProvider": "Edit connection",
+    "updateProvider": "Update",
+    "changeCredentials": "Change credentials",
+    "updateSuccess": "Updated successfully",
     "projects": {
       "title": "Select Projects",
       "subtitle": "Choose which projects to monitor",
