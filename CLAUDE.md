@@ -111,10 +111,12 @@ Strict order:
 - External credentials stored encrypted (`encrypt()`/`decrypt()`) — never store plaintext tokens
 - Admin routes protected in middleware and re-verified inside route handlers
 
-### Git — NEVER commit or push without explicit instruction
+### Git — NEVER commit, push, or create PRs without explicit instruction
 
-**Never run `git commit` or `git push` (or any variant) unless the user explicitly asks.**
+**Never run `git commit`, `git push`, or `gh pr create` (or any variant) unless the user explicitly asks.**
 This rule has no exceptions — do not commit "just to save progress" or as part of a workflow.
+
+GitHub may be read (e.g. `gh pr view`, `gh issue list`) but **never updated** — no creating, editing, or closing PRs/issues/comments without explicit instruction.
 
 ### ESLint
 Run `npm run lint` after every code change. Config extends `eslint-config-next/core-web-vitals` and `eslint-config-next/typescript`.

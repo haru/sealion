@@ -1,50 +1,168 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+<!--
+SYNC IMPACT REPORT
+==================
+Version change: (unversioned template) → 1.0.0
+Modified principles: N/A (initial fill)
+Added sections:
+  - Core Principles (5 principles)
+  - Technology Standards
+  - Development Workflow
+  - Governance
+Removed sections: N/A (template placeholders replaced)
+Templates checked:
+  - .specify/templates/plan-template.md ✅ "Constitution Check" section aligns with principles below
+  - .specify/templates/spec-template.md ✅ mandatory sections (User Scenarios, Requirements, Success Criteria) consistent
+  - .specify/templates/tasks-template.md ✅ TDD task ordering (tests before implementation) consistent
+Follow-up TODOs: None — all placeholders resolved from CLAUDE.md and repo context.
+-->
+
+# Sealion Constitution
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. Test-First (NON-NEGOTIABLE)
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+TDD is mandatory for every code change without exception.
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+- A failing test MUST exist before any implementation file is touched.
+- Workflow: write test → confirm RED → write minimal implementation → confirm GREEN → refactor.
+- Unit and integration tests live in `tests/unit/` and `tests/integration/` (Jest).
+- Pages, layouts, and React components are covered by E2E tests in `tests/e2e/` (Playwright).
+- `npm test` MUST pass after every change; coverage threshold is 95% lines (enforced by Jest).
+- Test files may not be written speculatively "just in case" — each test MUST map to a real
+  failing requirement.
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+**Rationale**: Prior violations caused regressions that were hard to trace. This rule is
+non-negotiable to keep the codebase trustworthy and deployable at any commit.
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+### II. Security by Design
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+Security controls MUST be applied at every layer; client-side checks alone are never sufficient.
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+- Every API route MUST enforce authentication and authorise the requesting user's session `userId`.
+- Users MUST NOT be able to read or modify another user's data (enforced at the API layer).
+- External provider credentials MUST be stored encrypted using AES-256-GCM (`src/lib/encryption.ts`);
+  plaintext tokens MUST never be persisted.
+- Admin routes MUST be protected in both middleware (`middleware.ts`) and inside each route handler.
+- All user inputs MUST be validated at system boundaries before processing.
+- Secrets (API keys, `AUTH_SECRET`, `CREDENTIALS_ENCRYPTION_KEY`) MUST be stored as environment
+  variables — never hardcoded in source.
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+**Rationale**: The system aggregates credentials for third-party services on behalf of users.
+A breach of one user's data must not cascade to others.
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+### III. Multi-Provider Adapter Abstraction
+
+Issue provider integrations MUST be implemented behind a shared `IssueProviderAdapter` interface.
+
+- New providers (GitHub, Jira, Redmine, future) MUST implement the adapter interface defined in
+  `src/lib/types.ts`.
+- `src/services/issue-provider/factory.ts` is the single creation point; callers MUST NOT
+  instantiate adapters directly.
+- The domain model (`User → IssueProvider → Project → Issue`) is canonical; adapters MUST
+  normalise remote data into this model.
+- Provider-specific logic MUST remain inside the adapter and MUST NOT leak into shared services
+  or API routes.
+
+**Rationale**: Keeps the core domain clean and allows new issue trackers to be added without
+changing business logic or the sync flow.
+
+### IV. Internationalisation First
+
+All user-visible strings MUST be externalised; hardcoded display strings are forbidden.
+
+- Every UI string MUST live in `src/messages/en.json` (English, default) and `src/messages/ja.json`
+  (Japanese).
+- Components MUST use `useTranslations` / `getTranslations` from `next-intl`; direct string literals
+  MUST NOT appear in JSX or returned API error messages shown to end-users.
+- Locale detection follows `next-intl` configuration (prefix: `never`); URL structure MUST NOT
+  include a locale segment (no `/en/`).
+- New user-facing features MUST add translation keys to both locale files before merging.
+
+**Rationale**: Japanese and English users are both first-class; retrofitting i18n after the fact
+is costly and error-prone.
+
+### V. Simplicity (YAGNI)
+
+Complexity MUST be justified; the minimum solution that satisfies current requirements is preferred.
+
+- Features, helpers, or abstractions MUST NOT be added for hypothetical future requirements.
+- Functions MUST be under 50 lines; files MUST stay under 800 lines.
+- Nesting MUST NOT exceed 4 levels.
+- Immutable data patterns MUST be used — existing objects MUST NOT be mutated in place.
+- When a simpler alternative exists, it MUST be chosen unless a documented technical reason
+  demands complexity (record such justifications in the plan's Complexity Tracking table).
+
+**Rationale**: The codebase is small and evolving quickly; premature abstractions create drag
+and obscure intent.
+
+## Technology Standards
+
+The following technology choices are binding for all features. Deviations require a constitution
+amendment.
+
+- **Runtime**: Node.js 20 LTS / TypeScript 5
+- **Framework**: Next.js 16 (App Router) — no Pages Router patterns
+- **UI**: MUI v6 (Material UI) + Material Icons — no other component libraries
+- **Auth**: Auth.js v5 (next-auth) with Prisma adapter; credentials-based (email/password)
+- **Database**: PostgreSQL 16 via Prisma 7 ORM — raw SQL MUST only be used where Prisma cannot
+  express the query
+- **i18n**: next-intl 4 (locale prefix: `never`)
+- **Testing**: Jest (unit + integration, 95% coverage), Playwright (E2E)
+- **Linting**: ESLint extending `eslint-config-next/core-web-vitals` + `typescript` — `npm run lint`
+  MUST pass after every code change
+- **LLM integration** (future): LangChain — not yet in use; no other LLM SDK MUST be introduced
+  without an amendment
+
+## Development Workflow
+
+### Git & Collaboration
+
+- **No commit, push, or PR** MUST be created without explicit user instruction. This rule has no
+  exceptions (see `CLAUDE.md`).
+- GitHub MUST only be read (e.g., `gh pr view`) — never written — unless explicitly instructed.
+- Commit messages MUST follow Conventional Commits (`feat:`, `fix:`, `refactor:`, `docs:`,
+  `test:`, `chore:`, `perf:`, `ci:`).
+- All source code, comments, commit messages, and documentation MUST be written in English.
+
+### Code Quality Gates (before any merge)
+
+1. `npm test` passes with ≥ 95% line coverage.
+2. `npm run lint` exits with zero errors.
+3. All CRITICAL and HIGH findings from code-review addressed.
+4. Security checklist cleared (no hardcoded secrets, inputs validated, auth enforced).
+
+### Feature Development Order
+
+1. Research & Reuse — search GitHub / docs before writing new code.
+2. Plan — use `/speckit.plan` to produce spec, research, data-model, contracts.
+3. TDD — tests first (RED → GREEN → refactor).
+4. Code Review — use `code-reviewer` agent immediately after writing code.
+5. Commit — only when explicitly instructed.
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+This constitution supersedes all other practices documented in this repository. When a conflict
+arises between this document and any other guideline, this constitution takes precedence.
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+### Amendment Procedure
+
+1. Open a discussion describing the proposed change and rationale.
+2. Increment the version according to semantic rules below.
+3. Update this file and run the consistency propagation checklist (templates, docs, CLAUDE.md).
+4. Record the change in the Sync Impact Report comment at the top of this file.
+5. Commit with message: `docs: amend constitution to vX.Y.Z (<summary>)`.
+
+### Versioning Policy
+
+- **MAJOR**: Backward-incompatible governance change — removal or redefinition of a principle.
+- **MINOR**: New principle or section added, or materially expanded guidance.
+- **PATCH**: Clarifications, wording, typo fixes, non-semantic refinements.
+
+### Compliance Review
+
+- All PRs MUST pass the Constitution Check in `plan-template.md` before Phase 0 research begins.
+- Complexity violations MUST be justified in the plan's Complexity Tracking table.
+- Security and TDD compliance MUST be verified during code review on every PR.
+
+**Version**: 1.0.0 | **Ratified**: 2026-03-20 | **Last Amended**: 2026-03-20
