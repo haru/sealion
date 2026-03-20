@@ -3,7 +3,6 @@ name: sealion
 services:
   db:
     image: postgres:16-alpine
-    env_file: .env
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
@@ -21,12 +20,14 @@ services:
     build:
       context: ..
       dockerfile: docker/Dockerfile
-    env_file: .env
     environment:
+      DATABASE_URL: "postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-password}@db:5432/${POSTGRES_DB:-sealion_dev}"
+      AUTH_SECRET: "${AUTH_SECRET}"
+      CREDENTIALS_ENCRYPTION_KEY: "${CREDENTIALS_ENCRYPTION_KEY}"
       DB_HOST: db
       AUTH_TRUST_HOST: "true"
     ports:
-      - "3000:3000"
+      - "${HOST_PORT:-3000}:3000"
     depends_on:
       db:
         condition: service_healthy
