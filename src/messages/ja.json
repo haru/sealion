@@ -131,6 +131,18 @@
       "role": "ロール"
     }
   },
+  "todayTasks": {
+    "title": "今日やるタスク",
+    "empty": "タスクをドラッグするか「今日やる」をクリックして追加してください",
+    "addToToday": "今日やる",
+    "remove": "除外",
+    "addSuccess": "今日やるタスクに追加しました",
+    "removeSuccess": "今日やるタスクから除外しました",
+    "reorderSuccess": "並び順を更新しました",
+    "addError": "タスクの追加に失敗しました。再試行してください。",
+    "removeError": "タスクの除外に失敗しました。再試行してください。",
+    "reorderError": "並び順の保存に失敗しました。変更を元に戻します。"
+  },
   "errors": {
     "UNAUTHORIZED": "続けるにはログインしてください",
     "FORBIDDEN": "この操作を実行する権限がありません",

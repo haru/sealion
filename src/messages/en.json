@@ -131,6 +131,18 @@
       "role": "Role"
     }
   },
+  "todayTasks": {
+    "title": "Today's Tasks",
+    "empty": "Drag tasks here or click \"Add to Today\" to get started",
+    "addToToday": "Add to Today",
+    "remove": "Remove",
+    "addSuccess": "Added to today's tasks",
+    "removeSuccess": "Removed from today's tasks",
+    "reorderSuccess": "Order updated",
+    "addError": "Failed to add task. Please try again.",
+    "removeError": "Failed to remove task. Please try again.",
+    "reorderError": "Failed to save order. Reverting changes."
+  },
   "errors": {
     "UNAUTHORIZED": "Please log in to continue",
     "FORBIDDEN": "You do not have permission to perform this action",

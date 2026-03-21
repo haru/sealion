@@ -1,5 +1,8 @@
 import { IssuePriority, IssueStatus } from "@prisma/client";
 
+export type Priority = IssuePriority;
+export type Status = IssueStatus;
+
 export interface NormalizedIssue {
   externalId: string;
   title: string;

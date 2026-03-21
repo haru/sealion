@@ -69,7 +69,30 @@ describe("PATCH /api/issues/[id]", () => {
 
     expect(res.status).toBe(200);
     expect(mockUpdate).toHaveBeenCalledWith(
-      expect.objectContaining({ data: { status: "CLOSED" } })
+      expect.objectContaining({
+        data: { status: "CLOSED", todayFlag: false, todayOrder: null, todayAddedAt: null },
+      })
+    );
+  });
+
+  it("clears today fields when closing an issue that was marked for today", async () => {
+    const todayIssue = {
+      ...MOCK_ISSUE,
+      todayFlag: true,
+      todayOrder: 2,
+      todayAddedAt: new Date(),
+    };
+    mockFindFirst.mockResolvedValue(todayIssue);
+    mockUpdate.mockResolvedValue({ id: "issue-1", status: "CLOSED", todayFlag: false, todayOrder: null, todayAddedAt: null });
+
+    const req = makeRequest("issue-1", { status: "CLOSED" });
+    const res = await PATCH(req, { params: Promise.resolve({ id: "issue-1" }) });
+
+    expect(res.status).toBe(200);
+    expect(mockUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: { status: "CLOSED", todayFlag: false, todayOrder: null, todayAddedAt: null },
+      })
     );
   });
 

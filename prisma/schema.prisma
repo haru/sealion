@@ -95,11 +95,17 @@ model Issue {
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 
+  // Today Tasks feature fields
+  todayFlag    Boolean   @default(false)
+  todayOrder   Int?
+  todayAddedAt DateTime?
+
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@unique([projectId, externalId])
   @@index([projectId])
   @@index([status, dueDate])
+  @@index([todayFlag, todayOrder])
 }
 
 // ─── Auth.js required tables ─────────────────────────────────────────────────

@@ -1,13 +1,14 @@
 "use client";
 
 import { IconButton, Tooltip } from "@mui/material";
-import TodayIcon from "@mui/icons-material/Today";
-import { useDraggable } from "@dnd-kit/core";
+import RemoveCircleOutlineIcon from "@mui/icons-material/RemoveCircleOutline";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { useTranslations } from "next-intl";
 import IssueCard from "@/components/IssueCard";
 import type { Priority, Status } from "@/lib/types";
 
-interface TodoItemProps {
+interface TodayTaskItemProps {
   id: string;
   title: string;
   status: Status;
@@ -18,11 +19,11 @@ interface TodoItemProps {
   providerIconUrl: string | null;
   providerName: string;
   projectName: string;
+  onRemove: (id: string) => void;
   onStatusChange?: (id: string, newStatus: Status) => void;
-  onAddToToday?: (id: string) => void;
 }
 
-export default function TodoItem({
+export default function TodayTaskItem({
   id,
   title,
   status,
@@ -33,30 +34,32 @@ export default function TodoItem({
   providerIconUrl,
   providerName,
   projectName,
+  onRemove,
   onStatusChange,
-  onAddToToday,
-}: TodoItemProps) {
-  const tToday = useTranslations("todayTasks");
+}: TodayTaskItemProps) {
+  const t = useTranslations("todayTasks");
 
-  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id,
-    data: { type: "todo-item", issueId: id },
+    data: { type: "today-item", issueId: id },
   });
 
-  const isComplete = status === "CLOSED";
+  const dragStyle = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
 
-  const actionButton =
-    onAddToToday && !isComplete ? (
-      <Tooltip title={tToday("addToToday")}>
-        <IconButton
-          size="small"
-          onClick={() => onAddToToday(id)}
-          aria-label={tToday("addToToday")}
-        >
-          <TodayIcon fontSize="small" />
-        </IconButton>
-      </Tooltip>
-    ) : null;
+  const actionButton = (
+    <Tooltip title={t("remove")}>
+      <IconButton
+        size="small"
+        onClick={() => onRemove(id)}
+        aria-label={t("remove")}
+      >
+        <RemoveCircleOutlineIcon fontSize="small" />
+      </IconButton>
+    </Tooltip>
+  );
 
   return (
     <IssueCard
@@ -74,6 +77,7 @@ export default function TodoItem({
       dragContainerRef={setNodeRef}
       dragHandleAttributes={attributes}
       dragHandleListeners={listeners}
+      dragStyle={dragStyle}
       isDragging={isDragging}
       onStatusChange={onStatusChange}
     />

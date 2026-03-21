@@ -265,6 +265,51 @@ describe("syncProviders", () => {
     expect(mockUpsert).toHaveBeenCalledTimes(2);
   });
 
+  it("resets todayFlag/todayOrder/todayAddedAt when issue is upserted with CLOSED status", async () => {
+    mockFindMany.mockResolvedValue([
+      {
+        id: "provider-1",
+        type: "GITHUB",
+        encryptedCredentials: "encrypted",
+        userId: "user-1",
+        projects: [{ id: "project-1", externalId: "owner/repo", includeUnassigned: false }],
+      },
+    ]);
+
+    const { createAdapter } = jest.requireMock("@/services/issue-provider/factory");
+    createAdapter.mockReturnValueOnce({
+      fetchAssignedIssues: jest.fn().mockResolvedValue([
+        {
+          externalId: "42",
+          title: "Closed issue",
+          status: "CLOSED",
+          priority: "MEDIUM",
+          dueDate: null,
+          externalUrl: "https://github.com/test/repo/issues/42",
+          isUnassigned: false,
+        },
+      ]),
+      fetchUnassignedIssues: jest.fn().mockResolvedValue([]),
+    });
+
+    const mockUpsert = prisma.issue.upsert as jest.Mock;
+    mockUpsert.mockResolvedValue({});
+    (prisma.project.update as jest.Mock).mockResolvedValue({});
+
+    await syncProviders("user-1");
+
+    expect(mockUpsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        update: expect.objectContaining({
+          status: "CLOSED",
+          todayFlag: false,
+          todayOrder: null,
+          todayAddedAt: null,
+        }),
+      })
+    );
+  });
+
   it("does not call fetchUnassignedIssues when project.includeUnassigned is false", async () => {
     mockFindMany.mockResolvedValue([
       {
