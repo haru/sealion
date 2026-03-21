@@ -9,6 +9,7 @@ import {
   Toolbar,
 } from "@mui/material";
 import FolderOpenIcon from "@mui/icons-material/FolderOpen";
+import FormatListBulletedIcon from "@mui/icons-material/FormatListBulleted";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -29,6 +30,17 @@ export default function Sidebar({ open, onClose, variant }: SidebarProps) {
     <>
       <Toolbar />
       <List>
+        <ListItemButton
+          component={Link}
+          href="/"
+          selected={pathname === "/"}
+          onClick={variant === "temporary" ? onClose : undefined}
+        >
+          <ListItemIcon>
+            <FormatListBulletedIcon />
+          </ListItemIcon>
+          <ListItemText primary={t("todo")} />
+        </ListItemButton>
         <ListItemButton
           component={Link}
           href="/projects"

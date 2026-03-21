@@ -86,6 +86,7 @@
     }
   },
   "sidebar": {
+    "todo": "TODO",
     "projectManagement": "プロジェクト管理"
   },
   "projects": {
