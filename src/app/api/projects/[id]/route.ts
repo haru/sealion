@@ -11,12 +11,10 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
 
   const { id } = await params;
 
-  const project = await prisma.project.findFirst({
+  const result = await prisma.project.deleteMany({
     where: { id, issueProvider: { userId: session.user.id } },
   });
-  if (!project) return fail("NOT_FOUND", 404);
-
-  await prisma.project.delete({ where: { id } });
+  if (result.count === 0) return fail("NOT_FOUND", 404);
 
   return new Response(null, { status: 204 });
 }
