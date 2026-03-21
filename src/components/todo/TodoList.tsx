@@ -8,6 +8,7 @@ import type { Priority, Status } from "@/lib/types";
 
 interface Issue {
   id: string;
+  externalId: string;
   title: string;
   status: Status;
   priority: Priority;
@@ -66,6 +67,7 @@ export default function TodoList({
         <TodoItem
           key={issue.id}
           id={issue.id}
+          externalId={issue.externalId}
           title={issue.title}
           status={issue.status}
           priority={issue.priority}

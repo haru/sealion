@@ -10,6 +10,7 @@ import type { Priority, Status } from "@/lib/types";
 
 interface TodayTaskItemProps {
   id: string;
+  externalId: string;
   title: string;
   status: Status;
   priority: Priority;
@@ -26,6 +27,7 @@ interface TodayTaskItemProps {
 /** Draggable today-task item with a remove button, wrapping {@link IssueCard}. */
 export default function TodayTaskItem({
   id,
+  externalId,
   title,
   status,
   priority,
@@ -65,6 +67,7 @@ export default function TodayTaskItem({
   return (
     <IssueCard
       id={id}
+      externalId={externalId}
       title={title}
       status={status}
       priority={priority}

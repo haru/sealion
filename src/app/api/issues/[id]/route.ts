@@ -86,7 +86,7 @@ async function handleTodayFlagUpdate(id: string, todayFlag: boolean, userId: str
       id,
       project: { issueProvider: { userId } },
     },
-    select: { id: true, status: true, todayFlag: true },
+    select: { id: true, status: true, todayFlag: true, todayOrder: true, todayAddedAt: true },
   });
 
   if (!issue) return fail("FORBIDDEN", 403);
@@ -96,6 +96,11 @@ async function handleTodayFlagUpdate(id: string, todayFlag: boolean, userId: str
   }
 
   if (todayFlag) {
+    // Idempotency: already flagged — return current state without corrupting todayOrder
+    if (issue.todayFlag) {
+      return ok({ id: issue.id, todayFlag: issue.todayFlag, todayOrder: issue.todayOrder, todayAddedAt: issue.todayAddedAt });
+    }
+
     const updated = await prisma.$transaction(async (tx) => {
       const todayCount = await tx.issue.count({
         where: {
@@ -143,7 +148,8 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   }
 
   if ("status" in body) {
-    return handleStatusUpdate(id, body.status as string, session.user.id);
+    if (typeof body.status !== "string") return fail("INVALID_INPUT", 400);
+    return handleStatusUpdate(id, body.status, session.user.id);
   }
 
   return fail("INVALID_BODY", 400);

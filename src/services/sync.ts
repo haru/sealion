@@ -9,6 +9,7 @@ const PROJECT_CONCURRENCY = 5;
 /**
  * Syncs issues for all enabled projects belonging to the given user.
  * External service is the source of truth — all returned issues are upserted.
+ * @param userId - ID of the user whose providers and projects are synced.
  */
 export async function syncProviders(userId: string): Promise<void> {
   const providers = await prisma.issueProvider.findMany({

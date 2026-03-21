@@ -9,6 +9,7 @@ import type { Priority, Status } from "@/lib/types";
 
 interface TodayIssue {
   id: string;
+  externalId: string;
   title: string;
   status: Status;
   priority: Priority;
@@ -28,9 +29,16 @@ interface TodayTasksAreaProps {
   onStatusChange: (id: string, newStatus: Status) => void;
 }
 
+/** Drop zone ID used by dnd-kit to identify today's tasks droppable area. */
 export const TODAY_DROP_ZONE_ID = "today-drop-zone";
 
-/** Drop zone and sortable list of today's flagged issues. */
+/**
+ * Drop zone and sortable list of today's flagged issues.
+ * @param items - Issues to display, sorted by `todayOrder`.
+ * @param onRemove - Callback invoked when the user removes an issue from today's list.
+ * @param onStatusChange - Callback invoked when the user changes an issue's status.
+ * @returns A droppable area containing a sorted list of today task items.
+ */
 export default function TodayTasksArea({ items, onRemove, onStatusChange }: TodayTasksAreaProps) {
   const t = useTranslations("todayTasks");
 
@@ -71,6 +79,7 @@ export default function TodayTasksArea({ items, onRemove, onStatusChange }: Toda
               <TodayTaskItem
                 key={issue.id}
                 id={issue.id}
+                externalId={issue.externalId}
                 title={issue.title}
                 status={issue.status}
                 priority={issue.priority}
