@@ -62,8 +62,8 @@ export default function DashboardPage() {
   const tToday = useTranslations("todayTasks");
 
   const [issues, setIssues] = useState<Issue[]>([]);
+  const [todayIssues, setTodayIssues] = useState<Issue[]>([]);
   const [total, setTotal] = useState(0);
-  const [totalToday, setTotalToday] = useState(0);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -74,11 +74,11 @@ export default function DashboardPage() {
 
   const sensors = useSensors(useSensor(PointerSensor));
 
-  const todayIssues = issues
-    .filter((i) => i.todayFlag && i.status === "OPEN")
-    .map((i) => ({ ...i, todayOrder: i.todayOrder ?? 0 }));
+  const todayIssuesSorted = todayIssues
+    .map((i) => ({ ...i, todayOrder: i.todayOrder ?? 0 }))
+    .sort((a, b) => a.todayOrder - b.todayOrder);
 
-  const regularIssues = issues.filter((i) => !i.todayFlag);
+  const regularIssues = issues;
 
   function showToast(message: string, severity: ToastSeverity) {
     setToast({ open: true, message, severity });
@@ -88,21 +88,16 @@ export default function DashboardPage() {
     const res = await fetch(`/api/issues?page=${p}&limit=20`);
     if (res.ok) {
       const json = await res.json();
-      setIssues((prev) => {
-        const prevById = new Map(prev.map((i) => [i.id, i]));
-        return json.data.items.map((fetched: Issue) => {
-          const existing = prevById.get(fetched.id);
-          // Preserve todayFlag from local state if it was optimistically set to true
-          // but the fetch returned false (race condition: fetch ran before PATCH committed),
-          // only while the fetched issue is still OPEN.
-          if (existing && existing.todayFlag && !fetched.todayFlag && fetched.status === "OPEN") {
-            return { ...fetched, todayFlag: existing.todayFlag, todayOrder: existing.todayOrder, todayAddedAt: existing.todayAddedAt };
-          }
-          return fetched;
-        });
-      });
+      setIssues(json.data.items);
       setTotal(json.data.total);
-      setTotalToday(json.data.totalToday);
+    }
+  }, []);
+
+  const fetchTodayIssues = useCallback(async () => {
+    const res = await fetch("/api/issues/today");
+    if (res.ok) {
+      const json = await res.json();
+      setTodayIssues(json.data.items);
     }
   }, []);
 
@@ -129,7 +124,7 @@ export default function DashboardPage() {
 
         const since = syncStartedAtRef.current;
         if (since && allProjectsSynced(providers, since)) {
-          if (!cancelled) await fetchIssues(page);
+          if (!cancelled) await Promise.all([fetchIssues(page), fetchTodayIssues()]);
           setIsSyncing(false);
           return;
         }
@@ -152,13 +147,14 @@ export default function DashboardPage() {
       clearTimeout(pollTimeout);
       clearTimeout(safetyTimeout);
     };
-  }, [isSyncing, page, fetchIssues]);
+  }, [isSyncing, page, fetchIssues, fetchTodayIssues]);
 
   useEffect(() => {
     async function init() {
       setLoading(true);
       await Promise.all([
         fetchIssues(1),
+        fetchTodayIssues(),
         fetch("/api/sync").then(async (res) => {
           if (res.ok) setSyncProviders((await res.json()).data);
         }),
@@ -167,7 +163,7 @@ export default function DashboardPage() {
       void startSync();
     }
     void init();
-  }, [fetchIssues, startSync]);
+  }, [fetchIssues, fetchTodayIssues, startSync]);
 
   async function handlePageChange(newPage: number) {
     setPage(newPage);
@@ -175,18 +171,21 @@ export default function DashboardPage() {
   }
 
   async function handleStatusChange(id: string, newStatus: Status) {
-    setIssues((prev) =>
-      prev.map((issue) => {
-        if (issue.id !== id) return issue;
-        const updates: Partial<Issue> = { status: newStatus };
-        if (newStatus === "CLOSED") {
-          updates.todayFlag = false;
-          updates.todayOrder = null;
-          updates.todayAddedAt = null;
-        }
-        return { ...issue, ...updates };
-      })
-    );
+    const originalInToday = todayIssues.find((i) => i.id === id);
+    const originalInRegular = issues.find((i) => i.id === id);
+
+    // Optimistic update: if closing a today item, remove it from today list
+    if (originalInToday && newStatus === "CLOSED") {
+      setTodayIssues((prev) => prev.filter((i) => i.id !== id));
+    } else if (originalInToday) {
+      setTodayIssues((prev) =>
+        prev.map((issue) => (issue.id === id ? { ...issue, status: newStatus } : issue))
+      );
+    } else {
+      setIssues((prev) =>
+        prev.map((issue) => (issue.id === id ? { ...issue, status: newStatus } : issue))
+      );
+    }
 
     const res = await fetch(`/api/issues/${id}`, {
       method: "PATCH",
@@ -195,27 +194,38 @@ export default function DashboardPage() {
     });
 
     if (!res.ok) {
-      setIssues((prev) =>
-        prev.map((issue) =>
-          issue.id === id
-            ? { ...issue, status: newStatus === "CLOSED" ? "OPEN" : "CLOSED" }
-            : issue
-        )
-      );
+      if (originalInToday) {
+        setTodayIssues((prev) => {
+          const exists = prev.some((i) => i.id === id);
+          return exists
+            ? prev.map((i) => (i.id === id ? originalInToday : i))
+            : [...prev, originalInToday];
+        });
+      }
+      if (originalInRegular) {
+        setIssues((prev) =>
+          prev.map((issue) => (issue.id === id ? originalInRegular : issue))
+        );
+      }
+      showToast(t("statusChangeError"), "error");
     }
   }
 
   async function handleAddToToday(id: string) {
-    const maxOrder = todayIssues.reduce((max, i) => Math.max(max, i.todayOrder), 0);
+    const issueToAdd = issues.find((i) => i.id === id);
+    if (!issueToAdd) return;
 
-    // Optimistic update
-    setIssues((prev) =>
-      prev.map((issue) =>
-        issue.id === id
-          ? { ...issue, todayFlag: true, todayOrder: maxOrder + 1, todayAddedAt: new Date().toISOString() }
-          : issue
-      )
-    );
+    const maxOrder = todayIssues.reduce((max, i) => Math.max(max, i.todayOrder ?? 0), 0);
+    const optimisticItem = {
+      ...issueToAdd,
+      todayFlag: true,
+      todayOrder: maxOrder + 1,
+      todayAddedAt: new Date().toISOString(),
+    };
+
+    // Optimistic update: move from regular to today
+    setIssues((prev) => prev.filter((i) => i.id !== id));
+    setTodayIssues((prev) => [...prev, optimisticItem]);
 
     const res = await fetch(`/api/issues/${id}`, {
       method: "PATCH",
@@ -225,7 +235,7 @@ export default function DashboardPage() {
 
     if (res.ok) {
       const json = await res.json();
-      setIssues((prev) =>
+      setTodayIssues((prev) =>
         prev.map((issue) =>
           issue.id === id
             ? {
@@ -240,27 +250,18 @@ export default function DashboardPage() {
       showToast(tToday("addSuccess"), "success");
     } else {
       // Rollback
-      setIssues((prev) =>
-        prev.map((issue) =>
-          issue.id === id
-            ? { ...issue, todayFlag: false, todayOrder: null, todayAddedAt: null }
-            : issue
-        )
-      );
+      setTodayIssues((prev) => prev.filter((i) => i.id !== id));
+      setIssues((prev) => [...prev, issueToAdd]);
       showToast(tToday("addError"), "error");
     }
   }
 
   async function handleRemoveFromToday(id: string) {
-    const issue = issues.find((i) => i.id === id);
+    const issue = todayIssues.find((i) => i.id === id);
     if (!issue) return;
 
-    // Optimistic update
-    setIssues((prev) =>
-      prev.map((i) =>
-        i.id === id ? { ...i, todayFlag: false, todayOrder: null, todayAddedAt: null } : i
-      )
-    );
+    // Optimistic update: remove from today
+    setTodayIssues((prev) => prev.filter((i) => i.id !== id));
 
     const res = await fetch(`/api/issues/${id}`, {
       method: "PATCH",
@@ -269,25 +270,21 @@ export default function DashboardPage() {
     });
 
     if (res.ok) {
+      // Refetch regular issues so the item appears back in the list
+      await fetchIssues(page);
       showToast(tToday("removeSuccess"), "success");
     } else {
       // Rollback
-      setIssues((prev) =>
-        prev.map((i) =>
-          i.id === id
-            ? { ...i, todayFlag: issue.todayFlag, todayOrder: issue.todayOrder, todayAddedAt: issue.todayAddedAt }
-            : i
-        )
-      );
+      setTodayIssues((prev) => [...prev, issue]);
       showToast(tToday("removeError"), "error");
     }
   }
 
   async function handleReorder(orderedIds: string[]) {
-    const prevIssues = issues;
+    const prevTodayIssues = todayIssues;
 
     // Optimistic update: reassign todayOrder based on new positions
-    setIssues((prev) =>
+    setTodayIssues((prev) =>
       prev.map((issue) => {
         const newOrder = orderedIds.indexOf(issue.id);
         if (newOrder === -1) return issue;
@@ -302,7 +299,7 @@ export default function DashboardPage() {
     });
 
     if (!res.ok) {
-      setIssues(prevIssues);
+      setTodayIssues(prevTodayIssues);
       showToast(tToday("reorderError"), "error");
     }
   }
@@ -335,9 +332,7 @@ export default function DashboardPage() {
     // Reorder within TodayTasksArea
     if (activeData.type === "today-item" && active.id !== over.id) {
       if (isOverTodayArea) {
-        const ids = todayIssues
-          .sort((a, b) => a.todayOrder - b.todayOrder)
-          .map((i) => i.id);
+        const ids = todayIssuesSorted.map((i) => i.id);
         const oldIndex = ids.indexOf(active.id as string);
         const newIndex = ids.indexOf(over.id as string);
         if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
@@ -358,10 +353,10 @@ export default function DashboardPage() {
         <SyncStatus providers={syncProviders} isSyncing={isSyncing} />
 
         <Box sx={{ mt: 2 }}>
-          <TodayTasksArea items={todayIssues} onRemove={handleRemoveFromToday} onStatusChange={handleStatusChange} />
+          <TodayTasksArea items={todayIssuesSorted} onRemove={handleRemoveFromToday} onStatusChange={handleStatusChange} />
           <TodoList
             items={regularIssues}
-            total={total - totalToday}
+            total={total}
             page={page}
             limit={20}
             loading={loading}
@@ -374,7 +369,7 @@ export default function DashboardPage() {
 
       <DragOverlay>
         {activeDragId ? (() => {
-          const issue = issues.find((i) => i.id === activeDragId);
+          const issue = [...issues, ...todayIssues].find((i) => i.id === activeDragId);
           if (!issue) return null;
           return (
             <Box

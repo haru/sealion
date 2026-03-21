@@ -8,6 +8,8 @@ interface GitHubIssue {
   state: string;
   html_url: string;
   milestone?: { due_on?: string | null };
+  created_at: string;
+  updated_at: string;
 }
 
 interface GitHubRepo {
@@ -88,6 +90,8 @@ export class GitHubAdapter implements IssueProviderAdapter {
       dueDate: issue.milestone?.due_on ? new Date(issue.milestone.due_on) : null,
       externalUrl: issue.html_url,
       isUnassigned: false,
+      providerCreatedAt: new Date(issue.created_at),
+      providerUpdatedAt: new Date(issue.updated_at),
     }));
   }
 
@@ -114,6 +118,8 @@ export class GitHubAdapter implements IssueProviderAdapter {
       dueDate: issue.milestone?.due_on ? new Date(issue.milestone.due_on) : null,
       externalUrl: issue.html_url,
       isUnassigned: true,
+      providerCreatedAt: new Date(issue.created_at),
+      providerUpdatedAt: new Date(issue.updated_at),
     }));
   }
 

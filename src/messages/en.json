@@ -50,7 +50,8 @@
     "dueDate": "Due: {date}",
     "noDueDate": "No due date",
     "unassignedChipLabel": "Unassigned",
-    "unassignedChipTooltip": "No assignee"
+    "unassignedChipTooltip": "No assignee",
+    "statusChangeError": "Failed to update status. Please try again."
   },
   "providers": {
     "title": "Issue Tracker Settings",

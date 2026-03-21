@@ -96,4 +96,103 @@ describe("GET /api/issues", () => {
     expect(json.data.items[0].isUnassigned).toBe(false);
     expect(json.data.items[1].isUnassigned).toBe(true);
   });
+
+  it("orders by dueDate asc nulls last as second orderBy key", async () => {
+    mockFindMany.mockResolvedValue([]);
+    mockCount.mockResolvedValue(0);
+
+    await GET(makeRequest());
+
+    const call = mockFindMany.mock.calls[0][0];
+    expect(call.orderBy).toEqual(
+      expect.arrayContaining([
+        { dueDate: { sort: "asc", nulls: "last" } },
+      ])
+    );
+  });
+
+  it("orders by providerUpdatedAt desc nulls last as third orderBy key", async () => {
+    mockFindMany.mockResolvedValue([]);
+    mockCount.mockResolvedValue(0);
+
+    await GET(makeRequest());
+
+    const call = mockFindMany.mock.calls[0][0];
+    expect(call.orderBy).toEqual(
+      expect.arrayContaining([
+        { providerUpdatedAt: { sort: "desc", nulls: "last" } },
+      ])
+    );
+  });
+
+  it("orders by providerCreatedAt desc nulls last as fourth orderBy key", async () => {
+    mockFindMany.mockResolvedValue([]);
+    mockCount.mockResolvedValue(0);
+
+    await GET(makeRequest());
+
+    const call = mockFindMany.mock.calls[0][0];
+    expect(call.orderBy).toEqual(
+      expect.arrayContaining([
+        { providerCreatedAt: { sort: "desc", nulls: "last" } },
+      ])
+    );
+  });
+
+  it("excludes today-flagged OPEN issues from paginated list and total count", async () => {
+    mockFindMany.mockResolvedValue([]);
+    mockCount.mockResolvedValue(0);
+
+    await GET(makeRequest());
+
+    const findManyCall = mockFindMany.mock.calls[0][0];
+    expect(findManyCall.where).toMatchObject({
+      NOT: { todayFlag: true, status: "OPEN" },
+    });
+
+    const regularCountCall = mockCount.mock.calls.find(
+      ([arg]: [{ where: Record<string, unknown> }]) => arg?.where?.NOT !== undefined
+    );
+    expect(regularCountCall).toBeDefined();
+    expect(regularCountCall[0].where).toMatchObject({
+      NOT: { todayFlag: true, status: "OPEN" },
+    });
+  });
+
+  it("counts totalToday independently of status filter", async () => {
+    mockFindMany.mockResolvedValue([]);
+    mockCount.mockResolvedValue(0);
+
+    await GET(makeRequest("?status=CLOSED"));
+
+    const todayCountCall = mockCount.mock.calls.find(
+      ([arg]: [{ where: Record<string, unknown> }]) =>
+        arg?.where?.todayFlag === true && arg?.where?.status === "OPEN"
+    );
+    expect(todayCountCall).toBeDefined();
+    // totalToday where must not include the CLOSED status filter
+    expect(todayCountCall[0].where).not.toHaveProperty("NOT");
+  });
+
+  it("does not use priority as an orderBy key", async () => {
+    mockFindMany.mockResolvedValue([]);
+    mockCount.mockResolvedValue(0);
+
+    await GET(makeRequest());
+
+    const call = mockFindMany.mock.calls[0][0];
+    const orderByKeys = call.orderBy.flatMap((o: Record<string, unknown>) => Object.keys(o));
+    expect(orderByKeys).not.toContain("priority");
+  });
+
+  it("includes providerCreatedAt and providerUpdatedAt in select", async () => {
+    mockFindMany.mockResolvedValue([]);
+    mockCount.mockResolvedValue(0);
+
+    await GET(makeRequest());
+
+    const call = mockFindMany.mock.calls[0][0];
+    expect(call.select.providerCreatedAt).toBe(true);
+    expect(call.select.providerUpdatedAt).toBe(true);
+  });
 });

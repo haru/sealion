@@ -10,8 +10,11 @@ export async function PATCH(req: NextRequest) {
   const body = await req.json().catch(() => null);
   if (!body) return fail("INVALID_BODY", 400);
 
-  const { orderedIds } = body as { orderedIds?: string[] };
-  if (!Array.isArray(orderedIds) || orderedIds.length === 0) {
+  const { orderedIds } = body as { orderedIds?: unknown[] };
+  if (!Array.isArray(orderedIds) || orderedIds.length === 0 || orderedIds.length > 100) {
+    return fail("INVALID_IDS", 400);
+  }
+  if (!orderedIds.every((id): id is string => typeof id === "string")) {
     return fail("INVALID_IDS", 400);
   }
 

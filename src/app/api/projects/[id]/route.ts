@@ -27,6 +27,8 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     select: { id: true, includeUnassigned: true },
   });
 
+  if (!updated) return fail("NOT_FOUND", 404);
+
   return ok(updated);
 }
 

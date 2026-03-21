@@ -178,6 +178,47 @@ describe("GitHubAdapter", () => {
     });
   });
 
+  describe("provider timestamps", () => {
+    it("maps created_at and updated_at to providerCreatedAt/providerUpdatedAt as Date", async () => {
+      mockAxiosInstance.get.mockResolvedValueOnce({ data: { login: "testuser" } });
+      mockAxiosInstance.get.mockResolvedValueOnce({
+        data: [
+          {
+            number: 42,
+            title: "Fix bug",
+            state: "open",
+            html_url: "https://github.com/owner/repo/issues/42",
+            created_at: "2026-01-15T10:00:00Z",
+            updated_at: "2026-03-10T14:30:00Z",
+          },
+        ],
+      });
+
+      const issues = await adapter.fetchAssignedIssues("owner/repo");
+      expect(issues[0].providerCreatedAt).toEqual(new Date("2026-01-15T10:00:00Z"));
+      expect(issues[0].providerUpdatedAt).toEqual(new Date("2026-03-10T14:30:00Z"));
+    });
+
+    it("maps created_at and updated_at in fetchUnassignedIssues as Date", async () => {
+      mockAxiosInstance.get.mockResolvedValueOnce({
+        data: [
+          {
+            number: 99,
+            title: "Unassigned bug",
+            state: "open",
+            html_url: "https://github.com/owner/repo/issues/99",
+            created_at: "2026-02-01T08:00:00Z",
+            updated_at: "2026-03-15T12:00:00Z",
+          },
+        ],
+      });
+
+      const issues = await adapter.fetchUnassignedIssues("owner/repo");
+      expect(issues[0].providerCreatedAt).toEqual(new Date("2026-02-01T08:00:00Z"));
+      expect(issues[0].providerUpdatedAt).toEqual(new Date("2026-03-15T12:00:00Z"));
+    });
+  });
+
   describe("closeIssue / reopenIssue", () => {
     it("patches issue state to closed", async () => {
       mockAxiosInstance.patch.mockResolvedValue({ data: {} });
@@ -337,6 +378,54 @@ describe("JiraAdapter", () => {
 
       const issues = await adapter.fetchAssignedIssues("PROJ");
       expect(issues[0].isUnassigned).toBe(false);
+    });
+  });
+
+  describe("provider timestamps", () => {
+    it("returns providerCreatedAt and providerUpdatedAt as Date when fields.created and fields.updated are present", async () => {
+      mockAxiosInstance.get.mockResolvedValue({
+        data: {
+          issues: [
+            {
+              id: "10001",
+              key: "PROJ-1",
+              fields: {
+                summary: "Fix login",
+                status: { statusCategory: { key: "indeterminate" } },
+                created: "2026-01-15T10:00:00.000+0900",
+                updated: "2026-03-10T14:30:00.000+0900",
+              },
+            },
+          ],
+          total: 1,
+        },
+      });
+
+      const issues = await adapter.fetchAssignedIssues("PROJ");
+      expect(issues[0].providerCreatedAt).toEqual(new Date("2026-01-15T10:00:00.000+0900"));
+      expect(issues[0].providerUpdatedAt).toEqual(new Date("2026-03-10T14:30:00.000+0900"));
+    });
+
+    it("returns providerCreatedAt and providerUpdatedAt as null when fields.created/updated are absent", async () => {
+      mockAxiosInstance.get.mockResolvedValue({
+        data: {
+          issues: [
+            {
+              id: "10001",
+              key: "PROJ-1",
+              fields: {
+                summary: "No timestamps",
+                status: { statusCategory: { key: "indeterminate" } },
+              },
+            },
+          ],
+          total: 1,
+        },
+      });
+
+      const issues = await adapter.fetchAssignedIssues("PROJ");
+      expect(issues[0].providerCreatedAt).toBeNull();
+      expect(issues[0].providerUpdatedAt).toBeNull();
     });
   });
 
@@ -539,6 +628,48 @@ describe("RedmineAdapter", () => {
 
       const issues = await adapter.fetchAssignedIssues("my-project");
       expect(issues[0].isUnassigned).toBe(false);
+    });
+  });
+
+  describe("provider timestamps", () => {
+    it("returns providerCreatedAt and providerUpdatedAt as Date when created_on/updated_on are present", async () => {
+      mockAxiosInstance.get.mockResolvedValue({
+        data: {
+          issues: [
+            {
+              id: 123,
+              subject: "Fix server",
+              status: { id: 1, name: "New", is_closed: false },
+              created_on: "2026-01-15 10:00:00 +0000",
+              updated_on: "2026-03-10 14:30:00 +0000",
+            },
+          ],
+          total_count: 1,
+        },
+      });
+
+      const issues = await adapter.fetchAssignedIssues("my-project");
+      expect(issues[0].providerCreatedAt).toEqual(new Date("2026-01-15 10:00:00 +0000"));
+      expect(issues[0].providerUpdatedAt).toEqual(new Date("2026-03-10 14:30:00 +0000"));
+    });
+
+    it("returns providerCreatedAt and providerUpdatedAt as null when created_on/updated_on are absent", async () => {
+      mockAxiosInstance.get.mockResolvedValue({
+        data: {
+          issues: [
+            {
+              id: 124,
+              subject: "No timestamps",
+              status: { id: 1, name: "New", is_closed: false },
+            },
+          ],
+          total_count: 1,
+        },
+      });
+
+      const issues = await adapter.fetchAssignedIssues("my-project");
+      expect(issues[0].providerCreatedAt).toBeNull();
+      expect(issues[0].providerUpdatedAt).toBeNull();
     });
   });
 

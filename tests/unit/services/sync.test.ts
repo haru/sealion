@@ -371,6 +371,102 @@ describe("syncProviders", () => {
     );
   });
 
+  it("persists providerCreatedAt and providerUpdatedAt in upsert update block", async () => {
+    const providerCreatedAt = new Date("2026-01-15T10:00:00Z");
+    const providerUpdatedAt = new Date("2026-03-10T14:30:00Z");
+
+    mockFindMany.mockResolvedValue([
+      {
+        id: "provider-1",
+        type: "GITHUB",
+        encryptedCredentials: "encrypted",
+        userId: "user-1",
+        projects: [{ id: "project-1", externalId: "owner/repo", includeUnassigned: false }],
+      },
+    ]);
+
+    const { createAdapter } = jest.requireMock("@/services/issue-provider/factory");
+    createAdapter.mockReturnValueOnce({
+      fetchAssignedIssues: jest.fn().mockResolvedValue([
+        {
+          externalId: "42",
+          title: "Fix the bug",
+          status: "OPEN",
+          priority: "HIGH",
+          dueDate: null,
+          externalUrl: "https://github.com/test/repo/issues/42",
+          isUnassigned: false,
+          providerCreatedAt,
+          providerUpdatedAt,
+        },
+      ]),
+      fetchUnassignedIssues: jest.fn().mockResolvedValue([]),
+    });
+
+    const mockUpsert = prisma.issue.upsert as jest.Mock;
+    mockUpsert.mockResolvedValue({});
+    (prisma.project.update as jest.Mock).mockResolvedValue({});
+
+    await syncProviders("user-1");
+
+    expect(mockUpsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        update: expect.objectContaining({
+          providerCreatedAt,
+          providerUpdatedAt,
+        }),
+      })
+    );
+  });
+
+  it("persists providerCreatedAt and providerUpdatedAt in upsert create block", async () => {
+    const providerCreatedAt = new Date("2026-01-15T10:00:00Z");
+    const providerUpdatedAt = new Date("2026-03-10T14:30:00Z");
+
+    mockFindMany.mockResolvedValue([
+      {
+        id: "provider-1",
+        type: "GITHUB",
+        encryptedCredentials: "encrypted",
+        userId: "user-1",
+        projects: [{ id: "project-1", externalId: "owner/repo", includeUnassigned: false }],
+      },
+    ]);
+
+    const { createAdapter } = jest.requireMock("@/services/issue-provider/factory");
+    createAdapter.mockReturnValueOnce({
+      fetchAssignedIssues: jest.fn().mockResolvedValue([
+        {
+          externalId: "42",
+          title: "Fix the bug",
+          status: "OPEN",
+          priority: "HIGH",
+          dueDate: null,
+          externalUrl: "https://github.com/test/repo/issues/42",
+          isUnassigned: false,
+          providerCreatedAt,
+          providerUpdatedAt,
+        },
+      ]),
+      fetchUnassignedIssues: jest.fn().mockResolvedValue([]),
+    });
+
+    const mockUpsert = prisma.issue.upsert as jest.Mock;
+    mockUpsert.mockResolvedValue({});
+    (prisma.project.update as jest.Mock).mockResolvedValue({});
+
+    await syncProviders("user-1");
+
+    expect(mockUpsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        create: expect.objectContaining({
+          providerCreatedAt,
+          providerUpdatedAt,
+        }),
+      })
+    );
+  });
+
   it("still upserts assigned issues when fetchUnassignedIssues fails", async () => {
     mockFindMany.mockResolvedValue([
       {

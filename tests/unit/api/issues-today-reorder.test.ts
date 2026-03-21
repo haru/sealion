@@ -77,6 +77,23 @@ describe("PATCH /api/issues/today/reorder", () => {
     expect(mockFindMany).not.toHaveBeenCalled();
   });
 
+  it("returns 400 when orderedIds contains non-string elements", async () => {
+    const req = makeRequest({ orderedIds: [1, "i2", "i3"] });
+    const res = await PATCH(req);
+
+    expect(res.status).toBe(400);
+    expect(mockFindMany).not.toHaveBeenCalled();
+  });
+
+  it("returns 400 when orderedIds has more than 100 items", async () => {
+    const ids = Array.from({ length: 101 }, (_, i) => `i${i}`);
+    const req = makeRequest({ orderedIds: ids });
+    const res = await PATCH(req);
+
+    expect(res.status).toBe(400);
+    expect(mockFindMany).not.toHaveBeenCalled();
+  });
+
   it("returns 403 when any id does not belong to user or lacks todayFlag", async () => {
     // Returns only 2 of the 3 ids — one is not owned/today
     mockFindMany.mockResolvedValue(TODAY_ISSUES.slice(0, 2));

@@ -50,7 +50,8 @@
     "dueDate": "期限: {date}",
     "noDueDate": "期限なし",
     "unassignedChipLabel": "担当者未設定",
-    "unassignedChipTooltip": "担当者が設定されていません"
+    "unassignedChipTooltip": "担当者が設定されていません",
+    "statusChangeError": "ステータスの更新に失敗しました。再試行してください。"
   },
   "providers": {
     "title": "issue管理システム設定",

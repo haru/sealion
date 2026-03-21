@@ -144,6 +144,7 @@ Uses **VSCode Dev Containers**. Open in the container before starting developmen
 - TypeScript 5 / Node.js 20 + Next.js 16 (App Router), Prisma 7.5, MUI v6, next-intl 4, Auth.js v5 (004-fix-provider-config)
 - TypeScript 5 / Node.js 20 LTS + Next.js 16 (App Router), MUI v6, Auth.js v5, Prisma 7, next-intl 4, `@dnd-kit/core` + `@dnd-kit/sortable` (newly added) (006-today-tasks)
 - PostgreSQL 16 via Prisma ORM (added columns to Issue table) (006-today-tasks)
+- TypeScript 5 / Node.js 20 LTS + Next.js 16 (App Router), Prisma 7, MUI v6, next-intl 4, Auth.js v5 (007-task-list-sort)
 
 ## Recent Changes
 - 003-docker-container-build: Added TypeScript 5 / Node.js 20 (LTS) + Next.js 16.1.6, Prisma 7.5, PostgreSQL 16, next-intl 4, Auth.js v5
