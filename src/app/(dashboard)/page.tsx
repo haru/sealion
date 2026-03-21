@@ -21,6 +21,7 @@ import type { Priority, Status } from "@/lib/types";
 
 interface Issue {
   id: string;
+  externalId: string;
   title: string;
   status: Status;
   priority: Priority;
@@ -397,7 +398,7 @@ export default function DashboardPage() {
               }}
             >
               <Typography variant="body1" noWrap>
-                {issue.title}
+                {`#${issue.externalId} ${issue.title}`}
               </Typography>
             </Box>
           );

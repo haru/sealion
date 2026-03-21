@@ -9,6 +9,7 @@ import type { Priority, Status } from "@/lib/types";
 
 interface TodoItemProps {
   id: string;
+  externalId: string;
   title: string;
   status: Status;
   priority: Priority;
@@ -25,6 +26,7 @@ interface TodoItemProps {
 /** Draggable issue list item with an "add to today" action, wrapping {@link IssueCard}. */
 export default function TodoItem({
   id,
+  externalId,
   title,
   status,
   priority,
@@ -62,6 +64,7 @@ export default function TodoItem({
   return (
     <IssueCard
       id={id}
+      externalId={externalId}
       title={title}
       status={status}
       priority={priority}

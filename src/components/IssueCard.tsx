@@ -28,6 +28,7 @@ const PRIORITY_COLORS: Record<Priority, "default" | "primary" | "warning" | "err
 
 interface IssueCardProps {
   id: string;
+  externalId: string;
   title: string;
   status: Status;
   priority: Priority;
@@ -49,6 +50,7 @@ interface IssueCardProps {
 /** Displays a single issue as a card with status toggle, drag handle, and external link. */
 export default function IssueCard({
   id,
+  externalId,
   title,
   status,
   priority,
@@ -107,7 +109,7 @@ export default function IssueCard({
               variant="body1"
               sx={{ textDecoration: isComplete ? "line-through" : "none", wordBreak: "break-word" }}
             >
-              {title}
+              {`#${externalId} ${title}`}
             </Typography>
             <Stack direction="row" spacing={1} sx={{ mt: 1, flexWrap: "wrap", gap: 0.5 }}>
               <Chip

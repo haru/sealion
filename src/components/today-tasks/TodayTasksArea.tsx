@@ -9,6 +9,7 @@ import type { Priority, Status } from "@/lib/types";
 
 interface TodayIssue {
   id: string;
+  externalId: string;
   title: string;
   status: Status;
   priority: Priority;
@@ -71,6 +72,7 @@ export default function TodayTasksArea({ items, onRemove, onStatusChange }: Toda
               <TodayTaskItem
                 key={issue.id}
                 id={issue.id}
+                externalId={issue.externalId}
                 title={issue.title}
                 status={issue.status}
                 priority={issue.priority}
