@@ -1,7 +1,7 @@
 import { IssuePriority, IssueStatus } from "@prisma/client";
 
-export type Priority = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
-export type Status = "OPEN" | "CLOSED";
+export type Priority = IssuePriority;
+export type Status = IssueStatus;
 
 export interface NormalizedIssue {
   externalId: string;

@@ -50,9 +50,18 @@ async function handleStatusUpdate(
     return fail("EXTERNAL_UPDATE_FAILED", 502);
   }
 
+  const updateData: { status: IssueStatus; todayFlag?: boolean; todayOrder?: null; todayAddedAt?: null } = {
+    status: status as IssueStatus,
+  };
+  if (status === IssueStatus.CLOSED) {
+    updateData.todayFlag = false;
+    updateData.todayOrder = null;
+    updateData.todayAddedAt = null;
+  }
+
   const updated = await prisma.issue.update({
     where: { id },
-    data: { status: status as IssueStatus },
+    data: updateData,
     select: { id: true, status: true },
   });
 
@@ -65,9 +74,14 @@ async function handleTodayFlagUpdate(id: string, todayFlag: boolean, userId: str
       id,
       project: { issueProvider: { userId } },
     },
+    select: { id: true, status: true, todayFlag: true },
   });
 
   if (!issue) return fail("FORBIDDEN", 403);
+
+  if (todayFlag && issue.status !== IssueStatus.OPEN) {
+    return fail("ISSUE_NOT_OPEN", 400);
+  }
 
   if (todayFlag) {
     const updated = await prisma.$transaction(async (tx) => {

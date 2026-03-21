@@ -69,6 +69,14 @@ describe("PATCH /api/issues/today/reorder", () => {
     expect(res.status).toBe(400);
   });
 
+  it("returns 400 when orderedIds contains duplicate ids", async () => {
+    const req = makeRequest({ orderedIds: ["i1", "i2", "i1"] });
+    const res = await PATCH(req);
+
+    expect(res.status).toBe(400);
+    expect(mockFindMany).not.toHaveBeenCalled();
+  });
+
   it("returns 403 when any id does not belong to user or lacks todayFlag", async () => {
     // Returns only 2 of the 3 ids — one is not owned/today
     mockFindMany.mockResolvedValue(TODAY_ISSUES.slice(0, 2));

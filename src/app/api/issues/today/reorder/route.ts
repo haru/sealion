@@ -15,6 +15,10 @@ export async function PATCH(req: NextRequest) {
     return fail("INVALID_IDS", 400);
   }
 
+  if (new Set(orderedIds).size !== orderedIds.length) {
+    return fail("INVALID_IDS", 400);
+  }
+
   // Verify all ids belong to the session user and have todayFlag=true
   const ownedIssues = await prisma.issue.findMany({
     where: {

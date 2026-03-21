@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
 
   const [total, totalToday, items] = await Promise.all([
     prisma.issue.count({ where }),
-    prisma.issue.count({ where: { ...where, todayFlag: true } }),
+    prisma.issue.count({ where: { ...where, todayFlag: true, status: IssueStatus.OPEN } }),
     prisma.issue.findMany({
       where,
       orderBy: [

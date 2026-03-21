@@ -135,6 +135,15 @@ describe("PATCH /api/issues/[id] — todayFlag", () => {
     );
   });
 
+  it("returns 400 when trying to set todayFlag=true on a CLOSED issue", async () => {
+    mockFindFirst.mockResolvedValue({ ...MOCK_ISSUE, status: "CLOSED" });
+
+    const req = makeRequest("issue-1", { todayFlag: true });
+    const res = await PATCH(req, { params: Promise.resolve({ id: "issue-1" }) });
+
+    expect(res.status).toBe(400);
+  });
+
   it("returns 401 when not authenticated", async () => {
     mockAuth.mockResolvedValue(null);
 

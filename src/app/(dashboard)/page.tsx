@@ -93,8 +93,9 @@ export default function DashboardPage() {
         return json.data.items.map((fetched: Issue) => {
           const existing = prevById.get(fetched.id);
           // Preserve todayFlag from local state if it was optimistically set to true
-          // but the fetch returned false (race condition: fetch ran before PATCH committed)
-          if (existing && existing.todayFlag && !fetched.todayFlag) {
+          // but the fetch returned false (race condition: fetch ran before PATCH committed),
+          // only while the fetched issue is still OPEN.
+          if (existing && existing.todayFlag && !fetched.todayFlag && fetched.status === "OPEN") {
             return { ...fetched, todayFlag: existing.todayFlag, todayOrder: existing.todayOrder, todayAddedAt: existing.todayAddedAt };
           }
           return fetched;
@@ -175,7 +176,16 @@ export default function DashboardPage() {
 
   async function handleStatusChange(id: string, newStatus: Status) {
     setIssues((prev) =>
-      prev.map((issue) => (issue.id === id ? { ...issue, status: newStatus } : issue))
+      prev.map((issue) => {
+        if (issue.id !== id) return issue;
+        const updates: Partial<Issue> = { status: newStatus };
+        if (newStatus === "CLOSED") {
+          updates.todayFlag = false;
+          updates.todayOrder = null;
+          updates.todayAddedAt = null;
+        }
+        return { ...issue, ...updates };
+      })
     );
 
     const res = await fetch(`/api/issues/${id}`, {

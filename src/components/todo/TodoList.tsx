@@ -4,9 +4,7 @@ import { Box, Pagination, Typography } from "@mui/material";
 import { useTranslations } from "next-intl";
 import TodoItem from "./TodoItem";
 import TodoListSkeleton from "./TodoListSkeleton";
-
-type Priority = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
-type Status = "OPEN" | "CLOSED";
+import type { Priority, Status } from "@/lib/types";
 
 interface Issue {
   id: string;
