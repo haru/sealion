@@ -19,7 +19,7 @@ interface Issue {
   externalUrl: string;
   project: {
     displayName: string;
-    issueProvider: { type: string; displayName: string };
+    issueProvider: { iconUrl: string | null; displayName: string };
   };
 }
 

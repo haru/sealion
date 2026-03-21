@@ -12,9 +12,8 @@ import {
   Stack,
 } from "@mui/material";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
-import GitHubIcon from "@mui/icons-material/GitHub";
-import CloudIcon from "@mui/icons-material/Cloud";
 import { useTranslations } from "next-intl";
+import ProviderIcon from "@/components/ProviderIcon";
 
 type Priority = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
 type Status = "OPEN" | "CLOSED";
@@ -26,7 +25,7 @@ interface TodoItemProps {
   priority: Priority;
   dueDate: string | null;
   externalUrl: string;
-  providerType: string;
+  providerIconUrl: string | null;
   providerName: string;
   projectName: string;
   onStatusChange?: (id: string, newStatus: Status) => void;
@@ -39,10 +38,6 @@ const PRIORITY_COLORS: Record<Priority, "default" | "primary" | "warning" | "err
   CRITICAL: "error",
 };
 
-function ProviderIcon({ type }: { type: string }) {
-  if (type === "GITHUB") return <GitHubIcon fontSize="small" />;
-  return <CloudIcon fontSize="small" />;
-}
 
 export default function TodoItem({
   id,
@@ -51,7 +46,7 @@ export default function TodoItem({
   priority,
   dueDate,
   externalUrl,
-  providerType,
+  providerIconUrl,
   providerName,
   projectName,
   onStatusChange,
@@ -103,7 +98,7 @@ export default function TodoItem({
               />
 
               <Chip
-                icon={<ProviderIcon type={providerType} />}
+                icon={<ProviderIcon iconUrl={providerIconUrl} fontSize="small" />}
                 label={`${providerName} / ${projectName}`}
                 size="small"
                 variant="outlined"

@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { ok, fail } from "@/lib/api-response";
+import { getProviderIconUrl } from "@/services/issue-provider/factory";
 
 export async function GET() {
   const session = await auth();
@@ -22,7 +23,10 @@ export async function GET() {
     orderBy: { displayName: "asc" },
   });
 
-  return ok(projects);
+  return ok(projects.map((p) => ({
+    ...p,
+    issueProvider: { ...p.issueProvider, iconUrl: getProviderIconUrl(p.issueProvider.type) },
+  })));
 }
 
 export async function POST(req: NextRequest) {
@@ -64,5 +68,8 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  return ok(project, 201);
+  return ok({
+    ...project,
+    issueProvider: { ...project.issueProvider, iconUrl: getProviderIconUrl(project.issueProvider.type) },
+  }, 201);
 }

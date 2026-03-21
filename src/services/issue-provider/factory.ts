@@ -24,6 +24,14 @@ export type ProviderCredentials =
   | JiraCredentials
   | RedmineCredentials;
 
+export function getProviderIconUrl(type: ProviderType): string | null {
+  switch (type) {
+    case ProviderType.GITHUB: return GitHubAdapter.iconUrl;
+    case ProviderType.JIRA: return JiraAdapter.iconUrl;
+    case ProviderType.REDMINE: return RedmineAdapter.iconUrl;
+  }
+}
+
 export function createAdapter(
   type: ProviderType,
   credentials: ProviderCredentials
