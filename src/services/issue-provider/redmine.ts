@@ -25,6 +25,10 @@ interface RedmineIssueStatus {
   is_closed: boolean;
 }
 
+/**
+ * Maps a Redmine priority name to the internal {@link IssuePriority} enum.
+ * @param name - The Redmine priority name (case-insensitive).
+ */
 function mapPriority(name?: string): IssuePriority {
   switch (name?.toLowerCase()) {
     case "urgent":
@@ -39,6 +43,7 @@ function mapPriority(name?: string): IssuePriority {
   }
 }
 
+/** Adapter for the Redmine issue provider. */
 export class RedmineAdapter implements IssueProviderAdapter {
   static readonly iconUrl: string | null = "/redmine.svg";
 
@@ -56,10 +61,12 @@ export class RedmineAdapter implements IssueProviderAdapter {
     });
   }
 
+  /** {@inheritDoc} */
   async testConnection(): Promise<void> {
     await this.client.get("/users/current.json");
   }
 
+  /** {@inheritDoc} */
   async listProjects(): Promise<ExternalProject[]> {
     const { data } = await this.client.get<{ projects: RedmineProject[] }>(
       "/projects.json",
@@ -71,6 +78,7 @@ export class RedmineAdapter implements IssueProviderAdapter {
     }));
   }
 
+  /** {@inheritDoc} */
   async fetchAssignedIssues(projectExternalId: string): Promise<NormalizedIssue[]> {
     const issues: RedmineIssue[] = [];
     let offset = 0;
@@ -107,6 +115,7 @@ export class RedmineAdapter implements IssueProviderAdapter {
     }));
   }
 
+  /** {@inheritDoc} */
   async fetchUnassignedIssues(projectExternalId: string): Promise<NormalizedIssue[]> {
     // The Redmine API does not support a server-side "unassigned" filter.
     // `assigned_to_id` only accepts a numeric user ID or the special value "me" —
@@ -148,6 +157,7 @@ export class RedmineAdapter implements IssueProviderAdapter {
       }));
   }
 
+  /** {@inheritDoc} */
   async closeIssue(projectExternalId: string, issueExternalId: string): Promise<void> {
     const { data } = await this.client.get<{ issue_statuses: RedmineIssueStatus[] }>(
       "/issue_statuses.json"
@@ -161,6 +171,7 @@ export class RedmineAdapter implements IssueProviderAdapter {
     });
   }
 
+  /** {@inheritDoc} */
   async reopenIssue(projectExternalId: string, issueExternalId: string): Promise<void> {
     const { data } = await this.client.get<{ issue_statuses: RedmineIssueStatus[] }>(
       "/issue_statuses.json"

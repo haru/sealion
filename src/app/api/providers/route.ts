@@ -6,6 +6,9 @@ import { ok, fail } from "@/lib/api-response";
 import { createAdapter, getProviderIconUrl } from "@/services/issue-provider/factory";
 import { ProviderType } from "@prisma/client";
 
+/**
+ * GET /api/providers — Returns all issue providers for the authenticated user.
+ */
 export async function GET() {
   const session = await auth();
   if (!session) return fail("UNAUTHORIZED", 401);
@@ -19,6 +22,9 @@ export async function GET() {
   return ok(providers.map((p) => ({ ...p, iconUrl: getProviderIconUrl(p.type) })));
 }
 
+/**
+ * POST /api/providers — Creates a new issue provider after verifying the connection.
+ */
 export async function POST(req: NextRequest) {
   const session = await auth();
   if (!session) return fail("UNAUTHORIZED", 401);

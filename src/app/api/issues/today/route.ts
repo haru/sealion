@@ -4,6 +4,9 @@ import { ok, fail } from "@/lib/api-response";
 import { IssueStatus } from "@prisma/client";
 import { getProviderIconUrl } from "@/services/issue-provider/factory";
 
+/**
+ * GET /api/issues/today — Returns today's flagged open issues for the authenticated user.
+ */
 export async function GET() {
   const session = await auth();
   if (!session) return fail("UNAUTHORIZED", 401);

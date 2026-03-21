@@ -13,6 +13,7 @@ import Typography from "@mui/material/Typography";
 import Alert from "@mui/material/Alert";
 import Link from "next/link";
 
+/** Login page with email and password credentials form. */
 export default function LoginPage() {
   const t = useTranslations("auth");
   const router = useRouter();
@@ -23,6 +24,7 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  /** Submits credentials to Auth.js and redirects on success. */
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);

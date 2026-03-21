@@ -34,6 +34,7 @@ interface ProviderEditModalProps {
   onUpdated: (updated: Provider) => void;
 }
 
+/** Modal dialog for editing an existing issue provider's display name, base URL, or credentials. */
 export default function ProviderEditModal({
   provider,
   open,
@@ -50,10 +51,12 @@ export default function ProviderEditModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  /** Updates a single credential field. */
   function handleCredentialChange(key: string, value: string) {
     setCredentials((prev) => ({ ...prev, [key]: value }));
   }
 
+  /** Submits the provider update form. */
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setLoading(true);

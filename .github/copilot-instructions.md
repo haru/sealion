@@ -104,8 +104,18 @@ All source code, comments, commit messages, and documentation must be written in
 - Prefer immutable patterns: spread operators, `Readonly<T>`, `as const`
 - Use Zod for input validation at system boundaries
 - React components use named prop interfaces (e.g., `interface ButtonProps`)
-- No JSDoc unless absolutely necessary — prefer self-documenting code
 - Do not use `console.log` in production code
+
+### TSDoc — Mandatory on All Exported Symbols
+
+Every exported function, class, interface, type alias, and constant **must** have a TSDoc block comment (`/** … */`) directly above its declaration. At minimum include:
+
+- A one-line summary.
+- `@param` for each parameter.
+- `@returns` for non-void functions.
+- `@throws` when the function can throw a known error type.
+
+Internal (non-exported) helpers should have a brief comment when intent is not obvious from the name alone. TSDoc must be in English and kept in sync with the implementation.
 
 ### File Organization
 - Many small files over few large files (200–400 lines typical, 800 max)

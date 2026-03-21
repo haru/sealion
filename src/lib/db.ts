@@ -5,6 +5,10 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
+/**
+ * Creates a new Prisma client instance configured for PostgreSQL.
+ * @returns A configured {@link PrismaClient} instance.
+ */
 function createPrismaClient(): PrismaClient {
   const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
   return new PrismaClient({

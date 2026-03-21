@@ -5,6 +5,7 @@ import { ok, fail } from "@/lib/api-response";
 import { hash } from "bcryptjs";
 import { UserRole } from "@prisma/client";
 
+/** Verifies the current session belongs to an admin user. */
 async function requireAdmin() {
   const session = await auth();
   if (!session) return { error: fail("UNAUTHORIZED", 401), session: null };
@@ -12,6 +13,9 @@ async function requireAdmin() {
   return { error: null, session };
 }
 
+/**
+ * GET /api/admin/users — Returns all users (admin only).
+ */
 export async function GET() {
   const { error } = await requireAdmin();
   if (error) return error;
@@ -24,6 +28,9 @@ export async function GET() {
   return ok(users);
 }
 
+/**
+ * POST /api/admin/users — Creates a new user (admin only).
+ */
 export async function POST(req: NextRequest) {
   const { error } = await requireAdmin();
   if (error) return error;

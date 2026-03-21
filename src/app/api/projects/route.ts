@@ -4,6 +4,9 @@ import { prisma } from "@/lib/db";
 import { ok, fail } from "@/lib/api-response";
 import { getProviderIconUrl } from "@/services/issue-provider/factory";
 
+/**
+ * GET /api/projects — Returns all projects for the authenticated user.
+ */
 export async function GET() {
   const session = await auth();
   if (!session) return fail("UNAUTHORIZED", 401);
@@ -30,6 +33,9 @@ export async function GET() {
   })));
 }
 
+/**
+ * POST /api/projects — Registers a new project under an issue provider.
+ */
 export async function POST(req: NextRequest) {
   const session = await auth();
   if (!session) return fail("UNAUTHORIZED", 401);

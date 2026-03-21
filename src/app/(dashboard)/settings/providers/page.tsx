@@ -26,6 +26,7 @@ interface Provider {
   iconUrl: string | null;
 }
 
+/** Providers settings page for adding, editing, and deleting issue providers. */
 export default function ProvidersPage() {
   const t = useTranslations("providers");
   const tCommon = useTranslations("common");
@@ -49,6 +50,7 @@ export default function ProvidersPage() {
     void fetchProviders();
   }, [fetchProviders]);
 
+  /** Sends a new provider to the API and refreshes the list on success. */
   async function handleAddProvider(data: {
     type: "GITHUB" | "JIRA" | "REDMINE";
     displayName: string;
@@ -68,6 +70,7 @@ export default function ProvidersPage() {
     await fetchProviders();
   }
 
+  /** Sends the delete request for the currently selected provider. */
   async function handleDeleteConfirm() {
     if (!deleteId) return;
 

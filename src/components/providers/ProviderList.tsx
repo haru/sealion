@@ -33,6 +33,7 @@ interface ProviderListProps {
 }
 
 
+/** Renders the list of issue providers with edit and delete actions. */
 export default function ProviderList({ providers, onDelete, onUpdated }: ProviderListProps) {
   const t = useTranslations("providers");
   const [editingProvider, setEditingProvider] = useState<Provider | null>(null);

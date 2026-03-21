@@ -22,6 +22,7 @@ interface TodoItemProps {
   onAddToToday?: (id: string) => void;
 }
 
+/** Draggable issue list item with an "add to today" action, wrapping {@link IssueCard}. */
 export default function TodoItem({
   id,
   title,

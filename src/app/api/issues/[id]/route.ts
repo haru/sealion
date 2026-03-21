@@ -8,6 +8,12 @@ import { IssueStatus } from "@prisma/client";
 
 type Params = { params: Promise<{ id: string }> };
 
+/**
+ * Updates the status of an issue and syncs the change to the external provider.
+ * @param id - Internal issue ID.
+ * @param status - Target status as a string, validated and coerced to {@link IssueStatus}.
+ * @param userId - ID of the authenticated user (for ownership check).
+ */
 async function handleStatusUpdate(
   id: string,
   status: string,
@@ -68,6 +74,12 @@ async function handleStatusUpdate(
   return ok(updated);
 }
 
+/**
+ * Sets or clears the today flag on an issue, assigning an order position when flagging.
+ * @param id - Internal issue ID.
+ * @param todayFlag - Whether to add or remove the issue from today's list.
+ * @param userId - ID of the authenticated user (for ownership check).
+ */
 async function handleTodayFlagUpdate(id: string, todayFlag: boolean, userId: string) {
   const issue = await prisma.issue.findFirst({
     where: {
@@ -114,6 +126,9 @@ async function handleTodayFlagUpdate(id: string, todayFlag: boolean, userId: str
   return ok(updated);
 }
 
+/**
+ * PATCH /api/issues/[id] — Updates the status or today flag of an issue.
+ */
 export async function PATCH(req: NextRequest, { params }: Params) {
   const session = await auth();
   if (!session) return fail("UNAUTHORIZED", 401);

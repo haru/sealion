@@ -31,6 +31,7 @@ interface TodoListProps {
   onAddToToday?: (id: string) => void;
 }
 
+/** Paginated issue list with loading skeleton and status-change callbacks. */
 export default function TodoList({
   items,
   total,

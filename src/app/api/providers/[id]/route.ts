@@ -8,6 +8,9 @@ import { ProviderType } from "@prisma/client";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
+/**
+ * DELETE /api/providers/[id] — Deletes an issue provider owned by the authenticated user.
+ */
 export async function DELETE(req: NextRequest, { params }: RouteContext) {
   const session = await auth();
   if (!session) return fail("UNAUTHORIZED", 401);
@@ -26,6 +29,9 @@ export async function DELETE(req: NextRequest, { params }: RouteContext) {
   return ok({ id });
 }
 
+/**
+ * PATCH /api/providers/[id] — Updates a provider's display name, base URL, or credentials.
+ */
 export async function PATCH(req: NextRequest, { params }: RouteContext) {
   const session = await auth();
   if (!session) return fail("UNAUTHORIZED", 401);

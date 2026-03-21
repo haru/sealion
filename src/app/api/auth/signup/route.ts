@@ -3,10 +3,17 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
 import { ok, fail } from "@/lib/api-response";
 
+/**
+ * Returns true if the string matches a basic email format.
+ * @param email - The email address to validate.
+ */
 function isValidEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
+/**
+ * POST /api/auth/signup — Registers a new user account.
+ */
 export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => null);
 

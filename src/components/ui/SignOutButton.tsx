@@ -7,6 +7,7 @@ interface SignOutButtonProps {
   label: string;
 }
 
+/** Button that signs the user out and redirects to the login page. */
 export function SignOutButton({ label }: SignOutButtonProps) {
   return (
     <Button color="inherit" onClick={() => signOut({ callbackUrl: "/login" })}>

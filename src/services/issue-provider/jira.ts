@@ -30,6 +30,10 @@ interface JiraTransition {
   to: { statusCategory: { key: string } };
 }
 
+/**
+ * Maps a Jira priority name to the internal {@link IssuePriority} enum.
+ * @param name - The Jira priority name (case-insensitive).
+ */
 function mapPriority(name?: string): IssuePriority {
   switch (name?.toLowerCase()) {
     case "highest":
@@ -47,6 +51,7 @@ function mapPriority(name?: string): IssuePriority {
   }
 }
 
+/** Adapter for the Jira issue provider. */
 export class JiraAdapter implements IssueProviderAdapter {
   static readonly iconUrl: string | null = "/jira.svg";
 
@@ -66,15 +71,18 @@ export class JiraAdapter implements IssueProviderAdapter {
     });
   }
 
+  /** {@inheritDoc} */
   async testConnection(): Promise<void> {
     await this.client.get("/myself");
   }
 
+  /** {@inheritDoc} */
   async listProjects(): Promise<ExternalProject[]> {
     const { data } = await this.client.get<JiraProject[]>("/project");
     return data.map((p) => ({ externalId: p.key, displayName: `${p.name} (${p.key})` }));
   }
 
+  /** {@inheritDoc} */
   async fetchAssignedIssues(projectExternalId: string): Promise<NormalizedIssue[]> {
     const jql = `project = "${projectExternalId}" AND assignee = currentUser() AND statusCategory != Done ORDER BY created DESC`;
     const issues: JiraIssue[] = [];
@@ -107,6 +115,7 @@ export class JiraAdapter implements IssueProviderAdapter {
     });
   }
 
+  /** {@inheritDoc} */
   async fetchUnassignedIssues(projectExternalId: string): Promise<NormalizedIssue[]> {
     const jql = `project = "${projectExternalId}" AND assignee is EMPTY AND statusCategory != Done ORDER BY created DESC`;
     const issues: JiraIssue[] = [];
@@ -139,6 +148,7 @@ export class JiraAdapter implements IssueProviderAdapter {
     });
   }
 
+  /** {@inheritDoc} */
   async closeIssue(projectExternalId: string, issueExternalId: string): Promise<void> {
     const { data } = await this.client.get<{ transitions: JiraTransition[] }>(
       `/issue/${issueExternalId}/transitions`
@@ -154,6 +164,7 @@ export class JiraAdapter implements IssueProviderAdapter {
     });
   }
 
+  /** {@inheritDoc} */
   async reopenIssue(projectExternalId: string, issueExternalId: string): Promise<void> {
     const { data } = await this.client.get<{ transitions: JiraTransition[] }>(
       `/issue/${issueExternalId}/transitions`

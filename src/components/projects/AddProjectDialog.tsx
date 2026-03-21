@@ -46,6 +46,7 @@ interface AddProjectDialogProps {
 }
 
 
+/** Multi-step dialog for selecting a provider and registering external projects. */
 export default function AddProjectDialog({ open, onClose }: AddProjectDialogProps) {
   const t = useTranslations("projects");
   const tCommon = useTranslations("common");
@@ -82,10 +83,12 @@ export default function AddProjectDialog({ open, onClose }: AddProjectDialogProp
       .finally(() => setLoadingProviders(false));
   }, [open, tCommon]);
 
+  /** Selects the given provider and advances to the projects step. */
   function handleSelectProvider(provider: Provider) {
     setSelectedProvider(provider);
   }
 
+  /** Loads external projects for the selected provider. */
   async function handleNextStep() {
     if (!selectedProvider) return;
     setStep("projects");
@@ -103,6 +106,7 @@ export default function AddProjectDialog({ open, onClose }: AddProjectDialogProp
     }
   }
 
+  /** Toggles selection of a project by its external ID. */
   function toggleProject(externalId: string) {
     setSelected((prev) => {
       const next = new Set(prev);
@@ -115,6 +119,7 @@ export default function AddProjectDialog({ open, onClose }: AddProjectDialogProp
     });
   }
 
+  /** Saves the selected projects via the API. */
   async function handleSave() {
     if (!selectedProvider || selected.size === 0) return;
     setSaving(true);

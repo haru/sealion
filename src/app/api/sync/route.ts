@@ -3,6 +3,9 @@ import { prisma } from "@/lib/db";
 import { ok, fail } from "@/lib/api-response";
 import { syncProviders } from "@/services/sync";
 
+/**
+ * POST /api/sync — Triggers a fire-and-forget sync of all providers for the authenticated user.
+ */
 export async function POST() {
   const session = await auth();
   if (!session) return fail("UNAUTHORIZED", 401);
@@ -13,6 +16,9 @@ export async function POST() {
   return ok({ syncing: true }, 202);
 }
 
+/**
+ * GET /api/sync — Returns all providers with their project sync status.
+ */
 export async function GET() {
   const session = await auth();
   if (!session) return fail("UNAUTHORIZED", 401);

@@ -12,6 +12,7 @@ export const metadata: Metadata = {
   description: "Aggregate your GitHub, Jira, and Redmine issues in one place",
 };
 
+/** Root layout providing i18n, MUI theme, and global CSS. */
 export default async function RootLayout({
   children,
 }: Readonly<{
