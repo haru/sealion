@@ -9,7 +9,7 @@ interface SyncProvider {
 
 /**
  * Returns true when every project has been successfully synced at or after `since`
- * (i.e. lastSyncedAt \>= since AND syncError is null).
+ * (i.e. `lastSyncedAt >= since` AND syncError is null).
  * Also returns true when there are no projects (nothing to sync).
  */
 export function allProjectsSynced(providers: SyncProvider[], since: Date): boolean {

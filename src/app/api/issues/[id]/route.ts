@@ -11,7 +11,7 @@ type Params = { params: Promise<{ id: string }> };
 /**
  * Updates the status of an issue and syncs the change to the external provider.
  * @param id - Internal issue ID.
- * @param status - Target {@link IssueStatus} value.
+ * @param status - Target status as a string, validated and coerced to {@link IssueStatus}.
  * @param userId - ID of the authenticated user (for ownership check).
  */
 async function handleStatusUpdate(
