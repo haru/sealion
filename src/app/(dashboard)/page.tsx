@@ -17,9 +17,7 @@ import TodoList from "@/components/todo/TodoList";
 import SyncStatus from "@/components/todo/SyncStatus";
 import TodayTasksArea, { TODAY_DROP_ZONE_ID } from "@/components/today-tasks/TodayTasksArea";
 import { allProjectsSynced } from "@/lib/sync-utils";
-
-type Priority = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
-type Status = "OPEN" | "CLOSED";
+import type { Priority, Status } from "@/lib/types";
 
 interface Issue {
   id: string;
@@ -65,6 +63,7 @@ export default function DashboardPage() {
 
   const [issues, setIssues] = useState<Issue[]>([]);
   const [total, setTotal] = useState(0);
+  const [totalToday, setTotalToday] = useState(0);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -102,6 +101,7 @@ export default function DashboardPage() {
         });
       });
       setTotal(json.data.total);
+      setTotalToday(json.data.totalToday);
     }
   }, []);
 
@@ -351,7 +351,7 @@ export default function DashboardPage() {
           <TodayTasksArea items={todayIssues} onRemove={handleRemoveFromToday} onStatusChange={handleStatusChange} />
           <TodoList
             items={regularIssues}
-            total={total - todayIssues.length}
+            total={total - totalToday}
             page={page}
             limit={20}
             loading={loading}

@@ -10,6 +10,7 @@ jest.mock("@/lib/db", () => ({
       update: jest.fn(),
       count: jest.fn(),
     },
+    $transaction: jest.fn(),
   },
 }));
 jest.mock("@/lib/encryption", () => ({
@@ -29,6 +30,7 @@ const mockAuth = auth as jest.Mock;
 const mockFindFirst = prisma.issue.findFirst as jest.Mock;
 const mockUpdate = prisma.issue.update as jest.Mock;
 const mockCount = prisma.issue.count as jest.Mock;
+const mockTransaction = prisma.$transaction as jest.Mock;
 
 const SESSION = { user: { id: "user-1", email: "u@example.com", role: "USER" } };
 
@@ -63,6 +65,10 @@ describe("PATCH /api/issues/[id] — todayFlag", () => {
     jest.clearAllMocks();
     mockAuth.mockResolvedValue(SESSION);
     mockCount.mockResolvedValue(0);
+    mockTransaction.mockImplementation(
+      async (fn: (tx: { issue: { count: jest.Mock; update: jest.Mock } }) => Promise<unknown>) =>
+        fn({ issue: { count: mockCount, update: mockUpdate } })
+    );
   });
 
   it("returns 200 and sets todayFlag true with todayOrder and todayAddedAt", async () => {

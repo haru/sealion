@@ -91,6 +91,17 @@ describe("GET /api/issues — today fields", () => {
     expect(json.data.items[1].todayAddedAt).toBeNull();
   });
 
+  it("returns totalToday in the response", async () => {
+    mockFindMany.mockResolvedValue([TODAY_ISSUE, REGULAR_ISSUE]);
+    mockCount.mockResolvedValueOnce(2).mockResolvedValueOnce(1);
+
+    const res = await GET(makeRequest());
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(json.data.totalToday).toBe(1);
+  });
+
   it("requests todayFlag/todayOrder/todayAddedAt in the DB select", async () => {
     mockFindMany.mockResolvedValue([]);
     mockCount.mockResolvedValue(0);

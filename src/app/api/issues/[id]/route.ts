@@ -9,7 +9,6 @@ import { IssueStatus } from "@prisma/client";
 type Params = { params: Promise<{ id: string }> };
 
 async function handleStatusUpdate(
-  req: NextRequest,
   id: string,
   status: string,
   userId: string
@@ -71,21 +70,22 @@ async function handleTodayFlagUpdate(id: string, todayFlag: boolean, userId: str
   if (!issue) return fail("FORBIDDEN", 403);
 
   if (todayFlag) {
-    const todayCount = await prisma.issue.count({
-      where: {
-        todayFlag: true,
-        project: { issueProvider: { userId } },
-      },
-    });
-
-    const updated = await prisma.issue.update({
-      where: { id },
-      data: {
-        todayFlag: true,
-        todayOrder: todayCount + 1,
-        todayAddedAt: new Date(),
-      },
-      select: { id: true, todayFlag: true, todayOrder: true, todayAddedAt: true },
+    const updated = await prisma.$transaction(async (tx) => {
+      const todayCount = await tx.issue.count({
+        where: {
+          todayFlag: true,
+          project: { issueProvider: { userId } },
+        },
+      });
+      return tx.issue.update({
+        where: { id },
+        data: {
+          todayFlag: true,
+          todayOrder: todayCount + 1,
+          todayAddedAt: new Date(),
+        },
+        select: { id: true, todayFlag: true, todayOrder: true, todayAddedAt: true },
+      });
     });
 
     return ok(updated);
@@ -114,7 +114,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   }
 
   if ("status" in body) {
-    return handleStatusUpdate(req, id, body.status as string, session.user.id);
+    return handleStatusUpdate(id, body.status as string, session.user.id);
   }
 
   return fail("INVALID_BODY", 400);

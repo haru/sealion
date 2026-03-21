@@ -5,9 +5,7 @@ import TodayIcon from "@mui/icons-material/Today";
 import { useDraggable } from "@dnd-kit/core";
 import { useTranslations } from "next-intl";
 import IssueCard from "@/components/IssueCard";
-
-type Priority = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
-type Status = "OPEN" | "CLOSED";
+import type { Priority, Status } from "@/lib/types";
 
 interface TodoItemProps {
   id: string;

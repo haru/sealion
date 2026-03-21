@@ -26,8 +26,9 @@ export async function GET(req: NextRequest) {
     ...(statusFilter ? { status: statusFilter } : {}),
   };
 
-  const [total, items] = await Promise.all([
+  const [total, totalToday, items] = await Promise.all([
     prisma.issue.count({ where }),
+    prisma.issue.count({ where: { ...where, todayFlag: true } }),
     prisma.issue.findMany({
       where,
       orderBy: [
@@ -73,5 +74,5 @@ export async function GET(req: NextRequest) {
     },
   }));
 
-  return ok({ items: itemsWithIconUrl, total, page, limit });
+  return ok({ items: itemsWithIconUrl, total, totalToday, page, limit });
 }

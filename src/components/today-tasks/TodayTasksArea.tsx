@@ -5,9 +5,7 @@ import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable"
 import { useDroppable } from "@dnd-kit/core";
 import { useTranslations } from "next-intl";
 import TodayTaskItem from "./TodayTaskItem";
-
-type Priority = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
-type Status = "OPEN" | "CLOSED";
+import type { Priority, Status } from "@/lib/types";
 
 interface TodayIssue {
   id: string;

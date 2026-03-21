@@ -6,9 +6,7 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useTranslations } from "next-intl";
 import IssueCard from "@/components/IssueCard";
-
-type Priority = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
-type Status = "OPEN" | "CLOSED";
+import type { Priority, Status } from "@/lib/types";
 
 interface TodayTaskItemProps {
   id: string;

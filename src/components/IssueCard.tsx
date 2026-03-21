@@ -17,9 +17,7 @@ import { useTranslations } from "next-intl";
 import ProviderIcon from "@/components/ProviderIcon";
 import type { DraggableSyntheticListeners, DraggableAttributes } from "@dnd-kit/core";
 import type { CSSProperties, ReactNode, Ref } from "react";
-
-type Priority = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
-type Status = "OPEN" | "CLOSED";
+import type { Priority, Status } from "@/lib/types";
 
 const PRIORITY_COLORS: Record<Priority, "default" | "primary" | "warning" | "error"> = {
   LOW: "default",
