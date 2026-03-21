@@ -3,6 +3,9 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { ok, fail } from "@/lib/api-response";
 
+/**
+ * PATCH /api/issues/today/reorder — Reorders today's flagged issues for the authenticated user.
+ */
 export async function PATCH(req: NextRequest) {
   const session = await auth();
   if (!session) return fail("UNAUTHORIZED", 401);

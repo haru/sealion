@@ -29,6 +29,7 @@ interface ProviderFormProps {
 
 const PROVIDER_TYPES: ProviderType[] = ["GITHUB", "JIRA", "REDMINE"];
 
+/** Form fields for GitHub provider credentials. */
 function GitHubFields({
   credentials,
   onChange,
@@ -50,6 +51,7 @@ function GitHubFields({
   );
 }
 
+/** Form fields for Jira provider credentials. */
 function JiraFields({
   credentials,
   onChange,
@@ -89,6 +91,7 @@ function JiraFields({
   );
 }
 
+/** Form fields for Redmine provider credentials. */
 function RedmineFields({
   credentials,
   onChange,
@@ -120,6 +123,7 @@ function RedmineFields({
   );
 }
 
+/** Form for creating a new issue provider, with provider-type selection and credential fields. */
 export default function ProviderForm({ onSubmit }: ProviderFormProps) {
   const t = useTranslations("providers");
   const tCommon = useTranslations("common");
@@ -130,16 +134,19 @@ export default function ProviderForm({ onSubmit }: ProviderFormProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  /** Updates a single credential field. */
   function handleCredentialChange(key: string, value: string) {
     setCredentials((prev) => ({ ...prev, [key]: value }));
   }
 
+  /** Resets credentials when the provider type changes. */
   function handleTypeChange(newType: ProviderType) {
     setType(newType);
     setCredentials({});
     setError(null);
   }
 
+  /** Submits the new provider form. */
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);

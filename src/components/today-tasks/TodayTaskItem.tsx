@@ -23,6 +23,7 @@ interface TodayTaskItemProps {
   onStatusChange?: (id: string, newStatus: Status) => void;
 }
 
+/** Draggable today-task item with a remove button, wrapping {@link IssueCard}. */
 export default function TodayTaskItem({
   id,
   title,

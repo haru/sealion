@@ -7,6 +7,9 @@ import { createAdapter } from "@/services/issue-provider/factory";
 
 type Params = { params: Promise<{ id: string }> };
 
+/**
+ * GET /api/providers/[id]/projects — Lists external projects for a provider, annotated with registration status.
+ */
 export async function GET(req: NextRequest, { params }: Params) {
   const session = await auth();
   if (!session) return fail("UNAUTHORIZED", 401);

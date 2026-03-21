@@ -30,6 +30,7 @@ interface TodayTasksAreaProps {
 
 export const TODAY_DROP_ZONE_ID = "today-drop-zone";
 
+/** Drop zone and sortable list of today's flagged issues. */
 export default function TodayTasksArea({ items, onRemove, onStatusChange }: TodayTasksAreaProps) {
   const t = useTranslations("todayTasks");
 

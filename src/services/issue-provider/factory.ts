@@ -24,6 +24,10 @@ export type ProviderCredentials =
   | JiraCredentials
   | RedmineCredentials;
 
+/**
+ * Returns the icon URL for the given provider type, or null if unknown.
+ * @param type - The issue provider type.
+ */
 export function getProviderIconUrl(type: ProviderType): string | null {
   switch (type) {
     case ProviderType.GITHUB: return GitHubAdapter.iconUrl;
@@ -33,6 +37,12 @@ export function getProviderIconUrl(type: ProviderType): string | null {
   }
 }
 
+/**
+ * Creates an {@link IssueProviderAdapter} for the given provider type and credentials.
+ * @param type - The issue provider type.
+ * @param credentials - Decrypted credentials for the provider.
+ * @throws If the provider type is not supported.
+ */
 export function createAdapter(
   type: ProviderType,
   credentials: ProviderCredentials

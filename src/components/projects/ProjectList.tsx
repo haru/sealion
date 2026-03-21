@@ -51,6 +51,7 @@ interface ProjectListProps {
   refreshSignal?: number;
 }
 
+/** Fetches and displays the list of registered projects with delete and unassigned-toggle actions. */
 export default function ProjectList({ refreshSignal }: ProjectListProps) {
   const t = useTranslations("projects");
   const tCommon = useTranslations("common");
@@ -109,6 +110,7 @@ export default function ProjectList({ refreshSignal }: ProjectListProps) {
     }
   }, [tCommon]);
 
+  /** Sends the delete request for the currently pending deletion target. */
   async function handleDeleteConfirm() {
     if (!deleteId) return;
     try {

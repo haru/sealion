@@ -12,6 +12,7 @@ import Typography from "@mui/material/Typography";
 import Alert from "@mui/material/Alert";
 import Link from "next/link";
 
+/** Sign-up page for creating a new user account. */
 export default function SignupPage() {
   const t = useTranslations("auth");
   const tErrors = useTranslations("errors");
@@ -21,6 +22,7 @@ export default function SignupPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  /** Submits the signup form to the API and redirects to the login page on success. */
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);

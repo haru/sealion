@@ -7,11 +7,13 @@ import { useTranslations } from "next-intl";
 import ProjectList from "@/components/projects/ProjectList";
 import AddProjectDialog from "@/components/projects/AddProjectDialog";
 
+/** Projects management page for registering and removing external projects. */
 export default function ProjectsPage() {
   const t = useTranslations("projects");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [refreshSignal, setRefreshSignal] = useState(0);
 
+  /** Handles dialog close and triggers a list refresh if a project was saved. */
   function handleDialogClose(saved: boolean) {
     setDialogOpen(false);
     if (saved) setRefreshSignal((n) => n + 1);

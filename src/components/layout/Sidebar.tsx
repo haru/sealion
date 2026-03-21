@@ -22,6 +22,7 @@ interface SidebarProps {
   variant: "permanent" | "temporary";
 }
 
+/** Navigation drawer with links to main sections of the dashboard. */
 export default function Sidebar({ open, onClose, variant }: SidebarProps) {
   const t = useTranslations("sidebar");
   const pathname = usePathname();

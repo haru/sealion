@@ -37,6 +37,7 @@ interface User {
   createdAt: string;
 }
 
+/** Admin page for managing user accounts (activate/deactivate, create). */
 export default function AdminUsersPage() {
   const t = useTranslations("admin");
   const tCommon = useTranslations("common");
@@ -62,6 +63,7 @@ export default function AdminUsersPage() {
     void fetchUsers();
   }, [fetchUsers]);
 
+  /** Toggles the active status of a user. */
   async function handleToggleActive(user: User) {
     const res = await fetch(`/api/admin/users/${user.id}`, {
       method: "PATCH",
@@ -77,6 +79,7 @@ export default function AdminUsersPage() {
     }
   }
 
+  /** Submits the create-user form and refreshes the user list on success. */
   async function handleCreateUser() {
     setCreating(true);
     setError(null);

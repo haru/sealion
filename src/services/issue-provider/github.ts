@@ -20,6 +20,7 @@ interface GitHubUser {
   login: string;
 }
 
+/** Adapter for the GitHub issue provider. */
 export class GitHubAdapter implements IssueProviderAdapter {
   static readonly iconUrl: string | null = "/github.svg";
 
@@ -37,6 +38,9 @@ export class GitHubAdapter implements IssueProviderAdapter {
     });
   }
 
+  /**
+   * Returns the authenticated GitHub username, cached after the first call.
+   */
   private getLogin(): Promise<string> {
     if (!this.loginPromise) {
       this.loginPromise = this.client
@@ -46,10 +50,12 @@ export class GitHubAdapter implements IssueProviderAdapter {
     return this.loginPromise;
   }
 
+  /** {@inheritDoc} */
   async testConnection(): Promise<void> {
     await this.client.get("/user");
   }
 
+  /** {@inheritDoc} */
   async listProjects(): Promise<ExternalProject[]> {
     const repos: GitHubRepo[] = [];
     let page = 1;
@@ -66,6 +72,7 @@ export class GitHubAdapter implements IssueProviderAdapter {
     return repos.map((r) => ({ externalId: r.full_name, displayName: r.full_name }));
   }
 
+  /** {@inheritDoc} */
   async fetchAssignedIssues(projectExternalId: string): Promise<NormalizedIssue[]> {
     const [owner, repo] = projectExternalId.split("/");
     const assignee = await this.getLogin();
@@ -95,6 +102,7 @@ export class GitHubAdapter implements IssueProviderAdapter {
     }));
   }
 
+  /** {@inheritDoc} */
   async fetchUnassignedIssues(projectExternalId: string): Promise<NormalizedIssue[]> {
     const [owner, repo] = projectExternalId.split("/");
     const issues: GitHubIssue[] = [];
@@ -123,6 +131,7 @@ export class GitHubAdapter implements IssueProviderAdapter {
     }));
   }
 
+  /** {@inheritDoc} */
   async closeIssue(projectExternalId: string, issueExternalId: string): Promise<void> {
     const [owner, repo] = projectExternalId.split("/");
     await this.client.patch(`/repos/${owner}/${repo}/issues/${issueExternalId}`, {
@@ -130,6 +139,7 @@ export class GitHubAdapter implements IssueProviderAdapter {
     });
   }
 
+  /** {@inheritDoc} */
   async reopenIssue(projectExternalId: string, issueExternalId: string): Promise<void> {
     const [owner, repo] = projectExternalId.split("/");
     await this.client.patch(`/repos/${owner}/${repo}/issues/${issueExternalId}`, {

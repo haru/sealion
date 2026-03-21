@@ -19,6 +19,7 @@ interface DashboardShellProps {
   children: React.ReactNode;
 }
 
+/** Top-level authenticated shell with app bar, sidebar, and main content area. */
 export default function DashboardShell({ email, children }: DashboardShellProps) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));

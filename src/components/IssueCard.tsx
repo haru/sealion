@@ -46,6 +46,7 @@ interface IssueCardProps {
   onStatusChange?: (id: string, newStatus: Status) => void;
 }
 
+/** Displays a single issue as a card with status toggle, drag handle, and external link. */
 export default function IssueCard({
   id,
   title,
@@ -72,6 +73,7 @@ export default function IssueCard({
     ? t("dueDate", { date: new Date(dueDate).toLocaleDateString() })
     : null;
 
+  /** Toggles the issue status between OPEN and CLOSED. */
   function handleCheck() {
     onStatusChange?.(id, isComplete ? "OPEN" : "CLOSED");
   }

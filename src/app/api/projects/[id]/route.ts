@@ -5,6 +5,9 @@ import { ok, fail } from "@/lib/api-response";
 
 type Params = { params: Promise<{ id: string }> };
 
+/**
+ * PATCH /api/projects/[id] — Updates the `includeUnassigned` setting for a project.
+ */
 export async function PATCH(req: NextRequest, { params }: Params) {
   const session = await auth();
   if (!session) return fail("UNAUTHORIZED", 401);
@@ -32,6 +35,9 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   return ok(updated);
 }
 
+/**
+ * DELETE /api/projects/[id] — Deletes a project owned by the authenticated user.
+ */
 export async function DELETE(_req: NextRequest, { params }: Params) {
   const session = await auth();
   if (!session) return fail("UNAUTHORIZED", 401);

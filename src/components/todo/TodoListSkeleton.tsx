@@ -6,6 +6,7 @@ interface TodoListSkeletonProps {
   count?: number;
 }
 
+/** Renders placeholder skeleton cards while the issue list is loading. */
 export default function TodoListSkeleton({ count = 5 }: TodoListSkeletonProps) {
   return (
     <>

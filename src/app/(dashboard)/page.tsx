@@ -57,6 +57,7 @@ interface Toast {
   severity: ToastSeverity;
 }
 
+/** Main dashboard page showing today's tasks and the full issue list with drag-and-drop support. */
 export default function DashboardPage() {
   const t = useTranslations("todo");
   const tToday = useTranslations("todayTasks");
@@ -80,6 +81,7 @@ export default function DashboardPage() {
 
   const regularIssues = issues;
 
+  /** Shows a toast notification with the given message and severity. */
   function showToast(message: string, severity: ToastSeverity) {
     setToast({ open: true, message, severity });
   }
@@ -113,6 +115,7 @@ export default function DashboardPage() {
     let cancelled = false;
     let pollTimeout: ReturnType<typeof setTimeout>;
 
+    /** Polls the sync status endpoint and refreshes issues when all providers have synced. */
     async function poll() {
       if (cancelled) return;
 
@@ -150,6 +153,7 @@ export default function DashboardPage() {
   }, [isSyncing, page, fetchIssues, fetchTodayIssues]);
 
   useEffect(() => {
+    /** Loads initial issue data and triggers a background sync. */
     async function init() {
       setLoading(true);
       await Promise.all([
@@ -165,11 +169,13 @@ export default function DashboardPage() {
     void init();
   }, [fetchIssues, fetchTodayIssues, startSync]);
 
+  /** Fetches the requested page of issues. */
   async function handlePageChange(newPage: number) {
     setPage(newPage);
     await fetchIssues(newPage);
   }
 
+  /** Optimistically updates the issue status and syncs with the API. */
   async function handleStatusChange(id: string, newStatus: Status) {
     const originalInToday = todayIssues.find((i) => i.id === id);
     const originalInRegular = issues.find((i) => i.id === id);
@@ -211,6 +217,7 @@ export default function DashboardPage() {
     }
   }
 
+  /** Optimistically moves an issue into today's list and flags it via the API. */
   async function handleAddToToday(id: string) {
     const issueToAdd = issues.find((i) => i.id === id);
     if (!issueToAdd) return;
@@ -256,6 +263,7 @@ export default function DashboardPage() {
     }
   }
 
+  /** Optimistically removes an issue from today's list and clears the flag via the API. */
   async function handleRemoveFromToday(id: string) {
     const issue = todayIssues.find((i) => i.id === id);
     if (!issue) return;
@@ -280,6 +288,7 @@ export default function DashboardPage() {
     }
   }
 
+  /** Optimistically reorders today's issues and persists the new order via the API. */
   async function handleReorder(orderedIds: string[]) {
     const prevTodayIssues = todayIssues;
 
@@ -304,6 +313,7 @@ export default function DashboardPage() {
     }
   }
 
+  /** Tracks the active dragged issue ID on drag start. */
   function handleDragStart(event: DragStartEvent) {
     const activeData = event.active.data.current as { type: string; issueId: string } | undefined;
     if (activeData?.type === "todo-item") {
@@ -311,6 +321,7 @@ export default function DashboardPage() {
     }
   }
 
+  /** Handles drop — adds to today or reorders within today. */
   function handleDragEnd(event: DragEndEvent) {
     setActiveDragId(null);
 

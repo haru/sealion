@@ -6,6 +6,9 @@ import { UserRole } from "@prisma/client";
 
 type Params = { params: Promise<{ id: string }> };
 
+/**
+ * PATCH /api/admin/users/[id] — Update a user's role or active status (admin only).
+ */
 export async function PATCH(req: NextRequest, { params }: Params) {
   const session = await auth();
   if (!session) return fail("UNAUTHORIZED", 401);

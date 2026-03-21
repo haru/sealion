@@ -27,6 +27,7 @@ interface SyncStatusProps {
   isSyncing: boolean;
 }
 
+/** Displays the sync status chip and error snackbars for all providers. */
 export default function SyncStatus({ providers, isSyncing }: SyncStatusProps) {
   const t = useTranslations("todo");
   const tErrors = useTranslations("errors");

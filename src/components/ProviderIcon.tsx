@@ -13,6 +13,7 @@ const FONT_SIZE_PX: Record<"small" | "medium" | "large", number> = {
   large: 35,
 };
 
+/** Renders a provider icon image, or a fallback cloud icon when no URL is available. */
 export default function ProviderIcon({ iconUrl, label = "provider", fontSize = "medium" }: ProviderIconProps) {
   if (iconUrl) {
     if (fontSize === "inherit") {

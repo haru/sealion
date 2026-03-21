@@ -3,6 +3,11 @@ import { createCipheriv, createDecipheriv, randomBytes } from "crypto";
 const ALGORITHM = "aes-256-gcm";
 const IV_LENGTH = 16;
 
+/**
+ * Reads and validates the AES-256-GCM encryption key from the environment.
+ * @returns A 32-byte Buffer derived from the `CREDENTIALS_ENCRYPTION_KEY` env var.
+ * @throws If the environment variable is missing or not a 64-character hex string.
+ */
 function getKey(): Buffer {
   const hex = process.env.CREDENTIALS_ENCRYPTION_KEY;
   if (!hex || hex.length !== 64) {
