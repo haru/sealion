@@ -63,6 +63,7 @@ export async function POST(req: NextRequest) {
       id: true,
       externalId: true,
       displayName: true,
+      includeUnassigned: true,
       issueProvider: {
         select: { id: true, displayName: true, type: true },
       },

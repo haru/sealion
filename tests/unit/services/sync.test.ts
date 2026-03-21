@@ -65,7 +65,6 @@ describe("syncProviders", () => {
           {
             id: "project-1",
             externalId: "owner/repo",
-            isEnabled: true,
             includeUnassigned: false,
           },
         ],
@@ -89,15 +88,14 @@ describe("syncProviders", () => {
     );
   });
 
-  it("skips disabled projects", async () => {
-    // Prisma filters out disabled projects before returning (where: { isEnabled: true })
+  it("skips providers with no projects", async () => {
     mockFindMany.mockResolvedValue([
       {
         id: "provider-1",
         type: "GITHUB",
         encryptedCredentials: "encrypted",
         userId: "user-1",
-        projects: [], // no enabled projects after Prisma filter
+        projects: [],
       },
     ]);
 
@@ -113,7 +111,7 @@ describe("syncProviders", () => {
         type: "GITHUB",
         encryptedCredentials: "encrypted",
         userId: "user-1",
-        projects: [{ id: "project-1", externalId: "owner/repo", isEnabled: true, includeUnassigned: false }],
+        projects: [{ id: "project-1", externalId: "owner/repo", includeUnassigned: false }],
       },
     ]);
 
@@ -142,7 +140,7 @@ describe("syncProviders", () => {
         type: "GITHUB",
         encryptedCredentials: "encrypted",
         userId: "user-1",
-        projects: [{ id: "project-1", externalId: "owner/repo", isEnabled: true, includeUnassigned: false }],
+        projects: [{ id: "project-1", externalId: "owner/repo", includeUnassigned: false }],
       },
     ]);
 
@@ -173,7 +171,7 @@ describe("syncProviders", () => {
         type: "REDMINE",
         encryptedCredentials: "encrypted",
         userId: "user-1",
-        projects: [{ id: "project-1", externalId: "my-project", isEnabled: true, includeUnassigned: false }],
+        projects: [{ id: "project-1", externalId: "my-project", includeUnassigned: false }],
       },
     ]);
 
@@ -209,7 +207,7 @@ describe("syncProviders", () => {
         type: "GITHUB",
         encryptedCredentials: "encrypted",
         userId: "user-1",
-        projects: [{ id: "project-1", externalId: "owner/repo", isEnabled: true }],
+        projects: [{ id: "project-1", externalId: "owner/repo", includeUnassigned: false }],
       },
     ]);
 
@@ -324,6 +322,42 @@ describe("syncProviders", () => {
     expect(mockUpsert).toHaveBeenCalledWith(
       expect.objectContaining({
         create: expect.objectContaining({ isUnassigned: false }),
+      })
+    );
+  });
+
+  it("still upserts assigned issues when fetchUnassignedIssues fails", async () => {
+    mockFindMany.mockResolvedValue([
+      {
+        id: "provider-1",
+        type: "GITHUB",
+        encryptedCredentials: "encrypted",
+        userId: "user-1",
+        projects: [{ id: "project-1", externalId: "owner/repo", includeUnassigned: true }],
+      },
+    ]);
+
+    const { createAdapter } = jest.requireMock("@/services/issue-provider/factory");
+    createAdapter.mockReturnValueOnce({
+      fetchAssignedIssues: jest.fn().mockResolvedValue([
+        { externalId: "1", title: "Assigned", status: "OPEN", priority: "MEDIUM", dueDate: null, externalUrl: "https://ex.com/1", isUnassigned: false },
+      ]),
+      fetchUnassignedIssues: jest.fn().mockRejectedValue(new Error("Unassigned fetch failed")),
+    });
+
+    const mockUpsert = prisma.issue.upsert as jest.Mock;
+    mockUpsert.mockResolvedValue({});
+    (prisma.project.update as jest.Mock).mockResolvedValue({});
+
+    await syncProviders("user-1");
+
+    // Assigned issues still upserted despite unassigned fetch failure
+    expect(mockUpsert).toHaveBeenCalledTimes(1);
+    expect(mockUpsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          projectId_externalId: { projectId: "project-1", externalId: "1" },
+        }),
       })
     );
   });

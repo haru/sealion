@@ -38,12 +38,19 @@ export async function syncProviders(userId: string): Promise<void> {
 
                 let allIssues = assignedIssues;
                 if (project.includeUnassigned) {
-                  const unassignedIssues = await adapter.fetchUnassignedIssues(project.externalId);
-                  const assignedIds = new Set(assignedIssues.map((i) => i.externalId));
-                  const filteredUnassigned = unassignedIssues.filter(
-                    (i) => !assignedIds.has(i.externalId)
-                  );
-                  allIssues = [...assignedIssues, ...filteredUnassigned];
+                  try {
+                    const unassignedIssues = await adapter.fetchUnassignedIssues(project.externalId);
+                    const assignedIds = new Set(assignedIssues.map((i) => i.externalId));
+                    const filteredUnassigned = unassignedIssues.filter(
+                      (i) => !assignedIds.has(i.externalId)
+                    );
+                    allIssues = [...assignedIssues, ...filteredUnassigned];
+                  } catch (unassignedErr) {
+                    console.error(
+                      `[sync] fetchUnassignedIssues failed for project ${project.externalId}:`,
+                      unassignedErr
+                    );
+                  }
                 }
 
                 const now = new Date();
