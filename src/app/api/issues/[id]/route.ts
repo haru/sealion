@@ -8,24 +8,20 @@ import { IssueStatus } from "@prisma/client";
 
 type Params = { params: Promise<{ id: string }> };
 
-export async function PATCH(req: NextRequest, { params }: Params) {
-  const session = await auth();
-  if (!session) return fail("UNAUTHORIZED", 401);
-
-  const { id } = await params;
-  const body = await req.json().catch(() => null);
-  if (!body) return fail("INVALID_BODY", 400);
-
-  const { status } = body as { status: string };
-  if (!status || !Object.values(IssueStatus).includes(status as IssueStatus)) {
+async function handleStatusUpdate(
+  req: NextRequest,
+  id: string,
+  status: string,
+  userId: string
+) {
+  if (!Object.values(IssueStatus).includes(status as IssueStatus)) {
     return fail("INVALID_STATUS", 400);
   }
 
-  // Verify ownership via provider's userId
   const issue = await prisma.issue.findFirst({
     where: {
       id,
-      project: { issueProvider: { userId: session.user.id } },
+      project: { issueProvider: { userId } },
     },
     include: {
       project: {
@@ -45,7 +41,6 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   const credentials = JSON.parse(decrypt(issue.project.issueProvider.encryptedCredentials));
   const adapter = createAdapter(issue.project.issueProvider.type as never, credentials);
 
-  // External service update must succeed before DB update
   try {
     if (status === IssueStatus.CLOSED) {
       await adapter.closeIssue(issue.project.externalId, issue.externalId);
@@ -63,4 +58,64 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   });
 
   return ok(updated);
+}
+
+async function handleTodayFlagUpdate(id: string, todayFlag: boolean, userId: string) {
+  const issue = await prisma.issue.findFirst({
+    where: {
+      id,
+      project: { issueProvider: { userId } },
+    },
+  });
+
+  if (!issue) return fail("FORBIDDEN", 403);
+
+  if (todayFlag) {
+    const todayCount = await prisma.issue.count({
+      where: {
+        todayFlag: true,
+        project: { issueProvider: { userId } },
+      },
+    });
+
+    const updated = await prisma.issue.update({
+      where: { id },
+      data: {
+        todayFlag: true,
+        todayOrder: todayCount + 1,
+        todayAddedAt: new Date(),
+      },
+      select: { id: true, todayFlag: true, todayOrder: true, todayAddedAt: true },
+    });
+
+    return ok(updated);
+  }
+
+  const updated = await prisma.issue.update({
+    where: { id },
+    data: { todayFlag: false, todayOrder: null, todayAddedAt: null },
+    select: { id: true, todayFlag: true, todayOrder: true, todayAddedAt: true },
+  });
+
+  return ok(updated);
+}
+
+export async function PATCH(req: NextRequest, { params }: Params) {
+  const session = await auth();
+  if (!session) return fail("UNAUTHORIZED", 401);
+
+  const { id } = await params;
+  const body = await req.json().catch(() => null);
+  if (!body) return fail("INVALID_BODY", 400);
+
+  if ("todayFlag" in body) {
+    if (typeof body.todayFlag !== "boolean") return fail("INVALID_INPUT", 400);
+    return handleTodayFlagUpdate(id, body.todayFlag as boolean, session.user.id);
+  }
+
+  if ("status" in body) {
+    return handleStatusUpdate(req, id, body.status as string, session.user.id);
+  }
+
+  return fail("INVALID_BODY", 400);
 }

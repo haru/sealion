@@ -30,6 +30,7 @@ interface TodoListProps {
   loading?: boolean;
   onPageChange?: (page: number) => void;
   onStatusChange?: (id: string, newStatus: Status) => void;
+  onAddToToday?: (id: string) => void;
 }
 
 export default function TodoList({
@@ -40,6 +41,7 @@ export default function TodoList({
   loading,
   onPageChange,
   onStatusChange,
+  onAddToToday,
 }: TodoListProps) {
   const t = useTranslations("todo");
   const totalPages = Math.ceil(total / limit);
@@ -75,6 +77,7 @@ export default function TodoList({
           providerName={issue.project.issueProvider.displayName}
           projectName={issue.project.displayName}
           onStatusChange={onStatusChange}
+          onAddToToday={onAddToToday}
         />
       ))}
 

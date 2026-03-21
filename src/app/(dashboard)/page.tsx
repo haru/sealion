@@ -1,10 +1,19 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Box, Container, Typography } from "@mui/material";
+import { Box, Container, Snackbar, Alert, Typography } from "@mui/material";
 import { useTranslations } from "next-intl";
+import {
+  DndContext,
+  DragEndEvent,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import { arrayMove } from "@dnd-kit/sortable";
 import TodoList from "@/components/todo/TodoList";
 import SyncStatus from "@/components/todo/SyncStatus";
+import TodayTasksArea, { TODAY_DROP_ZONE_ID } from "@/components/today-tasks/TodayTasksArea";
 import { allProjectsSynced } from "@/lib/sync-utils";
 
 type Priority = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
@@ -18,6 +27,9 @@ interface Issue {
   dueDate: string | null;
   externalUrl: string;
   isUnassigned: boolean;
+  todayFlag: boolean;
+  todayOrder: number | null;
+  todayAddedAt: string | null;
   project: {
     displayName: string;
     issueProvider: { iconUrl: string | null; displayName: string };
@@ -38,8 +50,16 @@ interface SyncProvider {
   projects: SyncProject[];
 }
 
+type ToastSeverity = "success" | "error";
+interface Toast {
+  open: boolean;
+  message: string;
+  severity: ToastSeverity;
+}
+
 export default function DashboardPage() {
   const t = useTranslations("todo");
+  const tToday = useTranslations("todayTasks");
 
   const [issues, setIssues] = useState<Issue[]>([]);
   const [total, setTotal] = useState(0);
@@ -47,7 +67,20 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncProviders, setSyncProviders] = useState<SyncProvider[]>([]);
+  const [toast, setToast] = useState<Toast>({ open: false, message: "", severity: "success" });
   const syncStartedAtRef = useRef<Date | null>(null);
+
+  const sensors = useSensors(useSensor(PointerSensor));
+
+  const todayIssues = issues
+    .filter((i) => i.todayFlag && i.status === "OPEN")
+    .map((i) => ({ ...i, todayOrder: i.todayOrder ?? 0 }));
+
+  const regularIssues = issues.filter((i) => !i.todayFlag);
+
+  function showToast(message: string, severity: ToastSeverity) {
+    setToast({ open: true, message, severity });
+  }
 
   const fetchIssues = useCallback(async (p: number) => {
     const res = await fetch(`/api/issues?page=${p}&limit=20`);
@@ -64,8 +97,6 @@ export default function DashboardPage() {
     await fetch("/api/sync", { method: "POST" });
   }, []);
 
-  // Poll sync status every 5s while syncing; stops when all enabled projects are synced.
-  // Uses self-scheduling setTimeout to avoid overlapping requests.
   useEffect(() => {
     if (!isSyncing) return;
 
@@ -96,7 +127,6 @@ export default function DashboardPage() {
 
     pollTimeout = setTimeout(poll, 5000);
 
-    // Safety timeout: stop polling after 2 minutes
     const safetyTimeout = setTimeout(() => {
       cancelled = true;
       setIsSyncing(false);
@@ -112,9 +142,12 @@ export default function DashboardPage() {
   useEffect(() => {
     async function init() {
       setLoading(true);
-      await Promise.all([fetchIssues(1), fetch("/api/sync").then(async (res) => {
-        if (res.ok) setSyncProviders((await res.json()).data);
-      })]);
+      await Promise.all([
+        fetchIssues(1),
+        fetch("/api/sync").then(async (res) => {
+          if (res.ok) setSyncProviders((await res.json()).data);
+        }),
+      ]);
       setLoading(false);
       void startSync();
     }
@@ -127,7 +160,6 @@ export default function DashboardPage() {
   }
 
   async function handleStatusChange(id: string, newStatus: Status) {
-    // Optimistic update
     setIssues((prev) =>
       prev.map((issue) => (issue.id === id ? { ...issue, status: newStatus } : issue))
     );
@@ -139,7 +171,6 @@ export default function DashboardPage() {
     });
 
     if (!res.ok) {
-      // Revert optimistic update
       setIssues((prev) =>
         prev.map((issue) =>
           issue.id === id
@@ -150,25 +181,170 @@ export default function DashboardPage() {
     }
   }
 
+  async function handleAddToToday(id: string) {
+    const maxOrder = todayIssues.reduce((max, i) => Math.max(max, i.todayOrder), 0);
+
+    // Optimistic update
+    setIssues((prev) =>
+      prev.map((issue) =>
+        issue.id === id
+          ? { ...issue, todayFlag: true, todayOrder: maxOrder + 1, todayAddedAt: new Date().toISOString() }
+          : issue
+      )
+    );
+
+    const res = await fetch(`/api/issues/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ todayFlag: true }),
+    });
+
+    if (res.ok) {
+      const json = await res.json();
+      setIssues((prev) =>
+        prev.map((issue) =>
+          issue.id === id
+            ? { ...issue, todayOrder: json.data.todayOrder, todayAddedAt: json.data.todayAddedAt }
+            : issue
+        )
+      );
+      showToast(tToday("addSuccess"), "success");
+    } else {
+      // Rollback
+      setIssues((prev) =>
+        prev.map((issue) =>
+          issue.id === id
+            ? { ...issue, todayFlag: false, todayOrder: null, todayAddedAt: null }
+            : issue
+        )
+      );
+      showToast(tToday("addError"), "error");
+    }
+  }
+
+  async function handleRemoveFromToday(id: string) {
+    const issue = issues.find((i) => i.id === id);
+    if (!issue) return;
+
+    // Optimistic update
+    setIssues((prev) =>
+      prev.map((i) =>
+        i.id === id ? { ...i, todayFlag: false, todayOrder: null, todayAddedAt: null } : i
+      )
+    );
+
+    const res = await fetch(`/api/issues/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ todayFlag: false }),
+    });
+
+    if (res.ok) {
+      showToast(tToday("removeSuccess"), "success");
+    } else {
+      // Rollback
+      setIssues((prev) =>
+        prev.map((i) =>
+          i.id === id
+            ? { ...i, todayFlag: issue.todayFlag, todayOrder: issue.todayOrder, todayAddedAt: issue.todayAddedAt }
+            : i
+        )
+      );
+      showToast(tToday("removeError"), "error");
+    }
+  }
+
+  async function handleReorder(orderedIds: string[]) {
+    const prevIssues = issues;
+
+    // Optimistic update: reassign todayOrder based on new positions
+    setIssues((prev) =>
+      prev.map((issue) => {
+        const newOrder = orderedIds.indexOf(issue.id);
+        if (newOrder === -1) return issue;
+        return { ...issue, todayOrder: newOrder + 1 };
+      })
+    );
+
+    const res = await fetch("/api/issues/today/reorder", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ orderedIds }),
+    });
+
+    if (!res.ok) {
+      setIssues(prevIssues);
+      showToast(tToday("reorderError"), "error");
+    }
+  }
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over) return;
+
+    const activeData = active.data.current as { type: string; issueId: string } | undefined;
+    if (!activeData) return;
+
+    // Drag from TodoList → TodayTasksArea
+    if (activeData.type === "todo-item" && over.id === TODAY_DROP_ZONE_ID) {
+      void handleAddToToday(activeData.issueId);
+      return;
+    }
+
+    // Reorder within TodayTasksArea
+    if (activeData.type === "today-item" && active.id !== over.id) {
+      const overData = over.data.current as { type?: string } | undefined;
+      if (over.id === TODAY_DROP_ZONE_ID || overData?.type === "today-item") {
+        const ids = todayIssues
+          .sort((a, b) => a.todayOrder - b.todayOrder)
+          .map((i) => i.id);
+        const oldIndex = ids.indexOf(active.id as string);
+        const newIndex = ids.indexOf(over.id as string);
+        if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
+          const reordered = arrayMove(ids, oldIndex, newIndex);
+          void handleReorder(reordered);
+        }
+      }
+    }
+  }
+
   return (
-    <Container maxWidth="md" sx={{ py: 3 }}>
-      <Typography variant="h4" component="h1" gutterBottom>
-        {t("title")}
-      </Typography>
+    <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+      <Container maxWidth="md" sx={{ py: 3 }}>
+        <Typography variant="h4" component="h1" gutterBottom>
+          {t("title")}
+        </Typography>
 
-      <SyncStatus providers={syncProviders} isSyncing={isSyncing} />
+        <SyncStatus providers={syncProviders} isSyncing={isSyncing} />
 
-      <Box sx={{ mt: 2 }}>
-        <TodoList
-          items={issues}
-          total={total}
-          page={page}
-          limit={20}
-          loading={loading}
-          onPageChange={handlePageChange}
-          onStatusChange={handleStatusChange}
-        />
-      </Box>
-    </Container>
+        <Box sx={{ mt: 2 }}>
+          <TodayTasksArea items={todayIssues} onRemove={handleRemoveFromToday} />
+          <TodoList
+            items={regularIssues}
+            total={total - todayIssues.length}
+            page={page}
+            limit={20}
+            loading={loading}
+            onPageChange={handlePageChange}
+            onStatusChange={handleStatusChange}
+            onAddToToday={handleAddToToday}
+          />
+        </Box>
+      </Container>
+
+      <Snackbar
+        open={toast.open}
+        autoHideDuration={4000}
+        onClose={() => setToast((prev) => ({ ...prev, open: false }))}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert
+          severity={toast.severity}
+          onClose={() => setToast((prev) => ({ ...prev, open: false }))}
+        >
+          {toast.message}
+        </Alert>
+      </Snackbar>
+    </DndContext>
   );
 }

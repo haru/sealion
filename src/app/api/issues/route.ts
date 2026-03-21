@@ -46,6 +46,9 @@ export async function GET(req: NextRequest) {
         dueDate: true,
         externalUrl: true,
         isUnassigned: true,
+        todayFlag: true,
+        todayOrder: true,
+        todayAddedAt: true,
         project: {
           select: {
             displayName: true,

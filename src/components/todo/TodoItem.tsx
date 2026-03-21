@@ -1,17 +1,19 @@
 "use client";
 
 import {
+  Box,
   Card,
   CardContent,
   Checkbox,
-  Typography,
   Chip,
-  Box,
   IconButton,
-  Tooltip,
   Stack,
+  Tooltip,
+  Typography,
 } from "@mui/material";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
+import TodayIcon from "@mui/icons-material/Today";
+import { useDraggable } from "@dnd-kit/core";
 import { useTranslations } from "next-intl";
 import ProviderIcon from "@/components/ProviderIcon";
 
@@ -30,6 +32,7 @@ interface TodoItemProps {
   providerName: string;
   projectName: string;
   onStatusChange?: (id: string, newStatus: Status) => void;
+  onAddToToday?: (id: string) => void;
 }
 
 const PRIORITY_COLORS: Record<Priority, "default" | "primary" | "warning" | "error"> = {
@@ -38,7 +41,6 @@ const PRIORITY_COLORS: Record<Priority, "default" | "primary" | "warning" | "err
   HIGH: "warning",
   CRITICAL: "error",
 };
-
 
 export default function TodoItem({
   id,
@@ -52,13 +54,20 @@ export default function TodoItem({
   providerName,
   projectName,
   onStatusChange,
+  onAddToToday,
 }: TodoItemProps) {
   const t = useTranslations("todo");
+  const tToday = useTranslations("todayTasks");
 
   const isComplete = status === "CLOSED";
   const dueDateFormatted = dueDate
     ? t("dueDate", { date: new Date(dueDate).toLocaleDateString() })
     : null;
+
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id,
+    data: { type: "todo-item", issueId: id },
+  });
 
   function handleCheck() {
     onStatusChange?.(id, isComplete ? "OPEN" : "CLOSED");
@@ -66,9 +75,10 @@ export default function TodoItem({
 
   return (
     <Card
+      ref={setNodeRef}
       variant="outlined"
       sx={{
-        opacity: isComplete ? 0.6 : 1,
+        opacity: isComplete || isDragging ? 0.6 : 1,
         mb: 1,
       }}
     >
@@ -81,7 +91,11 @@ export default function TodoItem({
             sx={{ mt: -0.5 }}
           />
 
-          <Box sx={{ flex: 1, minWidth: 0 }}>
+          <Box
+            {...attributes}
+            {...listeners}
+            sx={{ flex: 1, minWidth: 0, cursor: "grab" }}
+          >
             <Typography
               variant="body1"
               sx={{
@@ -100,7 +114,9 @@ export default function TodoItem({
               />
 
               <Chip
-                icon={<ProviderIcon iconUrl={providerIconUrl} label={providerName} fontSize="small" />}
+                icon={
+                  <ProviderIcon iconUrl={providerIconUrl} label={providerName} fontSize="small" />
+                }
                 label={`${providerName} / ${projectName}`}
                 size="small"
                 variant="outlined"
@@ -122,6 +138,18 @@ export default function TodoItem({
               )}
             </Stack>
           </Box>
+
+          {onAddToToday && !isComplete && (
+            <Tooltip title={tToday("addToToday")}>
+              <IconButton
+                size="small"
+                onClick={() => onAddToToday(id)}
+                aria-label={tToday("addToToday")}
+              >
+                <TodayIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          )}
 
           <Tooltip title={t("openInTracker")}>
             <IconButton

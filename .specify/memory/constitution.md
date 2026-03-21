@@ -1,19 +1,18 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version change: (unversioned template) → 1.0.0
-Modified principles: N/A (initial fill)
-Added sections:
-  - Core Principles (5 principles)
-  - Technology Standards
-  - Development Workflow
-  - Governance
-Removed sections: N/A (template placeholders replaced)
+Version change: 1.0.0 → 1.1.0
+Modified principles: None
+Added sections: None
+Added rules:
+  - Development Workflow › Code Quality Gates: added gate #3 "npm run build exits with zero errors"
+    (renumbered subsequent gates accordingly)
+Removed sections: None
 Templates checked:
-  - .specify/templates/plan-template.md ✅ "Constitution Check" section aligns with principles below
-  - .specify/templates/spec-template.md ✅ mandatory sections (User Scenarios, Requirements, Success Criteria) consistent
-  - .specify/templates/tasks-template.md ✅ TDD task ordering (tests before implementation) consistent
-Follow-up TODOs: None — all placeholders resolved from CLAUDE.md and repo context.
+  - .specify/templates/plan-template.md ✅ "Constitution Check" section is template-driven; no hardcoded gate list
+  - .specify/templates/spec-template.md ✅ no impact
+  - .specify/templates/tasks-template.md ✅ no impact; build check is a gate, not a task type
+Follow-up TODOs: None.
 -->
 
 # Sealion Constitution
@@ -129,8 +128,10 @@ amendment.
 
 1. `npm test` passes with ≥ 95% line coverage.
 2. `npm run lint` exits with zero errors.
-3. All CRITICAL and HIGH findings from code-review addressed.
-4. Security checklist cleared (no hardcoded secrets, inputs validated, auth enforced).
+3. `npm run build` exits with zero errors (type-check + compilation MUST pass after every
+   implementation; run after `prisma generate` whenever the Prisma schema has changed).
+4. All CRITICAL and HIGH findings from code-review addressed.
+5. Security checklist cleared (no hardcoded secrets, inputs validated, auth enforced).
 
 ### Feature Development Order
 
@@ -165,4 +166,4 @@ arises between this document and any other guideline, this constitution takes pr
 - Complexity violations MUST be justified in the plan's Complexity Tracking table.
 - Security and TDD compliance MUST be verified during code review on every PR.
 
-**Version**: 1.0.0 | **Ratified**: 2026-03-20 | **Last Amended**: 2026-03-20
+**Version**: 1.1.0 | **Ratified**: 2026-03-20 | **Last Amended**: 2026-03-21
