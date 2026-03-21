@@ -17,7 +17,7 @@ interface Issue {
   externalUrl: string;
   project: {
     displayName: string;
-    issueProvider: { type: string; displayName: string };
+    issueProvider: { iconUrl: string | null; displayName: string };
   };
 }
 
@@ -69,7 +69,7 @@ export default function TodoList({
           priority={issue.priority}
           dueDate={issue.dueDate}
           externalUrl={issue.externalUrl}
-          providerType={issue.project.issueProvider.type}
+          providerIconUrl={issue.project.issueProvider.iconUrl}
           providerName={issue.project.issueProvider.displayName}
           projectName={issue.project.displayName}
           onStatusChange={onStatusChange}

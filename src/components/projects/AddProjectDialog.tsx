@@ -23,15 +23,15 @@ import {
   Chip,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
-import GitHubIcon from "@mui/icons-material/GitHub";
-import CloudIcon from "@mui/icons-material/Cloud";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
+import ProviderIcon from "@/components/ProviderIcon";
 
 interface Provider {
   id: string;
   type: "GITHUB" | "JIRA" | "REDMINE";
   displayName: string;
+  iconUrl: string | null;
 }
 
 interface ExternalProject {
@@ -45,10 +45,6 @@ interface AddProjectDialogProps {
   onClose: (saved: boolean) => void;
 }
 
-function ProviderIcon({ type }: { type: Provider["type"] }) {
-  if (type === "GITHUB") return <GitHubIcon />;
-  return <CloudIcon />;
-}
 
 export default function AddProjectDialog({ open, onClose }: AddProjectDialogProps) {
   const t = useTranslations("projects");
@@ -202,7 +198,7 @@ export default function AddProjectDialog({ open, onClose }: AddProjectDialogProp
                       />
                     </ListItemIcon>
                     <ListItemIcon>
-                      <ProviderIcon type={provider.type} />
+                      <ProviderIcon iconUrl={provider.iconUrl} label={provider.type} />
                     </ListItemIcon>
                     <ListItemText primary={provider.displayName} />
                   </ListItemButton>

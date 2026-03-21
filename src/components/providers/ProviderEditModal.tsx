@@ -24,6 +24,7 @@ interface Provider {
   type: ProviderType;
   displayName: string;
   baseUrl: string | null;
+  iconUrl: string | null;
 }
 
 interface ProviderEditModalProps {

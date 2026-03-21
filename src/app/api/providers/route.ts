@@ -3,7 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { encrypt } from "@/lib/encryption";
 import { ok, fail } from "@/lib/api-response";
-import { createAdapter } from "@/services/issue-provider/factory";
+import { createAdapter, getProviderIconUrl } from "@/services/issue-provider/factory";
 import { ProviderType } from "@prisma/client";
 
 export async function GET() {
@@ -16,7 +16,7 @@ export async function GET() {
     orderBy: { createdAt: "asc" },
   });
 
-  return ok(providers);
+  return ok(providers.map((p) => ({ ...p, iconUrl: getProviderIconUrl(p.type) })));
 }
 
 export async function POST(req: NextRequest) {
@@ -64,5 +64,5 @@ export async function POST(req: NextRequest) {
     select: { id: true, type: true, displayName: true, baseUrl: true, createdAt: true },
   });
 
-  return ok(provider, 201);
+  return ok({ ...provider, iconUrl: getProviderIconUrl(provider.type) }, 201);
 }

@@ -37,6 +37,8 @@ function mapPriority(name?: string): IssuePriority {
 }
 
 export class RedmineAdapter implements IssueProviderAdapter {
+  static readonly iconUrl: string | null = "/redmine.svg";
+
   private readonly client;
   private readonly baseUrl: string;
 

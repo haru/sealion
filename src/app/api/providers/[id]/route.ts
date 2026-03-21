@@ -3,7 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { encrypt, decrypt } from "@/lib/encryption";
 import { ok, fail } from "@/lib/api-response";
-import { createAdapter } from "@/services/issue-provider/factory";
+import { createAdapter, getProviderIconUrl } from "@/services/issue-provider/factory";
 import { ProviderType } from "@prisma/client";
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -94,5 +94,5 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
     select: { id: true, type: true, displayName: true, baseUrl: true, createdAt: true },
   });
 
-  return ok(updated);
+  return ok({ ...updated, iconUrl: getProviderIconUrl(updated.type) });
 }

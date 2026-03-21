@@ -32,23 +32,32 @@ jest.mock("@/lib/encryption", () => ({
   decrypt: jest.fn().mockReturnValue("{}"),
 }));
 
-// Mock adapters
+// Mock adapters (include static iconUrl so getProviderIconUrl() works)
 jest.mock("@/services/issue-provider/github", () => ({
-  GitHubAdapter: jest.fn().mockImplementation(() => ({
-    testConnection: jest.fn().mockResolvedValue(undefined),
-  })),
+  GitHubAdapter: Object.assign(
+    jest.fn().mockImplementation(() => ({
+      testConnection: jest.fn().mockResolvedValue(undefined),
+    })),
+    { iconUrl: "/github.svg" }
+  ),
 }));
 
 jest.mock("@/services/issue-provider/jira", () => ({
-  JiraAdapter: jest.fn().mockImplementation(() => ({
-    testConnection: jest.fn().mockResolvedValue(undefined),
-  })),
+  JiraAdapter: Object.assign(
+    jest.fn().mockImplementation(() => ({
+      testConnection: jest.fn().mockResolvedValue(undefined),
+    })),
+    { iconUrl: "/jira.svg" }
+  ),
 }));
 
 jest.mock("@/services/issue-provider/redmine", () => ({
-  RedmineAdapter: jest.fn().mockImplementation(() => ({
-    testConnection: jest.fn().mockResolvedValue(undefined),
-  })),
+  RedmineAdapter: Object.assign(
+    jest.fn().mockImplementation(() => ({
+      testConnection: jest.fn().mockResolvedValue(undefined),
+    })),
+    { iconUrl: "/redmine.svg" }
+  ),
 }));
 
 import { auth } from "@/lib/auth";
@@ -92,6 +101,7 @@ describe("GET /api/providers", () => {
     expect(res.status).toBe(200);
     expect(json.data).toHaveLength(1);
     expect(json.data[0].type).toBe("GITHUB");
+    expect(json.data[0].iconUrl).toBe("/github.svg");
   });
 
   it("returns 401 when not authenticated", async () => {
@@ -168,6 +178,7 @@ describe("POST /api/providers", () => {
 
     expect(res.status).toBe(201);
     expect(json.data.type).toBe("GITHUB");
+    expect(json.data.iconUrl).toBe("/github.svg");
   });
 
   it("returns 422 when credentials are invalid (connection fails)", async () => {
@@ -408,6 +419,7 @@ describe("PATCH /api/providers/[id]", () => {
 
     expect(res.status).toBe(200);
     expect(json.data.displayName).toBe("Updated");
+    expect(json.data.iconUrl).toBe("/github.svg");
   });
 
   it("returns 200 updating credentials when changeCredentials=true", async () => {

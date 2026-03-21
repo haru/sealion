@@ -24,14 +24,14 @@ import {
   Tooltip,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
-import GitHubIcon from "@mui/icons-material/GitHub";
-import CloudIcon from "@mui/icons-material/Cloud";
 import { useTranslations } from "next-intl";
+import ProviderIcon from "@/components/ProviderIcon";
 
 interface IssueProvider {
   id: string;
   displayName: string;
   type: "GITHUB" | "JIRA" | "REDMINE";
+  iconUrl: string | null;
 }
 
 interface Project {
@@ -43,10 +43,6 @@ interface Project {
   issueProvider: IssueProvider;
 }
 
-function ProviderIcon({ type }: { type: IssueProvider["type"] }) {
-  if (type === "GITHUB") return <GitHubIcon fontSize="small" />;
-  return <CloudIcon fontSize="small" />;
-}
 
 interface ProjectListProps {
   refreshSignal?: number;
@@ -137,7 +133,7 @@ export default function ProjectList({ refreshSignal }: ProjectListProps) {
                 <TableCell>{project.displayName}</TableCell>
                 <TableCell>
                   <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                    <ProviderIcon type={project.issueProvider.type} />
+                    <ProviderIcon iconUrl={project.issueProvider.iconUrl} label={project.issueProvider.type} fontSize="small" />
                     <Chip
                       label={project.issueProvider.displayName}
                       size="small"

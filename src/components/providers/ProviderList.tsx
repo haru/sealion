@@ -14,16 +14,16 @@ import {
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
-import GitHubIcon from "@mui/icons-material/GitHub";
-import CloudIcon from "@mui/icons-material/Cloud";
 import { useTranslations } from "next-intl";
 import ProviderEditModal from "./ProviderEditModal";
+import ProviderIcon from "@/components/ProviderIcon";
 
 interface Provider {
   id: string;
   type: "GITHUB" | "JIRA" | "REDMINE";
   displayName: string;
   baseUrl: string | null;
+  iconUrl: string | null;
 }
 
 interface ProviderListProps {
@@ -32,10 +32,6 @@ interface ProviderListProps {
   onUpdated: (updated: Provider) => void;
 }
 
-function ProviderIcon({ type }: { type: Provider["type"] }) {
-  if (type === "GITHUB") return <GitHubIcon />;
-  return <CloudIcon />;
-}
 
 export default function ProviderList({ providers, onDelete, onUpdated }: ProviderListProps) {
   const t = useTranslations("providers");
@@ -55,7 +51,7 @@ export default function ProviderList({ providers, onDelete, onUpdated }: Provide
         {providers.map((provider) => (
           <ListItem key={provider.id} divider>
             <Box sx={{ mr: 2, display: "flex", alignItems: "center" }}>
-              <ProviderIcon type={provider.type} />
+              <ProviderIcon iconUrl={provider.iconUrl} label={provider.type} />
             </Box>
             <ListItemText
               primary={provider.displayName}

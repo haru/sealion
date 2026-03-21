@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { ok, fail } from "@/lib/api-response";
 import { IssueStatus } from "@prisma/client";
+import { getProviderIconUrl } from "@/services/issue-provider/factory";
 
 export async function GET(req: NextRequest) {
   const session = await auth();
@@ -52,9 +53,21 @@ export async function GET(req: NextRequest) {
             },
           },
         },
+
       },
     }),
   ]);
 
-  return ok({ items, total, page, limit });
+  const itemsWithIconUrl = items.map((issue) => ({
+    ...issue,
+    project: {
+      ...issue.project,
+      issueProvider: {
+        ...issue.project.issueProvider,
+        iconUrl: getProviderIconUrl(issue.project.issueProvider.type),
+      },
+    },
+  }));
+
+  return ok({ items: itemsWithIconUrl, total, page, limit });
 }

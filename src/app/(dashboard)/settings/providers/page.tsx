@@ -23,6 +23,7 @@ interface Provider {
   type: "GITHUB" | "JIRA" | "REDMINE";
   displayName: string;
   baseUrl: string | null;
+  iconUrl: string | null;
 }
 
 export default function ProvidersPage() {

@@ -46,6 +46,8 @@ function mapPriority(name?: string): IssuePriority {
 }
 
 export class JiraAdapter implements IssueProviderAdapter {
+  static readonly iconUrl: string | null = "/jira.svg";
+
   private readonly client;
   private readonly baseUrl: string;
 
