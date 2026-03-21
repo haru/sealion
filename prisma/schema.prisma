@@ -100,12 +100,17 @@ model Issue {
   todayOrder   Int?
   todayAddedAt DateTime?
 
+  // Provider-side timestamps (007-task-list-sort)
+  providerCreatedAt DateTime?
+  providerUpdatedAt DateTime?
+
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@unique([projectId, externalId])
   @@index([projectId])
   @@index([status, dueDate])
   @@index([todayFlag, todayOrder])
+  @@index([dueDate, providerUpdatedAt, providerCreatedAt])
 }
 
 // ─── Auth.js required tables ─────────────────────────────────────────────────

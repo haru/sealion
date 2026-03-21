@@ -9,6 +9,8 @@ interface RedmineIssue {
   priority?: { id: number; name: string };
   due_date?: string | null;
   assigned_to?: { id: number; name: string };
+  created_on?: string;
+  updated_on?: string;
 }
 
 interface RedmineProject {
@@ -100,6 +102,8 @@ export class RedmineAdapter implements IssueProviderAdapter {
       dueDate: issue.due_date ? new Date(issue.due_date) : null,
       externalUrl: `${this.baseUrl}/issues/${issue.id}`,
       isUnassigned: false,
+      providerCreatedAt: issue.created_on ? new Date(issue.created_on) : null,
+      providerUpdatedAt: issue.updated_on ? new Date(issue.updated_on) : null,
     }));
   }
 
@@ -139,6 +143,8 @@ export class RedmineAdapter implements IssueProviderAdapter {
         dueDate: issue.due_date ? new Date(issue.due_date) : null,
         externalUrl: `${this.baseUrl}/issues/${issue.id}`,
         isUnassigned: true,
+        providerCreatedAt: issue.created_on ? new Date(issue.created_on) : null,
+        providerUpdatedAt: issue.updated_on ? new Date(issue.updated_on) : null,
       }));
   }
 

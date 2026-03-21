@@ -74,6 +74,8 @@ export async function syncProviders(userId: string): Promise<void> {
                           externalUrl: issue.externalUrl,
                           isUnassigned: issue.isUnassigned,
                           lastSyncedAt: now,
+                          providerCreatedAt: issue.providerCreatedAt,
+                          providerUpdatedAt: issue.providerUpdatedAt,
                           // Reset today fields when issue is closed (FR-010)
                           ...(issue.status === "CLOSED"
                             ? { todayFlag: false, todayOrder: null, todayAddedAt: null }
@@ -89,6 +91,8 @@ export async function syncProviders(userId: string): Promise<void> {
                           externalUrl: issue.externalUrl,
                           isUnassigned: issue.isUnassigned,
                           lastSyncedAt: now,
+                          providerCreatedAt: issue.providerCreatedAt,
+                          providerUpdatedAt: issue.providerUpdatedAt,
                         },
                       })
                     )

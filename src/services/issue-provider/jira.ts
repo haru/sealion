@@ -13,6 +13,8 @@ interface JiraIssue {
     priority?: { name?: string };
     duedate?: string | null;
     assignee?: unknown;
+    created?: string;
+    updated?: string;
   };
 }
 
@@ -82,7 +84,7 @@ export class JiraAdapter implements IssueProviderAdapter {
     while (true) {
       const { data } = await this.client.get<{ issues: JiraIssue[]; total: number }>(
         "/search",
-        { params: { jql, startAt, maxResults, fields: "summary,status,priority,duedate" } }
+        { params: { jql, startAt, maxResults, fields: "summary,status,priority,duedate,created,updated" } }
       );
       issues.push(...data.issues);
       if (issues.length >= data.total) break;
@@ -99,6 +101,8 @@ export class JiraAdapter implements IssueProviderAdapter {
         dueDate: issue.fields.duedate ? new Date(issue.fields.duedate) : null,
         externalUrl: `${this.baseUrl}/browse/${issue.key}`,
         isUnassigned: false,
+        providerCreatedAt: issue.fields.created ? new Date(issue.fields.created) : null,
+        providerUpdatedAt: issue.fields.updated ? new Date(issue.fields.updated) : null,
       };
     });
   }
@@ -112,7 +116,7 @@ export class JiraAdapter implements IssueProviderAdapter {
     while (true) {
       const { data } = await this.client.get<{ issues: JiraIssue[]; total: number }>(
         "/search",
-        { params: { jql, startAt, maxResults, fields: "summary,status,priority,duedate" } }
+        { params: { jql, startAt, maxResults, fields: "summary,status,priority,duedate,created,updated" } }
       );
       issues.push(...data.issues);
       if (issues.length >= data.total) break;
@@ -129,6 +133,8 @@ export class JiraAdapter implements IssueProviderAdapter {
         dueDate: issue.fields.duedate ? new Date(issue.fields.duedate) : null,
         externalUrl: `${this.baseUrl}/browse/${issue.key}`,
         isUnassigned: true,
+        providerCreatedAt: issue.fields.created ? new Date(issue.fields.created) : null,
+        providerUpdatedAt: issue.fields.updated ? new Date(issue.fields.updated) : null,
       };
     });
   }

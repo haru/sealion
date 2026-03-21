@@ -32,9 +32,10 @@ export async function GET(req: NextRequest) {
     prisma.issue.findMany({
       where,
       orderBy: [
-        { status: "asc" },      // OPEN sorts before CLOSED (enum definition order)
-        { dueDate: "asc" },     // nulls last
-        { priority: "desc" },   // CRITICAL > HIGH > MEDIUM > LOW
+        { status: "asc" },
+        { dueDate: { sort: "asc", nulls: "last" } },
+        { providerUpdatedAt: { sort: "desc", nulls: "last" } },
+        { providerCreatedAt: { sort: "desc", nulls: "last" } },
       ],
       skip: (page - 1) * limit,
       take: limit,
@@ -50,6 +51,8 @@ export async function GET(req: NextRequest) {
         todayFlag: true,
         todayOrder: true,
         todayAddedAt: true,
+        providerCreatedAt: true,
+        providerUpdatedAt: true,
         project: {
           select: {
             displayName: true,

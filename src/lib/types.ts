@@ -11,6 +11,8 @@ export interface NormalizedIssue {
   dueDate: Date | null;
   externalUrl: string;
   isUnassigned: boolean;
+  providerCreatedAt: Date | null;
+  providerUpdatedAt: Date | null;
 }
 
 export interface ExternalProject {

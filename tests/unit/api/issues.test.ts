@@ -96,4 +96,68 @@ describe("GET /api/issues", () => {
     expect(json.data.items[0].isUnassigned).toBe(false);
     expect(json.data.items[1].isUnassigned).toBe(true);
   });
+
+  it("orders by dueDate asc nulls last as second orderBy key", async () => {
+    mockFindMany.mockResolvedValue([]);
+    mockCount.mockResolvedValue(0);
+
+    await GET(makeRequest());
+
+    const call = mockFindMany.mock.calls[0][0];
+    expect(call.orderBy).toEqual(
+      expect.arrayContaining([
+        { dueDate: { sort: "asc", nulls: "last" } },
+      ])
+    );
+  });
+
+  it("orders by providerUpdatedAt desc nulls last as third orderBy key", async () => {
+    mockFindMany.mockResolvedValue([]);
+    mockCount.mockResolvedValue(0);
+
+    await GET(makeRequest());
+
+    const call = mockFindMany.mock.calls[0][0];
+    expect(call.orderBy).toEqual(
+      expect.arrayContaining([
+        { providerUpdatedAt: { sort: "desc", nulls: "last" } },
+      ])
+    );
+  });
+
+  it("orders by providerCreatedAt desc nulls last as fourth orderBy key", async () => {
+    mockFindMany.mockResolvedValue([]);
+    mockCount.mockResolvedValue(0);
+
+    await GET(makeRequest());
+
+    const call = mockFindMany.mock.calls[0][0];
+    expect(call.orderBy).toEqual(
+      expect.arrayContaining([
+        { providerCreatedAt: { sort: "desc", nulls: "last" } },
+      ])
+    );
+  });
+
+  it("does not use priority as an orderBy key", async () => {
+    mockFindMany.mockResolvedValue([]);
+    mockCount.mockResolvedValue(0);
+
+    await GET(makeRequest());
+
+    const call = mockFindMany.mock.calls[0][0];
+    const orderByKeys = call.orderBy.flatMap((o: Record<string, unknown>) => Object.keys(o));
+    expect(orderByKeys).not.toContain("priority");
+  });
+
+  it("includes providerCreatedAt and providerUpdatedAt in select", async () => {
+    mockFindMany.mockResolvedValue([]);
+    mockCount.mockResolvedValue(0);
+
+    await GET(makeRequest());
+
+    const call = mockFindMany.mock.calls[0][0];
+    expect(call.select.providerCreatedAt).toBe(true);
+    expect(call.select.providerUpdatedAt).toBe(true);
+  });
 });
