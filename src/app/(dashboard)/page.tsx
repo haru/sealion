@@ -90,10 +90,6 @@ export default function DashboardPage() {
       }
 
       if (!cancelled) {
-        await fetchIssues(page);
-      }
-
-      if (!cancelled) {
         pollTimeout = setTimeout(poll, 5000);
       }
     }

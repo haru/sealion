@@ -16,17 +16,14 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     return fail("MISSING_FIELDS", 400);
   }
 
-  const project = await prisma.project.findFirst({
-    where: { id },
-    select: { id: true, issueProvider: { select: { userId: true } } },
-  });
-  if (!project || project.issueProvider.userId !== session.user.id) {
-    return fail("FORBIDDEN", 403);
-  }
-
-  const updated = await prisma.project.update({
-    where: { id },
+  const result = await prisma.project.updateMany({
+    where: { id, issueProvider: { userId: session.user.id } },
     data: { includeUnassigned: body.includeUnassigned },
+  });
+  if (result.count === 0) return fail("FORBIDDEN", 403);
+
+  const updated = await prisma.project.findUnique({
+    where: { id },
     select: { id: true, includeUnassigned: true },
   });
 

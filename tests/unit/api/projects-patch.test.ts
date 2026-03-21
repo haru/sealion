@@ -5,8 +5,8 @@ jest.mock("@/lib/auth", () => ({ auth: jest.fn() }));
 jest.mock("@/lib/db", () => ({
   prisma: {
     project: {
-      findFirst: jest.fn(),
-      update: jest.fn(),
+      updateMany: jest.fn(),
+      findUnique: jest.fn(),
     },
   },
 }));
@@ -16,8 +16,8 @@ import { prisma } from "@/lib/db";
 import { PATCH } from "@/app/api/projects/[id]/route";
 
 const mockAuth = auth as jest.Mock;
-const mockFindFirst = prisma.project.findFirst as jest.Mock;
-const mockUpdate = prisma.project.update as jest.Mock;
+const mockUpdateMany = prisma.project.updateMany as jest.Mock;
+const mockFindUnique = prisma.project.findUnique as jest.Mock;
 
 const SESSION = { user: { id: "user-1", email: "u@ex.com", role: "USER" } };
 
@@ -58,18 +58,15 @@ describe("PATCH /api/projects/[id]", () => {
 
   it("returns 403 when project belongs to another user", async () => {
     mockAuth.mockResolvedValue(SESSION);
-    mockFindFirst.mockResolvedValue(null);
+    mockUpdateMany.mockResolvedValue({ count: 0 });
     const res = await PATCH(makeRequest({ includeUnassigned: true }), makeParams());
     expect(res.status).toBe(403);
   });
 
   it("returns 200 with updated project when valid", async () => {
     mockAuth.mockResolvedValue(SESSION);
-    mockFindFirst.mockResolvedValue({
-      id: "proj-1",
-      issueProvider: { userId: "user-1" },
-    });
-    mockUpdate.mockResolvedValue({ id: "proj-1", includeUnassigned: true });
+    mockUpdateMany.mockResolvedValue({ count: 1 });
+    mockFindUnique.mockResolvedValue({ id: "proj-1", includeUnassigned: true });
 
     const res = await PATCH(makeRequest({ includeUnassigned: true }), makeParams());
     const json = await res.json();
@@ -81,18 +78,15 @@ describe("PATCH /api/projects/[id]", () => {
 
   it("sets includeUnassigned to false when toggling off", async () => {
     mockAuth.mockResolvedValue(SESSION);
-    mockFindFirst.mockResolvedValue({
-      id: "proj-1",
-      issueProvider: { userId: "user-1" },
-    });
-    mockUpdate.mockResolvedValue({ id: "proj-1", includeUnassigned: false });
+    mockUpdateMany.mockResolvedValue({ count: 1 });
+    mockFindUnique.mockResolvedValue({ id: "proj-1", includeUnassigned: false });
 
     const res = await PATCH(makeRequest({ includeUnassigned: false }), makeParams());
     const json = await res.json();
 
     expect(res.status).toBe(200);
     expect(json.data.includeUnassigned).toBe(false);
-    expect(mockUpdate).toHaveBeenCalledWith(
+    expect(mockUpdateMany).toHaveBeenCalledWith(
       expect.objectContaining({
         data: { includeUnassigned: false },
       })

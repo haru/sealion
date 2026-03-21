@@ -80,7 +80,7 @@ export default function ProjectList({ refreshSignal }: ProjectListProps) {
     void fetchProjects();
   }, [fetchProjects, refreshSignal]);
 
-  async function handleToggleUnassigned(projectId: string, currentValue: boolean) {
+  const handleToggleUnassigned = useCallback(async (projectId: string, currentValue: boolean) => {
     setTogglingId(projectId);
     const next = !currentValue;
     setProjects((prev) =>
@@ -107,7 +107,7 @@ export default function ProjectList({ refreshSignal }: ProjectListProps) {
     } finally {
       setTogglingId(null);
     }
-  }
+  }, [tCommon]);
 
   async function handleDeleteConfirm() {
     if (!deleteId) return;
@@ -180,18 +180,23 @@ export default function ProjectList({ refreshSignal }: ProjectListProps) {
                   </Box>
                 </TableCell>
                 <TableCell>
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={project.includeUnassigned}
-                        onChange={() => handleToggleUnassigned(project.id, project.includeUnassigned)}
-                        disabled={togglingId === project.id}
-                        size="small"
-                        inputProps={{ "aria-label": t("includeUnassigned") }}
-                      />
-                    }
-                    label=""
-                  />
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={project.includeUnassigned}
+                          onChange={() => handleToggleUnassigned(project.id, project.includeUnassigned)}
+                          disabled={togglingId === project.id}
+                          size="small"
+                          inputProps={{ "aria-label": t("includeUnassigned") }}
+                        />
+                      }
+                      label=""
+                    />
+                    {togglingId === project.id && (
+                      <CircularProgress size={14} />
+                    )}
+                  </Box>
                 </TableCell>
                 <TableCell align="right">
                   <Tooltip title={t("deleteProject")}>

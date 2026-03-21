@@ -88,7 +88,7 @@ export class RedmineAdapter implements IssueProviderAdapter {
         },
       });
       issues.push(...data.issues);
-      if (issues.length >= data.total_count) break;
+      if (!data.total_count || issues.length >= data.total_count) break;
       offset += limit;
     }
 
@@ -104,7 +104,11 @@ export class RedmineAdapter implements IssueProviderAdapter {
   }
 
   async fetchUnassignedIssues(projectExternalId: string): Promise<NormalizedIssue[]> {
-    const allIssues: RedmineIssue[] = [];
+    // The Redmine API does not support a server-side "unassigned" filter.
+    // `assigned_to_id` only accepts a numeric user ID or the special value "me" —
+    // there is no "none" token. We therefore fetch all open issues and filter
+    // client-side for those without an `assigned_to` field.
+    const allOpenIssues: RedmineIssue[] = [];
     let offset = 0;
     const limit = 100;
 
@@ -120,12 +124,12 @@ export class RedmineAdapter implements IssueProviderAdapter {
           limit,
         },
       });
-      allIssues.push(...data.issues);
-      if (allIssues.length >= data.total_count) break;
+      allOpenIssues.push(...data.issues);
+      if (!data.total_count || allOpenIssues.length >= data.total_count) break;
       offset += limit;
     }
 
-    return allIssues
+    return allOpenIssues
       .filter((issue) => !issue.assigned_to)
       .map((issue) => ({
         externalId: String(issue.id),

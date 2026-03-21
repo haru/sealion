@@ -66,6 +66,7 @@ describe("syncProviders", () => {
             id: "project-1",
             externalId: "owner/repo",
             isEnabled: true,
+            includeUnassigned: false,
           },
         ],
       },
@@ -112,16 +113,17 @@ describe("syncProviders", () => {
         type: "GITHUB",
         encryptedCredentials: "encrypted",
         userId: "user-1",
-        projects: [{ id: "project-1", externalId: "owner/repo", isEnabled: true }],
+        projects: [{ id: "project-1", externalId: "owner/repo", isEnabled: true, includeUnassigned: false }],
       },
     ]);
 
     const { createAdapter } = jest.requireMock("@/services/issue-provider/factory");
     createAdapter.mockReturnValueOnce({
       fetchAssignedIssues: jest.fn().mockResolvedValue([
-        { externalId: "1", title: "Issue 1", status: "OPEN", priority: "MEDIUM", dueDate: null, externalUrl: "https://example.com/1" },
-        { externalId: "2", title: "Issue 2", status: "OPEN", priority: "HIGH", dueDate: null, externalUrl: "https://example.com/2" },
+        { externalId: "1", title: "Issue 1", status: "OPEN", priority: "MEDIUM", dueDate: null, externalUrl: "https://example.com/1", isUnassigned: false },
+        { externalId: "2", title: "Issue 2", status: "OPEN", priority: "HIGH", dueDate: null, externalUrl: "https://example.com/2", isUnassigned: false },
       ]),
+      fetchUnassignedIssues: jest.fn().mockResolvedValue([]),
     });
 
     const mockUpsert = prisma.issue.upsert as jest.Mock;
@@ -140,13 +142,14 @@ describe("syncProviders", () => {
         type: "GITHUB",
         encryptedCredentials: "encrypted",
         userId: "user-1",
-        projects: [{ id: "project-1", externalId: "owner/repo", isEnabled: true }],
+        projects: [{ id: "project-1", externalId: "owner/repo", isEnabled: true, includeUnassigned: false }],
       },
     ]);
 
     const { createAdapter } = jest.requireMock("@/services/issue-provider/factory");
     createAdapter.mockReturnValueOnce({
       fetchAssignedIssues: jest.fn().mockRejectedValue(new Error("Network error")),
+      fetchUnassignedIssues: jest.fn().mockResolvedValue([]),
     });
 
     mockProjectUpdate.mockResolvedValue({});
@@ -170,7 +173,7 @@ describe("syncProviders", () => {
         type: "REDMINE",
         encryptedCredentials: "encrypted",
         userId: "user-1",
-        projects: [{ id: "project-1", externalId: "my-project", isEnabled: true }],
+        projects: [{ id: "project-1", externalId: "my-project", isEnabled: true, includeUnassigned: false }],
       },
     ]);
 
@@ -178,8 +181,9 @@ describe("syncProviders", () => {
     // Only issue "10" is returned — issue "99" was closed externally
     createAdapter.mockReturnValueOnce({
       fetchAssignedIssues: jest.fn().mockResolvedValue([
-        { externalId: "10", title: "Still open", status: "OPEN", priority: "MEDIUM", dueDate: null, externalUrl: "https://redmine.example.com/issues/10" },
+        { externalId: "10", title: "Still open", status: "OPEN", priority: "MEDIUM", dueDate: null, externalUrl: "https://redmine.example.com/issues/10", isUnassigned: false },
       ]),
+      fetchUnassignedIssues: jest.fn().mockResolvedValue([]),
     });
 
     const mockUpsert = prisma.issue.upsert as jest.Mock;

@@ -480,6 +480,45 @@ describe("RedmineAdapter", () => {
         expect.objectContaining({ params: expect.objectContaining({ status_id: "open" }) })
       );
     });
+
+    it("paginates across multiple pages and returns only unassigned issues", async () => {
+      // Page 1: 100 issues, 50 unassigned + 50 assigned; total_count = 150
+      const page1Issues = [
+        ...Array.from({ length: 50 }, (_, i) => ({
+          id: i + 1,
+          subject: `Unassigned ${i + 1}`,
+          status: { id: 1, name: "New", is_closed: false },
+        })),
+        ...Array.from({ length: 50 }, (_, i) => ({
+          id: i + 51,
+          subject: `Assigned ${i + 51}`,
+          status: { id: 1, name: "New", is_closed: false },
+          assigned_to: { id: 1, name: "Alice" },
+        })),
+      ];
+      // Page 2: 50 issues, all unassigned
+      const page2Issues = Array.from({ length: 50 }, (_, i) => ({
+        id: i + 101,
+        subject: `Unassigned page2 ${i + 101}`,
+        status: { id: 1, name: "New", is_closed: false },
+      }));
+
+      mockAxiosInstance.get
+        .mockResolvedValueOnce({ data: { issues: page1Issues, total_count: 150 } })
+        .mockResolvedValueOnce({ data: { issues: page2Issues, total_count: 150 } });
+
+      const issues = await adapter.fetchUnassignedIssues("my-project");
+
+      // 50 unassigned from page 1 + 50 from page 2 = 100
+      expect(issues).toHaveLength(100);
+      expect(issues.every((i) => i.isUnassigned)).toBe(true);
+      expect(mockAxiosInstance.get).toHaveBeenCalledTimes(2);
+      expect(mockAxiosInstance.get).toHaveBeenNthCalledWith(
+        2,
+        "/issues.json",
+        expect.objectContaining({ params: expect.objectContaining({ offset: 100 }) })
+      );
+    });
   });
 
   describe("fetchAssignedIssues isUnassigned field", () => {
