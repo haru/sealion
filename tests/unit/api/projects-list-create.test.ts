@@ -132,6 +132,37 @@ describe("POST /api/projects", () => {
     expect(res.status).toBe(403);
   });
 
+  it("returns 400 when externalId contains special characters", async () => {
+    mockAuth.mockResolvedValue(SESSION);
+    mockProviderFindFirst.mockResolvedValue({ id: "p1", userId: "user-1" });
+
+    const res = await POST(makeRequest("POST", { issueProviderId: "p1", externalId: 'PROJ" OR project = "OTHER', displayName: "test" }));
+    expect(res.status).toBe(400);
+  });
+
+  it("returns 400 when externalId contains whitespace", async () => {
+    mockAuth.mockResolvedValue(SESSION);
+    mockProviderFindFirst.mockResolvedValue({ id: "p1", userId: "user-1" });
+
+    const res = await POST(makeRequest("POST", { issueProviderId: "p1", externalId: "org repo", displayName: "test" }));
+    expect(res.status).toBe(400);
+  });
+
+  it("accepts valid GitHub-style externalId (owner/repo)", async () => {
+    mockAuth.mockResolvedValue(SESSION);
+    mockProviderFindFirst.mockResolvedValue({ id: "p1", userId: "user-1" });
+    mockProjectFindFirst.mockResolvedValue(null);
+    mockProjectCreate.mockResolvedValue({
+      id: "new-proj",
+      externalId: "org/repo",
+      displayName: "repo",
+      issueProvider: { id: "p1", displayName: "My GitHub", type: "GITHUB" },
+    });
+
+    const res = await POST(makeRequest("POST", { issueProviderId: "p1", externalId: "org/repo", displayName: "repo" }));
+    expect(res.status).toBe(201);
+  });
+
   it("returns 409 when project already registered", async () => {
     mockAuth.mockResolvedValue(SESSION);
     mockProviderFindFirst.mockResolvedValue({ id: "p1", userId: "user-1" });

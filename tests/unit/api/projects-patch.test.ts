@@ -76,6 +76,15 @@ describe("PATCH /api/projects/[id]", () => {
     expect(json.data.includeUnassigned).toBe(true);
   });
 
+  it("returns 404 when project is deleted between update and read (TOCTOU)", async () => {
+    mockAuth.mockResolvedValue(SESSION);
+    mockUpdateMany.mockResolvedValue({ count: 1 });
+    mockFindUnique.mockResolvedValue(null);
+
+    const res = await PATCH(makeRequest({ includeUnassigned: true }), makeParams());
+    expect(res.status).toBe(404);
+  });
+
   it("sets includeUnassigned to false when toggling off", async () => {
     mockAuth.mockResolvedValue(SESSION);
     mockUpdateMany.mockResolvedValue({ count: 1 });

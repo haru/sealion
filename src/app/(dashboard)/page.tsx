@@ -63,7 +63,6 @@ export default function DashboardPage() {
 
   const [issues, setIssues] = useState<Issue[]>([]);
   const [total, setTotal] = useState(0);
-  const [totalToday, setTotalToday] = useState(0);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -78,7 +77,7 @@ export default function DashboardPage() {
     .filter((i) => i.todayFlag && i.status === "OPEN")
     .map((i) => ({ ...i, todayOrder: i.todayOrder ?? 0 }));
 
-  const regularIssues = issues.filter((i) => !i.todayFlag);
+  const regularIssues = issues.filter((i) => !i.todayFlag || i.status === "CLOSED");
 
   function showToast(message: string, severity: ToastSeverity) {
     setToast({ open: true, message, severity });
@@ -102,7 +101,6 @@ export default function DashboardPage() {
         });
       });
       setTotal(json.data.total);
-      setTotalToday(json.data.totalToday);
     }
   }, []);
 
@@ -175,6 +173,8 @@ export default function DashboardPage() {
   }
 
   async function handleStatusChange(id: string, newStatus: Status) {
+    const original = issues.find((i) => i.id === id);
+
     setIssues((prev) =>
       prev.map((issue) => {
         if (issue.id !== id) return issue;
@@ -195,13 +195,12 @@ export default function DashboardPage() {
     });
 
     if (!res.ok) {
-      setIssues((prev) =>
-        prev.map((issue) =>
-          issue.id === id
-            ? { ...issue, status: newStatus === "CLOSED" ? "OPEN" : "CLOSED" }
-            : issue
-        )
-      );
+      if (original) {
+        setIssues((prev) =>
+          prev.map((issue) => (issue.id === id ? original : issue))
+        );
+      }
+      showToast(t("statusChangeError"), "error");
     }
   }
 
@@ -361,7 +360,7 @@ export default function DashboardPage() {
           <TodayTasksArea items={todayIssues} onRemove={handleRemoveFromToday} onStatusChange={handleStatusChange} />
           <TodoList
             items={regularIssues}
-            total={total - totalToday}
+            total={total}
             page={page}
             limit={20}
             loading={loading}

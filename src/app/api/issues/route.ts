@@ -19,18 +19,29 @@ export async function GET(req: NextRequest) {
       ? (statusParam as IssueStatus)
       : undefined;
 
-  const where = {
+  const baseWhere = {
     project: {
       issueProvider: { userId: session.user.id },
     },
+  };
+
+  const regularWhere = {
+    ...baseWhere,
+    NOT: { todayFlag: true, status: IssueStatus.OPEN },
     ...(statusFilter ? { status: statusFilter } : {}),
   };
 
+  const todayWhere = {
+    ...baseWhere,
+    todayFlag: true,
+    status: IssueStatus.OPEN,
+  };
+
   const [total, totalToday, items] = await Promise.all([
-    prisma.issue.count({ where }),
-    prisma.issue.count({ where: { ...where, todayFlag: true, status: IssueStatus.OPEN } }),
+    prisma.issue.count({ where: regularWhere }),
+    prisma.issue.count({ where: todayWhere }),
     prisma.issue.findMany({
-      where,
+      where: regularWhere,
       orderBy: [
         { status: "asc" },
         { dueDate: { sort: "asc", nulls: "last" } },

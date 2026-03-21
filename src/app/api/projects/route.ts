@@ -47,6 +47,11 @@ export async function POST(req: NextRequest) {
     return fail("MISSING_FIELDS", 400);
   }
 
+  // Prevent JQL/query injection: allow only alphanumeric, hyphens, underscores, dots, forward slashes
+  if (!/^[a-zA-Z0-9/_.-]+$/.test(externalId)) {
+    return fail("INVALID_EXTERNAL_ID", 400);
+  }
+
   const provider = await prisma.issueProvider.findFirst({
     where: { id: issueProviderId, userId: session.user.id },
   });

@@ -139,6 +139,41 @@ describe("GET /api/issues", () => {
     );
   });
 
+  it("excludes today-flagged OPEN issues from paginated list and total count", async () => {
+    mockFindMany.mockResolvedValue([]);
+    mockCount.mockResolvedValue(0);
+
+    await GET(makeRequest());
+
+    const findManyCall = mockFindMany.mock.calls[0][0];
+    expect(findManyCall.where).toMatchObject({
+      NOT: { todayFlag: true, status: "OPEN" },
+    });
+
+    const regularCountCall = mockCount.mock.calls.find(
+      ([arg]: [{ where: Record<string, unknown> }]) => arg?.where?.NOT !== undefined
+    );
+    expect(regularCountCall).toBeDefined();
+    expect(regularCountCall[0].where).toMatchObject({
+      NOT: { todayFlag: true, status: "OPEN" },
+    });
+  });
+
+  it("counts totalToday independently of status filter", async () => {
+    mockFindMany.mockResolvedValue([]);
+    mockCount.mockResolvedValue(0);
+
+    await GET(makeRequest("?status=CLOSED"));
+
+    const todayCountCall = mockCount.mock.calls.find(
+      ([arg]: [{ where: Record<string, unknown> }]) =>
+        arg?.where?.todayFlag === true && arg?.where?.status === "OPEN"
+    );
+    expect(todayCountCall).toBeDefined();
+    // totalToday where must not include the CLOSED status filter
+    expect(todayCountCall[0].where).not.toHaveProperty("NOT");
+  });
+
   it("does not use priority as an orderBy key", async () => {
     mockFindMany.mockResolvedValue([]);
     mockCount.mockResolvedValue(0);
