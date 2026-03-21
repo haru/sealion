@@ -29,6 +29,7 @@ export function getProviderIconUrl(type: ProviderType): string | null {
     case ProviderType.GITHUB: return GitHubAdapter.iconUrl;
     case ProviderType.JIRA: return JiraAdapter.iconUrl;
     case ProviderType.REDMINE: return RedmineAdapter.iconUrl;
+    default: return null;
   }
 }
 

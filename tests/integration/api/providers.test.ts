@@ -41,23 +41,32 @@ jest.mock("@/lib/auth", () => ({
   }),
 }));
 
-// Mock adapters to avoid real network calls
+// Mock adapters to avoid real network calls (include static iconUrl)
 jest.mock("@/services/issue-provider/github", () => ({
-  GitHubAdapter: jest.fn().mockImplementation(() => ({
-    testConnection: jest.fn().mockResolvedValue(undefined),
-  })),
+  GitHubAdapter: Object.assign(
+    jest.fn().mockImplementation(() => ({
+      testConnection: jest.fn().mockResolvedValue(undefined),
+    })),
+    { iconUrl: "/github.svg" }
+  ),
 }));
 
 jest.mock("@/services/issue-provider/jira", () => ({
-  JiraAdapter: jest.fn().mockImplementation(() => ({
-    testConnection: jest.fn().mockResolvedValue(undefined),
-  })),
+  JiraAdapter: Object.assign(
+    jest.fn().mockImplementation(() => ({
+      testConnection: jest.fn().mockResolvedValue(undefined),
+    })),
+    { iconUrl: "/jira.svg" }
+  ),
 }));
 
 jest.mock("@/services/issue-provider/redmine", () => ({
-  RedmineAdapter: jest.fn().mockImplementation(() => ({
-    testConnection: jest.fn().mockResolvedValue(undefined),
-  })),
+  RedmineAdapter: Object.assign(
+    jest.fn().mockImplementation(() => ({
+      testConnection: jest.fn().mockResolvedValue(undefined),
+    })),
+    { iconUrl: "/redmine.svg" }
+  ),
 }));
 
 let prisma: PrismaClient;

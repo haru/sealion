@@ -98,7 +98,7 @@ export default function TodoItem({
               />
 
               <Chip
-                icon={<ProviderIcon iconUrl={providerIconUrl} fontSize="small" />}
+                icon={<ProviderIcon iconUrl={providerIconUrl} label={providerName} fontSize="small" />}
                 label={`${providerName} / ${projectName}`}
                 size="small"
                 variant="outlined"
