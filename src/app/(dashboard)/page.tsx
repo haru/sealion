@@ -6,6 +6,8 @@ import { useTranslations } from "next-intl";
 import {
   DndContext,
   DragEndEvent,
+  DragOverlay,
+  DragStartEvent,
   PointerSensor,
   useSensor,
   useSensors,
@@ -68,6 +70,7 @@ export default function DashboardPage() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncProviders, setSyncProviders] = useState<SyncProvider[]>([]);
   const [toast, setToast] = useState<Toast>({ open: false, message: "", severity: "success" });
+  const [activeDragId, setActiveDragId] = useState<string | null>(null);
   const syncStartedAtRef = useRef<Date | null>(null);
 
   const sensors = useSensors(useSensor(PointerSensor));
@@ -86,7 +89,18 @@ export default function DashboardPage() {
     const res = await fetch(`/api/issues?page=${p}&limit=20`);
     if (res.ok) {
       const json = await res.json();
-      setIssues(json.data.items);
+      setIssues((prev) => {
+        const prevById = new Map(prev.map((i) => [i.id, i]));
+        return json.data.items.map((fetched: Issue) => {
+          const existing = prevById.get(fetched.id);
+          // Preserve todayFlag from local state if it was optimistically set to true
+          // but the fetch returned false (race condition: fetch ran before PATCH committed)
+          if (existing && existing.todayFlag && !fetched.todayFlag) {
+            return { ...fetched, todayFlag: existing.todayFlag, todayOrder: existing.todayOrder, todayAddedAt: existing.todayAddedAt };
+          }
+          return fetched;
+        });
+      });
       setTotal(json.data.total);
     }
   }, []);
@@ -204,7 +218,12 @@ export default function DashboardPage() {
       setIssues((prev) =>
         prev.map((issue) =>
           issue.id === id
-            ? { ...issue, todayOrder: json.data.todayOrder, todayAddedAt: json.data.todayAddedAt }
+            ? {
+                ...issue,
+                todayFlag: json.data.todayFlag,
+                todayOrder: json.data.todayOrder,
+                todayAddedAt: json.data.todayAddedAt,
+              }
             : issue
         )
       );
@@ -278,23 +297,34 @@ export default function DashboardPage() {
     }
   }
 
+  function handleDragStart(event: DragStartEvent) {
+    const activeData = event.active.data.current as { type: string; issueId: string } | undefined;
+    if (activeData?.type === "todo-item") {
+      setActiveDragId(activeData.issueId);
+    }
+  }
+
   function handleDragEnd(event: DragEndEvent) {
+    setActiveDragId(null);
+
     const { active, over } = event;
     if (!over) return;
 
     const activeData = active.data.current as { type: string; issueId: string } | undefined;
     if (!activeData) return;
 
-    // Drag from TodoList → TodayTasksArea
-    if (activeData.type === "todo-item" && over.id === TODAY_DROP_ZONE_ID) {
+    const overData = over.data.current as { type?: string } | undefined;
+    const isOverTodayArea = over.id === TODAY_DROP_ZONE_ID || overData?.type === "today-item";
+
+    // Drag from TodoList → TodayTasksArea (empty or over an existing today-item)
+    if (activeData.type === "todo-item" && isOverTodayArea) {
       void handleAddToToday(activeData.issueId);
       return;
     }
 
     // Reorder within TodayTasksArea
     if (activeData.type === "today-item" && active.id !== over.id) {
-      const overData = over.data.current as { type?: string } | undefined;
-      if (over.id === TODAY_DROP_ZONE_ID || overData?.type === "today-item") {
+      if (isOverTodayArea) {
         const ids = todayIssues
           .sort((a, b) => a.todayOrder - b.todayOrder)
           .map((i) => i.id);
@@ -309,7 +339,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+    <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
       <Container maxWidth="md" sx={{ py: 3 }}>
         <Typography variant="h4" component="h1" gutterBottom>
           {t("title")}
@@ -331,6 +361,32 @@ export default function DashboardPage() {
           />
         </Box>
       </Container>
+
+      <DragOverlay>
+        {activeDragId ? (() => {
+          const issue = issues.find((i) => i.id === activeDragId);
+          if (!issue) return null;
+          return (
+            <Box
+              sx={{
+                bgcolor: "background.paper",
+                border: 1,
+                borderColor: "primary.main",
+                borderRadius: 1,
+                px: 2,
+                py: 1,
+                boxShadow: 4,
+                opacity: 0.9,
+                cursor: "grabbing",
+              }}
+            >
+              <Typography variant="body1" noWrap>
+                {issue.title}
+              </Typography>
+            </Box>
+          );
+        })() : null}
+      </DragOverlay>
 
       <Snackbar
         open={toast.open}
