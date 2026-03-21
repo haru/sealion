@@ -7,12 +7,16 @@ import { useTranslations } from "next-intl";
 import TodayTaskItem from "./TodayTaskItem";
 
 type Priority = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+type Status = "OPEN" | "CLOSED";
 
 interface TodayIssue {
   id: string;
   title: string;
+  status: Status;
   priority: Priority;
+  dueDate: string | null;
   externalUrl: string;
+  isUnassigned: boolean;
   todayOrder: number;
   project: {
     displayName: string;
@@ -23,11 +27,12 @@ interface TodayIssue {
 interface TodayTasksAreaProps {
   items: TodayIssue[];
   onRemove: (id: string) => void;
+  onStatusChange: (id: string, newStatus: Status) => void;
 }
 
 export const TODAY_DROP_ZONE_ID = "today-drop-zone";
 
-export default function TodayTasksArea({ items, onRemove }: TodayTasksAreaProps) {
+export default function TodayTasksArea({ items, onRemove, onStatusChange }: TodayTasksAreaProps) {
   const t = useTranslations("todayTasks");
 
   const sorted = [...items].sort((a, b) => a.todayOrder - b.todayOrder);
@@ -68,12 +73,16 @@ export default function TodayTasksArea({ items, onRemove }: TodayTasksAreaProps)
                 key={issue.id}
                 id={issue.id}
                 title={issue.title}
+                status={issue.status}
                 priority={issue.priority}
+                dueDate={issue.dueDate}
                 externalUrl={issue.externalUrl}
+                isUnassigned={issue.isUnassigned}
                 providerIconUrl={issue.project.issueProvider.iconUrl}
                 providerName={issue.project.issueProvider.displayName}
                 projectName={issue.project.displayName}
                 onRemove={onRemove}
+                onStatusChange={onStatusChange}
               />
             ))}
           </SortableContext>

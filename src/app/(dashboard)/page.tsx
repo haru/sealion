@@ -348,7 +348,7 @@ export default function DashboardPage() {
         <SyncStatus providers={syncProviders} isSyncing={isSyncing} />
 
         <Box sx={{ mt: 2 }}>
-          <TodayTasksArea items={todayIssues} onRemove={handleRemoveFromToday} />
+          <TodayTasksArea items={todayIssues} onRemove={handleRemoveFromToday} onStatusChange={handleStatusChange} />
           <TodoList
             items={regularIssues}
             total={total - todayIssues.length}
