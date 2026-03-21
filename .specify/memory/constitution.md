@@ -1,17 +1,17 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version change: 1.0.0 → 1.1.0
+Version change: 1.1.0 → 1.2.0
 Modified principles: None
-Added sections: None
+Added sections:
+  - Principle VI. Code Documentation (TSDoc mandatory for all exported symbols)
 Added rules:
-  - Development Workflow › Code Quality Gates: added gate #3 "npm run build exits with zero errors"
-    (renumbered subsequent gates accordingly)
+  - Development Workflow › Code Quality Gates: added gate #6 "TSDoc present on all exported symbols"
 Removed sections: None
 Templates checked:
-  - .specify/templates/plan-template.md ✅ "Constitution Check" section is template-driven; no hardcoded gate list
+  - .specify/templates/plan-template.md ✅ "Constitution Check" section is template-driven; no impact
   - .specify/templates/spec-template.md ✅ no impact
-  - .specify/templates/tasks-template.md ✅ no impact; build check is a gate, not a task type
+  - .specify/templates/tasks-template.md ✅ no impact; documentation is a gate, not a new task type
 Follow-up TODOs: None.
 -->
 
@@ -95,6 +95,24 @@ Complexity MUST be justified; the minimum solution that satisfies current requir
 **Rationale**: The codebase is small and evolving quickly; premature abstractions create drag
 and obscure intent.
 
+### VI. Code Documentation
+
+All exported symbols MUST be documented with TSDoc comments.
+
+- Every exported function, class, interface, type alias, and constant MUST have a TSDoc block
+  comment (`/** … */`) immediately above its declaration.
+- TSDoc comments MUST include at minimum: a one-line summary, `@param` tags for each parameter,
+  and a `@returns` tag for non-void functions.
+- `@throws` MUST be documented when a function can throw a known error type.
+- Internal (non-exported) helpers SHOULD have a brief comment when their intent is not
+  immediately obvious from the name alone.
+- TSDoc MUST be written in English (consistent with the Language rule in Development Workflow).
+- Documentation MUST be kept in sync with implementation — stale or misleading comments are
+  treated as bugs.
+
+**Rationale**: The project integrates multiple external systems; clear API contracts on exported
+symbols reduce onboarding time and prevent misuse across module boundaries.
+
 ## Technology Standards
 
 The following technology choices are binding for all features. Deviations require a constitution
@@ -132,6 +150,8 @@ amendment.
    implementation; run after `prisma generate` whenever the Prisma schema has changed).
 4. All CRITICAL and HIGH findings from code-review addressed.
 5. Security checklist cleared (no hardcoded secrets, inputs validated, auth enforced).
+6. TSDoc present on all newly added or modified exported symbols (summary, `@param`, `@returns`,
+   and `@throws` where applicable).
 
 ### Feature Development Order
 
@@ -166,4 +186,4 @@ arises between this document and any other guideline, this constitution takes pr
 - Complexity violations MUST be justified in the plan's Complexity Tracking table.
 - Security and TDD compliance MUST be verified during code review on every PR.
 
-**Version**: 1.1.0 | **Ratified**: 2026-03-20 | **Last Amended**: 2026-03-21
+**Version**: 1.2.0 | **Ratified**: 2026-03-20 | **Last Amended**: 2026-03-21

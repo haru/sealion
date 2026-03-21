@@ -118,6 +118,19 @@ This rule has no exceptions — do not commit "just to save progress" or as part
 
 GitHub may be read (e.g. `gh pr view`, `gh issue list`) but **never updated** — no creating, editing, or closing PRs/issues/comments without explicit instruction.
 
+### TSDoc — MANDATORY on all exported symbols
+
+Every exported function, class, interface, type alias, and constant MUST have a TSDoc block
+comment (`/** … */`) directly above its declaration. At minimum include:
+
+- A one-line summary.
+- `@param` for each parameter.
+- `@returns` for non-void functions.
+- `@throws` when the function can throw a known error type.
+
+Internal (non-exported) helpers should have a brief comment when intent is not obvious from the
+name alone. TSDoc must be in English and kept in sync with the implementation.
+
 ### ESLint
 Run `npm run lint` after every code change. Config extends `eslint-config-next/core-web-vitals` and `eslint-config-next/typescript`.
 
@@ -138,13 +151,3 @@ CREDENTIALS_ENCRYPTION_KEY    # 64-char hex string (32 bytes) for AES-256-GCM
 
 Uses **VSCode Dev Containers**. Open in the container before starting development.
 
-## Active Technologies
-- TypeScript 5 / Node.js 20 (LTS) + Next.js 16.1.6, Prisma 7.5, PostgreSQL 16, next-intl 4, Auth.js v5 (003-docker-container-build)
-- PostgreSQL 16 (via Prisma ORM) (003-docker-container-build)
-- TypeScript 5 / Node.js 20 + Next.js 16 (App Router), Prisma 7.5, MUI v6, next-intl 4, Auth.js v5 (004-fix-provider-config)
-- TypeScript 5 / Node.js 20 LTS + Next.js 16 (App Router), MUI v6, Auth.js v5, Prisma 7, next-intl 4, `@dnd-kit/core` + `@dnd-kit/sortable` (newly added) (006-today-tasks)
-- PostgreSQL 16 via Prisma ORM (added columns to Issue table) (006-today-tasks)
-- TypeScript 5 / Node.js 20 LTS + Next.js 16 (App Router), Prisma 7, MUI v6, next-intl 4, Auth.js v5 (007-task-list-sort)
-
-## Recent Changes
-- 003-docker-container-build: Added TypeScript 5 / Node.js 20 (LTS) + Next.js 16.1.6, Prisma 7.5, PostgreSQL 16, next-intl 4, Auth.js v5
