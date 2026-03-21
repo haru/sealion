@@ -28,6 +28,7 @@ const OPEN_ISSUE = {
   priority: "HIGH",
   dueDate: new Date("2026-04-01"),
   externalUrl: "https://github.com/x/y/issues/42",
+  isUnassigned: false,
   project: { displayName: "repo", issueProvider: { type: "GITHUB", displayName: "My GH" } },
 };
 
@@ -81,5 +82,18 @@ describe("GET /api/issues", () => {
         where: expect.objectContaining({ status: "OPEN" }),
       })
     );
+  });
+
+  it("includes isUnassigned field in each issue item", async () => {
+    const unassignedIssue = { ...OPEN_ISSUE, id: "i3", isUnassigned: true };
+    mockFindMany.mockResolvedValue([OPEN_ISSUE, unassignedIssue]);
+    mockCount.mockResolvedValue(2);
+
+    const res = await GET(makeRequest());
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(json.data.items[0].isUnassigned).toBe(false);
+    expect(json.data.items[1].isUnassigned).toBe(true);
   });
 });

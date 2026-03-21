@@ -14,6 +14,7 @@ export async function GET() {
       id: true,
       externalId: true,
       displayName: true,
+      includeUnassigned: true,
       lastSyncedAt: true,
       syncError: true,
       issueProvider: {

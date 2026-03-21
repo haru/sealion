@@ -37,8 +37,10 @@ jest.mock("@/services/issue-provider/factory", () => ({
         priority: "HIGH",
         dueDate: null,
         externalUrl: "https://github.com/test/repo/issues/42",
+        isUnassigned: false,
       },
     ]),
+    fetchUnassignedIssues: jest.fn().mockResolvedValue([]),
   }),
 }));
 
@@ -210,6 +212,7 @@ describe("syncProviders", () => {
     const { createAdapter } = jest.requireMock("@/services/issue-provider/factory");
     createAdapter.mockReturnValueOnce({
       fetchAssignedIssues: jest.fn().mockRejectedValue(new Error("API rate limit exceeded")),
+      fetchUnassignedIssues: jest.fn().mockResolvedValue([]),
     });
 
     mockProjectUpdate.mockResolvedValue({});
@@ -222,6 +225,101 @@ describe("syncProviders", () => {
           syncError: "RATE_LIMITED",
           lastSyncedAt: expect.any(Date),
         }),
+      })
+    );
+  });
+
+  it("calls fetchUnassignedIssues when project.includeUnassigned is true", async () => {
+    mockFindMany.mockResolvedValue([
+      {
+        id: "provider-1",
+        type: "GITHUB",
+        encryptedCredentials: "encrypted",
+        userId: "user-1",
+        projects: [{ id: "project-1", externalId: "owner/repo", includeUnassigned: true }],
+      },
+    ]);
+
+    const mockFetchAssigned = jest.fn().mockResolvedValue([
+      { externalId: "1", title: "Assigned", status: "OPEN", priority: "MEDIUM", dueDate: null, externalUrl: "https://ex.com/1", isUnassigned: false },
+    ]);
+    const mockFetchUnassigned = jest.fn().mockResolvedValue([
+      { externalId: "2", title: "Unassigned", status: "OPEN", priority: "MEDIUM", dueDate: null, externalUrl: "https://ex.com/2", isUnassigned: true },
+    ]);
+
+    const { createAdapter } = jest.requireMock("@/services/issue-provider/factory");
+    createAdapter.mockReturnValueOnce({
+      fetchAssignedIssues: mockFetchAssigned,
+      fetchUnassignedIssues: mockFetchUnassigned,
+    });
+
+    const mockUpsert = prisma.issue.upsert as jest.Mock;
+    mockUpsert.mockResolvedValue({});
+    (prisma.project.update as jest.Mock).mockResolvedValue({});
+
+    await syncProviders("user-1");
+
+    expect(mockFetchUnassigned).toHaveBeenCalledWith("owner/repo");
+    expect(mockUpsert).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not call fetchUnassignedIssues when project.includeUnassigned is false", async () => {
+    mockFindMany.mockResolvedValue([
+      {
+        id: "provider-1",
+        type: "GITHUB",
+        encryptedCredentials: "encrypted",
+        userId: "user-1",
+        projects: [{ id: "project-1", externalId: "owner/repo", includeUnassigned: false }],
+      },
+    ]);
+
+    const mockFetchUnassigned = jest.fn().mockResolvedValue([]);
+
+    const { createAdapter } = jest.requireMock("@/services/issue-provider/factory");
+    createAdapter.mockReturnValueOnce({
+      fetchAssignedIssues: jest.fn().mockResolvedValue([]),
+      fetchUnassignedIssues: mockFetchUnassigned,
+    });
+
+    (prisma.project.update as jest.Mock).mockResolvedValue({});
+
+    await syncProviders("user-1");
+
+    expect(mockFetchUnassigned).not.toHaveBeenCalled();
+  });
+
+  it("deduplicates: assigned issue takes priority over unassigned for same externalId", async () => {
+    mockFindMany.mockResolvedValue([
+      {
+        id: "provider-1",
+        type: "GITHUB",
+        encryptedCredentials: "encrypted",
+        userId: "user-1",
+        projects: [{ id: "project-1", externalId: "owner/repo", includeUnassigned: true }],
+      },
+    ]);
+
+    const assignedIssue = { externalId: "42", title: "Bug", status: "OPEN", priority: "MEDIUM", dueDate: null, externalUrl: "https://ex.com/42", isUnassigned: false };
+    const unassignedIssue = { externalId: "42", title: "Bug", status: "OPEN", priority: "MEDIUM", dueDate: null, externalUrl: "https://ex.com/42", isUnassigned: true };
+
+    const { createAdapter } = jest.requireMock("@/services/issue-provider/factory");
+    createAdapter.mockReturnValueOnce({
+      fetchAssignedIssues: jest.fn().mockResolvedValue([assignedIssue]),
+      fetchUnassignedIssues: jest.fn().mockResolvedValue([unassignedIssue]),
+    });
+
+    const mockUpsert = prisma.issue.upsert as jest.Mock;
+    mockUpsert.mockResolvedValue({});
+    (prisma.project.update as jest.Mock).mockResolvedValue({});
+
+    await syncProviders("user-1");
+
+    // Only one upsert — the duplicate unassigned is filtered out
+    expect(mockUpsert).toHaveBeenCalledTimes(1);
+    expect(mockUpsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        create: expect.objectContaining({ isUnassigned: false }),
       })
     );
   });

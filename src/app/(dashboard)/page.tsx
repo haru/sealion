@@ -17,6 +17,7 @@ interface Issue {
   priority: Priority;
   dueDate: string | null;
   externalUrl: string;
+  isUnassigned: boolean;
   project: {
     displayName: string;
     issueProvider: { iconUrl: string | null; displayName: string };

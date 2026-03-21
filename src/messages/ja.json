@@ -48,7 +48,9 @@
       "REDMINE": "Redmine"
     },
     "dueDate": "期限: {date}",
-    "noDueDate": "期限なし"
+    "noDueDate": "期限なし",
+    "unassignedChipLabel": "担当者未設定",
+    "unassignedChipTooltip": "担当者が設定されていません"
   },
   "providers": {
     "title": "issue管理システム設定",
@@ -103,7 +105,9 @@
     "goToProviders": "Issue管理システム設定へ",
     "alreadyRegistered": "追加済み",
     "add": "選択した項目を追加",
-    "searchProjects": "プロジェクトを検索..."
+    "searchProjects": "プロジェクトを検索...",
+    "includeUnassigned": "担当者未設定のIssueを含める",
+    "includeUnassignedHint": "担当者が未設定のIssueも同期対象に含めます"
   },
   "admin": {
     "userManagement": "ユーザー管理",

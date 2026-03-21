@@ -22,6 +22,8 @@ import {
   DialogActions,
   Button,
   Tooltip,
+  Switch,
+  FormControlLabel,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { useTranslations } from "next-intl";
@@ -38,6 +40,7 @@ interface Project {
   id: string;
   externalId: string;
   displayName: string;
+  includeUnassigned: boolean;
   lastSyncedAt: string | null;
   syncError: string | null;
   issueProvider: IssueProvider;
@@ -56,6 +59,7 @@ export default function ProjectList({ refreshSignal }: ProjectListProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
 
   const fetchProjects = useCallback(async () => {
     setLoading(true);
@@ -75,6 +79,35 @@ export default function ProjectList({ refreshSignal }: ProjectListProps) {
   useEffect(() => {
     void fetchProjects();
   }, [fetchProjects, refreshSignal]);
+
+  async function handleToggleUnassigned(projectId: string, currentValue: boolean) {
+    setTogglingId(projectId);
+    const next = !currentValue;
+    setProjects((prev) =>
+      prev.map((p) => (p.id === projectId ? { ...p, includeUnassigned: next } : p))
+    );
+    try {
+      const res = await fetch(`/api/projects/${projectId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ includeUnassigned: next }),
+      });
+      if (!res.ok) {
+        // Revert on failure
+        setProjects((prev) =>
+          prev.map((p) => (p.id === projectId ? { ...p, includeUnassigned: currentValue } : p))
+        );
+        setError(tCommon("error"));
+      }
+    } catch {
+      setProjects((prev) =>
+        prev.map((p) => (p.id === projectId ? { ...p, includeUnassigned: currentValue } : p))
+      );
+      setError(tCommon("error"));
+    } finally {
+      setTogglingId(null);
+    }
+  }
 
   async function handleDeleteConfirm() {
     if (!deleteId) return;
@@ -124,6 +157,11 @@ export default function ProjectList({ refreshSignal }: ProjectListProps) {
             <TableRow>
               <TableCell>{t("projectName")}</TableCell>
               <TableCell>{t("provider")}</TableCell>
+              <TableCell>
+                <Tooltip title={t("includeUnassignedHint")}>
+                  <span>{t("includeUnassigned")}</span>
+                </Tooltip>
+              </TableCell>
               <TableCell align="right" />
             </TableRow>
           </TableHead>
@@ -140,6 +178,20 @@ export default function ProjectList({ refreshSignal }: ProjectListProps) {
                       variant="outlined"
                     />
                   </Box>
+                </TableCell>
+                <TableCell>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={project.includeUnassigned}
+                        onChange={() => handleToggleUnassigned(project.id, project.includeUnassigned)}
+                        disabled={togglingId === project.id}
+                        size="small"
+                        inputProps={{ "aria-label": t("includeUnassigned") }}
+                      />
+                    }
+                    label=""
+                  />
                 </TableCell>
                 <TableCell align="right">
                   <Tooltip title={t("deleteProject")}>

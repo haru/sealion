@@ -67,11 +67,12 @@ model Project {
   id              String    @id @default(cuid())
   issueProviderId String
   externalId      String
-  displayName     String
-  lastSyncedAt    DateTime?
-  syncError       String?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  displayName       String
+  includeUnassigned Boolean   @default(false)
+  lastSyncedAt      DateTime?
+  syncError         String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
   issueProvider IssueProvider @relation(fields: [issueProviderId], references: [id], onDelete: Cascade)
   issues        Issue[]
@@ -88,8 +89,9 @@ model Issue {
   status       IssueStatus   @default(OPEN)
   priority     IssuePriority @default(MEDIUM)
   dueDate      DateTime?
-  externalUrl  String
-  lastSyncedAt DateTime      @default(now())
+  externalUrl   String
+  isUnassigned  Boolean       @default(false)
+  lastSyncedAt  DateTime      @default(now())
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 
