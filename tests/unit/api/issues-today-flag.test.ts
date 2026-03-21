@@ -135,6 +135,22 @@ describe("PATCH /api/issues/[id] — todayFlag", () => {
     );
   });
 
+  it("returns 200 without modifying todayOrder when issue is already todayFlag=true", async () => {
+    const existing = { ...MOCK_ISSUE, todayFlag: true, todayOrder: 2, todayAddedAt: new Date() };
+    mockFindFirst.mockResolvedValue(existing);
+
+    const req = makeRequest("issue-1", { todayFlag: true });
+    const res = await PATCH(req, { params: Promise.resolve({ id: "issue-1" }) });
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(json.data.todayFlag).toBe(true);
+    expect(json.data.todayOrder).toBe(2);
+    // Should not call transaction or update — returns existing state immediately
+    expect(mockTransaction).not.toHaveBeenCalled();
+    expect(mockUpdate).not.toHaveBeenCalled();
+  });
+
   it("returns 400 when trying to set todayFlag=true on a CLOSED issue", async () => {
     mockFindFirst.mockResolvedValue({ ...MOCK_ISSUE, status: "CLOSED" });
 

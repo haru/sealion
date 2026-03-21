@@ -18,6 +18,7 @@ import { prisma } from "@/lib/db";
 
 const mockAuth = auth as jest.Mock;
 const mockFindMany = prisma.issue.findMany as jest.Mock;
+const mockUpdate = prisma.issue.update as jest.Mock;
 const mockTransaction = prisma.$transaction as jest.Mock;
 
 const SESSION = { user: { id: "user-1", email: "u@example.com", role: "USER" } };
@@ -53,6 +54,28 @@ describe("PATCH /api/issues/today/reorder", () => {
     expect(res.status).toBe(200);
     expect(json.data.updated).toBe(3);
     expect(mockTransaction).toHaveBeenCalled();
+  });
+
+  it("assigns todayOrder 1,2,3 matching the given orderedIds sequence", async () => {
+    mockFindMany.mockResolvedValue(TODAY_ISSUES);
+
+    const req = makeRequest({ orderedIds: ["i3", "i1", "i2"] });
+    await PATCH(req);
+
+    // prisma.issue.update is called once per id before being passed to $transaction
+    expect(mockUpdate).toHaveBeenCalledTimes(3);
+    expect(mockUpdate).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({ where: { id: "i3" }, data: { todayOrder: 1 } })
+    );
+    expect(mockUpdate).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({ where: { id: "i1" }, data: { todayOrder: 2 } })
+    );
+    expect(mockUpdate).toHaveBeenNthCalledWith(
+      3,
+      expect.objectContaining({ where: { id: "i2" }, data: { todayOrder: 3 } })
+    );
   });
 
   it("returns 400 when orderedIds is empty", async () => {

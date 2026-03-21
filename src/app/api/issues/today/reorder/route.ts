@@ -5,6 +5,8 @@ import { ok, fail } from "@/lib/api-response";
 
 /**
  * PATCH /api/issues/today/reorder — Reorders today's flagged issues for the authenticated user.
+ * @param req - Request body must contain `orderedIds`: an ordered array of issue IDs (1–100 elements).
+ * @returns JSON response with `{ updated: number }` or an error envelope.
  */
 export async function PATCH(req: NextRequest) {
   const session = await auth();

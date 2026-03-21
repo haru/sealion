@@ -29,9 +29,16 @@ interface TodayTasksAreaProps {
   onStatusChange: (id: string, newStatus: Status) => void;
 }
 
+/** Drop zone ID used by dnd-kit to identify the today's tasks droppable area. */
 export const TODAY_DROP_ZONE_ID = "today-drop-zone";
 
-/** Drop zone and sortable list of today's flagged issues. */
+/**
+ * Drop zone and sortable list of today's flagged issues.
+ * @param props.items - Issues to display, sorted by `todayOrder`.
+ * @param props.onRemove - Callback invoked when the user removes an issue from today's list.
+ * @param props.onStatusChange - Callback invoked when the user changes an issue's status.
+ * @returns A droppable area containing a sorted list of today task items.
+ */
 export default function TodayTasksArea({ items, onRemove, onStatusChange }: TodayTasksAreaProps) {
   const t = useTranslations("todayTasks");
 

@@ -7,6 +7,8 @@ import { getProviderIconUrl } from "@/services/issue-provider/factory";
 
 /**
  * GET /api/issues — Returns a paginated list of issues for the authenticated user.
+ * @param req - Supports query params: `page`, `limit`, `status`.
+ * @returns JSON response with `{ items, total, totalToday, page, limit }` or an error envelope.
  */
 export async function GET(req: NextRequest) {
   const session = await auth();
