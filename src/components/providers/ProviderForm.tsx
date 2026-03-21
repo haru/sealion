@@ -159,6 +159,9 @@ export default function ProviderForm({ onSubmit }: ProviderFormProps) {
 
   return (
     <Box component="form" onSubmit={handleSubmit}>
+      {/* Honeypot fields to prevent browser from autofilling real fields */}
+      <input type="text" name="username" style={{ display: "none" }} autoComplete="username" readOnly />
+      <input type="password" name="password" style={{ display: "none" }} autoComplete="current-password" readOnly />
       <Stack spacing={2}>
         {error && <Alert severity="error">{error}</Alert>}
 
@@ -183,6 +186,8 @@ export default function ProviderForm({ onSubmit }: ProviderFormProps) {
           onChange={(e) => setDisplayName(e.target.value)}
           required
           fullWidth
+          name="providerName"
+          autoComplete="organization"
         />
 
         {type === "GITHUB" && (
