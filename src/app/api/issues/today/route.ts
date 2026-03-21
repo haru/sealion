@@ -6,7 +6,7 @@ import { getProviderIconUrl } from "@/services/issue-provider/factory";
 
 /**
  * GET /api/issues/today — Returns today's flagged open issues for the authenticated user.
- * @returns JSON response with `{ items: [...] }` or an error envelope.
+ * @returns JSON response using the standard envelope: `{ data: { items: [...] }, error: null }` on success or `{ data: null, error: string }` on failure.
  */
 export async function GET() {
   const session = await auth();

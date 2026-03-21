@@ -398,7 +398,7 @@ export default function DashboardPage() {
               }}
             >
               <Typography variant="body1" noWrap>
-                {`#${issue.externalId} ${issue.title}`}
+                {`${issue.externalId} ${issue.title}`}
               </Typography>
             </Box>
           );
