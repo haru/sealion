@@ -11,6 +11,7 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
+import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import TodayIcon from "@mui/icons-material/Today";
 import { useDraggable } from "@dnd-kit/core";
@@ -84,6 +85,14 @@ export default function TodoItem({
     >
       <CardContent sx={{ pb: "16px !important" }}>
         <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1 }}>
+          <Box
+            {...attributes}
+            {...listeners}
+            sx={{ cursor: "grab", color: "text.secondary", display: "flex", alignItems: "center", mt: 0.5 }}
+          >
+            <DragIndicatorIcon fontSize="small" />
+          </Box>
+
           <Checkbox
             checked={isComplete}
             onChange={handleCheck}
@@ -91,11 +100,7 @@ export default function TodoItem({
             sx={{ mt: -0.5 }}
           />
 
-          <Box
-            {...attributes}
-            {...listeners}
-            sx={{ flex: 1, minWidth: 0, cursor: "grab" }}
-          >
+          <Box sx={{ flex: 1, minWidth: 0 }}>
             <Typography
               variant="body1"
               sx={{
