@@ -5,8 +5,7 @@ jest.mock("@/lib/auth", () => ({ auth: jest.fn() }));
 jest.mock("@/lib/db", () => ({
   prisma: {
     project: {
-      findFirst: jest.fn(),
-      delete: jest.fn(),
+      deleteMany: jest.fn(),
     },
   },
 }));
@@ -16,8 +15,7 @@ import { prisma } from "@/lib/db";
 import { DELETE } from "@/app/api/projects/[id]/route";
 
 const mockAuth = auth as jest.Mock;
-const mockFindFirst = prisma.project.findFirst as jest.Mock;
-const mockDelete = prisma.project.delete as jest.Mock;
+const mockDeleteMany = prisma.project.deleteMany as jest.Mock;
 
 const SESSION = { user: { id: "user-1", email: "u@ex.com", role: "USER" } };
 
@@ -36,15 +34,15 @@ describe("DELETE /api/projects/:id", () => {
 
   it("returns 404 when project not found", async () => {
     mockAuth.mockResolvedValue(SESSION);
-    mockFindFirst.mockResolvedValue(null);
+    mockDeleteMany.mockResolvedValue({ count: 0 });
 
     const res = await DELETE(makeRequest(), { params: Promise.resolve({ id: "proj-1" }) });
     expect(res.status).toBe(404);
   });
 
-  it("returns 404 when project belongs to another user (userId-scoped lookup returns null)", async () => {
+  it("returns 404 when project belongs to another user", async () => {
     mockAuth.mockResolvedValue(SESSION);
-    mockFindFirst.mockResolvedValue(null);
+    mockDeleteMany.mockResolvedValue({ count: 0 });
 
     const res = await DELETE(makeRequest(), { params: Promise.resolve({ id: "proj-other" }) });
     expect(res.status).toBe(404);
@@ -52,11 +50,12 @@ describe("DELETE /api/projects/:id", () => {
 
   it("returns 204 and deletes project when valid", async () => {
     mockAuth.mockResolvedValue(SESSION);
-    mockFindFirst.mockResolvedValue({ id: "proj-1", issueProviderId: "p1" });
-    mockDelete.mockResolvedValue({});
+    mockDeleteMany.mockResolvedValue({ count: 1 });
 
     const res = await DELETE(makeRequest(), { params: Promise.resolve({ id: "proj-1" }) });
     expect(res.status).toBe(204);
-    expect(mockDelete).toHaveBeenCalledWith({ where: { id: "proj-1" } });
+    expect(mockDeleteMany).toHaveBeenCalledWith({
+      where: { id: "proj-1", issueProvider: { userId: "user-1" } },
+    });
   });
 });
