@@ -82,6 +82,12 @@ export default function DashboardPage() {
 
         const since = syncStartedAtRef.current;
         if (since && allProjectsSynced(providers, since)) {
+          const issueRes = await fetch(`/api/issues?page=${page}&limit=20`);
+          if (!cancelled && issueRes.ok) {
+            const json = await issueRes.json();
+            setIssues(json.data.items);
+            setTotal(json.data.total);
+          }
           setIsSyncing(false);
           return;
         }

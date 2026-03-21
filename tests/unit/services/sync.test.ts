@@ -9,6 +9,7 @@ jest.mock("@/lib/db", () => ({
     },
     issue: {
       upsert: jest.fn(),
+      deleteMany: jest.fn(),
     },
     project: {
       update: jest.fn(),
@@ -153,6 +154,41 @@ describe("syncProviders", () => {
         }),
       })
     );
+  });
+
+  it("deletes issues that are no longer returned by the adapter", async () => {
+    mockFindMany.mockResolvedValue([
+      {
+        id: "provider-1",
+        type: "REDMINE",
+        encryptedCredentials: "encrypted",
+        userId: "user-1",
+        projects: [{ id: "project-1", externalId: "my-project", isEnabled: true }],
+      },
+    ]);
+
+    const { createAdapter } = jest.requireMock("@/services/issue-provider/factory");
+    // Only issue "10" is returned — issue "99" was closed externally
+    createAdapter.mockReturnValueOnce({
+      fetchAssignedIssues: jest.fn().mockResolvedValue([
+        { externalId: "10", title: "Still open", status: "OPEN", priority: "MEDIUM", dueDate: null, externalUrl: "https://redmine.example.com/issues/10" },
+      ]),
+    });
+
+    const mockUpsert = prisma.issue.upsert as jest.Mock;
+    mockUpsert.mockResolvedValue({});
+    const mockDeleteMany = prisma.issue.deleteMany as jest.Mock;
+    mockDeleteMany.mockResolvedValue({ count: 1 });
+    (prisma.project.update as jest.Mock).mockResolvedValue({});
+
+    await syncProviders("user-1");
+
+    expect(mockDeleteMany).toHaveBeenCalledWith({
+      where: {
+        projectId: "project-1",
+        externalId: { notIn: ["10"] },
+      },
+    });
   });
 
   it("handles rate limit error by recording RATE_LIMITED", async () => {

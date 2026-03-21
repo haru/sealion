@@ -68,6 +68,15 @@ export async function syncProviders(userId: string): Promise<void> {
                   )
                 );
 
+                // Delete issues that were not returned (closed or unassigned externally)
+                const returnedExternalIds = issues.map((i) => i.externalId);
+                await prisma.issue.deleteMany({
+                  where: {
+                    projectId: project.id,
+                    externalId: { notIn: returnedExternalIds },
+                  },
+                });
+
                 await prisma.project.update({
                   where: { id: project.id },
                   data: { lastSyncedAt: now, syncError: null },
