@@ -25,6 +25,7 @@ interface TodoItemProps {
   priority: Priority;
   dueDate: string | null;
   externalUrl: string;
+  isUnassigned: boolean;
   providerIconUrl: string | null;
   providerName: string;
   projectName: string;
@@ -46,6 +47,7 @@ export default function TodoItem({
   priority,
   dueDate,
   externalUrl,
+  isUnassigned,
   providerIconUrl,
   providerName,
   projectName,
@@ -106,6 +108,17 @@ export default function TodoItem({
 
               {dueDateFormatted && (
                 <Chip label={dueDateFormatted} size="small" variant="outlined" />
+              )}
+
+              {isUnassigned && (
+                <Tooltip title={t("unassignedChipTooltip")}>
+                  <Chip
+                    label={t("unassignedChipLabel")}
+                    size="small"
+                    variant="outlined"
+                    color="warning"
+                  />
+                </Tooltip>
               )}
             </Stack>
           </Box>

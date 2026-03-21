@@ -15,7 +15,7 @@ export async function syncProviders(userId: string): Promise<void> {
     where: { userId },
     include: {
       projects: {
-        select: { id: true, externalId: true },
+        select: { id: true, externalId: true, includeUnassigned: true },
       },
     },
   });
@@ -34,14 +34,31 @@ export async function syncProviders(userId: string): Promise<void> {
           provider.projects.map((project) =>
             projectLimit(async () => {
               try {
-                const issues = await adapter.fetchAssignedIssues(project.externalId);
-                const now = new Date();
+                const assignedIssues = await adapter.fetchAssignedIssues(project.externalId);
 
-                const returnedExternalIds = issues.map((i) => i.externalId);
+                let allIssues = assignedIssues;
+                if (project.includeUnassigned) {
+                  try {
+                    const unassignedIssues = await adapter.fetchUnassignedIssues(project.externalId);
+                    const assignedIds = new Set(assignedIssues.map((i) => i.externalId));
+                    const filteredUnassigned = unassignedIssues.filter(
+                      (i) => !assignedIds.has(i.externalId)
+                    );
+                    allIssues = [...assignedIssues, ...filteredUnassigned];
+                  } catch (unassignedErr) {
+                    console.error(
+                      `[sync] fetchUnassignedIssues failed for project ${project.externalId}:`,
+                      unassignedErr
+                    );
+                  }
+                }
+
+                const now = new Date();
+                const returnedExternalIds = allIssues.map((i) => i.externalId);
 
                 await prisma.$transaction(async (tx) => {
                   await Promise.all(
-                    issues.map((issue) =>
+                    allIssues.map((issue) =>
                       tx.issue.upsert({
                         where: {
                           projectId_externalId: {
@@ -55,6 +72,7 @@ export async function syncProviders(userId: string): Promise<void> {
                           priority: issue.priority,
                           dueDate: issue.dueDate,
                           externalUrl: issue.externalUrl,
+                          isUnassigned: issue.isUnassigned,
                           lastSyncedAt: now,
                         },
                         create: {
@@ -65,6 +83,7 @@ export async function syncProviders(userId: string): Promise<void> {
                           priority: issue.priority,
                           dueDate: issue.dueDate,
                           externalUrl: issue.externalUrl,
+                          isUnassigned: issue.isUnassigned,
                           lastSyncedAt: now,
                         },
                       })

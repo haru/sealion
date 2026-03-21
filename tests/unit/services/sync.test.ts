@@ -37,8 +37,10 @@ jest.mock("@/services/issue-provider/factory", () => ({
         priority: "HIGH",
         dueDate: null,
         externalUrl: "https://github.com/test/repo/issues/42",
+        isUnassigned: false,
       },
     ]),
+    fetchUnassignedIssues: jest.fn().mockResolvedValue([]),
   }),
 }));
 
@@ -63,7 +65,7 @@ describe("syncProviders", () => {
           {
             id: "project-1",
             externalId: "owner/repo",
-            isEnabled: true,
+            includeUnassigned: false,
           },
         ],
       },
@@ -86,15 +88,14 @@ describe("syncProviders", () => {
     );
   });
 
-  it("skips disabled projects", async () => {
-    // Prisma filters out disabled projects before returning (where: { isEnabled: true })
+  it("skips providers with no projects", async () => {
     mockFindMany.mockResolvedValue([
       {
         id: "provider-1",
         type: "GITHUB",
         encryptedCredentials: "encrypted",
         userId: "user-1",
-        projects: [], // no enabled projects after Prisma filter
+        projects: [],
       },
     ]);
 
@@ -110,16 +111,17 @@ describe("syncProviders", () => {
         type: "GITHUB",
         encryptedCredentials: "encrypted",
         userId: "user-1",
-        projects: [{ id: "project-1", externalId: "owner/repo", isEnabled: true }],
+        projects: [{ id: "project-1", externalId: "owner/repo", includeUnassigned: false }],
       },
     ]);
 
     const { createAdapter } = jest.requireMock("@/services/issue-provider/factory");
     createAdapter.mockReturnValueOnce({
       fetchAssignedIssues: jest.fn().mockResolvedValue([
-        { externalId: "1", title: "Issue 1", status: "OPEN", priority: "MEDIUM", dueDate: null, externalUrl: "https://example.com/1" },
-        { externalId: "2", title: "Issue 2", status: "OPEN", priority: "HIGH", dueDate: null, externalUrl: "https://example.com/2" },
+        { externalId: "1", title: "Issue 1", status: "OPEN", priority: "MEDIUM", dueDate: null, externalUrl: "https://example.com/1", isUnassigned: false },
+        { externalId: "2", title: "Issue 2", status: "OPEN", priority: "HIGH", dueDate: null, externalUrl: "https://example.com/2", isUnassigned: false },
       ]),
+      fetchUnassignedIssues: jest.fn().mockResolvedValue([]),
     });
 
     const mockUpsert = prisma.issue.upsert as jest.Mock;
@@ -138,13 +140,14 @@ describe("syncProviders", () => {
         type: "GITHUB",
         encryptedCredentials: "encrypted",
         userId: "user-1",
-        projects: [{ id: "project-1", externalId: "owner/repo", isEnabled: true }],
+        projects: [{ id: "project-1", externalId: "owner/repo", includeUnassigned: false }],
       },
     ]);
 
     const { createAdapter } = jest.requireMock("@/services/issue-provider/factory");
     createAdapter.mockReturnValueOnce({
       fetchAssignedIssues: jest.fn().mockRejectedValue(new Error("Network error")),
+      fetchUnassignedIssues: jest.fn().mockResolvedValue([]),
     });
 
     mockProjectUpdate.mockResolvedValue({});
@@ -168,7 +171,7 @@ describe("syncProviders", () => {
         type: "REDMINE",
         encryptedCredentials: "encrypted",
         userId: "user-1",
-        projects: [{ id: "project-1", externalId: "my-project", isEnabled: true }],
+        projects: [{ id: "project-1", externalId: "my-project", includeUnassigned: false }],
       },
     ]);
 
@@ -176,8 +179,9 @@ describe("syncProviders", () => {
     // Only issue "10" is returned — issue "99" was closed externally
     createAdapter.mockReturnValueOnce({
       fetchAssignedIssues: jest.fn().mockResolvedValue([
-        { externalId: "10", title: "Still open", status: "OPEN", priority: "MEDIUM", dueDate: null, externalUrl: "https://redmine.example.com/issues/10" },
+        { externalId: "10", title: "Still open", status: "OPEN", priority: "MEDIUM", dueDate: null, externalUrl: "https://redmine.example.com/issues/10", isUnassigned: false },
       ]),
+      fetchUnassignedIssues: jest.fn().mockResolvedValue([]),
     });
 
     const mockUpsert = prisma.issue.upsert as jest.Mock;
@@ -203,13 +207,14 @@ describe("syncProviders", () => {
         type: "GITHUB",
         encryptedCredentials: "encrypted",
         userId: "user-1",
-        projects: [{ id: "project-1", externalId: "owner/repo", isEnabled: true }],
+        projects: [{ id: "project-1", externalId: "owner/repo", includeUnassigned: false }],
       },
     ]);
 
     const { createAdapter } = jest.requireMock("@/services/issue-provider/factory");
     createAdapter.mockReturnValueOnce({
       fetchAssignedIssues: jest.fn().mockRejectedValue(new Error("API rate limit exceeded")),
+      fetchUnassignedIssues: jest.fn().mockResolvedValue([]),
     });
 
     mockProjectUpdate.mockResolvedValue({});
@@ -221,6 +226,137 @@ describe("syncProviders", () => {
         data: expect.objectContaining({
           syncError: "RATE_LIMITED",
           lastSyncedAt: expect.any(Date),
+        }),
+      })
+    );
+  });
+
+  it("calls fetchUnassignedIssues when project.includeUnassigned is true", async () => {
+    mockFindMany.mockResolvedValue([
+      {
+        id: "provider-1",
+        type: "GITHUB",
+        encryptedCredentials: "encrypted",
+        userId: "user-1",
+        projects: [{ id: "project-1", externalId: "owner/repo", includeUnassigned: true }],
+      },
+    ]);
+
+    const mockFetchAssigned = jest.fn().mockResolvedValue([
+      { externalId: "1", title: "Assigned", status: "OPEN", priority: "MEDIUM", dueDate: null, externalUrl: "https://ex.com/1", isUnassigned: false },
+    ]);
+    const mockFetchUnassigned = jest.fn().mockResolvedValue([
+      { externalId: "2", title: "Unassigned", status: "OPEN", priority: "MEDIUM", dueDate: null, externalUrl: "https://ex.com/2", isUnassigned: true },
+    ]);
+
+    const { createAdapter } = jest.requireMock("@/services/issue-provider/factory");
+    createAdapter.mockReturnValueOnce({
+      fetchAssignedIssues: mockFetchAssigned,
+      fetchUnassignedIssues: mockFetchUnassigned,
+    });
+
+    const mockUpsert = prisma.issue.upsert as jest.Mock;
+    mockUpsert.mockResolvedValue({});
+    (prisma.project.update as jest.Mock).mockResolvedValue({});
+
+    await syncProviders("user-1");
+
+    expect(mockFetchUnassigned).toHaveBeenCalledWith("owner/repo");
+    expect(mockUpsert).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not call fetchUnassignedIssues when project.includeUnassigned is false", async () => {
+    mockFindMany.mockResolvedValue([
+      {
+        id: "provider-1",
+        type: "GITHUB",
+        encryptedCredentials: "encrypted",
+        userId: "user-1",
+        projects: [{ id: "project-1", externalId: "owner/repo", includeUnassigned: false }],
+      },
+    ]);
+
+    const mockFetchUnassigned = jest.fn().mockResolvedValue([]);
+
+    const { createAdapter } = jest.requireMock("@/services/issue-provider/factory");
+    createAdapter.mockReturnValueOnce({
+      fetchAssignedIssues: jest.fn().mockResolvedValue([]),
+      fetchUnassignedIssues: mockFetchUnassigned,
+    });
+
+    (prisma.project.update as jest.Mock).mockResolvedValue({});
+
+    await syncProviders("user-1");
+
+    expect(mockFetchUnassigned).not.toHaveBeenCalled();
+  });
+
+  it("deduplicates: assigned issue takes priority over unassigned for same externalId", async () => {
+    mockFindMany.mockResolvedValue([
+      {
+        id: "provider-1",
+        type: "GITHUB",
+        encryptedCredentials: "encrypted",
+        userId: "user-1",
+        projects: [{ id: "project-1", externalId: "owner/repo", includeUnassigned: true }],
+      },
+    ]);
+
+    const assignedIssue = { externalId: "42", title: "Bug", status: "OPEN", priority: "MEDIUM", dueDate: null, externalUrl: "https://ex.com/42", isUnassigned: false };
+    const unassignedIssue = { externalId: "42", title: "Bug", status: "OPEN", priority: "MEDIUM", dueDate: null, externalUrl: "https://ex.com/42", isUnassigned: true };
+
+    const { createAdapter } = jest.requireMock("@/services/issue-provider/factory");
+    createAdapter.mockReturnValueOnce({
+      fetchAssignedIssues: jest.fn().mockResolvedValue([assignedIssue]),
+      fetchUnassignedIssues: jest.fn().mockResolvedValue([unassignedIssue]),
+    });
+
+    const mockUpsert = prisma.issue.upsert as jest.Mock;
+    mockUpsert.mockResolvedValue({});
+    (prisma.project.update as jest.Mock).mockResolvedValue({});
+
+    await syncProviders("user-1");
+
+    // Only one upsert — the duplicate unassigned is filtered out
+    expect(mockUpsert).toHaveBeenCalledTimes(1);
+    expect(mockUpsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        create: expect.objectContaining({ isUnassigned: false }),
+      })
+    );
+  });
+
+  it("still upserts assigned issues when fetchUnassignedIssues fails", async () => {
+    mockFindMany.mockResolvedValue([
+      {
+        id: "provider-1",
+        type: "GITHUB",
+        encryptedCredentials: "encrypted",
+        userId: "user-1",
+        projects: [{ id: "project-1", externalId: "owner/repo", includeUnassigned: true }],
+      },
+    ]);
+
+    const { createAdapter } = jest.requireMock("@/services/issue-provider/factory");
+    createAdapter.mockReturnValueOnce({
+      fetchAssignedIssues: jest.fn().mockResolvedValue([
+        { externalId: "1", title: "Assigned", status: "OPEN", priority: "MEDIUM", dueDate: null, externalUrl: "https://ex.com/1", isUnassigned: false },
+      ]),
+      fetchUnassignedIssues: jest.fn().mockRejectedValue(new Error("Unassigned fetch failed")),
+    });
+
+    const mockUpsert = prisma.issue.upsert as jest.Mock;
+    mockUpsert.mockResolvedValue({});
+    (prisma.project.update as jest.Mock).mockResolvedValue({});
+
+    await syncProviders("user-1");
+
+    // Assigned issues still upserted despite unassigned fetch failure
+    expect(mockUpsert).toHaveBeenCalledTimes(1);
+    expect(mockUpsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          projectId_externalId: { projectId: "project-1", externalId: "1" },
         }),
       })
     );

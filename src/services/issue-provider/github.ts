@@ -87,6 +87,33 @@ export class GitHubAdapter implements IssueProviderAdapter {
       priority: IssuePriority.MEDIUM,
       dueDate: issue.milestone?.due_on ? new Date(issue.milestone.due_on) : null,
       externalUrl: issue.html_url,
+      isUnassigned: false,
+    }));
+  }
+
+  async fetchUnassignedIssues(projectExternalId: string): Promise<NormalizedIssue[]> {
+    const [owner, repo] = projectExternalId.split("/");
+    const issues: GitHubIssue[] = [];
+    let page = 1;
+
+    while (true) {
+      const { data } = await this.client.get<GitHubIssue[]>(
+        `/repos/${owner}/${repo}/issues`,
+        { params: { state: "open", assignee: "none", per_page: 100, page } }
+      );
+      issues.push(...data);
+      if (data.length < 100) break;
+      page++;
+    }
+
+    return issues.map((issue) => ({
+      externalId: String(issue.number),
+      title: issue.title,
+      status: issue.state === "open" ? IssueStatus.OPEN : IssueStatus.CLOSED,
+      priority: IssuePriority.MEDIUM,
+      dueDate: issue.milestone?.due_on ? new Date(issue.milestone.due_on) : null,
+      externalUrl: issue.html_url,
+      isUnassigned: true,
     }));
   }
 

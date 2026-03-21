@@ -135,6 +135,49 @@ describe("GitHubAdapter", () => {
     });
   });
 
+  describe("fetchUnassignedIssues", () => {
+    it("fetches issues with assignee=none and sets isUnassigned: true", async () => {
+      mockAxiosInstance.get.mockResolvedValueOnce({
+        data: [
+          {
+            number: 99,
+            title: "Unassigned bug",
+            state: "open",
+            html_url: "https://github.com/owner/repo/issues/99",
+          },
+        ],
+      });
+
+      const issues = await adapter.fetchUnassignedIssues("owner/repo");
+      expect(issues).toHaveLength(1);
+      expect(issues[0].isUnassigned).toBe(true);
+      expect(issues[0].externalId).toBe("99");
+    });
+
+    it("passes assignee=none param to the API", async () => {
+      mockAxiosInstance.get.mockResolvedValueOnce({ data: [] });
+
+      await adapter.fetchUnassignedIssues("owner/repo");
+
+      expect(mockAxiosInstance.get).toHaveBeenCalledWith(
+        "/repos/owner/repo/issues",
+        expect.objectContaining({ params: expect.objectContaining({ assignee: "none" }) })
+      );
+    });
+  });
+
+  describe("fetchAssignedIssues isUnassigned field", () => {
+    it("sets isUnassigned: false on all returned issues", async () => {
+      mockAxiosInstance.get.mockResolvedValueOnce({ data: { login: "testuser" } });
+      mockAxiosInstance.get.mockResolvedValueOnce({
+        data: [{ number: 1, title: "My issue", state: "open", html_url: "https://github.com/owner/repo/issues/1" }],
+      });
+
+      const issues = await adapter.fetchAssignedIssues("owner/repo");
+      expect(issues[0].isUnassigned).toBe(false);
+    });
+  });
+
   describe("closeIssue / reopenIssue", () => {
     it("patches issue state to closed", async () => {
       mockAxiosInstance.patch.mockResolvedValue({ data: {} });
@@ -231,6 +274,69 @@ describe("JiraAdapter", () => {
 
       const issues = await adapter.fetchAssignedIssues("PROJ");
       expect(issues[0].status).toBe("CLOSED");
+    });
+  });
+
+  describe("fetchUnassignedIssues", () => {
+    it("fetches issues with JQL assignee is EMPTY and sets isUnassigned: true", async () => {
+      mockAxiosInstance.get.mockResolvedValue({
+        data: {
+          issues: [
+            {
+              id: "20001",
+              key: "PROJ-5",
+              fields: {
+                summary: "Unassigned task",
+                status: { statusCategory: { key: "indeterminate" } },
+              },
+            },
+          ],
+          total: 1,
+        },
+      });
+
+      const issues = await adapter.fetchUnassignedIssues("PROJ");
+      expect(issues).toHaveLength(1);
+      expect(issues[0].isUnassigned).toBe(true);
+      expect(issues[0].externalId).toBe("PROJ-5");
+    });
+
+    it("passes correct JQL with assignee is EMPTY", async () => {
+      mockAxiosInstance.get.mockResolvedValue({ data: { issues: [], total: 0 } });
+
+      await adapter.fetchUnassignedIssues("PROJ");
+
+      expect(mockAxiosInstance.get).toHaveBeenCalledWith(
+        "/search",
+        expect.objectContaining({
+          params: expect.objectContaining({
+            jql: expect.stringContaining("assignee is EMPTY"),
+          }),
+        })
+      );
+    });
+  });
+
+  describe("fetchAssignedIssues isUnassigned field", () => {
+    it("sets isUnassigned: false on all returned issues", async () => {
+      mockAxiosInstance.get.mockResolvedValue({
+        data: {
+          issues: [
+            {
+              id: "10001",
+              key: "PROJ-1",
+              fields: {
+                summary: "My issue",
+                status: { statusCategory: { key: "indeterminate" } },
+              },
+            },
+          ],
+          total: 1,
+        },
+      });
+
+      const issues = await adapter.fetchAssignedIssues("PROJ");
+      expect(issues[0].isUnassigned).toBe(false);
     });
   });
 
@@ -333,6 +439,106 @@ describe("RedmineAdapter", () => {
       mockAxiosInstance.get.mockResolvedValue({ data: {} });
       await adapter.testConnection();
       expect(mockAxiosInstance.get).toHaveBeenCalledWith("/users/current.json");
+    });
+  });
+
+  describe("fetchUnassignedIssues", () => {
+    it("fetches open issues without assigned_to and sets isUnassigned: true", async () => {
+      mockAxiosInstance.get.mockResolvedValue({
+        data: {
+          issues: [
+            {
+              id: 201,
+              subject: "Unassigned task",
+              status: { id: 1, name: "New", is_closed: false },
+              // no assigned_to field
+            },
+            {
+              id: 202,
+              subject: "Assigned task",
+              status: { id: 1, name: "New", is_closed: false },
+              assigned_to: { id: 5, name: "Alice" },
+            },
+          ],
+          total_count: 2,
+        },
+      });
+
+      const issues = await adapter.fetchUnassignedIssues("my-project");
+      expect(issues).toHaveLength(1);
+      expect(issues[0].externalId).toBe("201");
+      expect(issues[0].isUnassigned).toBe(true);
+    });
+
+    it("passes status_id=open to the API", async () => {
+      mockAxiosInstance.get.mockResolvedValue({ data: { issues: [], total_count: 0 } });
+
+      await adapter.fetchUnassignedIssues("my-project");
+
+      expect(mockAxiosInstance.get).toHaveBeenCalledWith(
+        "/issues.json",
+        expect.objectContaining({ params: expect.objectContaining({ status_id: "open" }) })
+      );
+    });
+
+    it("paginates across multiple pages and returns only unassigned issues", async () => {
+      // Page 1: 100 issues, 50 unassigned + 50 assigned; total_count = 150
+      const page1Issues = [
+        ...Array.from({ length: 50 }, (_, i) => ({
+          id: i + 1,
+          subject: `Unassigned ${i + 1}`,
+          status: { id: 1, name: "New", is_closed: false },
+        })),
+        ...Array.from({ length: 50 }, (_, i) => ({
+          id: i + 51,
+          subject: `Assigned ${i + 51}`,
+          status: { id: 1, name: "New", is_closed: false },
+          assigned_to: { id: 1, name: "Alice" },
+        })),
+      ];
+      // Page 2: 50 issues, all unassigned
+      const page2Issues = Array.from({ length: 50 }, (_, i) => ({
+        id: i + 101,
+        subject: `Unassigned page2 ${i + 101}`,
+        status: { id: 1, name: "New", is_closed: false },
+      }));
+
+      mockAxiosInstance.get
+        .mockResolvedValueOnce({ data: { issues: page1Issues, total_count: 150 } })
+        .mockResolvedValueOnce({ data: { issues: page2Issues, total_count: 150 } });
+
+      const issues = await adapter.fetchUnassignedIssues("my-project");
+
+      // 50 unassigned from page 1 + 50 from page 2 = 100
+      expect(issues).toHaveLength(100);
+      expect(issues.every((i) => i.isUnassigned)).toBe(true);
+      expect(mockAxiosInstance.get).toHaveBeenCalledTimes(2);
+      expect(mockAxiosInstance.get).toHaveBeenNthCalledWith(
+        2,
+        "/issues.json",
+        expect.objectContaining({ params: expect.objectContaining({ offset: 100 }) })
+      );
+    });
+  });
+
+  describe("fetchAssignedIssues isUnassigned field", () => {
+    it("sets isUnassigned: false on all returned issues", async () => {
+      mockAxiosInstance.get.mockResolvedValue({
+        data: {
+          issues: [
+            {
+              id: 123,
+              subject: "Fix server",
+              status: { id: 1, name: "New", is_closed: false },
+              assigned_to: { id: 1, name: "Me" },
+            },
+          ],
+          total_count: 1,
+        },
+      });
+
+      const issues = await adapter.fetchAssignedIssues("my-project");
+      expect(issues[0].isUnassigned).toBe(false);
     });
   });
 

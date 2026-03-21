@@ -45,6 +45,7 @@ export async function GET(req: NextRequest) {
         priority: true,
         dueDate: true,
         externalUrl: true,
+        isUnassigned: true,
         project: {
           select: {
             displayName: true,

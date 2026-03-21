@@ -48,7 +48,9 @@
       "REDMINE": "Redmine"
     },
     "dueDate": "Due: {date}",
-    "noDueDate": "No due date"
+    "noDueDate": "No due date",
+    "unassignedChipLabel": "Unassigned",
+    "unassignedChipTooltip": "No assignee"
   },
   "providers": {
     "title": "Issue Tracker Settings",
@@ -103,7 +105,9 @@
     "goToProviders": "Go to Issue Tracker Settings",
     "alreadyRegistered": "Already added",
     "add": "Add Selected",
-    "searchProjects": "Search projects..."
+    "searchProjects": "Search projects...",
+    "includeUnassigned": "Include unassigned issues",
+    "includeUnassignedHint": "Also sync issues with no assignee"
   },
   "admin": {
     "userManagement": "User Management",

@@ -17,6 +17,7 @@ interface Issue {
   priority: Priority;
   dueDate: string | null;
   externalUrl: string;
+  isUnassigned: boolean;
   project: {
     displayName: string;
     issueProvider: { iconUrl: string | null; displayName: string };
@@ -86,10 +87,6 @@ export default function DashboardPage() {
           setIsSyncing(false);
           return;
         }
-      }
-
-      if (!cancelled) {
-        await fetchIssues(page);
       }
 
       if (!cancelled) {

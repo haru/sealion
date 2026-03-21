@@ -98,6 +98,37 @@ export class JiraAdapter implements IssueProviderAdapter {
         priority: mapPriority(issue.fields.priority?.name),
         dueDate: issue.fields.duedate ? new Date(issue.fields.duedate) : null,
         externalUrl: `${this.baseUrl}/browse/${issue.key}`,
+        isUnassigned: false,
+      };
+    });
+  }
+
+  async fetchUnassignedIssues(projectExternalId: string): Promise<NormalizedIssue[]> {
+    const jql = `project = "${projectExternalId}" AND assignee is EMPTY AND statusCategory != Done ORDER BY created DESC`;
+    const issues: JiraIssue[] = [];
+    let startAt = 0;
+    const maxResults = 100;
+
+    while (true) {
+      const { data } = await this.client.get<{ issues: JiraIssue[]; total: number }>(
+        "/search",
+        { params: { jql, startAt, maxResults, fields: "summary,status,priority,duedate" } }
+      );
+      issues.push(...data.issues);
+      if (issues.length >= data.total) break;
+      startAt += maxResults;
+    }
+
+    return issues.map((issue) => {
+      const isDone = issue.fields.status.statusCategory.key === "done";
+      return {
+        externalId: issue.key,
+        title: issue.fields.summary,
+        status: isDone ? IssueStatus.CLOSED : IssueStatus.OPEN,
+        priority: mapPriority(issue.fields.priority?.name),
+        dueDate: issue.fields.duedate ? new Date(issue.fields.duedate) : null,
+        externalUrl: `${this.baseUrl}/browse/${issue.key}`,
+        isUnassigned: true,
       };
     });
   }

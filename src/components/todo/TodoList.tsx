@@ -15,6 +15,7 @@ interface Issue {
   priority: Priority;
   dueDate: string | null;
   externalUrl: string;
+  isUnassigned: boolean;
   project: {
     displayName: string;
     issueProvider: { iconUrl: string | null; displayName: string };
@@ -69,6 +70,7 @@ export default function TodoList({
           priority={issue.priority}
           dueDate={issue.dueDate}
           externalUrl={issue.externalUrl}
+          isUnassigned={issue.isUnassigned}
           providerIconUrl={issue.project.issueProvider.iconUrl}
           providerName={issue.project.issueProvider.displayName}
           projectName={issue.project.displayName}

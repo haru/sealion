@@ -64,6 +64,7 @@ describe("GET /api/projects", () => {
         displayName: "alpha",
         lastSyncedAt: null,
         syncError: null,
+        includeUnassigned: false,
         issueProvider: { id: "p1", displayName: "My GitHub", type: "GITHUB" },
       },
       {
@@ -72,6 +73,7 @@ describe("GET /api/projects", () => {
         displayName: "beta",
         lastSyncedAt: null,
         syncError: null,
+        includeUnassigned: true,
         issueProvider: { id: "p1", displayName: "My GitHub", type: "GITHUB" },
       },
     ]);
@@ -83,6 +85,27 @@ describe("GET /api/projects", () => {
     expect(json.data).toHaveLength(2);
     expect(json.data[0].displayName).toBe("alpha");
     expect(json.data[0].issueProvider.type).toBe("GITHUB");
+  });
+
+  it("includes includeUnassigned field in each project", async () => {
+    mockAuth.mockResolvedValue(SESSION);
+    mockProjectFindMany.mockResolvedValue([
+      {
+        id: "proj-1",
+        externalId: "org/repo",
+        displayName: "repo",
+        lastSyncedAt: null,
+        syncError: null,
+        includeUnassigned: true,
+        issueProvider: { id: "p1", displayName: "My GitHub", type: "GITHUB" },
+      },
+    ]);
+
+    const res = await GET();
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(json.data[0].includeUnassigned).toBe(true);
   });
 });
 

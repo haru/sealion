@@ -7,6 +7,7 @@ export interface NormalizedIssue {
   priority: IssuePriority;
   dueDate: Date | null;
   externalUrl: string;
+  isUnassigned: boolean;
 }
 
 export interface ExternalProject {
@@ -18,6 +19,7 @@ export interface IssueProviderAdapter {
   testConnection(): Promise<void>;
   listProjects(): Promise<ExternalProject[]>;
   fetchAssignedIssues(projectExternalId: string): Promise<NormalizedIssue[]>;
+  fetchUnassignedIssues(projectExternalId: string): Promise<NormalizedIssue[]>;
   closeIssue(projectExternalId: string, issueExternalId: string): Promise<void>;
   reopenIssue(projectExternalId: string, issueExternalId: string): Promise<void>;
 }
