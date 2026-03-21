@@ -14,7 +14,12 @@ jest.mock("@/lib/db", () => ({
     project: {
       update: jest.fn(),
     },
-    $transaction: jest.fn().mockImplementation((ops: Promise<unknown>[]) => Promise.all(ops)),
+    $transaction: jest.fn().mockImplementation((fnOrOps: unknown) => {
+      if (typeof fnOrOps === "function") {
+        return (fnOrOps as (tx: unknown) => Promise<unknown>)(prisma);
+      }
+      return Promise.all(fnOrOps as Promise<unknown>[]);
+    }),
   },
 }));
 

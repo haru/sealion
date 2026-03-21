@@ -59,11 +59,9 @@ test.describe("TODO List Display", () => {
       });
     });
 
-    // First /api/issues call returns 0 items (pre-sync), subsequent calls return 1 item
-    let issuesCallCount = 0;
+    // /api/issues returns the item only after sync has completed (pollCount >= 3)
     await page.route("/api/issues*", async (route) => {
-      issuesCallCount++;
-      const items = issuesCallCount > 1
+      const items = pollCount >= 3
         ? [{ id: "i1", title: "Synced Issue", status: "OPEN", priority: "MEDIUM", dueDate: null, externalUrl: "https://example.com", project: { displayName: "repo", issueProvider: { iconUrl: null, displayName: "GitHub" } } }]
         : [];
       await route.fulfill({
@@ -75,7 +73,10 @@ test.describe("TODO List Display", () => {
 
     await page.goto("/");
 
-    // Wait until the synced issue appears in the list (proves issues were re-fetched after sync)
+    // Issue must NOT be visible before sync completes
+    await expect(page.getByText("Synced Issue")).not.toBeVisible();
+
+    // Wait until the synced issue appears — proves the re-fetch was triggered by sync completion
     await expect(page.getByText("Synced Issue")).toBeVisible({ timeout: 30000 });
   });
 });

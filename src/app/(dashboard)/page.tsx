@@ -82,24 +82,14 @@ export default function DashboardPage() {
 
         const since = syncStartedAtRef.current;
         if (since && allProjectsSynced(providers, since)) {
-          const issueRes = await fetch(`/api/issues?page=${page}&limit=20`);
-          if (!cancelled && issueRes.ok) {
-            const json = await issueRes.json();
-            setIssues(json.data.items);
-            setTotal(json.data.total);
-          }
+          if (!cancelled) await fetchIssues(page);
           setIsSyncing(false);
           return;
         }
       }
 
       if (!cancelled) {
-        const issueRes = await fetch(`/api/issues?page=${page}&limit=20`);
-        if (!cancelled && issueRes.ok) {
-          const json = await issueRes.json();
-          setIssues(json.data.items);
-          setTotal(json.data.total);
-        }
+        await fetchIssues(page);
       }
 
       if (!cancelled) {
@@ -120,7 +110,7 @@ export default function DashboardPage() {
       clearTimeout(pollTimeout);
       clearTimeout(safetyTimeout);
     };
-  }, [isSyncing, page]);
+  }, [isSyncing, page, fetchIssues]);
 
   useEffect(() => {
     async function init() {

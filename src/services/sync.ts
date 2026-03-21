@@ -37,49 +37,52 @@ export async function syncProviders(userId: string): Promise<void> {
                 const issues = await adapter.fetchAssignedIssues(project.externalId);
                 const now = new Date();
 
-                await prisma.$transaction(
-                  issues.map((issue) =>
-                    prisma.issue.upsert({
-                      where: {
-                        projectId_externalId: {
+                const returnedExternalIds = issues.map((i) => i.externalId);
+
+                await prisma.$transaction(async (tx) => {
+                  await Promise.all(
+                    issues.map((issue) =>
+                      tx.issue.upsert({
+                        where: {
+                          projectId_externalId: {
+                            projectId: project.id,
+                            externalId: issue.externalId,
+                          },
+                        },
+                        update: {
+                          title: issue.title,
+                          status: issue.status,
+                          priority: issue.priority,
+                          dueDate: issue.dueDate,
+                          externalUrl: issue.externalUrl,
+                          lastSyncedAt: now,
+                        },
+                        create: {
                           projectId: project.id,
                           externalId: issue.externalId,
+                          title: issue.title,
+                          status: issue.status,
+                          priority: issue.priority,
+                          dueDate: issue.dueDate,
+                          externalUrl: issue.externalUrl,
+                          lastSyncedAt: now,
                         },
-                      },
-                      update: {
-                        title: issue.title,
-                        status: issue.status,
-                        priority: issue.priority,
-                        dueDate: issue.dueDate,
-                        externalUrl: issue.externalUrl,
-                        lastSyncedAt: now,
-                      },
-                      create: {
-                        projectId: project.id,
-                        externalId: issue.externalId,
-                        title: issue.title,
-                        status: issue.status,
-                        priority: issue.priority,
-                        dueDate: issue.dueDate,
-                        externalUrl: issue.externalUrl,
-                        lastSyncedAt: now,
-                      },
-                    })
-                  )
-                );
+                      })
+                    )
+                  );
 
-                // Delete issues that were not returned (closed or unassigned externally)
-                const returnedExternalIds = issues.map((i) => i.externalId);
-                await prisma.issue.deleteMany({
-                  where: {
-                    projectId: project.id,
-                    externalId: { notIn: returnedExternalIds },
-                  },
-                });
+                  // Delete issues not returned (closed or unassigned externally)
+                  await tx.issue.deleteMany({
+                    where: {
+                      projectId: project.id,
+                      externalId: { notIn: returnedExternalIds },
+                    },
+                  });
 
-                await prisma.project.update({
-                  where: { id: project.id },
-                  data: { lastSyncedAt: now, syncError: null },
+                  await tx.project.update({
+                    where: { id: project.id },
+                    data: { lastSyncedAt: now, syncError: null },
+                  });
                 });
               } catch (err) {
                 const isRateLimit =
