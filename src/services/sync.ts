@@ -47,8 +47,9 @@ export async function syncProviders(userId: string): Promise<void> {
                       (i) => !assignedIds.has(i.externalId)
                     );
                     allIssues = [...assignedIssues, ...filteredUnassigned];
-                  } catch {
-                    // fetchUnassignedIssues failure is non-fatal: sync continues with assigned issues only.
+                  } catch (unassignedError) {
+                    // Treat fetchUnassignedIssues failure as fatal to avoid deleting valid unassigned issues.
+                    throw unassignedError;
                   }
                 }
 

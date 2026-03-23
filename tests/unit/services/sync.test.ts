@@ -470,7 +470,7 @@ describe("syncProviders", () => {
     );
   });
 
-  it("still upserts assigned issues when fetchUnassignedIssues fails", async () => {
+  it("marks project as SYNC_FAILED when fetchUnassignedIssues fails", async () => {
     mockFindMany.mockResolvedValue([
       {
         id: "provider-1",
@@ -495,13 +495,13 @@ describe("syncProviders", () => {
 
     await syncProviders("user-1");
 
-    // Assigned issues still upserted despite unassigned fetch failure
-    expect(mockUpsert).toHaveBeenCalledTimes(1);
-    expect(mockUpsert).toHaveBeenCalledWith(
+    // Unassigned fetch failure is fatal — no upserts should occur (avoids deleting valid issues)
+    expect(mockUpsert).not.toHaveBeenCalled();
+    // Project should be marked as failed
+    expect(prisma.project.update).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: expect.objectContaining({
-          projectId_externalId: { projectId: "project-1", externalId: "1" },
-        }),
+        where: { id: "project-1" },
+        data: expect.objectContaining({ syncError: "SYNC_FAILED" }),
       })
     );
   });
