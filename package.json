@@ -22,7 +22,7 @@
     "@prisma/adapter-pg": "^7.5.0",
     "@prisma/client": "^7.5.0",
     "@prisma/config": "^7.5.0",
-    "@types/pg": "^8.18.0",
+    "@types/pg": "^8.20.0",
     "axios": "^1.13.6",
     "bcryptjs": "^3.0.3",
     "next": "16.2.1",
