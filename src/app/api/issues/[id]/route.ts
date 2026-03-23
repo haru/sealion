@@ -34,7 +34,7 @@ async function handleStatusUpdate(
           id: true,
           externalId: true,
           issueProvider: {
-            select: { type: true, encryptedCredentials: true, userId: true },
+            select: { type: true, encryptedCredentials: true, baseUrl: true, userId: true },
           },
         },
       },
@@ -43,7 +43,8 @@ async function handleStatusUpdate(
 
   if (!issue) return fail("FORBIDDEN", 403);
 
-  const credentials = JSON.parse(decrypt(issue.project.issueProvider.encryptedCredentials));
+  const decryptedCredentials = JSON.parse(decrypt(issue.project.issueProvider.encryptedCredentials));
+  const credentials = { ...decryptedCredentials, ...(issue.project.issueProvider.baseUrl ? { baseUrl: issue.project.issueProvider.baseUrl } : {}) };
   const adapter = createAdapter(issue.project.issueProvider.type as never, credentials);
 
   try {
