@@ -112,7 +112,7 @@ export default function IssueCard({
               variant="body1"
               sx={{ textDecoration: isComplete ? "line-through" : "none", wordBreak: "break-word" }}
             >
-              {`${externalId} ${title}`}
+              {`#${externalId} ${title}`}
             </Typography>
             <Stack direction="row" spacing={1} sx={{ mt: 1, flexWrap: "wrap", gap: 0.5 }}>
               <Chip
