@@ -7,7 +7,7 @@ jest.mock("@/lib/db", () => ({
   prisma: {
     issue: {
       findMany: jest.fn(),
-      update: jest.fn().mockResolvedValue({}),
+      updateMany: jest.fn().mockResolvedValue({ count: 1 }),
     },
     $transaction: jest.fn(),
   },
@@ -18,7 +18,7 @@ import { prisma } from "@/lib/db";
 
 const mockAuth = auth as jest.Mock;
 const mockFindMany = prisma.issue.findMany as jest.Mock;
-const mockUpdate = prisma.issue.update as jest.Mock;
+const mockUpdateMany = prisma.issue.updateMany as jest.Mock;
 const mockTransaction = prisma.$transaction as jest.Mock;
 
 const SESSION = { user: { id: "user-1", email: "u@example.com", role: "USER" } };
@@ -56,25 +56,34 @@ describe("PATCH /api/issues/today/reorder", () => {
     expect(mockTransaction).toHaveBeenCalled();
   });
 
-  it("assigns todayOrder 1,2,3 matching the given orderedIds sequence", async () => {
+  it("assigns todayOrder 1,2,3 matching the given orderedIds sequence with ownership check", async () => {
     mockFindMany.mockResolvedValue(TODAY_ISSUES);
 
     const req = makeRequest({ orderedIds: ["i3", "i1", "i2"] });
     await PATCH(req);
 
-    // prisma.issue.update is called once per id before being passed to $transaction
-    expect(mockUpdate).toHaveBeenCalledTimes(3);
-    expect(mockUpdate).toHaveBeenNthCalledWith(
+    // prisma.issue.updateMany is called once per id before being passed to $transaction
+    expect(mockUpdateMany).toHaveBeenCalledTimes(3);
+    expect(mockUpdateMany).toHaveBeenNthCalledWith(
       1,
-      expect.objectContaining({ where: { id: "i3" }, data: { todayOrder: 1 } })
+      expect.objectContaining({
+        where: expect.objectContaining({ id: "i3", project: { issueProvider: { userId: "user-1" } } }),
+        data: { todayOrder: 1 },
+      })
     );
-    expect(mockUpdate).toHaveBeenNthCalledWith(
+    expect(mockUpdateMany).toHaveBeenNthCalledWith(
       2,
-      expect.objectContaining({ where: { id: "i1" }, data: { todayOrder: 2 } })
+      expect.objectContaining({
+        where: expect.objectContaining({ id: "i1" }),
+        data: { todayOrder: 2 },
+      })
     );
-    expect(mockUpdate).toHaveBeenNthCalledWith(
+    expect(mockUpdateMany).toHaveBeenNthCalledWith(
       3,
-      expect.objectContaining({ where: { id: "i2" }, data: { todayOrder: 3 } })
+      expect.objectContaining({
+        where: expect.objectContaining({ id: "i2" }),
+        data: { todayOrder: 3 },
+      })
     );
   });
 

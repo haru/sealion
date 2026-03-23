@@ -41,11 +41,12 @@ export async function PATCH(req: NextRequest) {
     return fail("FORBIDDEN", 403);
   }
 
-  // Update todayOrder for each issue in a transaction (Last Write Wins)
+  // Update todayOrder for each issue in a transaction (Last Write Wins).
+  // Ownership is re-enforced inside the transaction as defense-in-depth.
   await prisma.$transaction(
     orderedIds.map((id, index) =>
-      prisma.issue.update({
-        where: { id },
+      prisma.issue.updateMany({
+        where: { id, project: { issueProvider: { userId: session.user.id } } },
         data: { todayOrder: index + 1 },
       })
     )

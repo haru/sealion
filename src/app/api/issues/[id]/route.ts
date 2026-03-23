@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db";
 import { decrypt } from "@/lib/encryption";
 import { ok, fail } from "@/lib/api-response";
 import { createAdapter } from "@/services/issue-provider/factory";
-import { IssueStatus } from "@prisma/client";
+import { Prisma, IssueStatus } from "@prisma/client";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -101,23 +101,28 @@ async function handleTodayFlagUpdate(id: string, todayFlag: boolean, userId: str
       return ok({ id: issue.id, todayFlag: issue.todayFlag, todayOrder: issue.todayOrder, todayAddedAt: issue.todayAddedAt });
     }
 
-    const updated = await prisma.$transaction(async (tx) => {
-      const todayCount = await tx.issue.count({
-        where: {
-          todayFlag: true,
-          project: { issueProvider: { userId } },
-        },
-      });
-      return tx.issue.update({
-        where: { id },
-        data: {
-          todayFlag: true,
-          todayOrder: todayCount + 1,
-          todayAddedAt: new Date(),
-        },
-        select: { id: true, todayFlag: true, todayOrder: true, todayAddedAt: true },
-      });
-    });
+    // Use Serializable isolation so that concurrent flag requests cannot
+    // read the same count and assign duplicate todayOrder values.
+    const updated = await prisma.$transaction(
+      async (tx) => {
+        const todayCount = await tx.issue.count({
+          where: {
+            todayFlag: true,
+            project: { issueProvider: { userId } },
+          },
+        });
+        return tx.issue.update({
+          where: { id },
+          data: {
+            todayFlag: true,
+            todayOrder: todayCount + 1,
+            todayAddedAt: new Date(),
+          },
+          select: { id: true, todayFlag: true, todayOrder: true, todayAddedAt: true },
+        });
+      },
+      { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }
+    );
 
     return ok(updated);
   }

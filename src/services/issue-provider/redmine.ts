@@ -28,6 +28,7 @@ interface RedmineIssueStatus {
 /**
  * Maps a Redmine priority name to the internal {@link IssuePriority} enum.
  * @param name - The Redmine priority name (case-insensitive).
+ * @returns The corresponding {@link IssuePriority} value; defaults to `MEDIUM`.
  */
 function mapPriority(name?: string): IssuePriority {
   switch (name?.toLowerCase()) {
@@ -121,11 +122,16 @@ export class RedmineAdapter implements IssueProviderAdapter {
     // `assigned_to_id` only accepts a numeric user ID or the special value "me" —
     // there is no "none" token. We therefore fetch all open issues and filter
     // client-side for those without an `assigned_to` field.
+    // MAX_PAGES guards against unbounded memory use; if the cap is reached with
+    // remaining pages, we throw so the caller does not delete issues we never saw.
+    const MAX_PAGES = 20;
     const allOpenIssues: RedmineIssue[] = [];
     let offset = 0;
     const limit = 100;
+    let fetchedPages = 0;
+    let serverTotal = 0;
 
-    while (true) {
+    while (fetchedPages < MAX_PAGES) {
       const { data } = await this.client.get<{
         issues: RedmineIssue[];
         total_count: number;
@@ -138,8 +144,18 @@ export class RedmineAdapter implements IssueProviderAdapter {
         },
       });
       allOpenIssues.push(...data.issues);
+      serverTotal = data.total_count ?? 0;
+      fetchedPages++;
       if (!data.total_count || allOpenIssues.length >= data.total_count) break;
       offset += limit;
+    }
+
+    if (allOpenIssues.length < serverTotal) {
+      throw new Error(
+        `Redmine unassigned issues fetch truncated at ${MAX_PAGES} pages ` +
+          `(fetched ${allOpenIssues.length} of ${serverTotal}); ` +
+          `skipping sync to avoid deleting issues beyond the page cap`
+      );
     }
 
     return allOpenIssues

@@ -1,4 +1,5 @@
 import pLimit from "p-limit";
+import type { AxiosError } from "axios";
 import { prisma } from "@/lib/db";
 import { decrypt } from "@/lib/encryption";
 import { createAdapter } from "@/services/issue-provider/factory";
@@ -46,11 +47,9 @@ export async function syncProviders(userId: string): Promise<void> {
                       (i) => !assignedIds.has(i.externalId)
                     );
                     allIssues = [...assignedIssues, ...filteredUnassigned];
-                  } catch (unassignedErr) {
-                    console.error(
-                      `[sync] fetchUnassignedIssues failed for project ${project.externalId}:`,
-                      unassignedErr
-                    );
+                  } catch (unassignedError) {
+                    // Treat fetchUnassignedIssues failure as fatal to avoid deleting valid unassigned issues.
+                    throw unassignedError;
                   }
                 }
 
@@ -113,11 +112,7 @@ export async function syncProviders(userId: string): Promise<void> {
                   });
                 });
               } catch (err) {
-                const isRateLimit =
-                  err instanceof Error &&
-                  (err.message.includes("rate limit") || err.message.includes("429"));
-
-                console.error(`[sync] project ${project.externalId} failed:`, err);
+                const isRateLimit = (err as AxiosError)?.response?.status === 429;
 
                 await prisma.project.update({
                   where: { id: project.id },

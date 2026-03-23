@@ -1,6 +1,7 @@
 /** @jest-environment node */
 import { PATCH } from "@/app/api/issues/[id]/route";
 import { NextRequest } from "next/server";
+import { Prisma } from "@prisma/client";
 
 jest.mock("@/lib/auth", () => ({ auth: jest.fn() }));
 jest.mock("@/lib/db", () => ({
@@ -176,5 +177,18 @@ describe("PATCH /api/issues/[id] — todayFlag", () => {
     const res = await PATCH(req, { params: Promise.resolve({ id: "issue-1" }) });
 
     expect(res.status).toBe(403);
+  });
+
+  it("uses Serializable isolation when setting todayFlag=true", async () => {
+    mockFindFirst.mockResolvedValue(MOCK_ISSUE);
+    mockUpdate.mockResolvedValue({ id: "issue-1", todayFlag: true, todayOrder: 1, todayAddedAt: new Date() });
+
+    const req = makeRequest("issue-1", { todayFlag: true });
+    await PATCH(req, { params: Promise.resolve({ id: "issue-1" }) });
+
+    expect(mockTransaction).toHaveBeenCalledWith(
+      expect.any(Function),
+      { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }
+    );
   });
 });

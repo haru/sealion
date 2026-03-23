@@ -5,8 +5,7 @@ jest.mock("@/lib/auth", () => ({ auth: jest.fn() }));
 jest.mock("@/lib/db", () => ({
   prisma: {
     project: {
-      updateMany: jest.fn(),
-      findUnique: jest.fn(),
+      update: jest.fn(),
     },
   },
 }));
@@ -16,8 +15,7 @@ import { prisma } from "@/lib/db";
 import { PATCH } from "@/app/api/projects/[id]/route";
 
 const mockAuth = auth as jest.Mock;
-const mockUpdateMany = prisma.project.updateMany as jest.Mock;
-const mockFindUnique = prisma.project.findUnique as jest.Mock;
+const mockUpdate = prisma.project.update as jest.Mock;
 
 const SESSION = { user: { id: "user-1", email: "u@ex.com", role: "USER" } };
 
@@ -56,17 +54,18 @@ describe("PATCH /api/projects/[id]", () => {
     expect(res.status).toBe(400);
   });
 
-  it("returns 403 when project belongs to another user", async () => {
+  it("returns 403 when project is not found or not owned by user", async () => {
     mockAuth.mockResolvedValue(SESSION);
-    mockUpdateMany.mockResolvedValue({ count: 0 });
+    const notFoundError = Object.assign(new Error("Not found"), { code: "P2025" });
+    mockUpdate.mockRejectedValue(notFoundError);
+
     const res = await PATCH(makeRequest({ includeUnassigned: true }), makeParams());
     expect(res.status).toBe(403);
   });
 
   it("returns 200 with updated project when valid", async () => {
     mockAuth.mockResolvedValue(SESSION);
-    mockUpdateMany.mockResolvedValue({ count: 1 });
-    mockFindUnique.mockResolvedValue({ id: "proj-1", includeUnassigned: true });
+    mockUpdate.mockResolvedValue({ id: "proj-1", includeUnassigned: true });
 
     const res = await PATCH(makeRequest({ includeUnassigned: true }), makeParams());
     const json = await res.json();
@@ -76,28 +75,34 @@ describe("PATCH /api/projects/[id]", () => {
     expect(json.data.includeUnassigned).toBe(true);
   });
 
-  it("returns 404 when project is deleted between update and read (TOCTOU)", async () => {
-    mockAuth.mockResolvedValue(SESSION);
-    mockUpdateMany.mockResolvedValue({ count: 1 });
-    mockFindUnique.mockResolvedValue(null);
-
-    const res = await PATCH(makeRequest({ includeUnassigned: true }), makeParams());
-    expect(res.status).toBe(404);
-  });
-
   it("sets includeUnassigned to false when toggling off", async () => {
     mockAuth.mockResolvedValue(SESSION);
-    mockUpdateMany.mockResolvedValue({ count: 1 });
-    mockFindUnique.mockResolvedValue({ id: "proj-1", includeUnassigned: false });
+    mockUpdate.mockResolvedValue({ id: "proj-1", includeUnassigned: false });
 
     const res = await PATCH(makeRequest({ includeUnassigned: false }), makeParams());
     const json = await res.json();
 
     expect(res.status).toBe(200);
     expect(json.data.includeUnassigned).toBe(false);
-    expect(mockUpdateMany).toHaveBeenCalledWith(
+    expect(mockUpdate).toHaveBeenCalledWith(
       expect.objectContaining({
         data: { includeUnassigned: false },
+      })
+    );
+  });
+
+  it("enforces ownership via where clause in single atomic update", async () => {
+    mockAuth.mockResolvedValue(SESSION);
+    mockUpdate.mockResolvedValue({ id: "proj-1", includeUnassigned: true });
+
+    await PATCH(makeRequest({ includeUnassigned: true }), makeParams());
+
+    expect(mockUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          id: "proj-1",
+          issueProvider: { userId: "user-1" },
+        }),
       })
     );
   });

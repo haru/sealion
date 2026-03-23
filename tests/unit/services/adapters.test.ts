@@ -269,7 +269,7 @@ describe("JiraAdapter", () => {
 
   describe("fetchAssignedIssues", () => {
     it("normalizes Jira issues", async () => {
-      mockAxiosInstance.get.mockResolvedValue({
+      mockAxiosInstance.post.mockResolvedValue({
         data: {
           issues: [
             {
@@ -283,7 +283,6 @@ describe("JiraAdapter", () => {
               },
             },
           ],
-          total: 1,
         },
       });
 
@@ -297,7 +296,7 @@ describe("JiraAdapter", () => {
     });
 
     it("maps done status to CLOSED", async () => {
-      mockAxiosInstance.get.mockResolvedValue({
+      mockAxiosInstance.post.mockResolvedValue({
         data: {
           issues: [
             {
@@ -309,7 +308,6 @@ describe("JiraAdapter", () => {
               },
             },
           ],
-          total: 1,
         },
       });
 
@@ -320,7 +318,7 @@ describe("JiraAdapter", () => {
 
   describe("fetchUnassignedIssues", () => {
     it("fetches issues with JQL assignee is EMPTY and sets isUnassigned: true", async () => {
-      mockAxiosInstance.get.mockResolvedValue({
+      mockAxiosInstance.post.mockResolvedValue({
         data: {
           issues: [
             {
@@ -332,7 +330,6 @@ describe("JiraAdapter", () => {
               },
             },
           ],
-          total: 1,
         },
       });
 
@@ -343,16 +340,14 @@ describe("JiraAdapter", () => {
     });
 
     it("passes correct JQL with assignee is EMPTY", async () => {
-      mockAxiosInstance.get.mockResolvedValue({ data: { issues: [], total: 0 } });
+      mockAxiosInstance.post.mockResolvedValue({ data: { issues: [] } });
 
       await adapter.fetchUnassignedIssues("PROJ");
 
-      expect(mockAxiosInstance.get).toHaveBeenCalledWith(
-        "/search",
+      expect(mockAxiosInstance.post).toHaveBeenCalledWith(
+        "/search/jql",
         expect.objectContaining({
-          params: expect.objectContaining({
-            jql: expect.stringContaining("assignee is EMPTY"),
-          }),
+          jql: expect.stringContaining("assignee is EMPTY"),
         })
       );
     });
@@ -360,7 +355,7 @@ describe("JiraAdapter", () => {
 
   describe("fetchAssignedIssues isUnassigned field", () => {
     it("sets isUnassigned: false on all returned issues", async () => {
-      mockAxiosInstance.get.mockResolvedValue({
+      mockAxiosInstance.post.mockResolvedValue({
         data: {
           issues: [
             {
@@ -372,7 +367,6 @@ describe("JiraAdapter", () => {
               },
             },
           ],
-          total: 1,
         },
       });
 
@@ -383,7 +377,7 @@ describe("JiraAdapter", () => {
 
   describe("provider timestamps", () => {
     it("returns providerCreatedAt and providerUpdatedAt as Date when fields.created and fields.updated are present", async () => {
-      mockAxiosInstance.get.mockResolvedValue({
+      mockAxiosInstance.post.mockResolvedValue({
         data: {
           issues: [
             {
@@ -397,7 +391,6 @@ describe("JiraAdapter", () => {
               },
             },
           ],
-          total: 1,
         },
       });
 
@@ -407,7 +400,7 @@ describe("JiraAdapter", () => {
     });
 
     it("returns providerCreatedAt and providerUpdatedAt as null when fields.created/updated are absent", async () => {
-      mockAxiosInstance.get.mockResolvedValue({
+      mockAxiosInstance.post.mockResolvedValue({
         data: {
           issues: [
             {
@@ -419,7 +412,6 @@ describe("JiraAdapter", () => {
               },
             },
           ],
-          total: 1,
         },
       });
 
@@ -496,7 +488,6 @@ describe("JiraAdapter", () => {
           },
         },
       ],
-      total: 1,
     });
 
     it.each([
@@ -508,7 +499,7 @@ describe("JiraAdapter", () => {
       ["Trivial", "LOW"],
       ["Normal", "MEDIUM"],
     ])("maps Jira priority %s to %s", async (jiraPriority, expected) => {
-      mockAxiosInstance.get.mockResolvedValue({ data: makePriorityIssue(jiraPriority) });
+      mockAxiosInstance.post.mockResolvedValue({ data: makePriorityIssue(jiraPriority) });
       const issues = await adapter.fetchAssignedIssues("PROJ");
       expect(issues[0].priority).toBe(expected);
     });
