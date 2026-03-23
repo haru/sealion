@@ -24,6 +24,11 @@ interface JiraProject {
   name: string;
 }
 
+interface JiraSearchResponse {
+  issues: JiraIssue[];
+  nextPageToken?: string;
+}
+
 interface JiraTransition {
   id: string;
   name: string;
@@ -86,17 +91,16 @@ export class JiraAdapter implements IssueProviderAdapter {
   async fetchAssignedIssues(projectExternalId: string): Promise<NormalizedIssue[]> {
     const jql = `project = "${projectExternalId}" AND assignee = currentUser() AND statusCategory != Done ORDER BY created DESC`;
     const issues: JiraIssue[] = [];
-    let startAt = 0;
     const maxResults = 100;
+    let nextPageToken: string | undefined;
 
     while (true) {
-      const { data } = await this.client.get<{ issues: JiraIssue[]; total: number }>(
-        "/search",
-        { params: { jql, startAt, maxResults, fields: "summary,status,priority,duedate,created,updated" } }
-      );
+      const body: Record<string, unknown> = { jql, maxResults, fields: ["summary", "status", "priority", "duedate", "created", "updated"] };
+      if (nextPageToken) body.nextPageToken = nextPageToken;
+      const { data } = await this.client.post<JiraSearchResponse>("/search/jql", body);
       issues.push(...data.issues);
-      if (issues.length >= data.total) break;
-      startAt += maxResults;
+      if (!data.nextPageToken || data.issues.length < maxResults) break;
+      nextPageToken = data.nextPageToken;
     }
 
     return issues.map((issue) => {
@@ -119,17 +123,16 @@ export class JiraAdapter implements IssueProviderAdapter {
   async fetchUnassignedIssues(projectExternalId: string): Promise<NormalizedIssue[]> {
     const jql = `project = "${projectExternalId}" AND assignee is EMPTY AND statusCategory != Done ORDER BY created DESC`;
     const issues: JiraIssue[] = [];
-    let startAt = 0;
     const maxResults = 100;
+    let nextPageToken: string | undefined;
 
     while (true) {
-      const { data } = await this.client.get<{ issues: JiraIssue[]; total: number }>(
-        "/search",
-        { params: { jql, startAt, maxResults, fields: "summary,status,priority,duedate,created,updated" } }
-      );
+      const body: Record<string, unknown> = { jql, maxResults, fields: ["summary", "status", "priority", "duedate", "created", "updated"] };
+      if (nextPageToken) body.nextPageToken = nextPageToken;
+      const { data } = await this.client.post<JiraSearchResponse>("/search/jql", body);
       issues.push(...data.issues);
-      if (issues.length >= data.total) break;
-      startAt += maxResults;
+      if (!data.nextPageToken || data.issues.length < maxResults) break;
+      nextPageToken = data.nextPageToken;
     }
 
     return issues.map((issue) => {
