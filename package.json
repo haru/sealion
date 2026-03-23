@@ -46,7 +46,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "16.2.0",
+    "eslint-config-next": "16.2.1",
     "eslint-plugin-jsdoc": "^62.8.0",
     "eslint-plugin-tsdoc": "^0.5.2",
     "jest": "^30.3.0",
