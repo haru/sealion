@@ -34,7 +34,7 @@ export const TODAY_DROP_ZONE_ID = "today-drop-zone";
 
 /**
  * Drop zone and sortable list of today's flagged issues.
- * @param items - Issues to display, sorted by `todayOrder`.
+ * @param items - Issues to display, pre-sorted by `todayOrder`.
  * @param onRemove - Callback invoked when the user removes an issue from today's list.
  * @param onStatusChange - Callback invoked when the user changes an issue's status.
  * @returns A droppable area containing a sorted list of today task items.
@@ -42,8 +42,7 @@ export const TODAY_DROP_ZONE_ID = "today-drop-zone";
 export default function TodayTasksArea({ items, onRemove, onStatusChange }: TodayTasksAreaProps) {
   const t = useTranslations("todayTasks");
 
-  const sorted = [...items].sort((a, b) => a.todayOrder - b.todayOrder);
-  const ids = sorted.map((i) => i.id);
+  const ids = items.map((i) => i.id);
 
   const { setNodeRef, isOver } = useDroppable({ id: TODAY_DROP_ZONE_ID });
 
@@ -65,7 +64,7 @@ export default function TodayTasksArea({ items, onRemove, onStatusChange }: Toda
           transition: "border-color 0.2s, background-color 0.2s",
         }}
       >
-        {sorted.length === 0 ? (
+        {items.length === 0 ? (
           <Typography
             variant="body2"
             color="text.secondary"
@@ -75,7 +74,7 @@ export default function TodayTasksArea({ items, onRemove, onStatusChange }: Toda
           </Typography>
         ) : (
           <SortableContext items={ids} strategy={verticalListSortingStrategy}>
-            {sorted.map((issue) => (
+            {items.map((issue) => (
               <TodayTaskItem
                 key={issue.id}
                 id={issue.id}

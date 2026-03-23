@@ -44,6 +44,8 @@ interface IssueCardProps {
   dragHandleListeners?: DraggableSyntheticListeners;
   dragStyle?: CSSProperties;
   isDragging?: boolean;
+  /** When true, the card is rendered as a semi-transparent ghost placeholder (opacity 0.15). */
+  isGhost?: boolean;
   onStatusChange?: (id: string, newStatus: Status) => void;
 }
 
@@ -66,6 +68,7 @@ export default function IssueCard({
   dragHandleListeners,
   dragStyle,
   isDragging,
+  isGhost,
   onStatusChange,
 }: IssueCardProps) {
   const t = useTranslations("todo");
@@ -85,7 +88,7 @@ export default function IssueCard({
       ref={dragContainerRef}
       style={dragStyle}
       variant="outlined"
-      sx={{ opacity: isComplete || isDragging ? 0.6 : 1, mb: 1 }}
+      sx={{ opacity: isGhost ? 0.15 : isComplete || isDragging ? 0.6 : 1, mb: 1 }}
     >
       <CardContent sx={{ pb: "16px !important" }}>
         <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1 }}>
@@ -109,7 +112,7 @@ export default function IssueCard({
               variant="body1"
               sx={{ textDecoration: isComplete ? "line-through" : "none", wordBreak: "break-word" }}
             >
-              {`${externalId} ${title}`}
+              {`#${externalId} ${title}`}
             </Typography>
             <Stack direction="row" spacing={1} sx={{ mt: 1, flexWrap: "wrap", gap: 0.5 }}>
               <Chip

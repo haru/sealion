@@ -151,3 +151,4 @@ CREDENTIALS_ENCRYPTION_KEY    # 64-char hex string (32 bytes) for AES-256-GCM
 
 Uses **VSCode Dev Containers**. Open in the container before starting development.
 
+
