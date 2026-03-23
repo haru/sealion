@@ -384,7 +384,7 @@ export default function DashboardPage() {
 
       if (!over || !isOverTodayArea) {
         // Dropped outside the today area — remove from today list
-        void handleRemoveFromToday(active.id as string);
+        void handleRemoveFromToday(activeData.issueId);
         return;
       }
 

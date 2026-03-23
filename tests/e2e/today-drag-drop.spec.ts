@@ -66,7 +66,7 @@ async function setupMocks(page: Page) {
         contentType: "application/json",
         body: JSON.stringify({ data: { success: true }, error: null }),
       });
-    } else if (url.includes("/api/issues/today")) {
+    } else if (/\/api\/issues\/today(\?|$)/.test(url) && method === "GET") {
       await route.fulfill({
         status: 200,
         contentType: "application/json",
