@@ -3,7 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { decrypt } from "@/lib/encryption";
 import { ok, fail } from "@/lib/api-response";
-import { createAdapter } from "@/services/issue-provider/factory";
+import { createAdapter, ProviderCredentials } from "@/services/issue-provider/factory";
 import { Prisma, IssueStatus } from "@prisma/client";
 
 type Params = { params: Promise<{ id: string }> };
@@ -34,7 +34,7 @@ async function handleStatusUpdate(
           id: true,
           externalId: true,
           issueProvider: {
-            select: { type: true, encryptedCredentials: true, userId: true },
+            select: { type: true, encryptedCredentials: true, baseUrl: true, userId: true },
           },
         },
       },
@@ -43,8 +43,18 @@ async function handleStatusUpdate(
 
   if (!issue) return fail("FORBIDDEN", 403);
 
-  const credentials = JSON.parse(decrypt(issue.project.issueProvider.encryptedCredentials));
-  const adapter = createAdapter(issue.project.issueProvider.type as never, credentials);
+  let credentials: ProviderCredentials;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const decryptedCredentials: any = JSON.parse(decrypt(issue.project.issueProvider.encryptedCredentials));
+    credentials = {
+      ...decryptedCredentials,
+      ...(issue.project.issueProvider.baseUrl ? { baseUrl: issue.project.issueProvider.baseUrl } : {}),
+    } as ProviderCredentials;
+  } catch {
+    return fail("INVALID_CREDENTIALS", 400);
+  }
+  const adapter = createAdapter(issue.project.issueProvider.type, credentials);
 
   try {
     if (status === IssueStatus.CLOSED) {

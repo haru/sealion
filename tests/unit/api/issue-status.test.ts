@@ -128,4 +128,43 @@ describe("PATCH /api/issues/[id]", () => {
 
     expect(res.status).toBe(401);
   });
+
+  it("passes baseUrl from issueProvider to createAdapter for Jira", async () => {
+    const jiraIssue = {
+      ...MOCK_ISSUE,
+      project: {
+        ...MOCK_ISSUE.project,
+        issueProvider: {
+          type: "JIRA",
+          encryptedCredentials: "encrypted",
+          baseUrl: "https://example.atlassian.net",
+          userId: "user-1",
+        },
+      },
+    };
+    mockFindFirst.mockResolvedValue(jiraIssue);
+    mockUpdate.mockResolvedValue({ id: "issue-1", status: "CLOSED" });
+
+    const { createAdapter } = jest.requireMock("@/services/issue-provider/factory");
+    const req = makeRequest("issue-1", { status: "CLOSED" });
+    await PATCH(req, { params: Promise.resolve({ id: "issue-1" }) });
+
+    expect(createAdapter).toHaveBeenCalledWith(
+      "JIRA",
+      expect.objectContaining({ baseUrl: "https://example.atlassian.net" })
+    );
+  });
+
+  it("returns 400 when credential decryption fails", async () => {
+    mockFindFirst.mockResolvedValue(MOCK_ISSUE);
+    const { decrypt } = jest.requireMock("@/lib/encryption");
+    decrypt.mockImplementationOnce(() => { throw new Error("Decryption failed"); });
+
+    const req = makeRequest("issue-1", { status: "CLOSED" });
+    const res = await PATCH(req, { params: Promise.resolve({ id: "issue-1" }) });
+    const json = await res.json();
+
+    expect(res.status).toBe(400);
+    expect(json.error).toBe("INVALID_CREDENTIALS");
+  });
 });
