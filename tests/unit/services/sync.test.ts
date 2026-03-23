@@ -212,8 +212,11 @@ describe("syncProviders", () => {
     ]);
 
     const { createAdapter } = jest.requireMock("@/services/issue-provider/factory");
+    const rateLimitError = Object.assign(new Error("Request failed with status 429"), {
+      response: { status: 429 },
+    });
     createAdapter.mockReturnValueOnce({
-      fetchAssignedIssues: jest.fn().mockRejectedValue(new Error("API rate limit exceeded")),
+      fetchAssignedIssues: jest.fn().mockRejectedValue(rateLimitError),
       fetchUnassignedIssues: jest.fn().mockResolvedValue([]),
     });
 

@@ -6,6 +6,11 @@ import { getProviderIconUrl } from "@/services/issue-provider/factory";
 
 /**
  * GET /api/issues/today — Returns today's flagged open issues for the authenticated user.
+ *
+ * Issues appear here when their `todayFlag` has been set to `true` via
+ * `PATCH /api/issues/[id]` with `{ todayFlag: true }`.
+ * To remove an issue from today's list, send `PATCH /api/issues/[id]` with `{ todayFlag: false }`.
+ *
  * @returns JSON response using the standard envelope: `{ data: { items: [...] }, error: null }` on success or `{ data: null, error: string }` on failure.
  */
 export async function GET() {

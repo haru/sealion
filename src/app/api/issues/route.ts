@@ -32,7 +32,9 @@ export async function GET(req: NextRequest) {
 
   const regularWhere = {
     ...baseWhere,
-    NOT: { todayFlag: true, status: IssueStatus.OPEN },
+    // Exclude open issues in today's list — those are shown in the Today widget instead.
+    // Uses OR (complement of todayFlag=true AND status=OPEN) for explicit, future-proof semantics.
+    OR: [{ todayFlag: { not: true } }, { status: { not: IssueStatus.OPEN } }],
     ...(statusFilter ? { status: statusFilter } : {}),
   };
 

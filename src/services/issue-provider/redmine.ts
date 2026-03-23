@@ -28,6 +28,7 @@ interface RedmineIssueStatus {
 /**
  * Maps a Redmine priority name to the internal {@link IssuePriority} enum.
  * @param name - The Redmine priority name (case-insensitive).
+ * @returns The corresponding {@link IssuePriority} value; defaults to `MEDIUM`.
  */
 function mapPriority(name?: string): IssuePriority {
   switch (name?.toLowerCase()) {
@@ -121,11 +122,14 @@ export class RedmineAdapter implements IssueProviderAdapter {
     // `assigned_to_id` only accepts a numeric user ID or the special value "me" —
     // there is no "none" token. We therefore fetch all open issues and filter
     // client-side for those without an `assigned_to` field.
+    // MAX_PAGES caps memory usage for large Redmine instances (max 2000 issues).
+    const MAX_PAGES = 20;
     const allOpenIssues: RedmineIssue[] = [];
     let offset = 0;
     const limit = 100;
+    let fetchedPages = 0;
 
-    while (true) {
+    while (fetchedPages < MAX_PAGES) {
       const { data } = await this.client.get<{
         issues: RedmineIssue[];
         total_count: number;
@@ -138,6 +142,7 @@ export class RedmineAdapter implements IssueProviderAdapter {
         },
       });
       allOpenIssues.push(...data.issues);
+      fetchedPages++;
       if (!data.total_count || allOpenIssues.length >= data.total_count) break;
       offset += limit;
     }

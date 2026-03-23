@@ -38,6 +38,7 @@ interface JiraTransition {
 /**
  * Maps a Jira priority name to the internal {@link IssuePriority} enum.
  * @param name - The Jira priority name (case-insensitive).
+ * @returns The corresponding {@link IssuePriority} value; defaults to `MEDIUM`.
  */
 function mapPriority(name?: string): IssuePriority {
   switch (name?.toLowerCase()) {
@@ -53,6 +54,18 @@ function mapPriority(name?: string): IssuePriority {
       return IssuePriority.LOW;
     default:
       return IssuePriority.MEDIUM;
+  }
+}
+
+/**
+ * Validates that a Jira project key contains only safe characters to prevent JQL injection.
+ * Jira project keys consist of uppercase letters and digits (e.g. "ABC", "MY2").
+ * @param key - The project external ID to validate.
+ * @throws If the key contains characters that could be used for JQL injection.
+ */
+function assertSafeProjectKey(key: string): void {
+  if (!/^[A-Z][A-Z0-9_]{0,19}$/.test(key)) {
+    throw new Error(`Unsafe Jira project key: "${key}"`);
   }
 }
 
@@ -87,9 +100,13 @@ export class JiraAdapter implements IssueProviderAdapter {
     return data.map((p) => ({ externalId: p.key, displayName: `${p.name} (${p.key})` }));
   }
 
-  /** {@inheritDoc} */
-  async fetchAssignedIssues(projectExternalId: string): Promise<NormalizedIssue[]> {
-    const jql = `project = "${projectExternalId}" AND assignee = currentUser() AND statusCategory != Done ORDER BY created DESC`;
+  /**
+   * Executes a paginated JQL search and returns normalized issues.
+   * @param jql - The JQL query string (must be pre-validated for safety).
+   * @param isUnassigned - Whether fetched issues should be marked as unassigned.
+   * @returns Array of {@link NormalizedIssue} matching the query.
+   */
+  private async searchIssues(jql: string, isUnassigned: boolean): Promise<NormalizedIssue[]> {
     const issues: JiraIssue[] = [];
     const maxResults = 100;
     let nextPageToken: string | undefined;
@@ -112,47 +129,29 @@ export class JiraAdapter implements IssueProviderAdapter {
         priority: mapPriority(issue.fields.priority?.name),
         dueDate: issue.fields.duedate ? new Date(issue.fields.duedate) : null,
         externalUrl: `${this.baseUrl}/browse/${issue.key}`,
-        isUnassigned: false,
+        isUnassigned,
         providerCreatedAt: issue.fields.created ? new Date(issue.fields.created) : null,
         providerUpdatedAt: issue.fields.updated ? new Date(issue.fields.updated) : null,
       };
     });
+  }
+
+  /** {@inheritDoc} */
+  async fetchAssignedIssues(projectExternalId: string): Promise<NormalizedIssue[]> {
+    assertSafeProjectKey(projectExternalId);
+    const jql = `project = "${projectExternalId}" AND assignee = currentUser() AND statusCategory != Done ORDER BY created DESC`;
+    return this.searchIssues(jql, false);
   }
 
   /** {@inheritDoc} */
   async fetchUnassignedIssues(projectExternalId: string): Promise<NormalizedIssue[]> {
+    assertSafeProjectKey(projectExternalId);
     const jql = `project = "${projectExternalId}" AND assignee is EMPTY AND statusCategory != Done ORDER BY created DESC`;
-    const issues: JiraIssue[] = [];
-    const maxResults = 100;
-    let nextPageToken: string | undefined;
-
-    while (true) {
-      const body: Record<string, unknown> = { jql, maxResults, fields: ["summary", "status", "priority", "duedate", "created", "updated"] };
-      if (nextPageToken) body.nextPageToken = nextPageToken;
-      const { data } = await this.client.post<JiraSearchResponse>("/search/jql", body);
-      issues.push(...data.issues);
-      if (!data.nextPageToken || data.issues.length < maxResults) break;
-      nextPageToken = data.nextPageToken;
-    }
-
-    return issues.map((issue) => {
-      const isDone = issue.fields.status.statusCategory.key === "done";
-      return {
-        externalId: issue.key,
-        title: issue.fields.summary,
-        status: isDone ? IssueStatus.CLOSED : IssueStatus.OPEN,
-        priority: mapPriority(issue.fields.priority?.name),
-        dueDate: issue.fields.duedate ? new Date(issue.fields.duedate) : null,
-        externalUrl: `${this.baseUrl}/browse/${issue.key}`,
-        isUnassigned: true,
-        providerCreatedAt: issue.fields.created ? new Date(issue.fields.created) : null,
-        providerUpdatedAt: issue.fields.updated ? new Date(issue.fields.updated) : null,
-      };
-    });
+    return this.searchIssues(jql, true);
   }
 
   /** {@inheritDoc} */
-  async closeIssue(projectExternalId: string, issueExternalId: string): Promise<void> {
+  async closeIssue(_projectExternalId: string, issueExternalId: string): Promise<void> {
     const { data } = await this.client.get<{ transitions: JiraTransition[] }>(
       `/issue/${issueExternalId}/transitions`
     );
@@ -168,7 +167,7 @@ export class JiraAdapter implements IssueProviderAdapter {
   }
 
   /** {@inheritDoc} */
-  async reopenIssue(projectExternalId: string, issueExternalId: string): Promise<void> {
+  async reopenIssue(_projectExternalId: string, issueExternalId: string): Promise<void> {
     const { data } = await this.client.get<{ transitions: JiraTransition[] }>(
       `/issue/${issueExternalId}/transitions`
     );

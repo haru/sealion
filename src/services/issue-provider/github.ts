@@ -7,6 +7,7 @@ interface GitHubIssue {
   title: string;
   state: string;
   html_url: string;
+  assignee?: { login: string } | null;
   milestone?: { due_on?: string | null };
   created_at: string;
   updated_at: string;

@@ -147,15 +147,15 @@ describe("GET /api/issues", () => {
 
     const findManyCall = mockFindMany.mock.calls[0][0];
     expect(findManyCall.where).toMatchObject({
-      NOT: { todayFlag: true, status: "OPEN" },
+      OR: [{ todayFlag: { not: true } }, { status: { not: "OPEN" } }],
     });
 
     const regularCountCall = mockCount.mock.calls.find(
-      ([arg]: [{ where: Record<string, unknown> }]) => arg?.where?.NOT !== undefined
+      ([arg]: [{ where: Record<string, unknown> }]) => arg?.where?.OR !== undefined
     );
     expect(regularCountCall).toBeDefined();
     expect(regularCountCall[0].where).toMatchObject({
-      NOT: { todayFlag: true, status: "OPEN" },
+      OR: [{ todayFlag: { not: true } }, { status: { not: "OPEN" } }],
     });
   });
 
