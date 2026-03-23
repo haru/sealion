@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import {
   DndContext,
   DragEndEvent,
+  DragMoveEvent,
   DragOverlay,
   DragStartEvent,
   PointerSensor,
@@ -13,6 +14,7 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
+import IssueCard from "@/components/IssueCard";
 import TodoList from "@/components/todo/TodoList";
 import SyncStatus from "@/components/todo/SyncStatus";
 import TodayTasksArea, { TODAY_DROP_ZONE_ID } from "@/components/today-tasks/TodayTasksArea";
@@ -72,6 +74,7 @@ export default function DashboardPage() {
   const [syncProviders, setSyncProviders] = useState<SyncProvider[]>([]);
   const [toast, setToast] = useState<Toast>({ open: false, message: "", severity: "success" });
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
+  const [isDraggingOutside, setIsDraggingOutside] = useState(false);
   const syncStartedAtRef = useRef<Date | null>(null);
 
   const sensors = useSensors(useSensor(PointerSensor));
@@ -314,49 +317,74 @@ export default function DashboardPage() {
     }
   }
 
-  /** Tracks the active dragged issue ID on drag start. */
+  /** Tracks the active dragged issue ID on drag start for both todo-items and today-items. */
   function handleDragStart(event: DragStartEvent) {
     const activeData = event.active.data.current as { type: string; issueId: string } | undefined;
-    if (activeData?.type === "todo-item") {
+    if (activeData?.type === "todo-item" || activeData?.type === "today-item") {
       setActiveDragId(activeData.issueId);
     }
   }
 
-  /** Handles drop — adds to today or reorders within today. */
+  /**
+   * Tracks whether the dragged today-item is currently over a valid drop zone.
+   * Sets `isDraggingOutside` to true when the cursor leaves the today area.
+   *
+   * @param event - dnd-kit DragMoveEvent.
+   */
+  function handleDragMove(event: DragMoveEvent) {
+    const activeData = event.active.data.current as { type: string } | undefined;
+    if (activeData?.type === "today-item") {
+      const isOver =
+        event.over?.id === TODAY_DROP_ZONE_ID ||
+        (event.over?.data.current as { type?: string } | undefined)?.type === "today-item";
+      setIsDraggingOutside(!isOver);
+    } else {
+      setIsDraggingOutside(false);
+    }
+  }
+
+  /** Handles drop — adds to today, reorders within today, or removes on drop-outside. */
   function handleDragEnd(event: DragEndEvent) {
     setActiveDragId(null);
 
     const { active, over } = event;
-    if (!over) return;
-
     const activeData = active.data.current as { type: string; issueId: string } | undefined;
     if (!activeData) return;
 
-    const overData = over.data.current as { type?: string } | undefined;
-    const isOverTodayArea = over.id === TODAY_DROP_ZONE_ID || overData?.type === "today-item";
+    const overData = over?.data.current as { type?: string } | undefined;
+    const isOverTodayArea =
+      over?.id === TODAY_DROP_ZONE_ID || overData?.type === "today-item";
 
     // Drag from TodoList → TodayTasksArea (empty or over an existing today-item)
-    if (activeData.type === "todo-item" && isOverTodayArea) {
+    if (activeData.type === "todo-item" && over && isOverTodayArea) {
       void handleAddToToday(activeData.issueId);
       return;
     }
 
-    // Reorder within TodayTasksArea
-    if (activeData.type === "today-item" && active.id !== over.id) {
-      if (isOverTodayArea) {
+    // today-item drag: remove on drop-outside, reorder on drop-inside
+    if (activeData.type === "today-item") {
+      setIsDraggingOutside(false);
+
+      if (!over || !isOverTodayArea) {
+        // Dropped outside the today area — remove from today list
+        void handleRemoveFromToday(active.id as string);
+        return;
+      }
+
+      // Dropped inside today area — reorder
+      if (active.id !== over.id) {
         const ids = todayIssuesSorted.map((i) => i.id);
         const oldIndex = ids.indexOf(active.id as string);
         const newIndex = ids.indexOf(over.id as string);
         if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
-          const reordered = arrayMove(ids, oldIndex, newIndex);
-          void handleReorder(reordered);
+          void handleReorder(arrayMove(ids, oldIndex, newIndex));
         }
       }
     }
   }
 
   return (
-    <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+    <DndContext sensors={sensors} onDragStart={handleDragStart} onDragMove={handleDragMove} onDragEnd={handleDragEnd}>
       <Container maxWidth="md" sx={{ py: 3 }}>
         <Typography variant="h4" component="h1" gutterBottom>
           {t("title")}
@@ -383,23 +411,29 @@ export default function DashboardPage() {
         {activeDragId ? (() => {
           const issue = [...issues, ...todayIssues].find((i) => i.id === activeDragId);
           if (!issue) return null;
+          const overlayStyle = isDraggingOutside
+            ? { filter: "grayscale(80%)", opacity: 0.6 }
+            : { opacity: 0.95 };
           return (
-            <Box
-              sx={{
-                bgcolor: "background.paper",
-                border: 1,
-                borderColor: "primary.main",
-                borderRadius: 1,
-                px: 2,
-                py: 1,
-                boxShadow: 4,
-                opacity: 0.9,
-                cursor: "grabbing",
-              }}
-            >
-              <Typography variant="body1" noWrap>
-                {`${issue.externalId} ${issue.title}`}
-              </Typography>
+            <Box sx={{ cursor: "grabbing", boxShadow: 6, borderRadius: 1, ...overlayStyle }}>
+              <IssueCard
+                id={issue.id}
+                externalId={issue.externalId}
+                title={issue.title}
+                status={issue.status}
+                priority={issue.priority}
+                dueDate={issue.dueDate}
+                externalUrl={issue.externalUrl}
+                isUnassigned={issue.isUnassigned}
+                providerIconUrl={issue.project.issueProvider.iconUrl}
+                providerName={issue.project.issueProvider.displayName}
+                projectName={issue.project.displayName}
+                actionButton={null}
+                dragContainerRef={undefined}
+                dragHandleAttributes={undefined}
+                dragHandleListeners={undefined}
+                isDragging={false}
+              />
             </Box>
           );
         })() : null}
