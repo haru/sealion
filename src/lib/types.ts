@@ -46,7 +46,7 @@ export interface ExternalProject {
 export interface IssueProviderAdapter {
   /**
    * Verifies that the stored credentials are valid.
-   * @throws {Error} When authentication fails or the provider is unreachable.
+   * @throws Error when authentication fails or the provider is unreachable.
    */
   testConnection(): Promise<void>;
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { Box, Container, Snackbar, Alert, Typography } from "@mui/material";
 import { useTranslations } from "next-intl";
 import {
@@ -79,11 +79,18 @@ export default function DashboardPage() {
 
   const sensors = useSensors(useSensor(PointerSensor));
 
-  const todayIssuesSorted = todayIssues
-    .map((i) => ({ ...i, todayOrder: i.todayOrder ?? 0 }))
-    .sort((a, b) => a.todayOrder - b.todayOrder);
+  const todayIssuesSorted = useMemo(
+    () =>
+      todayIssues
+        .map((i) => ({ ...i, todayOrder: i.todayOrder ?? 0 }))
+        .sort((a, b) => a.todayOrder - b.todayOrder),
+    [todayIssues]
+  );
 
-  const regularIssues = issues;
+  const activeIssue = useMemo(
+    () => (activeDragId ? [...issues, ...todayIssues].find((i) => i.id === activeDragId) : undefined),
+    [activeDragId, issues, todayIssues]
+  );
 
   /** Shows a toast notification with the given message and severity. */
   function showToast(message: string, severity: ToastSeverity) {
@@ -328,6 +335,7 @@ export default function DashboardPage() {
   /**
    * Tracks whether the dragged today-item is currently over a valid drop zone.
    * Sets `isDraggingOutside` to true when the cursor leaves the today area.
+   * Guards against unnecessary re-renders by skipping state updates when the value has not changed.
    *
    * @param event - dnd-kit DragMoveEvent.
    */
@@ -337,10 +345,19 @@ export default function DashboardPage() {
       const isOver =
         event.over?.id === TODAY_DROP_ZONE_ID ||
         (event.over?.data.current as { type?: string } | undefined)?.type === "today-item";
-      setIsDraggingOutside(!isOver);
+      setIsDraggingOutside((prev) => {
+        const next = !isOver;
+        return prev === next ? prev : next;
+      });
     } else {
-      setIsDraggingOutside(false);
+      setIsDraggingOutside((prev) => (prev ? false : prev));
     }
+  }
+
+  /** Resets drag state when a drag operation is cancelled (e.g. via Escape key). */
+  function handleDragCancel() {
+    setActiveDragId(null);
+    setIsDraggingOutside(false);
   }
 
   /** Handles drop — adds to today, reorders within today, or removes on drop-outside. */
@@ -384,7 +401,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <DndContext sensors={sensors} onDragStart={handleDragStart} onDragMove={handleDragMove} onDragEnd={handleDragEnd}>
+    <DndContext sensors={sensors} onDragStart={handleDragStart} onDragMove={handleDragMove} onDragEnd={handleDragEnd} onDragCancel={handleDragCancel}>
       <Container maxWidth="md" sx={{ py: 3 }}>
         <Typography variant="h4" component="h1" gutterBottom>
           {t("title")}
@@ -395,7 +412,7 @@ export default function DashboardPage() {
         <Box sx={{ mt: 2 }}>
           <TodayTasksArea items={todayIssuesSorted} onRemove={handleRemoveFromToday} onStatusChange={handleStatusChange} />
           <TodoList
-            items={regularIssues}
+            items={issues}
             total={total}
             page={page}
             limit={20}
@@ -408,35 +425,34 @@ export default function DashboardPage() {
       </Container>
 
       <DragOverlay>
-        {activeDragId ? (() => {
-          const issue = [...issues, ...todayIssues].find((i) => i.id === activeDragId);
-          if (!issue) return null;
-          const overlayStyle = isDraggingOutside
-            ? { filter: "grayscale(80%)", opacity: 0.6 }
-            : { opacity: 0.95 };
-          return (
-            <Box sx={{ cursor: "grabbing", boxShadow: 6, borderRadius: 1, ...overlayStyle }}>
-              <IssueCard
-                id={issue.id}
-                externalId={issue.externalId}
-                title={issue.title}
-                status={issue.status}
-                priority={issue.priority}
-                dueDate={issue.dueDate}
-                externalUrl={issue.externalUrl}
-                isUnassigned={issue.isUnassigned}
-                providerIconUrl={issue.project.issueProvider.iconUrl}
-                providerName={issue.project.issueProvider.displayName}
-                projectName={issue.project.displayName}
-                actionButton={null}
-                dragContainerRef={undefined}
-                dragHandleAttributes={undefined}
-                dragHandleListeners={undefined}
-                isDragging={false}
-              />
-            </Box>
-          );
-        })() : null}
+        {activeIssue ? (
+          <Box
+            sx={{
+              cursor: "grabbing",
+              boxShadow: 6,
+              borderRadius: 1,
+              ...(isDraggingOutside ? { filter: "grayscale(80%)", opacity: 0.6 } : { opacity: 0.95 }),
+            }}
+          >
+            <IssueCard
+              id={activeIssue.id}
+              externalId={activeIssue.externalId}
+              title={activeIssue.title}
+              status={activeIssue.status}
+              priority={activeIssue.priority}
+              dueDate={activeIssue.dueDate}
+              externalUrl={activeIssue.externalUrl}
+              isUnassigned={activeIssue.isUnassigned}
+              providerIconUrl={activeIssue.project.issueProvider.iconUrl}
+              providerName={activeIssue.project.issueProvider.displayName}
+              projectName={activeIssue.project.displayName}
+              actionButton={null}
+              dragContainerRef={undefined}
+              dragHandleAttributes={undefined}
+              dragHandleListeners={undefined}
+            />
+          </Box>
+        ) : null}
       </DragOverlay>
 
       <Snackbar

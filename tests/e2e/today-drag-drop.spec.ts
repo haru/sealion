@@ -181,14 +181,14 @@ test.describe("Today Tasks Drag and Drop", () => {
     );
     await page.mouse.up();
 
-    // Wait for the optimistic reorder state update.
-    await page.waitForTimeout(300);
-
     // "Second today task" should now precede "First today task" in the list.
-    const allCardTexts = await page.locator(".MuiCard-root").allTextContents();
-    const firstIdx = allCardTexts.findIndex((t) => t.includes("First today task"));
-    const secondIdx = allCardTexts.findIndex((t) => t.includes("Second today task"));
-    expect(secondIdx).toBeLessThan(firstIdx);
+    // Wait until the second card appears before the first in the DOM.
+    await expect(async () => {
+      const allCardTexts = await page.locator(".MuiCard-root").allTextContents();
+      const firstIdx = allCardTexts.findIndex((t) => t.includes("First today task"));
+      const secondIdx = allCardTexts.findIndex((t) => t.includes("Second today task"));
+      expect(secondIdx).toBeLessThan(firstIdx);
+    }).toPass({ timeout: 3000 });
   });
 
   // ── User Story 2: Drop outside today area removes item ────────────────────

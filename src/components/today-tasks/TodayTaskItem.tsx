@@ -82,7 +82,6 @@ export default function TodayTaskItem({
       dragHandleAttributes={attributes}
       dragHandleListeners={listeners}
       dragStyle={dragStyle}
-      isDragging={isDragging}
       isGhost={isDragging}
       onStatusChange={onStatusChange}
     />
