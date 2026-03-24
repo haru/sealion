@@ -63,10 +63,12 @@ test.describe("Sync Throttle — auto-sync on page load", () => {
       await route.fulfill({ status: 200, contentType: "application/json", body: EMPTY_ISSUES });
     });
 
+    // Wait for init() GET to resolve (confirms init ran), then assert no POST was triggered
+    const getResponsePromise = page.waitForResponse(
+      (resp) => resp.url().includes("/api/sync") && resp.request().method() === "GET"
+    );
     await login(page);
-
-    // Wait long enough for init() to complete and any startSync() call to fire
-    await page.waitForTimeout(2000);
+    await getResponsePromise;
 
     expect(postSyncCalled).toBe(false);
   });
@@ -96,10 +98,12 @@ test.describe("Sync Throttle — auto-sync on page load", () => {
       await route.fulfill({ status: 200, contentType: "application/json", body: EMPTY_ISSUES });
     });
 
+    // Wait for the POST to be made before asserting
+    const postRequestPromise = page.waitForRequest(
+      (req) => req.url().includes("/api/sync") && req.method() === "POST"
+    );
     await login(page);
-
-    // Wait for init() to complete and startSync() to fire
-    await page.waitForTimeout(2000);
+    await postRequestPromise;
 
     expect(postSyncCalled).toBe(true);
   });
@@ -131,8 +135,11 @@ test.describe("Sync Throttle — auto-sync on page load", () => {
       await route.fulfill({ status: 200, contentType: "application/json", body: EMPTY_ISSUES });
     });
 
+    const postRequestPromise = page.waitForRequest(
+      (req) => req.url().includes("/api/sync") && req.method() === "POST"
+    );
     await login(page);
-    await page.waitForTimeout(2000);
+    await postRequestPromise;
 
     expect(postSyncCalled).toBe(true);
   });
@@ -192,14 +199,20 @@ test.describe("Sync Throttle — Sync Now button", () => {
       await route.fulfill({ status: 200, contentType: "application/json", body: EMPTY_ISSUES });
     });
 
+    // Wait for init() GET to resolve (confirms init ran without POSTing), then assert no auto-sync
+    const getResponsePromise = page.waitForResponse(
+      (resp) => resp.url().includes("/api/sync") && resp.request().method() === "GET"
+    );
     await login(page);
-    // Auto-sync skipped (throttled) — postSyncCallCount should be 0 so far
-    await page.waitForTimeout(1000);
+    await getResponsePromise;
     expect(postSyncCallCount).toBe(0);
 
-    // Click Sync Now — should trigger POST /api/sync
+    // Click Sync Now and wait for the POST to be made
+    const postRequestPromise = page.waitForRequest(
+      (req) => req.url().includes("/api/sync") && req.method() === "POST"
+    );
     await page.getByRole("button", { name: /sync now/i }).click();
-    await page.waitForTimeout(500);
+    await postRequestPromise;
 
     expect(postSyncCallCount).toBe(1);
   });
@@ -229,12 +242,14 @@ test.describe("Sync Throttle — Sync Now button", () => {
       await route.fulfill({ status: 200, contentType: "application/json", body: EMPTY_ISSUES });
     });
 
+    // Wait for the auto-sync POST to be triggered (old lastSyncedAt → not throttled)
+    const postRequestPromise = page.waitForRequest(
+      (req) => req.url().includes("/api/sync") && req.method() === "POST"
+    );
     await login(page);
+    await postRequestPromise;
 
-    // Auto-sync fires (old lastSyncedAt) — wait for isSyncing to become true
-    await page.waitForTimeout(1000);
-
-    // Button should be disabled while syncing
+    // Button should be disabled while syncing (POST response is intentionally slow)
     await expect(page.getByRole("button", { name: /sync now/i })).toBeDisabled();
   });
 });

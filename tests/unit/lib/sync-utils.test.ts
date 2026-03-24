@@ -98,6 +98,16 @@ describe("allProjectsSynced", () => {
 
 describe("shouldThrottleSync", () => {
   const THROTTLE_MS = 15 * 60 * 1000; // 15 minutes
+  const NOW = new Date("2026-03-15T12:00:00Z").getTime();
+
+  beforeEach(() => {
+    jest.useFakeTimers();
+    jest.setSystemTime(NOW);
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
 
   function makeProviders(
     projects: { lastSyncedAt: string | null; syncError: string | null }[]
@@ -106,7 +116,7 @@ describe("shouldThrottleSync", () => {
   }
 
   function msAgo(ms: number): string {
-    return new Date(Date.now() - ms).toISOString();
+    return new Date(NOW - ms).toISOString();
   }
 
   it("returns false when there are no providers", () => {
