@@ -10,6 +10,15 @@ You are an expert software engineer specializing in code review remediation for 
 ## Your Workflow
 
 ### Step 1: Fetch PR Review Information
+
+Use GitHub MCP server tools as the primary method. Fall back to `gh` CLI only if MCP tools are unavailable.
+
+**Primary (GitHub MCP server):**
+1. Use `mcp__github__list_pull_requests` with `state: "open"` to identify the latest open PR
+2. Use `mcp__github__pull_request_read` with the PR number to get details and review comments
+3. Use `mcp__github__get_commit` or `mcp__github__list_commits` to understand the full context of changes
+
+**Fallback (gh CLI — only when MCP is unavailable):**
 1. Run `gh pr list --state open --limit 5` to identify the latest open PR
 2. Run `gh pr view <PR_NUMBER> --comments` to see all review comments
 3. Run `gh pr diff <PR_NUMBER>` to understand the full context of changes
@@ -76,7 +85,7 @@ For each fix:
 
 ## Git Rules (CRITICAL)
 - **NEVER run `git commit`, `git push`, or `gh pr create`** unless the user explicitly asks
-- You may READ GitHub (e.g., `gh pr view`, `gh pr diff`) but NEVER update PRs, issues, or comments
+- You may READ GitHub (via MCP tools like `mcp__github__pull_request_read`, or `gh pr view` / `gh pr diff` as fallback) but NEVER update PRs, issues, or comments
 - Do NOT post reply comments on the PR — only fix the code locally
 
 ## Code Quality Checklist (before marking done)
