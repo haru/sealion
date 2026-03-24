@@ -46,3 +46,4 @@ next-env.d.ts
 /playwright-report/
 /test-results/
 
+.claude/agent-memory/

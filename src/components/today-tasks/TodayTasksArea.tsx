@@ -24,10 +24,17 @@ interface TodayIssue {
   };
 }
 
+/** Props for {@link TodayTasksArea}. */
 interface TodayTasksAreaProps {
+  /** Today's issues sorted by {@link TodayIssue.todayOrder}. */
   items: TodayIssue[];
+  /** Called when the user removes an issue from today's list. */
   onRemove: (id: string) => void;
-  onStatusChange: (id: string, newStatus: Status) => void;
+  /**
+   * Called when the user clicks the "Complete" button on an issue card.
+   * @param id - Internal issue ID.
+   */
+  onComplete?: (id: string) => void;
 }
 
 /** Drop zone ID used by dnd-kit to identify today's tasks droppable area. */
@@ -37,10 +44,10 @@ export const TODAY_DROP_ZONE_ID = "today-drop-zone";
  * Drop zone and sortable list of today's flagged issues.
  * @param items - Issues to display, pre-sorted by `todayOrder`.
  * @param onRemove - Callback invoked when the user removes an issue from today's list.
- * @param onStatusChange - Callback invoked when the user changes an issue's status.
+ * @param onComplete - Callback invoked when the user clicks the "Complete" button.
  * @returns A droppable area containing a sorted list of today task items.
  */
-export default function TodayTasksArea({ items, onRemove, onStatusChange }: TodayTasksAreaProps) {
+export default function TodayTasksArea({ items, onRemove, onComplete }: TodayTasksAreaProps) {
   const t = useTranslations("todayTasks");
 
   const ids = items.map((i) => i.id);
@@ -91,7 +98,7 @@ export default function TodayTasksArea({ items, onRemove, onStatusChange }: Toda
                 providerName={issue.project.issueProvider.displayName}
                 projectName={issue.project.displayName}
                 onRemove={onRemove}
-                onStatusChange={onStatusChange}
+                onComplete={onComplete}
               />
             ))}
           </SortableContext>

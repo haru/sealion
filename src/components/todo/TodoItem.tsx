@@ -7,26 +7,42 @@ import { useTranslations } from "next-intl";
 import IssueCard from "@/components/IssueCard";
 import type { Status } from "@/lib/types";
 
+/** Props for {@link TodoItem}. */
 interface TodoItemProps {
+  /** Internal issue ID. */
   id: string;
+  /** External ID from the provider. */
   externalId: string;
+  /** Issue title. */
   title: string;
+  /** Current issue status. */
   status: Status;
+  /** ISO 8601 due date string, or `null`. */
   dueDate: string | null;
+  /** URL to the issue on the external provider. */
   externalUrl: string;
+  /** Whether the issue has no assignee. */
   isUnassigned: boolean;
+  /** Provider icon URL or `null`. */
   providerIconUrl: string | null;
+  /** Display name of the issue provider. */
   providerName: string;
+  /** Display name of the project. */
   projectName: string;
   /** ISO 8601 datetime string from the issue provider, or `null` if unavailable. */
   providerCreatedAt: string | null;
   /** ISO 8601 datetime string from the issue provider, or `null` if unavailable. */
   providerUpdatedAt: string | null;
-  onStatusChange?: (id: string, newStatus: Status) => void;
+  /**
+   * Called when the user clicks the "Complete" button on the issue card.
+   * @param id - Internal issue ID.
+   */
+  onComplete?: (id: string) => void;
+  /** Called when the user adds the issue to today's task list. */
   onAddToToday?: (id: string) => void;
 }
 
-/** Draggable issue list item with an "add to today" action, wrapping {@link IssueCard}. */
+/** Draggable issue list item with an "add to today" action and complete button, wrapping {@link IssueCard}. */
 export default function TodoItem({
   id,
   externalId,
@@ -40,7 +56,7 @@ export default function TodoItem({
   projectName,
   providerCreatedAt,
   providerUpdatedAt,
-  onStatusChange,
+  onComplete,
   onAddToToday,
 }: TodoItemProps) {
   const tToday = useTranslations("todayTasks");
@@ -84,7 +100,7 @@ export default function TodoItem({
       dragHandleAttributes={attributes}
       dragHandleListeners={listeners}
       isDragging={isDragging}
-      onStatusChange={onStatusChange}
+      onComplete={onComplete}
     />
   );
 }

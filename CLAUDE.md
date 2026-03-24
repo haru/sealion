@@ -160,3 +160,4 @@ Uses **VSCode Dev Containers**. Open in the container before starting developmen
 ## Recent Changes
 - 009-task-display-cleanup: Removed `priority` field from Issue model; added `providerCreatedAt` / `providerUpdatedAt` fields; added Today tasks area with drag-and-drop reorder (dnd-kit)
 - 010-sync-throttle: Introduced sync throttling logic and related tests; no database schema changes required.
+- 011-close-issue-modal: Added `addComment()` to adapter interface; new Complete Issue modal; no schema changes required.

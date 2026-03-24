@@ -238,6 +238,22 @@ describe("GitHubAdapter", () => {
       );
     });
   });
+
+  describe("addComment", () => {
+    it("posts comment to GitHub issues endpoint", async () => {
+      mockAxiosInstance.post.mockResolvedValue({ data: { id: 1 } });
+      await adapter.addComment("owner/repo", "42", "This is a comment");
+      expect(mockAxiosInstance.post).toHaveBeenCalledWith(
+        "/repos/owner/repo/issues/42/comments",
+        { body: "This is a comment" }
+      );
+    });
+
+    it("propagates error when comment posting fails", async () => {
+      mockAxiosInstance.post.mockRejectedValue(new Error("403 Forbidden"));
+      await expect(adapter.addComment("owner/repo", "42", "comment")).rejects.toThrow();
+    });
+  });
 });
 
 describe("JiraAdapter", () => {
@@ -472,6 +488,22 @@ describe("JiraAdapter", () => {
       });
 
       await expect(adapter.reopenIssue("PROJ", "PROJ-1")).rejects.toThrow();
+    });
+  });
+
+  describe("addComment", () => {
+    it("posts comment to Jira issue comment endpoint", async () => {
+      mockAxiosInstance.post.mockResolvedValue({ data: {} });
+      await adapter.addComment("PROJ", "PROJ-1", "Completed after review.");
+      expect(mockAxiosInstance.post).toHaveBeenCalledWith(
+        "/issue/PROJ-1/comment",
+        { body: "Completed after review." }
+      );
+    });
+
+    it("propagates error when comment posting fails", async () => {
+      mockAxiosInstance.post.mockRejectedValue(new Error("500 Server Error"));
+      await expect(adapter.addComment("PROJ", "PROJ-1", "comment")).rejects.toThrow();
     });
   });
 
@@ -716,6 +748,22 @@ describe("RedmineAdapter", () => {
       });
 
       await expect(adapter.reopenIssue("my-project", "123")).rejects.toThrow();
+    });
+  });
+
+  describe("addComment", () => {
+    it("puts comment via notes field to Redmine issue endpoint", async () => {
+      mockAxiosInstance.put.mockResolvedValue({ data: {} });
+      await adapter.addComment("my-project", "123", "Resolved by PR #45.");
+      expect(mockAxiosInstance.put).toHaveBeenCalledWith(
+        "/issues/123.json",
+        { issue: { notes: "Resolved by PR #45." } }
+      );
+    });
+
+    it("propagates error when comment posting fails", async () => {
+      mockAxiosInstance.put.mockRejectedValue(new Error("422 Unprocessable Entity"));
+      await expect(adapter.addComment("my-project", "123", "comment")).rejects.toThrow();
     });
   });
 

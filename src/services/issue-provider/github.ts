@@ -145,4 +145,12 @@ export class GitHubAdapter implements IssueProviderAdapter {
       state: "open",
     });
   }
+
+  /** {@inheritDoc} */
+  async addComment(projectExternalId: string, issueExternalId: string, comment: string): Promise<void> {
+    const [owner, repo] = projectExternalId.split("/");
+    await this.client.post(`/repos/${owner}/${repo}/issues/${issueExternalId}/comments`, {
+      body: comment,
+    });
+  }
 }

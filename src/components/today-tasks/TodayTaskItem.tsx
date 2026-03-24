@@ -8,26 +8,42 @@ import { useTranslations } from "next-intl";
 import IssueCard from "@/components/IssueCard";
 import type { Status } from "@/lib/types";
 
+/** Props for {@link TodayTaskItem}. */
 interface TodayTaskItemProps {
+  /** Internal issue ID. */
   id: string;
+  /** External ID from the provider. */
   externalId: string;
+  /** Issue title. */
   title: string;
+  /** Current issue status. */
   status: Status;
+  /** ISO 8601 due date string, or `null`. */
   dueDate: string | null;
+  /** URL to the issue on the external provider. */
   externalUrl: string;
+  /** Whether the issue has no assignee. */
   isUnassigned: boolean;
+  /** Provider icon URL or `null`. */
   providerIconUrl: string | null;
+  /** Display name of the issue provider. */
   providerName: string;
+  /** Display name of the project. */
   projectName: string;
   /** ISO 8601 datetime string from the issue provider, or `null` if unavailable. */
   providerCreatedAt: string | null;
   /** ISO 8601 datetime string from the issue provider, or `null` if unavailable. */
   providerUpdatedAt: string | null;
+  /** Called when the user removes the issue from today's list. */
   onRemove: (id: string) => void;
-  onStatusChange?: (id: string, newStatus: Status) => void;
+  /**
+   * Called when the user clicks the "Complete" button on the issue card.
+   * @param id - Internal issue ID.
+   */
+  onComplete?: (id: string) => void;
 }
 
-/** Draggable today-task item with a remove button, wrapping {@link IssueCard}. */
+/** Draggable today-task item with a remove button and complete button, wrapping {@link IssueCard}. */
 export default function TodayTaskItem({
   id,
   externalId,
@@ -42,7 +58,7 @@ export default function TodayTaskItem({
   providerCreatedAt,
   providerUpdatedAt,
   onRemove,
-  onStatusChange,
+  onComplete,
 }: TodayTaskItemProps) {
   const t = useTranslations("todayTasks");
 
@@ -88,7 +104,7 @@ export default function TodayTaskItem({
       dragHandleListeners={listeners}
       dragStyle={dragStyle}
       isGhost={isDragging}
-      onStatusChange={onStatusChange}
+      onComplete={onComplete}
     />
   );
 }
