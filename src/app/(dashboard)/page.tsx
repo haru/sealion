@@ -219,9 +219,9 @@ export default function DashboardPage() {
     // Optimistic update: remove from both lists (closing deletes the issue)
     if (originalInToday) {
       setTodayIssues((prev) => prev.filter((i) => i.id !== issueId));
-    } else {
-      setIssues((prev) => prev.filter((issue) => issue.id !== issueId));
     }
+    setIssues((prev) => prev.filter((issue) => issue.id !== issueId));
+
     const body: Record<string, unknown> = { closed: true };
     if (comment.trim()) body.comment = comment.trim();
 
@@ -240,7 +240,8 @@ export default function DashboardPage() {
             ? prev.map((i) => (i.id === issueId ? originalInToday : i))
             : [...prev, originalInToday];
         });
-      } else if (originalInIssues) {
+      }
+      if (originalInIssues) {
         setIssues((prev) => [originalInIssues, ...prev.filter((i) => i.id !== issueId)]);
       }
       throw new Error("EXTERNAL_UPDATE_FAILED");

@@ -11,7 +11,7 @@ const PROJECT_CONCURRENCY = 5;
  * Syncs issues for all enabled projects belonging to the given user.
  * External service is the source of truth — all returned issues are upserted;
  * issues no longer returned by the adapter are deleted from the local DB.
- * DB invariant: all Issues in local DB are OPEN (adapters return only open issues).
+ * DB invariant: only issues considered open by providers are stored locally (adapters return only open issues).
  * @param userId - ID of the user whose providers and projects are synced.
  */
 export async function syncProviders(userId: string): Promise<void> {
