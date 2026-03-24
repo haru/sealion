@@ -18,7 +18,7 @@ import IssueCard from "@/components/IssueCard";
 import TodoList from "@/components/todo/TodoList";
 import SyncStatus from "@/components/todo/SyncStatus";
 import TodayTasksArea, { TODAY_DROP_ZONE_ID } from "@/components/today-tasks/TodayTasksArea";
-import { allProjectsSynced } from "@/lib/sync-utils";
+import { allProjectsSynced, shouldThrottleSync, SYNC_THROTTLE_MS } from "@/lib/sync-utils";
 import type { Status } from "@/lib/types";
 
 interface Issue {
@@ -164,19 +164,29 @@ export default function DashboardPage() {
     };
   }, [isSyncing, page, fetchIssues, fetchTodayIssues]);
 
+  const handleSyncNow = useCallback(() => {
+    void startSync();
+  }, [startSync]);
+
   useEffect(() => {
-    /** Loads initial issue data and triggers a background sync. */
+    /** Loads initial issue data and triggers a background sync unless throttled. */
     async function init() {
       setLoading(true);
+      let fetchedProviders: SyncProvider[] = [];
       await Promise.all([
         fetchIssues(1),
         fetchTodayIssues(),
         fetch("/api/sync").then(async (res) => {
-          if (res.ok) setSyncProviders((await res.json()).data);
+          if (res.ok) {
+            fetchedProviders = (await res.json()).data;
+            setSyncProviders(fetchedProviders);
+          }
         }),
       ]);
       setLoading(false);
-      void startSync();
+      if (!shouldThrottleSync(fetchedProviders, SYNC_THROTTLE_MS)) {
+        void startSync();
+      }
     }
     void init();
   }, [fetchIssues, fetchTodayIssues, startSync]);
@@ -408,7 +418,7 @@ export default function DashboardPage() {
           {t("title")}
         </Typography>
 
-        <SyncStatus providers={syncProviders} isSyncing={isSyncing} />
+        <SyncStatus providers={syncProviders} isSyncing={isSyncing} onSyncNow={handleSyncNow} />
 
         <Box sx={{ mt: 2 }}>
           <TodayTasksArea items={todayIssuesSorted} onRemove={handleRemoveFromToday} onStatusChange={handleStatusChange} />

@@ -47,7 +47,8 @@
     "noDueDate": "No due date",
     "unassignedChipLabel": "Unassigned",
     "unassignedChipTooltip": "No assignee",
-    "statusChangeError": "Failed to update status. Please try again."
+    "statusChangeError": "Failed to update status. Please try again.",
+    "syncNow": "Sync Now"
   },
   "providers": {
     "title": "Issue Tracker Settings",
