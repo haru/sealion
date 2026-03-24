@@ -54,7 +54,8 @@ async function handleCloseIssue(id: string, userId: string, comment?: string) {
     if (comment && comment.trim()) {
       await adapter.addComment(issue.project.externalId, issue.externalId, comment.trim());
     }
-  } catch {
+  } catch (err) {
+    console.error("[closeIssue] External provider call failed:", err);
     return fail("EXTERNAL_UPDATE_FAILED", 502);
   }
 

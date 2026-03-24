@@ -428,12 +428,23 @@ describe("JiraAdapter", () => {
   });
 
   describe("addComment", () => {
-    it("posts comment to Jira issue comment endpoint", async () => {
+    it("posts comment to Jira issue comment endpoint using ADF format", async () => {
       mockAxiosInstance.post.mockResolvedValue({ data: {} });
       await adapter.addComment("PROJ", "PROJ-1", "Completed after review.");
       expect(mockAxiosInstance.post).toHaveBeenCalledWith(
         "/issue/PROJ-1/comment",
-        { body: "Completed after review." }
+        {
+          body: {
+            type: "doc",
+            version: 1,
+            content: [
+              {
+                type: "paragraph",
+                content: [{ type: "text", text: "Completed after review." }],
+              },
+            ],
+          },
+        }
       );
     });
 
