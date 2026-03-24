@@ -67,13 +67,6 @@ export interface IssueProviderAdapter {
   closeIssue(projectExternalId: string, issueExternalId: string): Promise<void>;
 
   /**
-   * Reopens the specified issue on the external provider.
-   * @param projectExternalId - External ID of the project.
-   * @param issueExternalId - External ID of the issue to reopen.
-   */
-  reopenIssue(projectExternalId: string, issueExternalId: string): Promise<void>;
-
-  /**
    * Posts a comment to the specified issue on the external provider.
    * @param projectExternalId - External ID of the project.
    * @param issueExternalId - External ID of the issue.

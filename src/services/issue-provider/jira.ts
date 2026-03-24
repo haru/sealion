@@ -140,22 +140,6 @@ export class JiraAdapter implements IssueProviderAdapter {
   }
 
   /** {@inheritDoc} */
-  async reopenIssue(_projectExternalId: string, issueExternalId: string): Promise<void> {
-    const { data } = await this.client.get<{ transitions: JiraTransition[] }>(
-      `/issue/${issueExternalId}/transitions`
-    );
-    const todoTransition = data.transitions.find(
-      (t) => t.to.statusCategory.key === "new"
-    );
-    if (!todoTransition) {
-      throw new Error(`No "new" transition found for issue ${issueExternalId}`);
-    }
-    await this.client.post(`/issue/${issueExternalId}/transitions`, {
-      transition: { id: todoTransition.id },
-    });
-  }
-
-  /** {@inheritDoc} */
   async addComment(_projectExternalId: string, issueExternalId: string, comment: string): Promise<void> {
     await this.client.post(`/issue/${issueExternalId}/comment`, { body: comment });
   }

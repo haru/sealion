@@ -7,7 +7,7 @@ jest.mock("@/lib/db", () => ({
   prisma: {
     issue: {
       findFirst: jest.fn(),
-      delete: jest.fn(),
+      deleteMany: jest.fn(),
     },
   },
 }));
@@ -17,7 +17,6 @@ jest.mock("@/lib/encryption", () => ({
 jest.mock("@/services/issue-provider/factory", () => ({
   createAdapter: jest.fn().mockReturnValue({
     closeIssue: jest.fn().mockResolvedValue(undefined),
-    reopenIssue: jest.fn().mockResolvedValue(undefined),
   }),
 }));
 
@@ -26,7 +25,7 @@ import { prisma } from "@/lib/db";
 
 const mockAuth = auth as jest.Mock;
 const mockFindFirst = prisma.issue.findFirst as jest.Mock;
-const mockDelete = prisma.issue.delete as jest.Mock;
+const mockDeleteMany = prisma.issue.deleteMany as jest.Mock;
 
 const SESSION = { user: { id: "user-1", email: "u@example.com", role: "USER" } };
 
@@ -60,7 +59,7 @@ describe("PATCH /api/issues/[id]", () => {
 
   it("returns 200 and deletes issue on success", async () => {
     mockFindFirst.mockResolvedValue(MOCK_ISSUE);
-    mockDelete.mockResolvedValue({ id: "issue-1" });
+    mockDeleteMany.mockResolvedValue({ count: 1 });
 
     const req = makeRequest("issue-1", { closed: true });
     const res = await PATCH(req, { params: Promise.resolve({ id: "issue-1" }) });
@@ -68,7 +67,7 @@ describe("PATCH /api/issues/[id]", () => {
 
     expect(res.status).toBe(200);
     expect(json.data.id).toBe("issue-1");
-    expect(mockDelete).toHaveBeenCalledWith(
+    expect(mockDeleteMany).toHaveBeenCalledWith(
       expect.objectContaining({ where: { id: "issue-1" } })
     );
   });
@@ -85,7 +84,7 @@ describe("PATCH /api/issues/[id]", () => {
     const res = await PATCH(req, { params: Promise.resolve({ id: "issue-1" }) });
 
     expect(res.status).toBe(502);
-    expect(mockDelete).not.toHaveBeenCalled();
+    expect(mockDeleteMany).not.toHaveBeenCalled();
   });
 
   it("returns 403 when issue belongs to different user", async () => {
@@ -106,6 +105,25 @@ describe("PATCH /api/issues/[id]", () => {
     expect(res.status).toBe(401);
   });
 
+  it("returns 400 when closed is false", async () => {
+    const req = makeRequest("issue-1", { closed: false });
+    const res = await PATCH(req, { params: Promise.resolve({ id: "issue-1" }) });
+    const json = await res.json();
+
+    expect(res.status).toBe(400);
+    expect(json.error).toBe("INVALID_INPUT");
+  });
+
+  it("returns 404 when issue was already deleted by concurrent request", async () => {
+    mockFindFirst.mockResolvedValue(MOCK_ISSUE);
+    mockDeleteMany.mockResolvedValue({ count: 0 });
+
+    const req = makeRequest("issue-1", { closed: true });
+    const res = await PATCH(req, { params: Promise.resolve({ id: "issue-1" }) });
+
+    expect(res.status).toBe(404);
+  });
+
   it("passes baseUrl from issueProvider to createAdapter for Jira", async () => {
     const jiraIssue = {
       ...MOCK_ISSUE,
@@ -120,7 +138,7 @@ describe("PATCH /api/issues/[id]", () => {
       },
     };
     mockFindFirst.mockResolvedValue(jiraIssue);
-    mockDelete.mockResolvedValue({ id: "issue-1" });
+    mockDeleteMany.mockResolvedValue({ count: 1 });
 
     const { createAdapter } = jest.requireMock("@/services/issue-provider/factory");
     const req = makeRequest("issue-1", { closed: true });

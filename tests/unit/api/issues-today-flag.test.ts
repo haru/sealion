@@ -20,7 +20,6 @@ jest.mock("@/lib/encryption", () => ({
 jest.mock("@/services/issue-provider/factory", () => ({
   createAdapter: jest.fn().mockReturnValue({
     closeIssue: jest.fn().mockResolvedValue(undefined),
-    reopenIssue: jest.fn().mockResolvedValue(undefined),
   }),
 }));
 

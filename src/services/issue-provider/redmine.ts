@@ -163,20 +163,6 @@ export class RedmineAdapter implements IssueProviderAdapter {
   }
 
   /** {@inheritDoc} */
-  async reopenIssue(projectExternalId: string, issueExternalId: string): Promise<void> {
-    const { data } = await this.client.get<{ issue_statuses: RedmineIssueStatus[] }>(
-      "/issue_statuses.json"
-    );
-    const openStatus = data.issue_statuses.find((s) => !s.is_closed);
-    if (!openStatus) {
-      throw new Error("No open status found in Redmine");
-    }
-    await this.client.put(`/issues/${issueExternalId}.json`, {
-      issue: { status_id: openStatus.id },
-    });
-  }
-
-  /** {@inheritDoc} */
   async addComment(_projectExternalId: string, issueExternalId: string, comment: string): Promise<void> {
     await this.client.put(`/issues/${issueExternalId}.json`, {
       issue: { notes: comment },

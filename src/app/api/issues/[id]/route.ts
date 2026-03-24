@@ -58,9 +58,12 @@ async function handleCloseIssue(id: string, userId: string, comment?: string) {
     return fail("EXTERNAL_UPDATE_FAILED", 502);
   }
 
-  const deleted = await prisma.issue.delete({ where: { id } });
+  // Use deleteMany so that a concurrent close request (which already deleted the record)
+  // produces a graceful 404 rather than an unhandled Prisma P2025 error.
+  const { count } = await prisma.issue.deleteMany({ where: { id } });
+  if (count === 0) return fail("NOT_FOUND", 404);
 
-  return ok({ id: deleted.id });
+  return ok({ id });
 }
 
 /**

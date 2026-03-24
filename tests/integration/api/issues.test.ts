@@ -26,14 +26,12 @@ jest.mock("@/lib/auth", () => ({
 }));
 
 const mockCloseIssue = jest.fn().mockResolvedValue(undefined);
-const mockReopenIssue = jest.fn().mockResolvedValue(undefined);
 const mockAddComment = jest.fn().mockResolvedValue(undefined);
 
 jest.mock("@/services/issue-provider/github", () => ({
   GitHubAdapter: Object.assign(
     jest.fn().mockImplementation(() => ({
       closeIssue: mockCloseIssue,
-      reopenIssue: mockReopenIssue,
       addComment: mockAddComment,
     })),
     { iconUrl: "/github.svg" }
@@ -44,7 +42,6 @@ jest.mock("@/services/issue-provider/jira", () => ({
   JiraAdapter: Object.assign(
     jest.fn().mockImplementation(() => ({
       closeIssue: mockCloseIssue,
-      reopenIssue: mockReopenIssue,
       addComment: mockAddComment,
     })),
     { iconUrl: "/jira.svg" }
@@ -55,7 +52,6 @@ jest.mock("@/services/issue-provider/redmine", () => ({
   RedmineAdapter: Object.assign(
     jest.fn().mockImplementation(() => ({
       closeIssue: mockCloseIssue,
-      reopenIssue: mockReopenIssue,
       addComment: mockAddComment,
     })),
     { iconUrl: "/redmine.svg" }
@@ -120,7 +116,6 @@ async function importIssueIdRoute(p: unknown) {
     GitHubAdapter: Object.assign(
       jest.fn().mockImplementation(() => ({
         closeIssue: mockCloseIssue,
-        reopenIssue: mockReopenIssue,
         addComment: mockAddComment,
       })),
       { iconUrl: "/github.svg" }
@@ -130,7 +125,6 @@ async function importIssueIdRoute(p: unknown) {
     JiraAdapter: Object.assign(
       jest.fn().mockImplementation(() => ({
         closeIssue: mockCloseIssue,
-        reopenIssue: mockReopenIssue,
         addComment: mockAddComment,
       })),
       { iconUrl: "/jira.svg" }
@@ -140,7 +134,6 @@ async function importIssueIdRoute(p: unknown) {
     RedmineAdapter: Object.assign(
       jest.fn().mockImplementation(() => ({
         closeIssue: mockCloseIssue,
-        reopenIssue: mockReopenIssue,
         addComment: mockAddComment,
       })),
       { iconUrl: "/redmine.svg" }

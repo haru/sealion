@@ -214,6 +214,7 @@ export default function DashboardPage() {
    */
   async function handleModalConfirm(issueId: string, comment: string) {
     const originalInToday = todayIssues.find((i) => i.id === issueId);
+    const originalInIssues = issues.find((i) => i.id === issueId);
 
     // Optimistic update: remove from both lists (closing deletes the issue)
     if (originalInToday) {
@@ -221,8 +222,6 @@ export default function DashboardPage() {
     } else {
       setIssues((prev) => prev.filter((issue) => issue.id !== issueId));
     }
-
-    const originalInIssues = issues.find((i) => i.id === issueId);
     const body: Record<string, unknown> = { closed: true };
     if (comment.trim()) body.comment = comment.trim();
 

@@ -210,22 +210,13 @@ describe("GitHubAdapter", () => {
     });
   });
 
-  describe("closeIssue / reopenIssue", () => {
+  describe("closeIssue", () => {
     it("patches issue state to closed", async () => {
       mockAxiosInstance.patch.mockResolvedValue({ data: {} });
       await adapter.closeIssue("owner/repo", "42");
       expect(mockAxiosInstance.patch).toHaveBeenCalledWith(
         "/repos/owner/repo/issues/42",
         { state: "closed" }
-      );
-    });
-
-    it("patches issue state to open", async () => {
-      mockAxiosInstance.patch.mockResolvedValue({ data: {} });
-      await adapter.reopenIssue("owner/repo", "42");
-      expect(mockAxiosInstance.patch).toHaveBeenCalledWith(
-        "/repos/owner/repo/issues/42",
-        { state: "open" }
       );
     });
   });
@@ -433,33 +424,6 @@ describe("JiraAdapter", () => {
       });
 
       await expect(adapter.closeIssue("PROJ", "PROJ-1")).rejects.toThrow();
-    });
-  });
-
-  describe("reopenIssue", () => {
-    it("applies new/to-do transition", async () => {
-      mockAxiosInstance.get.mockResolvedValue({
-        data: {
-          transitions: [
-            { id: "11", name: "To Do", to: { statusCategory: { key: "new" } } },
-          ],
-        },
-      });
-      mockAxiosInstance.post.mockResolvedValue({ data: {} });
-
-      await adapter.reopenIssue("PROJ", "PROJ-1");
-      expect(mockAxiosInstance.post).toHaveBeenCalledWith(
-        "/issue/PROJ-1/transitions",
-        { transition: { id: "11" } }
-      );
-    });
-
-    it("throws when no new transition exists", async () => {
-      mockAxiosInstance.get.mockResolvedValue({
-        data: { transitions: [{ id: "31", name: "Done", to: { statusCategory: { key: "done" } } }] },
-      });
-
-      await expect(adapter.reopenIssue("PROJ", "PROJ-1")).rejects.toThrow();
     });
   });
 
@@ -692,34 +656,6 @@ describe("RedmineAdapter", () => {
       });
 
       await expect(adapter.closeIssue("my-project", "123")).rejects.toThrow();
-    });
-  });
-
-  describe("reopenIssue", () => {
-    it("applies open status", async () => {
-      mockAxiosInstance.get.mockResolvedValue({
-        data: {
-          issue_statuses: [
-            { id: 1, name: "New", is_closed: false },
-            { id: 5, name: "Closed", is_closed: true },
-          ],
-        },
-      });
-      mockAxiosInstance.put.mockResolvedValue({ data: {} });
-
-      await adapter.reopenIssue("my-project", "123");
-      expect(mockAxiosInstance.put).toHaveBeenCalledWith(
-        "/issues/123.json",
-        { issue: { status_id: 1 } }
-      );
-    });
-
-    it("throws when no open status exists", async () => {
-      mockAxiosInstance.get.mockResolvedValue({
-        data: { issue_statuses: [{ id: 5, name: "Closed", is_closed: true }] },
-      });
-
-      await expect(adapter.reopenIssue("my-project", "123")).rejects.toThrow();
     });
   });
 
