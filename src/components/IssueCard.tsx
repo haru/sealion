@@ -116,17 +116,6 @@ export default function IssueCard({
             <DragIndicatorIcon fontSize="small" />
           </Box>
 
-          {!isComplete && onComplete && (
-            <Button
-              size="small"
-              variant="outlined"
-              onClick={() => onComplete(id)}
-              sx={{ mt: 0.25, flexShrink: 0 }}
-            >
-              {tModal("confirmButton")}
-            </Button>
-          )}
-
           <Box sx={{ flex: 1, minWidth: 0 }}>
             <Typography
               variant="body1"
@@ -158,6 +147,17 @@ export default function IssueCard({
               )}
             </Stack>
           </Box>
+
+          {!isComplete && onComplete && (
+            <Button
+              size="small"
+              variant="outlined"
+              onClick={() => onComplete(id)}
+              sx={{ mt: 0.25, flexShrink: 0 }}
+            >
+              {tModal("confirmButton")}
+            </Button>
+          )}
 
           {actionButton}
 
