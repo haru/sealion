@@ -73,7 +73,7 @@ async function seedTestIssue(): Promise<string> {
     create: {
       id: TEST_USER_ID,
       email: "issues-test@integration.com",
-      hashedPassword: "hashed",
+      passwordHash: "hashed",
       role: "USER",
     },
   });

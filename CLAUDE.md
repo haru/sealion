@@ -156,9 +156,8 @@ Uses **VSCode Dev Containers**. Open in the container before starting developmen
 ## Active Technologies
 - TypeScript 5 / Node.js 20 LTS + Next.js 16 (App Router), React, MUI v7, Prisma 7, next-intl 4, Jest, Playwright, dnd-kit
 - PostgreSQL 16 via Prisma 7
-- TypeScript 5 / Node.js 20 LTS + Next.js 16 (App Router), MUI v6, next-intl 4, Prisma 7, axios (011-close-issue-modal)
-- PostgreSQL 16 via Prisma 7 — no schema changes required (011-close-issue-modal)
 
 ## Recent Changes
 - 009-task-display-cleanup: Removed `priority` field from Issue model; added `providerCreatedAt` / `providerUpdatedAt` fields; added Today tasks area with drag-and-drop reorder (dnd-kit)
 - 010-sync-throttle: Introduced sync throttling logic and related tests; no database schema changes required.
+- 011-close-issue-modal: Added `addComment()` to adapter interface; new Complete Issue modal; no schema changes required.

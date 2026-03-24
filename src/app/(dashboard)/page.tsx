@@ -218,9 +218,13 @@ export default function DashboardPage() {
   async function handleModalConfirm(issueId: string, comment: string) {
     const originalInToday = todayIssues.find((i) => i.id === issueId);
 
-    // Optimistic update: remove from today list if flagged there
+    // Optimistic update: remove from today list and insert into the regular list as CLOSED
     if (originalInToday) {
       setTodayIssues((prev) => prev.filter((i) => i.id !== issueId));
+      setIssues((prev) => [
+        { ...originalInToday, status: "CLOSED" as Status, todayFlag: false, todayOrder: null, todayAddedAt: null },
+        ...prev,
+      ]);
     } else {
       setIssues((prev) =>
         prev.map((issue) => (issue.id === issueId ? { ...issue, status: "CLOSED" as Status } : issue))
@@ -239,6 +243,7 @@ export default function DashboardPage() {
     if (!res.ok) {
       // Rollback optimistic update
       if (originalInToday) {
+        setIssues((prev) => prev.filter((i) => i.id !== issueId));
         setTodayIssues((prev) => {
           const exists = prev.some((i) => i.id === issueId);
           return exists

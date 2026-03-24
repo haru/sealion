@@ -39,8 +39,12 @@ test.describe("Complete Issue Modal", () => {
     }
     // Complete button should be present on open issue cards
     const completeButtons = page.getByRole("button", { name: /complete/i });
-    // There may be 0 buttons if all issues are closed - just verify no crash
-    expect(await completeButtons.count()).toBeGreaterThanOrEqual(0);
+    const buttonCount = await completeButtons.count();
+    if (buttonCount === 0) {
+      test.skip(); // No open issues with a Complete button to verify
+      return;
+    }
+    await expect(completeButtons.first()).toBeVisible();
   });
 
   test("clicking Complete opens confirmation modal", async ({ page }) => {
