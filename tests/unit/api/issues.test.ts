@@ -25,14 +25,13 @@ const OPEN_ISSUE = {
   externalId: "42",
   title: "Bug",
   status: "OPEN",
-  priority: "HIGH",
   dueDate: new Date("2026-04-01"),
   externalUrl: "https://github.com/x/y/issues/42",
   isUnassigned: false,
   project: { displayName: "repo", issueProvider: { type: "GITHUB", displayName: "My GH" } },
 };
 
-const CLOSED_ISSUE = { ...OPEN_ISSUE, id: "i2", status: "CLOSED", priority: "LOW", dueDate: null };
+const CLOSED_ISSUE = { ...OPEN_ISSUE, id: "i2", status: "CLOSED", dueDate: null };
 
 describe("GET /api/issues", () => {
   beforeEach(() => {
@@ -183,6 +182,16 @@ describe("GET /api/issues", () => {
     const call = mockFindMany.mock.calls[0][0];
     const orderByKeys = call.orderBy.flatMap((o: Record<string, unknown>) => Object.keys(o));
     expect(orderByKeys).not.toContain("priority");
+  });
+
+  it("does not include priority in select", async () => {
+    mockFindMany.mockResolvedValue([]);
+    mockCount.mockResolvedValue(0);
+
+    await GET(makeRequest());
+
+    const call = mockFindMany.mock.calls[0][0];
+    expect(call.select).not.toHaveProperty("priority");
   });
 
   it("includes providerCreatedAt and providerUpdatedAt in select", async () => {

@@ -1,12 +1,11 @@
 import axios from "axios";
 import { IssueProviderAdapter, NormalizedIssue, ExternalProject } from "@/lib/types";
-import { IssueStatus, IssuePriority } from "@prisma/client";
+import { IssueStatus } from "@prisma/client";
 
 interface RedmineIssue {
   id: number;
   subject: string;
   status: { id: number; name: string; is_closed?: boolean };
-  priority?: { id: number; name: string };
   due_date?: string | null;
   assigned_to?: { id: number; name: string };
   created_on?: string;
@@ -23,25 +22,6 @@ interface RedmineIssueStatus {
   id: number;
   name: string;
   is_closed: boolean;
-}
-
-/**
- * Maps a Redmine priority name to the internal {@link IssuePriority} enum.
- * @param name - The Redmine priority name (case-insensitive).
- * @returns The corresponding {@link IssuePriority} value; defaults to `MEDIUM`.
- */
-function mapPriority(name?: string): IssuePriority {
-  switch (name?.toLowerCase()) {
-    case "urgent":
-    case "immediate":
-      return IssuePriority.CRITICAL;
-    case "high":
-      return IssuePriority.HIGH;
-    case "low":
-      return IssuePriority.LOW;
-    default:
-      return IssuePriority.MEDIUM;
-  }
 }
 
 /** Adapter for the Redmine issue provider. */
@@ -107,7 +87,6 @@ export class RedmineAdapter implements IssueProviderAdapter {
       externalId: String(issue.id),
       title: issue.subject,
       status: issue.status.is_closed ? IssueStatus.CLOSED : IssueStatus.OPEN,
-      priority: mapPriority(issue.priority?.name),
       dueDate: issue.due_date ? new Date(issue.due_date) : null,
       externalUrl: `${this.baseUrl}/issues/${issue.id}`,
       isUnassigned: false,
@@ -164,7 +143,6 @@ export class RedmineAdapter implements IssueProviderAdapter {
         externalId: String(issue.id),
         title: issue.subject,
         status: issue.status.is_closed ? IssueStatus.CLOSED : IssueStatus.OPEN,
-        priority: mapPriority(issue.priority?.name),
         dueDate: issue.due_date ? new Date(issue.due_date) : null,
         externalUrl: `${this.baseUrl}/issues/${issue.id}`,
         isUnassigned: true,

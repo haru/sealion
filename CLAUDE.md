@@ -152,3 +152,10 @@ CREDENTIALS_ENCRYPTION_KEY    # 64-char hex string (32 bytes) for AES-256-GCM
 Uses **VSCode Dev Containers**. Open in the container before starting development.
 
 
+
+## Active Technologies
+- TypeScript 5 / Node.js 20 LTS + Next.js 16 (App Router), MUI v7, Prisma 7, next-intl 4, dnd-kit
+- PostgreSQL 16 via Prisma ORM
+
+## Recent Changes
+- 009-task-display-cleanup: Removed `priority` field from Issue model; added `providerCreatedAt` / `providerUpdatedAt` fields; added Today tasks area with drag-and-drop reorder (dnd-kit)

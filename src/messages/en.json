@@ -32,12 +32,8 @@
     "openInTracker": "Open in issue tracker",
     "markComplete": "Mark as complete",
     "markIncomplete": "Mark as incomplete",
-    "priority": {
-      "LOW": "Low",
-      "MEDIUM": "Medium",
-      "HIGH": "High",
-      "CRITICAL": "Critical"
-    },
+    "providerCreatedAt": "Created: {date}",
+    "providerUpdatedAt": "Updated: {date}",
     "status": {
       "OPEN": "Open",
       "CLOSED": "Closed"

@@ -28,8 +28,9 @@ test.describe("Unassigned Issues", () => {
                 externalId: "99",
                 title: "Unassigned bug to fix",
                 status: "OPEN",
-                priority: "MEDIUM",
                 dueDate: null,
+                providerCreatedAt: null,
+                providerUpdatedAt: null,
                 externalUrl: "https://github.com/owner/repo/issues/99",
                 isUnassigned: true,
                 project: {
@@ -42,8 +43,9 @@ test.describe("Unassigned Issues", () => {
                 externalId: "100",
                 title: "My assigned issue",
                 status: "OPEN",
-                priority: "HIGH",
                 dueDate: null,
+                providerCreatedAt: null,
+                providerUpdatedAt: null,
                 externalUrl: "https://github.com/owner/repo/issues/100",
                 isUnassigned: false,
                 project: {
@@ -80,8 +82,9 @@ test.describe("Unassigned Issues", () => {
                 externalId: "101",
                 title: "Only assigned issue",
                 status: "OPEN",
-                priority: "LOW",
                 dueDate: null,
+                providerCreatedAt: null,
+                providerUpdatedAt: null,
                 externalUrl: "https://github.com/owner/repo/issues/101",
                 isUnassigned: false,
                 project: {
@@ -118,8 +121,9 @@ test.describe("Unassigned Issues", () => {
                 externalId: "102",
                 title: "Issue without assignee",
                 status: "OPEN",
-                priority: "MEDIUM",
                 dueDate: null,
+                providerCreatedAt: null,
+                providerUpdatedAt: null,
                 externalUrl: "https://github.com/owner/repo/issues/102",
                 isUnassigned: true,
                 project: {

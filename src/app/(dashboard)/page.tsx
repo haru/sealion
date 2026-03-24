@@ -19,20 +19,21 @@ import TodoList from "@/components/todo/TodoList";
 import SyncStatus from "@/components/todo/SyncStatus";
 import TodayTasksArea, { TODAY_DROP_ZONE_ID } from "@/components/today-tasks/TodayTasksArea";
 import { allProjectsSynced } from "@/lib/sync-utils";
-import type { Priority, Status } from "@/lib/types";
+import type { Status } from "@/lib/types";
 
 interface Issue {
   id: string;
   externalId: string;
   title: string;
   status: Status;
-  priority: Priority;
   dueDate: string | null;
   externalUrl: string;
   isUnassigned: boolean;
   todayFlag: boolean;
   todayOrder: number | null;
   todayAddedAt: string | null;
+  providerCreatedAt: string | null;
+  providerUpdatedAt: string | null;
   project: {
     displayName: string;
     issueProvider: { iconUrl: string | null; displayName: string };
@@ -439,10 +440,11 @@ export default function DashboardPage() {
               externalId={activeIssue.externalId}
               title={activeIssue.title}
               status={activeIssue.status}
-              priority={activeIssue.priority}
               dueDate={activeIssue.dueDate}
               externalUrl={activeIssue.externalUrl}
               isUnassigned={activeIssue.isUnassigned}
+              providerCreatedAt={activeIssue.providerCreatedAt}
+              providerUpdatedAt={activeIssue.providerUpdatedAt}
               providerIconUrl={activeIssue.project.issueProvider.iconUrl}
               providerName={activeIssue.project.issueProvider.displayName}
               projectName={activeIssue.project.displayName}

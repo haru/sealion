@@ -17,27 +17,23 @@ import { useTranslations } from "next-intl";
 import ProviderIcon from "@/components/ProviderIcon";
 import type { DraggableSyntheticListeners, DraggableAttributes } from "@dnd-kit/core";
 import type { CSSProperties, ReactNode, Ref } from "react";
-import type { Priority, Status } from "@/lib/types";
-
-const PRIORITY_COLORS: Record<Priority, "default" | "primary" | "warning" | "error"> = {
-  LOW: "default",
-  MEDIUM: "primary",
-  HIGH: "warning",
-  CRITICAL: "error",
-};
+import type { Status } from "@/lib/types";
 
 interface IssueCardProps {
   id: string;
   externalId: string;
   title: string;
   status: Status;
-  priority: Priority;
   dueDate: string | null;
   externalUrl: string;
   isUnassigned: boolean;
   providerIconUrl: string | null;
   providerName: string;
   projectName: string;
+  /** ISO 8601 datetime string from the issue provider, or `null` if unavailable. */
+  providerCreatedAt: string | null;
+  /** ISO 8601 datetime string from the issue provider, or `null` if unavailable. */
+  providerUpdatedAt: string | null;
   actionButton: ReactNode;
   dragContainerRef?: Ref<HTMLDivElement>;
   dragHandleAttributes?: DraggableAttributes;
@@ -55,13 +51,14 @@ export default function IssueCard({
   externalId,
   title,
   status,
-  priority,
   dueDate,
   externalUrl,
   isUnassigned,
   providerIconUrl,
   providerName,
   projectName,
+  providerCreatedAt,
+  providerUpdatedAt,
   actionButton,
   dragContainerRef,
   dragHandleAttributes,
@@ -77,6 +74,12 @@ export default function IssueCard({
   const dueDateFormatted = dueDate
     ? t("dueDate", { date: new Date(dueDate).toLocaleDateString() })
     : null;
+  const createdFormatted = t("providerCreatedAt", {
+    date: providerCreatedAt ? new Date(providerCreatedAt).toLocaleString() : "\u2014",
+  });
+  const updatedFormatted = t("providerUpdatedAt", {
+    date: providerUpdatedAt ? new Date(providerUpdatedAt).toLocaleString() : "\u2014",
+  });
 
   /** Toggles the issue status between OPEN and CLOSED. */
   function handleCheck() {
@@ -116,11 +119,6 @@ export default function IssueCard({
             </Typography>
             <Stack direction="row" spacing={1} sx={{ mt: 1, flexWrap: "wrap", gap: 0.5 }}>
               <Chip
-                label={t(`priority.${priority}`)}
-                size="small"
-                color={PRIORITY_COLORS[priority]}
-              />
-              <Chip
                 icon={<ProviderIcon iconUrl={providerIconUrl} label={providerName} fontSize="small" />}
                 label={`${providerName} / ${projectName}`}
                 size="small"
@@ -129,6 +127,8 @@ export default function IssueCard({
               {dueDateFormatted && (
                 <Chip label={dueDateFormatted} size="small" variant="outlined" />
               )}
+              <Chip label={createdFormatted} size="small" variant="outlined" />
+              <Chip label={updatedFormatted} size="small" variant="outlined" />
               {isUnassigned && (
                 <Tooltip title={t("unassignedChipTooltip")}>
                   <Chip

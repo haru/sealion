@@ -6,20 +6,23 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useTranslations } from "next-intl";
 import IssueCard from "@/components/IssueCard";
-import type { Priority, Status } from "@/lib/types";
+import type { Status } from "@/lib/types";
 
 interface TodayTaskItemProps {
   id: string;
   externalId: string;
   title: string;
   status: Status;
-  priority: Priority;
   dueDate: string | null;
   externalUrl: string;
   isUnassigned: boolean;
   providerIconUrl: string | null;
   providerName: string;
   projectName: string;
+  /** ISO 8601 datetime string from the issue provider, or `null` if unavailable. */
+  providerCreatedAt: string | null;
+  /** ISO 8601 datetime string from the issue provider, or `null` if unavailable. */
+  providerUpdatedAt: string | null;
   onRemove: (id: string) => void;
   onStatusChange?: (id: string, newStatus: Status) => void;
 }
@@ -30,13 +33,14 @@ export default function TodayTaskItem({
   externalId,
   title,
   status,
-  priority,
   dueDate,
   externalUrl,
   isUnassigned,
   providerIconUrl,
   providerName,
   projectName,
+  providerCreatedAt,
+  providerUpdatedAt,
   onRemove,
   onStatusChange,
 }: TodayTaskItemProps) {
@@ -70,13 +74,14 @@ export default function TodayTaskItem({
       externalId={externalId}
       title={title}
       status={status}
-      priority={priority}
       dueDate={dueDate}
       externalUrl={externalUrl}
       isUnassigned={isUnassigned}
       providerIconUrl={providerIconUrl}
       providerName={providerName}
       projectName={projectName}
+      providerCreatedAt={providerCreatedAt}
+      providerUpdatedAt={providerUpdatedAt}
       actionButton={actionButton}
       dragContainerRef={setNodeRef}
       dragHandleAttributes={attributes}

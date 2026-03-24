@@ -1,7 +1,4 @@
-import { IssuePriority, IssueStatus } from "@prisma/client";
-
-/** Re-export of Prisma's {@link IssuePriority} enum for use across the application. */
-export type Priority = IssuePriority;
+import { IssueStatus } from "@prisma/client";
 
 /** Re-export of Prisma's {@link IssueStatus} enum for use across the application. */
 export type Status = IssueStatus;
@@ -17,8 +14,6 @@ export interface NormalizedIssue {
   title: string;
   /** Current status mapped to the internal enum. */
   status: IssueStatus;
-  /** Priority mapped to the internal enum. */
-  priority: IssuePriority;
   /** Optional due date from the provider, or `null` if not set. */
   dueDate: Date | null;
   /** URL to the issue on the provider's website. */
