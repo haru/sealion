@@ -69,7 +69,6 @@ export async function syncProviders(userId: string): Promise<void> {
                         update: {
                           title: issue.title,
                           status: issue.status,
-                          priority: issue.priority,
                           dueDate: issue.dueDate,
                           externalUrl: issue.externalUrl,
                           isUnassigned: issue.isUnassigned,
@@ -86,7 +85,6 @@ export async function syncProviders(userId: string): Promise<void> {
                           externalId: issue.externalId,
                           title: issue.title,
                           status: issue.status,
-                          priority: issue.priority,
                           dueDate: issue.dueDate,
                           externalUrl: issue.externalUrl,
                           isUnassigned: issue.isUnassigned,

@@ -31,7 +31,6 @@ export async function GET() {
       externalId: true,
       title: true,
       status: true,
-      priority: true,
       dueDate: true,
       externalUrl: true,
       isUnassigned: true,

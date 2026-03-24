@@ -1,6 +1,6 @@
 import axios from "axios";
 import { IssueProviderAdapter, NormalizedIssue, ExternalProject } from "@/lib/types";
-import { IssueStatus, IssuePriority } from "@prisma/client";
+import { IssueStatus } from "@prisma/client";
 
 interface JiraIssue {
   id: string;
@@ -10,7 +10,6 @@ interface JiraIssue {
     status: {
       statusCategory: { key: string };
     };
-    priority?: { name?: string };
     duedate?: string | null;
     assignee?: unknown;
     created?: string;
@@ -33,28 +32,6 @@ interface JiraTransition {
   id: string;
   name: string;
   to: { statusCategory: { key: string } };
-}
-
-/**
- * Maps a Jira priority name to the internal {@link IssuePriority} enum.
- * @param name - The Jira priority name (case-insensitive).
- * @returns The corresponding {@link IssuePriority} value; defaults to `MEDIUM`.
- */
-function mapPriority(name?: string): IssuePriority {
-  switch (name?.toLowerCase()) {
-    case "highest":
-    case "critical":
-      return IssuePriority.CRITICAL;
-    case "high":
-      return IssuePriority.HIGH;
-    case "low":
-      return IssuePriority.LOW;
-    case "lowest":
-    case "trivial":
-      return IssuePriority.LOW;
-    default:
-      return IssuePriority.MEDIUM;
-  }
 }
 
 /**
@@ -112,7 +89,7 @@ export class JiraAdapter implements IssueProviderAdapter {
     let nextPageToken: string | undefined;
 
     while (true) {
-      const body: Record<string, unknown> = { jql, maxResults, fields: ["summary", "status", "priority", "duedate", "created", "updated"] };
+      const body: Record<string, unknown> = { jql, maxResults, fields: ["summary", "status", "duedate", "created", "updated"] };
       if (nextPageToken) body.nextPageToken = nextPageToken;
       const { data } = await this.client.post<JiraSearchResponse>("/search/jql", body);
       issues.push(...data.issues);
@@ -126,7 +103,6 @@ export class JiraAdapter implements IssueProviderAdapter {
         externalId: issue.key,
         title: issue.fields.summary,
         status: isDone ? IssueStatus.CLOSED : IssueStatus.OPEN,
-        priority: mapPriority(issue.fields.priority?.name),
         dueDate: issue.fields.duedate ? new Date(issue.fields.duedate) : null,
         externalUrl: `${this.baseUrl}/browse/${issue.key}`,
         isUnassigned,

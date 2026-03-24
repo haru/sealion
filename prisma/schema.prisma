@@ -19,13 +19,6 @@ enum ProviderType {
   REDMINE
 }
 
-enum IssuePriority {
-  LOW
-  MEDIUM
-  HIGH
-  CRITICAL
-}
-
 enum IssueStatus {
   OPEN
   CLOSED
@@ -87,7 +80,6 @@ model Issue {
   externalId   String
   title        String
   status       IssueStatus   @default(OPEN)
-  priority     IssuePriority @default(MEDIUM)
   dueDate      DateTime?
   externalUrl   String
   isUnassigned  Boolean       @default(false)

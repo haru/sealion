@@ -62,7 +62,6 @@ export async function GET(req: NextRequest) {
         externalId: true,
         title: true,
         status: true,
-        priority: true,
         dueDate: true,
         externalUrl: true,
         isUnassigned: true,

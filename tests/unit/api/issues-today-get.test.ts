@@ -24,7 +24,6 @@ const TODAY_ISSUE = {
   externalId: "42",
   title: "Today task",
   status: "OPEN",
-  priority: "HIGH",
   dueDate: null,
   externalUrl: "https://github.com/x/y/issues/42",
   isUnassigned: false,
@@ -104,5 +103,14 @@ describe("GET /api/issues/today", () => {
     expect(call.select.todayFlag).toBe(true);
     expect(call.select.todayOrder).toBe(true);
     expect(call.select.todayAddedAt).toBe(true);
+  });
+
+  it("does not include priority in select", async () => {
+    mockFindMany.mockResolvedValue([]);
+
+    await GET(makeRequest());
+
+    const call = mockFindMany.mock.calls[0][0];
+    expect(call.select).not.toHaveProperty("priority");
   });
 });

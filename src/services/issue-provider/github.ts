@@ -1,6 +1,6 @@
 import axios from "axios";
 import { IssueProviderAdapter, NormalizedIssue, ExternalProject } from "@/lib/types";
-import { IssueStatus, IssuePriority } from "@prisma/client";
+import { IssueStatus } from "@prisma/client";
 
 interface GitHubIssue {
   number: number;
@@ -94,7 +94,6 @@ export class GitHubAdapter implements IssueProviderAdapter {
       externalId: String(issue.number),
       title: issue.title,
       status: issue.state === "open" ? IssueStatus.OPEN : IssueStatus.CLOSED,
-      priority: IssuePriority.MEDIUM,
       dueDate: issue.milestone?.due_on ? new Date(issue.milestone.due_on) : null,
       externalUrl: issue.html_url,
       isUnassigned: false,
@@ -123,7 +122,6 @@ export class GitHubAdapter implements IssueProviderAdapter {
       externalId: String(issue.number),
       title: issue.title,
       status: issue.state === "open" ? IssueStatus.OPEN : IssueStatus.CLOSED,
-      priority: IssuePriority.MEDIUM,
       dueDate: issue.milestone?.due_on ? new Date(issue.milestone.due_on) : null,
       externalUrl: issue.html_url,
       isUnassigned: true,

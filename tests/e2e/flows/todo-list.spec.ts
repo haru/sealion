@@ -62,7 +62,7 @@ test.describe("TODO List Display", () => {
     // /api/issues returns the item only after sync has completed (pollCount >= 3)
     await page.route("/api/issues*", async (route) => {
       const items = pollCount >= 3
-        ? [{ id: "i1", title: "Synced Issue", status: "OPEN", priority: "MEDIUM", dueDate: null, externalUrl: "https://example.com", project: { displayName: "repo", issueProvider: { iconUrl: null, displayName: "GitHub" } } }]
+        ? [{ id: "i1", title: "Synced Issue", status: "OPEN", dueDate: null, externalUrl: "https://example.com", providerCreatedAt: "2026-01-15T10:30:00.000Z", providerUpdatedAt: "2026-03-10T14:00:00.000Z", project: { displayName: "repo", issueProvider: { iconUrl: null, displayName: "GitHub" } } }]
         : [];
       await route.fulfill({
         status: 200,
@@ -78,5 +78,120 @@ test.describe("TODO List Display", () => {
 
     // Wait until the synced issue appears — proves the re-fetch was triggered by sync completion
     await expect(page.getByText("Synced Issue")).toBeVisible({ timeout: 30000 });
+  });
+
+  test("shows providerCreatedAt and providerUpdatedAt chips on each task", async ({ page }) => {
+    const providerCreatedAt = "2026-01-15T10:30:00.000Z";
+    const providerUpdatedAt = "2026-03-10T14:00:00.000Z";
+
+    await page.route("/api/sync*", async (route) => {
+      if (route.request().method() === "POST") {
+        await route.fulfill({ status: 202, contentType: "application/json", body: JSON.stringify({ data: { syncing: false }, error: null }) });
+        return;
+      }
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ data: [], error: null }) });
+    });
+
+    await page.route("/api/issues/today", async (route) => {
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ data: { items: [] }, error: null }) });
+    });
+
+    await page.route("/api/issues*", async (route) => {
+      if (route.request().url().includes("/today")) return;
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          data: {
+            items: [{
+              id: "i1",
+              externalId: "42",
+              title: "Date Display Issue",
+              status: "OPEN",
+              dueDate: null,
+              externalUrl: "https://example.com",
+              isUnassigned: false,
+              todayFlag: false,
+              todayOrder: null,
+              todayAddedAt: null,
+              providerCreatedAt,
+              providerUpdatedAt,
+              project: { displayName: "repo", issueProvider: { iconUrl: null, displayName: "GitHub" } },
+            }],
+            total: 1,
+            totalToday: 0,
+            page: 1,
+            limit: 20,
+          },
+          error: null,
+        }),
+      });
+    });
+
+    await page.goto("/");
+
+    // Issue must be visible
+    await expect(page.getByText("Date Display Issue")).toBeVisible({ timeout: 10000 });
+
+    // Created and updated date chips must be visible
+    const createdDate = new Date(providerCreatedAt).toLocaleString();
+    const updatedDate = new Date(providerUpdatedAt).toLocaleString();
+    await expect(page.getByText(new RegExp(createdDate.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")))).toBeVisible();
+    await expect(page.getByText(new RegExp(updatedDate.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")))).toBeVisible();
+  });
+
+  test("does not show priority chip on any task", async ({ page }) => {
+    await page.route("/api/sync*", async (route) => {
+      if (route.request().method() === "POST") {
+        await route.fulfill({ status: 202, contentType: "application/json", body: JSON.stringify({ data: { syncing: false }, error: null }) });
+        return;
+      }
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ data: [], error: null }) });
+    });
+
+    await page.route("/api/issues/today", async (route) => {
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ data: { items: [] }, error: null }) });
+    });
+
+    await page.route("/api/issues*", async (route) => {
+      if (route.request().url().includes("/today")) return;
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          data: {
+            items: [{
+              id: "i1",
+              externalId: "42",
+              title: "Priority Test Issue",
+              status: "OPEN",
+              dueDate: null,
+              externalUrl: "https://example.com",
+              isUnassigned: false,
+              todayFlag: false,
+              todayOrder: null,
+              todayAddedAt: null,
+              providerCreatedAt: null,
+              providerUpdatedAt: null,
+              project: { displayName: "repo", issueProvider: { iconUrl: null, displayName: "GitHub" } },
+            }],
+            total: 1,
+            totalToday: 0,
+            page: 1,
+            limit: 20,
+          },
+          error: null,
+        }),
+      });
+    });
+
+    await page.goto("/");
+    await expect(page.getByText("Priority Test Issue")).toBeVisible({ timeout: 10000 });
+
+    // None of the priority labels should be visible
+    await expect(page.getByText("Low")).not.toBeVisible();
+    await expect(page.getByText("Medium")).not.toBeVisible();
+    await expect(page.getByText("High")).not.toBeVisible();
+    await expect(page.getByText("Critical")).not.toBeVisible();
   });
 });

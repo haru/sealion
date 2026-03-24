@@ -93,8 +93,8 @@ describe("GitHubAdapter", () => {
         externalId: "42",
         title: "Fix bug",
         status: "OPEN",
-        priority: "MEDIUM",
       });
+      expect(issues[0]).not.toHaveProperty("priority");
       expect(issues[0].dueDate).toBeInstanceOf(Date);
     });
 
@@ -291,8 +291,8 @@ describe("JiraAdapter", () => {
         externalId: "PROJ-1",
         title: "Fix login",
         status: "OPEN",
-        priority: "HIGH",
       });
+      expect(issues[0]).not.toHaveProperty("priority");
     });
 
     it("maps done status to CLOSED", async () => {
@@ -475,36 +475,8 @@ describe("JiraAdapter", () => {
     });
   });
 
-  describe("priority mapping", () => {
-    const makePriorityIssue = (priorityName: string) => ({
-      issues: [
-        {
-          id: "1",
-          key: "PROJ-1",
-          fields: {
-            summary: "Test",
-            status: { statusCategory: { key: "indeterminate" } },
-            priority: { name: priorityName },
-          },
-        },
-      ],
-    });
-
-    it.each([
-      ["Highest", "CRITICAL"],
-      ["Critical", "CRITICAL"],
-      ["High", "HIGH"],
-      ["Low", "LOW"],
-      ["Lowest", "LOW"],
-      ["Trivial", "LOW"],
-      ["Normal", "MEDIUM"],
-    ])("maps Jira priority %s to %s", async (jiraPriority, expected) => {
-      mockAxiosInstance.post.mockResolvedValue({ data: makePriorityIssue(jiraPriority) });
-      const issues = await adapter.fetchAssignedIssues("PROJ");
-      expect(issues[0].priority).toBe(expected);
-    });
-  });
 });
+
 
 describe("RedmineAdapter", () => {
   let adapter: RedmineAdapter;
@@ -686,8 +658,8 @@ describe("RedmineAdapter", () => {
         externalId: "123",
         title: "Fix server",
         status: "OPEN",
-        priority: "HIGH",
       });
+      expect(issues[0]).not.toHaveProperty("priority");
     });
   });
 

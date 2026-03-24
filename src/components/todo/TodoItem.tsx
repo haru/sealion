@@ -5,20 +5,23 @@ import TodayIcon from "@mui/icons-material/Today";
 import { useDraggable } from "@dnd-kit/core";
 import { useTranslations } from "next-intl";
 import IssueCard from "@/components/IssueCard";
-import type { Priority, Status } from "@/lib/types";
+import type { Status } from "@/lib/types";
 
 interface TodoItemProps {
   id: string;
   externalId: string;
   title: string;
   status: Status;
-  priority: Priority;
   dueDate: string | null;
   externalUrl: string;
   isUnassigned: boolean;
   providerIconUrl: string | null;
   providerName: string;
   projectName: string;
+  /** ISO 8601 datetime string from the issue provider, or `null` if unavailable. */
+  providerCreatedAt: string | null;
+  /** ISO 8601 datetime string from the issue provider, or `null` if unavailable. */
+  providerUpdatedAt: string | null;
   onStatusChange?: (id: string, newStatus: Status) => void;
   onAddToToday?: (id: string) => void;
 }
@@ -29,13 +32,14 @@ export default function TodoItem({
   externalId,
   title,
   status,
-  priority,
   dueDate,
   externalUrl,
   isUnassigned,
   providerIconUrl,
   providerName,
   projectName,
+  providerCreatedAt,
+  providerUpdatedAt,
   onStatusChange,
   onAddToToday,
 }: TodoItemProps) {
@@ -67,13 +71,14 @@ export default function TodoItem({
       externalId={externalId}
       title={title}
       status={status}
-      priority={priority}
       dueDate={dueDate}
       externalUrl={externalUrl}
       isUnassigned={isUnassigned}
       providerIconUrl={providerIconUrl}
       providerName={providerName}
       projectName={projectName}
+      providerCreatedAt={providerCreatedAt}
+      providerUpdatedAt={providerUpdatedAt}
       actionButton={actionButton}
       dragContainerRef={setNodeRef}
       dragHandleAttributes={attributes}

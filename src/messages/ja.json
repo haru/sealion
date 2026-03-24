@@ -32,12 +32,8 @@
     "openInTracker": "issue管理システムで開く",
     "markComplete": "完了にする",
     "markIncomplete": "未完了に戻す",
-    "priority": {
-      "LOW": "低",
-      "MEDIUM": "中",
-      "HIGH": "高",
-      "CRITICAL": "緊急"
-    },
+    "providerCreatedAt": "作成日時: {date}",
+    "providerUpdatedAt": "更新日時: {date}",
     "status": {
       "OPEN": "未完了",
       "CLOSED": "完了"
