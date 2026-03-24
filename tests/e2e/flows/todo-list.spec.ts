@@ -133,11 +133,22 @@ test.describe("TODO List Display", () => {
     // Issue must be visible
     await expect(page.getByText("Date Display Issue")).toBeVisible({ timeout: 10000 });
 
-    // Created and updated date chips must be visible
-    const createdDate = new Date(providerCreatedAt).toLocaleString();
-    const updatedDate = new Date(providerUpdatedAt).toLocaleString();
-    await expect(page.getByText(new RegExp(createdDate.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")))).toBeVisible();
-    await expect(page.getByText(new RegExp(updatedDate.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")))).toBeVisible();
+    // Created and updated date chips must be visible.
+    // Compute expected strings inside the browser context to match the UI's locale/timezone.
+    const { createdDateText, updatedDateText } = await page.evaluate(
+      ({ createdIso, updatedIso }) => {
+        const created = new Date(createdIso).toLocaleString();
+        const updated = new Date(updatedIso).toLocaleString();
+        return { createdDateText: created, updatedDateText: updated };
+      },
+      { createdIso: providerCreatedAt, updatedIso: providerUpdatedAt },
+    );
+    await expect(
+      page.getByText(new RegExp(createdDateText.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))),
+    ).toBeVisible();
+    await expect(
+      page.getByText(new RegExp(updatedDateText.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))),
+    ).toBeVisible();
   });
 
   test("does not show priority chip on any task", async ({ page }) => {
