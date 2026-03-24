@@ -155,7 +155,7 @@ Uses **VSCode Dev Containers**. Open in the container before starting developmen
 
 ## Active Technologies
 - TypeScript 5 / Node.js 20 LTS + Next.js 16 (App Router), MUI v6, Prisma 7, next-intl 4, dnd-kit (009-task-display-cleanup)
-- PostgreSQL 16 via Prisma ORM — DB migration required (remove `priority` column + `IssuePriority` enum) (009-task-display-cleanup)
+- PostgreSQL 16 via Prisma ORM
 
 ## Recent Changes
-- 009-task-display-cleanup: Added TypeScript 5 / Node.js 20 LTS + Next.js 16 (App Router), MUI v6, Prisma 7, next-intl 4, dnd-kit
+- 009-task-display-cleanup: Removed `priority` field from Issue model; added `providerCreatedAt` / `providerUpdatedAt` fields; added Today tasks area with drag-and-drop reorder (dnd-kit)

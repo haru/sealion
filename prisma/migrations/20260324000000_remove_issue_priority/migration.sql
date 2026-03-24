@@ -1,5 +1,5 @@
 -- Remove priority column from Issue table
-ALTER TABLE "Issue" DROP COLUMN "priority";
+ALTER TABLE "Issue" DROP COLUMN IF EXISTS "priority";
 
 -- Drop IssuePriority enum
-DROP TYPE "IssuePriority";
+DROP TYPE IF EXISTS "IssuePriority";
