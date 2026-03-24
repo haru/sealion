@@ -1,6 +1,6 @@
 "use client";
 
-import { Box, Chip, Snackbar, Alert } from "@mui/material";
+import { Box, Button, Chip, Snackbar, Alert } from "@mui/material";
 import SyncIcon from "@mui/icons-material/Sync";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import ErrorIcon from "@mui/icons-material/Error";
@@ -25,10 +25,12 @@ interface ProviderStatus {
 interface SyncStatusProps {
   providers: ProviderStatus[];
   isSyncing: boolean;
+  /** Callback invoked when the user clicks the "Sync Now" button. */
+  onSyncNow: () => void;
 }
 
-/** Displays the sync status chip and error snackbars for all providers. */
-export default function SyncStatus({ providers, isSyncing }: SyncStatusProps) {
+/** Displays the sync status chip, a "Sync Now" button, and error snackbars for all providers. */
+export default function SyncStatus({ providers, isSyncing, onSyncNow }: SyncStatusProps) {
   const t = useTranslations("todo");
   const tErrors = useTranslations("errors");
 
@@ -85,8 +87,16 @@ export default function SyncStatus({ providers, isSyncing }: SyncStatusProps) {
 
   return (
     <>
-      <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", mb: 2 }}>
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
         <Chip icon={icon} label={label} size="small" variant="outlined" />
+        <Button
+          variant="outlined"
+          size="small"
+          disabled={isSyncing || providers.length === 0}
+          onClick={onSyncNow}
+        >
+          {t("syncNow")}
+        </Button>
       </Box>
 
       <Snackbar
