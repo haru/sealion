@@ -94,6 +94,21 @@ export default function SyncStatus({ providers, isSyncing, onSyncNow }: SyncStat
           size="small"
           disabled={isSyncing || providers.length === 0}
           onClick={onSyncNow}
+          startIcon={
+            <SyncIcon
+              sx={
+                isSyncing
+                  ? {
+                      animation: "spin 1s linear infinite",
+                      "@keyframes spin": {
+                        "0%": { transform: "rotate(0deg)" },
+                        "100%": { transform: "rotate(360deg)" },
+                      },
+                    }
+                  : undefined
+              }
+            />
+          }
         >
           {t("syncNow")}
         </Button>
