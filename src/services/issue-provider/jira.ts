@@ -157,4 +157,9 @@ export class JiraAdapter implements IssueProviderAdapter {
       transition: { id: todoTransition.id },
     });
   }
+
+  /** {@inheritDoc} */
+  async addComment(_projectExternalId: string, issueExternalId: string, comment: string): Promise<void> {
+    await this.client.post(`/issue/${issueExternalId}/comment`, { body: comment });
+  }
 }

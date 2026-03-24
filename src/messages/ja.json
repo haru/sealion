@@ -141,6 +141,14 @@
     "removeError": "タスクの除外に失敗しました。再試行してください。",
     "reorderError": "並び順の保存に失敗しました。変更を元に戻します。"
   },
+  "completeModal": {
+    "title": "Issueを完了する",
+    "reasonLabel": "完了の理由（任意）",
+    "reasonPlaceholder": "Issueにコメントを追加...",
+    "confirmButton": "完了",
+    "cancelButton": "キャンセル",
+    "errorMessage": "Issueのクローズに失敗しました。もう一度お試しください。"
+  },
   "errors": {
     "UNAUTHORIZED": "続けるにはログインしてください",
     "FORBIDDEN": "この操作を実行する権限がありません",

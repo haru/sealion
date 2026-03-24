@@ -22,18 +22,30 @@ interface Issue {
   };
 }
 
+/** Props for {@link TodoList}. */
 interface TodoListProps {
+  /** Issues to display on the current page. */
   items: Issue[];
+  /** Total number of issues (for pagination). */
   total: number;
+  /** Current page (1-based). */
   page: number;
+  /** Number of issues per page. */
   limit: number;
+  /** When true, shows a loading skeleton. */
   loading?: boolean;
+  /** Called when the user navigates to a different page. */
   onPageChange?: (page: number) => void;
-  onStatusChange?: (id: string, newStatus: Status) => void;
+  /**
+   * Called when the user clicks the "Complete" button on an issue card.
+   * @param id - Internal issue ID.
+   */
+  onComplete?: (id: string) => void;
+  /** Called when the user adds an issue to today's task list. */
   onAddToToday?: (id: string) => void;
 }
 
-/** Paginated issue list with loading skeleton and status-change callbacks. */
+/** Paginated issue list with loading skeleton, complete button, and add-to-today callbacks. */
 export default function TodoList({
   items,
   total,
@@ -41,7 +53,7 @@ export default function TodoList({
   limit,
   loading,
   onPageChange,
-  onStatusChange,
+  onComplete,
   onAddToToday,
 }: TodoListProps) {
   const t = useTranslations("todo");
@@ -79,7 +91,7 @@ export default function TodoList({
           providerIconUrl={issue.project.issueProvider.iconUrl}
           providerName={issue.project.issueProvider.displayName}
           projectName={issue.project.displayName}
-          onStatusChange={onStatusChange}
+          onComplete={onComplete}
           onAddToToday={onAddToToday}
         />
       ))}

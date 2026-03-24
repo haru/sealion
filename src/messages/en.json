@@ -141,6 +141,14 @@
     "removeError": "Failed to remove task. Please try again.",
     "reorderError": "Failed to save order. Reverting changes."
   },
+  "completeModal": {
+    "title": "Complete Issue",
+    "reasonLabel": "Reason for completion (optional)",
+    "reasonPlaceholder": "Add a comment to the issue...",
+    "confirmButton": "Complete",
+    "cancelButton": "Cancel",
+    "errorMessage": "Failed to close the issue. Please try again."
+  },
   "errors": {
     "UNAUTHORIZED": "Please log in to continue",
     "FORBIDDEN": "You do not have permission to perform this action",

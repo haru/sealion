@@ -178,4 +178,11 @@ export class RedmineAdapter implements IssueProviderAdapter {
       issue: { status_id: openStatus.id },
     });
   }
+
+  /** {@inheritDoc} */
+  async addComment(_projectExternalId: string, issueExternalId: string, comment: string): Promise<void> {
+    await this.client.put(`/issues/${issueExternalId}.json`, {
+      issue: { notes: comment },
+    });
+  }
 }

@@ -17,6 +17,7 @@ import { arrayMove } from "@dnd-kit/sortable";
 import IssueCard from "@/components/IssueCard";
 import TodoList from "@/components/todo/TodoList";
 import SyncStatus from "@/components/todo/SyncStatus";
+import CompleteIssueModal from "@/components/todo/CompleteIssueModal";
 import TodayTasksArea, { TODAY_DROP_ZONE_ID } from "@/components/today-tasks/TodayTasksArea";
 import { allProjectsSynced, shouldThrottleSync, SYNC_THROTTLE_MS } from "@/lib/sync-utils";
 import type { Status } from "@/lib/types";
@@ -76,6 +77,7 @@ export default function DashboardPage() {
   const [toast, setToast] = useState<Toast>({ open: false, message: "", severity: "success" });
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
   const [isDraggingOutside, setIsDraggingOutside] = useState(false);
+  const [completeModalIssueId, setCompleteModalIssueId] = useState<string | null>(null);
   const syncStartedAtRef = useRef<Date | null>(null);
 
   const sensors = useSensors(useSensor(PointerSensor));
@@ -197,46 +199,61 @@ export default function DashboardPage() {
     await fetchIssues(newPage);
   }
 
-  /** Optimistically updates the issue status and syncs with the API. */
-  async function handleStatusChange(id: string, newStatus: Status) {
-    const originalInToday = todayIssues.find((i) => i.id === id);
-    const originalInRegular = issues.find((i) => i.id === id);
+  /** Opens the complete-issue modal for the given issue ID. */
+  function handleComplete(id: string) {
+    setCompleteModalIssueId(id);
+  }
 
-    // Optimistic update: if closing a today item, remove it from today list
-    if (originalInToday && newStatus === "CLOSED") {
-      setTodayIssues((prev) => prev.filter((i) => i.id !== id));
-    } else if (originalInToday) {
-      setTodayIssues((prev) =>
-        prev.map((issue) => (issue.id === id ? { ...issue, status: newStatus } : issue))
-      );
+  /** Closes the complete-issue modal without taking action. */
+  function handleModalCancel() {
+    setCompleteModalIssueId(null);
+  }
+
+  /**
+   * Confirms issue close from the modal. Posts comment if provided, then updates local state.
+   * Throws on API failure so the modal can display an inline error.
+   * @param issueId - Internal ID of the issue to close.
+   * @param comment - Optional completion reason entered by the user.
+   */
+  async function handleModalConfirm(issueId: string, comment: string) {
+    const originalInToday = todayIssues.find((i) => i.id === issueId);
+
+    // Optimistic update: remove from today list if flagged there
+    if (originalInToday) {
+      setTodayIssues((prev) => prev.filter((i) => i.id !== issueId));
     } else {
       setIssues((prev) =>
-        prev.map((issue) => (issue.id === id ? { ...issue, status: newStatus } : issue))
+        prev.map((issue) => (issue.id === issueId ? { ...issue, status: "CLOSED" as Status } : issue))
       );
     }
 
-    const res = await fetch(`/api/issues/${id}`, {
+    const body: Record<string, unknown> = { status: "CLOSED" };
+    if (comment.trim()) body.comment = comment.trim();
+
+    const res = await fetch(`/api/issues/${issueId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status: newStatus }),
+      body: JSON.stringify(body),
     });
 
     if (!res.ok) {
+      // Rollback optimistic update
       if (originalInToday) {
         setTodayIssues((prev) => {
-          const exists = prev.some((i) => i.id === id);
+          const exists = prev.some((i) => i.id === issueId);
           return exists
-            ? prev.map((i) => (i.id === id ? originalInToday : i))
+            ? prev.map((i) => (i.id === issueId ? originalInToday : i))
             : [...prev, originalInToday];
         });
-      }
-      if (originalInRegular) {
+      } else {
         setIssues((prev) =>
-          prev.map((issue) => (issue.id === id ? originalInRegular : issue))
+          prev.map((issue) => (issue.id === issueId ? { ...issue, status: "OPEN" as Status } : issue))
         );
       }
-      showToast(t("statusChangeError"), "error");
+      throw new Error("EXTERNAL_UPDATE_FAILED");
     }
+
+    setCompleteModalIssueId(null);
   }
 
   /** Optimistically moves an issue into today's list and flags it via the API. */
@@ -421,7 +438,7 @@ export default function DashboardPage() {
         <SyncStatus providers={syncProviders} isSyncing={isSyncing} onSyncNow={handleSyncNow} />
 
         <Box sx={{ mt: 2 }}>
-          <TodayTasksArea items={todayIssuesSorted} onRemove={handleRemoveFromToday} onStatusChange={handleStatusChange} />
+          <TodayTasksArea items={todayIssuesSorted} onRemove={handleRemoveFromToday} onComplete={handleComplete} />
           <TodoList
             items={issues}
             total={total}
@@ -429,7 +446,7 @@ export default function DashboardPage() {
             limit={20}
             loading={loading}
             onPageChange={handlePageChange}
-            onStatusChange={handleStatusChange}
+            onComplete={handleComplete}
             onAddToToday={handleAddToToday}
           />
         </Box>
@@ -466,6 +483,13 @@ export default function DashboardPage() {
           </Box>
         ) : null}
       </DragOverlay>
+
+      <CompleteIssueModal
+        open={completeModalIssueId !== null}
+        issueId={completeModalIssueId ?? ""}
+        onConfirm={handleModalConfirm}
+        onCancel={handleModalCancel}
+      />
 
       <Snackbar
         open={toast.open}

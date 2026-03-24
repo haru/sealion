@@ -10,14 +10,17 @@ type Params = { params: Promise<{ id: string }> };
 
 /**
  * Updates the status of an issue and syncs the change to the external provider.
+ * When closing with a non-empty comment, posts the comment to the provider after closing.
  * @param id - Internal issue ID.
  * @param status - Target status as a string, validated and coerced to {@link IssueStatus}.
  * @param userId - ID of the authenticated user (for ownership check).
+ * @param comment - Optional comment to post to the provider when closing an issue.
  */
 async function handleStatusUpdate(
   id: string,
   status: string,
-  userId: string
+  userId: string,
+  comment?: string
 ) {
   if (!Object.values(IssueStatus).includes(status as IssueStatus)) {
     return fail("INVALID_STATUS", 400);
@@ -59,6 +62,9 @@ async function handleStatusUpdate(
   try {
     if (status === IssueStatus.CLOSED) {
       await adapter.closeIssue(issue.project.externalId, issue.externalId);
+      if (comment && comment.trim()) {
+        await adapter.addComment(issue.project.externalId, issue.externalId, comment.trim());
+      }
     } else {
       await adapter.reopenIssue(issue.project.externalId, issue.externalId);
     }
@@ -164,7 +170,8 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
   if ("status" in body) {
     if (typeof body.status !== "string") return fail("INVALID_INPUT", 400);
-    return handleStatusUpdate(id, body.status, session.user.id);
+    const comment = typeof body.comment === "string" ? body.comment : undefined;
+    return handleStatusUpdate(id, body.status, session.user.id, comment);
   }
 
   return fail("INVALID_BODY", 400);

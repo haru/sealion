@@ -2,9 +2,9 @@
 
 import {
   Box,
+  Button,
   Card,
   CardContent,
-  Checkbox,
   Chip,
   IconButton,
   Stack,
@@ -19,21 +19,33 @@ import type { DraggableSyntheticListeners, DraggableAttributes } from "@dnd-kit/
 import type { CSSProperties, ReactNode, Ref } from "react";
 import type { Status } from "@/lib/types";
 
+/** Props for {@link IssueCard}. */
 interface IssueCardProps {
+  /** Internal issue ID. */
   id: string;
+  /** External ID from the provider (e.g. GitHub issue number). */
   externalId: string;
+  /** Issue title. */
   title: string;
+  /** Current status of the issue. */
   status: Status;
+  /** ISO 8601 due date string, or `null`. */
   dueDate: string | null;
+  /** URL to the issue on the external provider. */
   externalUrl: string;
+  /** Whether the issue has no assignee. */
   isUnassigned: boolean;
+  /** Provider icon URL or `null`. */
   providerIconUrl: string | null;
+  /** Display name of the issue provider. */
   providerName: string;
+  /** Display name of the project. */
   projectName: string;
   /** ISO 8601 datetime string from the issue provider, or `null` if unavailable. */
   providerCreatedAt: string | null;
   /** ISO 8601 datetime string from the issue provider, or `null` if unavailable. */
   providerUpdatedAt: string | null;
+  /** Additional action button rendered beside the title (e.g. "Add to Today"). */
   actionButton: ReactNode;
   dragContainerRef?: Ref<HTMLDivElement>;
   dragHandleAttributes?: DraggableAttributes;
@@ -42,10 +54,15 @@ interface IssueCardProps {
   isDragging?: boolean;
   /** When true, the card is rendered as a semi-transparent ghost placeholder (opacity 0.15). */
   isGhost?: boolean;
-  onStatusChange?: (id: string, newStatus: Status) => void;
+  /**
+   * Called when the user clicks the "Complete" button.
+   * Only shown for open (non-closed) issues.
+   * @param id - Internal issue ID.
+   */
+  onComplete?: (id: string) => void;
 }
 
-/** Displays a single issue as a card with status toggle, drag handle, and external link. */
+/** Displays a single issue as a card with a Complete button, drag handle, and external link. */
 export default function IssueCard({
   id,
   externalId,
@@ -66,9 +83,10 @@ export default function IssueCard({
   dragStyle,
   isDragging,
   isGhost,
-  onStatusChange,
+  onComplete,
 }: IssueCardProps) {
   const t = useTranslations("todo");
+  const tModal = useTranslations("completeModal");
 
   const isComplete = status === "CLOSED";
   const dueDateFormatted = dueDate
@@ -80,11 +98,6 @@ export default function IssueCard({
   const updatedFormatted = t("providerUpdatedAt", {
     date: providerUpdatedAt ? new Date(providerUpdatedAt).toLocaleString() : "\u2014",
   });
-
-  /** Toggles the issue status between OPEN and CLOSED. */
-  function handleCheck() {
-    onStatusChange?.(id, isComplete ? "OPEN" : "CLOSED");
-  }
 
   return (
     <Card
@@ -103,12 +116,16 @@ export default function IssueCard({
             <DragIndicatorIcon fontSize="small" />
           </Box>
 
-          <Checkbox
-            checked={isComplete}
-            onChange={handleCheck}
-            aria-label={isComplete ? t("markIncomplete") : t("markComplete")}
-            sx={{ mt: -0.5 }}
-          />
+          {!isComplete && onComplete && (
+            <Button
+              size="small"
+              variant="outlined"
+              onClick={() => onComplete(id)}
+              sx={{ mt: 0.25, flexShrink: 0 }}
+            >
+              {tModal("confirmButton")}
+            </Button>
+          )}
 
           <Box sx={{ flex: 1, minWidth: 0 }}>
             <Typography
