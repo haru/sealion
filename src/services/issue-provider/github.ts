@@ -1,6 +1,5 @@
 import axios from "axios";
 import { IssueProviderAdapter, NormalizedIssue, ExternalProject } from "@/lib/types";
-import { IssueStatus } from "@prisma/client";
 
 interface GitHubIssue {
   number: number;
@@ -93,7 +92,6 @@ export class GitHubAdapter implements IssueProviderAdapter {
     return issues.map((issue) => ({
       externalId: String(issue.number),
       title: issue.title,
-      status: issue.state === "open" ? IssueStatus.OPEN : IssueStatus.CLOSED,
       dueDate: issue.milestone?.due_on ? new Date(issue.milestone.due_on) : null,
       externalUrl: issue.html_url,
       isUnassigned: false,
@@ -121,7 +119,6 @@ export class GitHubAdapter implements IssueProviderAdapter {
     return issues.map((issue) => ({
       externalId: String(issue.number),
       title: issue.title,
-      status: issue.state === "open" ? IssueStatus.OPEN : IssueStatus.CLOSED,
       dueDate: issue.milestone?.due_on ? new Date(issue.milestone.due_on) : null,
       externalUrl: issue.html_url,
       isUnassigned: true,
@@ -135,14 +132,6 @@ export class GitHubAdapter implements IssueProviderAdapter {
     const [owner, repo] = projectExternalId.split("/");
     await this.client.patch(`/repos/${owner}/${repo}/issues/${issueExternalId}`, {
       state: "closed",
-    });
-  }
-
-  /** {@inheritDoc} */
-  async reopenIssue(projectExternalId: string, issueExternalId: string): Promise<void> {
-    const [owner, repo] = projectExternalId.split("/");
-    await this.client.patch(`/repos/${owner}/${repo}/issues/${issueExternalId}`, {
-      state: "open",
     });
   }
 

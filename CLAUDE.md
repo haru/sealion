@@ -138,6 +138,17 @@ Run `npm run lint` after every code change. Config extends `eslint-config-next/c
 Run `npm run build` after implementation is complete to verify TypeScript compilation passes.
 When the Prisma schema has changed, run `npx prisma generate` before `npm run build`.
 
+### Database Migration — NEVER run `prisma migrate dev` without checking for drift first
+
+**`prisma migrate dev` will reset (wipe) the database if it detects schema drift** — i.e., when the actual DB schema does not match what the migration history expects. This permanently deletes all data.
+
+Before running `prisma migrate dev`:
+1. Run `npx prisma migrate status` to check for drift or unapplied migrations.
+2. If drift is detected, **stop and inform the user** — do not proceed without explicit confirmation.
+3. Only run `prisma migrate dev` after confirming with the user that a DB reset is acceptable.
+
+Schema drift typically occurs when `prisma db push` was used in a previous session instead of `prisma migrate dev`.
+
 ## Environment Variables
 
 Required at runtime:
@@ -161,3 +172,4 @@ Uses **VSCode Dev Containers**. Open in the container before starting developmen
 - 009-task-display-cleanup: Removed `priority` field from Issue model; added `providerCreatedAt` / `providerUpdatedAt` fields; added Today tasks area with drag-and-drop reorder (dnd-kit)
 - 010-sync-throttle: Introduced sync throttling logic and related tests; no database schema changes required.
 - 011-close-issue-modal: Added `addComment()` to adapter interface; new Complete Issue modal; no schema changes required.
+- 012-remove-issue-status: Removed `status` column from Issue table (`ALTER TABLE Issue DROP COLUMN status; DROP TYPE IssueStatus`); removed `reopenIssue` from adapter interface; closing an issue now always deletes it from the local DB.

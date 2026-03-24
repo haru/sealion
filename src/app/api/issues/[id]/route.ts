@@ -4,28 +4,18 @@ import { prisma } from "@/lib/db";
 import { decrypt } from "@/lib/encryption";
 import { ok, fail } from "@/lib/api-response";
 import { createAdapter, ProviderCredentials } from "@/services/issue-provider/factory";
-import { Prisma, IssueStatus } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 
 type Params = { params: Promise<{ id: string }> };
 
 /**
- * Updates the status of an issue and syncs the change to the external provider.
- * When closing with a non-empty comment, posts the comment to the provider after closing.
+ * Closes an issue on the external provider, posts an optional comment, then deletes it from the local DB.
+ * All issues in the local DB are open by invariant, so closure always means deletion.
  * @param id - Internal issue ID.
- * @param status - Target status as a string, validated and coerced to {@link IssueStatus}.
  * @param userId - ID of the authenticated user (for ownership check).
- * @param comment - Optional comment to post to the provider when closing an issue.
+ * @param comment - Optional comment to post to the provider before deleting.
  */
-async function handleStatusUpdate(
-  id: string,
-  status: string,
-  userId: string,
-  comment?: string
-) {
-  if (!Object.values(IssueStatus).includes(status as IssueStatus)) {
-    return fail("INVALID_STATUS", 400);
-  }
-
+async function handleCloseIssue(id: string, userId: string, comment?: string) {
   const issue = await prisma.issue.findFirst({
     where: {
       id,
@@ -60,34 +50,20 @@ async function handleStatusUpdate(
   const adapter = createAdapter(issue.project.issueProvider.type, credentials);
 
   try {
-    if (status === IssueStatus.CLOSED) {
-      await adapter.closeIssue(issue.project.externalId, issue.externalId);
-      if (comment && comment.trim()) {
-        await adapter.addComment(issue.project.externalId, issue.externalId, comment.trim());
-      }
-    } else {
-      await adapter.reopenIssue(issue.project.externalId, issue.externalId);
+    await adapter.closeIssue(issue.project.externalId, issue.externalId);
+    if (comment && comment.trim()) {
+      await adapter.addComment(issue.project.externalId, issue.externalId, comment.trim());
     }
   } catch {
     return fail("EXTERNAL_UPDATE_FAILED", 502);
   }
 
-  const updateData: { status: IssueStatus; todayFlag?: boolean; todayOrder?: null; todayAddedAt?: null } = {
-    status: status as IssueStatus,
-  };
-  if (status === IssueStatus.CLOSED) {
-    updateData.todayFlag = false;
-    updateData.todayOrder = null;
-    updateData.todayAddedAt = null;
-  }
+  // Use deleteMany so that a concurrent close request (which already deleted the record)
+  // produces a graceful 404 rather than an unhandled Prisma P2025 error.
+  const { count } = await prisma.issue.deleteMany({ where: { id } });
+  if (count === 0) return fail("NOT_FOUND", 404);
 
-  const updated = await prisma.issue.update({
-    where: { id },
-    data: updateData,
-    select: { id: true, status: true },
-  });
-
-  return ok(updated);
+  return ok({ id });
 }
 
 /**
@@ -102,14 +78,10 @@ async function handleTodayFlagUpdate(id: string, todayFlag: boolean, userId: str
       id,
       project: { issueProvider: { userId } },
     },
-    select: { id: true, status: true, todayFlag: true, todayOrder: true, todayAddedAt: true },
+    select: { id: true, todayFlag: true, todayOrder: true, todayAddedAt: true },
   });
 
   if (!issue) return fail("FORBIDDEN", 403);
-
-  if (todayFlag && issue.status !== IssueStatus.OPEN) {
-    return fail("ISSUE_NOT_OPEN", 400);
-  }
 
   if (todayFlag) {
     // Idempotency: already flagged — return current state without corrupting todayOrder
@@ -153,7 +125,9 @@ async function handleTodayFlagUpdate(id: string, todayFlag: boolean, userId: str
 }
 
 /**
- * PATCH /api/issues/[id] — Updates the status or today flag of an issue.
+ * PATCH /api/issues/[id] — Closes or updates the today flag of an issue.
+ * - `{ closed: true, comment?: string }` — closes the issue on the provider and deletes it locally.
+ * - `{ todayFlag: boolean }` — sets or clears the today flag.
  */
 export async function PATCH(req: NextRequest, { params }: Params) {
   const session = await auth();
@@ -168,10 +142,10 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     return handleTodayFlagUpdate(id, body.todayFlag as boolean, session.user.id);
   }
 
-  if ("status" in body) {
-    if (typeof body.status !== "string") return fail("INVALID_INPUT", 400);
+  if ("closed" in body) {
+    if (body.closed !== true) return fail("INVALID_INPUT", 400);
     const comment = typeof body.comment === "string" ? body.comment : undefined;
-    return handleStatusUpdate(id, body.status, session.user.id, comment);
+    return handleCloseIssue(id, session.user.id, comment);
   }
 
   return fail("INVALID_BODY", 400);

@@ -26,14 +26,12 @@ jest.mock("@/lib/auth", () => ({
 }));
 
 const mockCloseIssue = jest.fn().mockResolvedValue(undefined);
-const mockReopenIssue = jest.fn().mockResolvedValue(undefined);
 const mockAddComment = jest.fn().mockResolvedValue(undefined);
 
 jest.mock("@/services/issue-provider/github", () => ({
   GitHubAdapter: Object.assign(
     jest.fn().mockImplementation(() => ({
       closeIssue: mockCloseIssue,
-      reopenIssue: mockReopenIssue,
       addComment: mockAddComment,
     })),
     { iconUrl: "/github.svg" }
@@ -44,7 +42,6 @@ jest.mock("@/services/issue-provider/jira", () => ({
   JiraAdapter: Object.assign(
     jest.fn().mockImplementation(() => ({
       closeIssue: mockCloseIssue,
-      reopenIssue: mockReopenIssue,
       addComment: mockAddComment,
     })),
     { iconUrl: "/jira.svg" }
@@ -55,7 +52,6 @@ jest.mock("@/services/issue-provider/redmine", () => ({
   RedmineAdapter: Object.assign(
     jest.fn().mockImplementation(() => ({
       closeIssue: mockCloseIssue,
-      reopenIssue: mockReopenIssue,
       addComment: mockAddComment,
     })),
     { iconUrl: "/redmine.svg" }
@@ -101,7 +97,6 @@ async function seedTestIssue(): Promise<string> {
       projectId: project.id,
       externalId: "99",
       title: "Test issue for PATCH",
-      status: "OPEN",
       externalUrl: "https://github.com/owner/repo/issues/99",
     },
   });
@@ -121,7 +116,6 @@ async function importIssueIdRoute(p: unknown) {
     GitHubAdapter: Object.assign(
       jest.fn().mockImplementation(() => ({
         closeIssue: mockCloseIssue,
-        reopenIssue: mockReopenIssue,
         addComment: mockAddComment,
       })),
       { iconUrl: "/github.svg" }
@@ -131,7 +125,6 @@ async function importIssueIdRoute(p: unknown) {
     JiraAdapter: Object.assign(
       jest.fn().mockImplementation(() => ({
         closeIssue: mockCloseIssue,
-        reopenIssue: mockReopenIssue,
         addComment: mockAddComment,
       })),
       { iconUrl: "/jira.svg" }
@@ -141,7 +134,6 @@ async function importIssueIdRoute(p: unknown) {
     RedmineAdapter: Object.assign(
       jest.fn().mockImplementation(() => ({
         closeIssue: mockCloseIssue,
-        reopenIssue: mockReopenIssue,
         addComment: mockAddComment,
       })),
       { iconUrl: "/redmine.svg" }
@@ -182,7 +174,7 @@ beforeEach(() => {
 });
 
 describe("PATCH /api/issues/[id] — status update", () => {
-  it("closes issue without comment when comment is omitted (backward compat)", async () => {
+  it("closes issue without comment when comment is omitted", async () => {
     if (!dbAvailable) return;
 
     const issueId = await seedTestIssue();
@@ -190,7 +182,7 @@ describe("PATCH /api/issues/[id] — status update", () => {
 
     const req = new NextRequest(`http://localhost/api/issues/${issueId}`, {
       method: "PATCH",
-      body: JSON.stringify({ status: "CLOSED" }),
+      body: JSON.stringify({ closed: true }),
       headers: { "Content-Type": "application/json" },
     });
 
@@ -198,7 +190,7 @@ describe("PATCH /api/issues/[id] — status update", () => {
     const json = await res.json();
 
     expect(res.status).toBe(200);
-    expect(json.data.status).toBe("CLOSED");
+    expect(json.data.id).toBe(issueId);
     expect(mockCloseIssue).toHaveBeenCalledTimes(1);
     expect(mockAddComment).not.toHaveBeenCalled();
   });
@@ -211,7 +203,7 @@ describe("PATCH /api/issues/[id] — status update", () => {
 
     const req = new NextRequest(`http://localhost/api/issues/${issueId}`, {
       method: "PATCH",
-      body: JSON.stringify({ status: "CLOSED", comment: "Completed after review." }),
+      body: JSON.stringify({ closed: true, comment: "Completed after review." }),
       headers: { "Content-Type": "application/json" },
     });
 
@@ -219,7 +211,7 @@ describe("PATCH /api/issues/[id] — status update", () => {
     const json = await res.json();
 
     expect(res.status).toBe(200);
-    expect(json.data.status).toBe("CLOSED");
+    expect(json.data.id).toBe(issueId);
     expect(mockCloseIssue).toHaveBeenCalledTimes(1);
     expect(mockAddComment).toHaveBeenCalledTimes(1);
     expect(mockAddComment).toHaveBeenCalledWith(
@@ -237,7 +229,7 @@ describe("PATCH /api/issues/[id] — status update", () => {
 
     const req = new NextRequest(`http://localhost/api/issues/${issueId}`, {
       method: "PATCH",
-      body: JSON.stringify({ status: "CLOSED", comment: "" }),
+      body: JSON.stringify({ closed: true, comment: "" }),
       headers: { "Content-Type": "application/json" },
     });
 
@@ -256,7 +248,7 @@ describe("PATCH /api/issues/[id] — status update", () => {
 
     const req = new NextRequest(`http://localhost/api/issues/${issueId}`, {
       method: "PATCH",
-      body: JSON.stringify({ status: "CLOSED", comment: "   " }),
+      body: JSON.stringify({ closed: true, comment: "   " }),
       headers: { "Content-Type": "application/json" },
     });
 
@@ -276,7 +268,7 @@ describe("PATCH /api/issues/[id] — status update", () => {
 
     const req = new NextRequest(`http://localhost/api/issues/${issueId}`, {
       method: "PATCH",
-      body: JSON.stringify({ status: "CLOSED", comment: "A comment that will fail" }),
+      body: JSON.stringify({ closed: true, comment: "A comment that will fail" }),
       headers: { "Content-Type": "application/json" },
     });
 

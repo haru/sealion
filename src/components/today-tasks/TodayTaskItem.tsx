@@ -6,7 +6,6 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useTranslations } from "next-intl";
 import IssueCard from "@/components/IssueCard";
-import type { Status } from "@/lib/types";
 
 /** Props for {@link TodayTaskItem}. */
 interface TodayTaskItemProps {
@@ -16,8 +15,6 @@ interface TodayTaskItemProps {
   externalId: string;
   /** Issue title. */
   title: string;
-  /** Current issue status. */
-  status: Status;
   /** ISO 8601 due date string, or `null`. */
   dueDate: string | null;
   /** URL to the issue on the external provider. */
@@ -48,7 +45,6 @@ export default function TodayTaskItem({
   id,
   externalId,
   title,
-  status,
   dueDate,
   externalUrl,
   isUnassigned,
@@ -89,7 +85,6 @@ export default function TodayTaskItem({
       id={id}
       externalId={externalId}
       title={title}
-      status={status}
       dueDate={dueDate}
       externalUrl={externalUrl}
       isUnassigned={isUnassigned}

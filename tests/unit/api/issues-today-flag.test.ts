@@ -20,7 +20,6 @@ jest.mock("@/lib/encryption", () => ({
 jest.mock("@/services/issue-provider/factory", () => ({
   createAdapter: jest.fn().mockReturnValue({
     closeIssue: jest.fn().mockResolvedValue(undefined),
-    reopenIssue: jest.fn().mockResolvedValue(undefined),
   }),
 }));
 
@@ -38,7 +37,6 @@ const SESSION = { user: { id: "user-1", email: "u@example.com", role: "USER" } }
 const MOCK_ISSUE = {
   id: "issue-1",
   externalId: "42",
-  status: "OPEN",
   todayFlag: false,
   todayOrder: null,
   todayAddedAt: null,
@@ -150,15 +148,6 @@ describe("PATCH /api/issues/[id] — todayFlag", () => {
     // Should not call transaction or update — returns existing state immediately
     expect(mockTransaction).not.toHaveBeenCalled();
     expect(mockUpdate).not.toHaveBeenCalled();
-  });
-
-  it("returns 400 when trying to set todayFlag=true on a CLOSED issue", async () => {
-    mockFindFirst.mockResolvedValue({ ...MOCK_ISSUE, status: "CLOSED" });
-
-    const req = makeRequest("issue-1", { todayFlag: true });
-    const res = await PATCH(req, { params: Promise.resolve({ id: "issue-1" }) });
-
-    expect(res.status).toBe(400);
   });
 
   it("returns 401 when not authenticated", async () => {

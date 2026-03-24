@@ -1,6 +1,5 @@
 import axios from "axios";
 import { IssueProviderAdapter, NormalizedIssue, ExternalProject } from "@/lib/types";
-import { IssueStatus } from "@prisma/client";
 
 interface JiraIssue {
   id: string;
@@ -98,11 +97,9 @@ export class JiraAdapter implements IssueProviderAdapter {
     }
 
     return issues.map((issue) => {
-      const isDone = issue.fields.status.statusCategory.key === "done";
       return {
         externalId: issue.key,
         title: issue.fields.summary,
-        status: isDone ? IssueStatus.CLOSED : IssueStatus.OPEN,
         dueDate: issue.fields.duedate ? new Date(issue.fields.duedate) : null,
         externalUrl: `${this.baseUrl}/browse/${issue.key}`,
         isUnassigned,
@@ -139,22 +136,6 @@ export class JiraAdapter implements IssueProviderAdapter {
     }
     await this.client.post(`/issue/${issueExternalId}/transitions`, {
       transition: { id: doneTransition.id },
-    });
-  }
-
-  /** {@inheritDoc} */
-  async reopenIssue(_projectExternalId: string, issueExternalId: string): Promise<void> {
-    const { data } = await this.client.get<{ transitions: JiraTransition[] }>(
-      `/issue/${issueExternalId}/transitions`
-    );
-    const todoTransition = data.transitions.find(
-      (t) => t.to.statusCategory.key === "new"
-    );
-    if (!todoTransition) {
-      throw new Error(`No "new" transition found for issue ${issueExternalId}`);
-    }
-    await this.client.post(`/issue/${issueExternalId}/transitions`, {
-      transition: { id: todoTransition.id },
     });
   }
 

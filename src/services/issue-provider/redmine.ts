@@ -1,6 +1,5 @@
 import axios from "axios";
 import { IssueProviderAdapter, NormalizedIssue, ExternalProject } from "@/lib/types";
-import { IssueStatus } from "@prisma/client";
 
 interface RedmineIssue {
   id: number;
@@ -86,7 +85,6 @@ export class RedmineAdapter implements IssueProviderAdapter {
     return issues.map((issue) => ({
       externalId: String(issue.id),
       title: issue.subject,
-      status: issue.status.is_closed ? IssueStatus.CLOSED : IssueStatus.OPEN,
       dueDate: issue.due_date ? new Date(issue.due_date) : null,
       externalUrl: `${this.baseUrl}/issues/${issue.id}`,
       isUnassigned: false,
@@ -142,7 +140,6 @@ export class RedmineAdapter implements IssueProviderAdapter {
       .map((issue) => ({
         externalId: String(issue.id),
         title: issue.subject,
-        status: issue.status.is_closed ? IssueStatus.CLOSED : IssueStatus.OPEN,
         dueDate: issue.due_date ? new Date(issue.due_date) : null,
         externalUrl: `${this.baseUrl}/issues/${issue.id}`,
         isUnassigned: true,
@@ -162,20 +159,6 @@ export class RedmineAdapter implements IssueProviderAdapter {
     }
     await this.client.put(`/issues/${issueExternalId}.json`, {
       issue: { status_id: closedStatus.id },
-    });
-  }
-
-  /** {@inheritDoc} */
-  async reopenIssue(projectExternalId: string, issueExternalId: string): Promise<void> {
-    const { data } = await this.client.get<{ issue_statuses: RedmineIssueStatus[] }>(
-      "/issue_statuses.json"
-    );
-    const openStatus = data.issue_statuses.find((s) => !s.is_closed);
-    if (!openStatus) {
-      throw new Error("No open status found in Redmine");
-    }
-    await this.client.put(`/issues/${issueExternalId}.json`, {
-      issue: { status_id: openStatus.id },
     });
   }
 

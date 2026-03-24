@@ -9,7 +9,9 @@ const PROJECT_CONCURRENCY = 5;
 
 /**
  * Syncs issues for all enabled projects belonging to the given user.
- * External service is the source of truth — all returned issues are upserted.
+ * External service is the source of truth — all returned issues are upserted;
+ * issues no longer returned by the adapter are deleted from the local DB.
+ * DB invariant: only issues considered open by providers are stored locally (adapters return only open issues).
  * @param userId - ID of the user whose providers and projects are synced.
  */
 export async function syncProviders(userId: string): Promise<void> {
@@ -68,23 +70,17 @@ export async function syncProviders(userId: string): Promise<void> {
                         },
                         update: {
                           title: issue.title,
-                          status: issue.status,
                           dueDate: issue.dueDate,
                           externalUrl: issue.externalUrl,
                           isUnassigned: issue.isUnassigned,
                           lastSyncedAt: now,
                           providerCreatedAt: issue.providerCreatedAt,
                           providerUpdatedAt: issue.providerUpdatedAt,
-                          // Reset today fields when issue is closed (FR-010)
-                          ...(issue.status === "CLOSED"
-                            ? { todayFlag: false, todayOrder: null, todayAddedAt: null }
-                            : {}),
                         },
                         create: {
                           projectId: project.id,
                           externalId: issue.externalId,
                           title: issue.title,
-                          status: issue.status,
                           dueDate: issue.dueDate,
                           externalUrl: issue.externalUrl,
                           isUnassigned: issue.isUnassigned,

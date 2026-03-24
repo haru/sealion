@@ -7,7 +7,7 @@ jest.mock("@/lib/db", () => ({
   prisma: {
     issue: {
       findFirst: jest.fn(),
-      update: jest.fn(),
+      deleteMany: jest.fn(),
     },
   },
 }));
@@ -17,7 +17,6 @@ jest.mock("@/lib/encryption", () => ({
 jest.mock("@/services/issue-provider/factory", () => ({
   createAdapter: jest.fn().mockReturnValue({
     closeIssue: jest.fn().mockResolvedValue(undefined),
-    reopenIssue: jest.fn().mockResolvedValue(undefined),
   }),
 }));
 
@@ -26,14 +25,13 @@ import { prisma } from "@/lib/db";
 
 const mockAuth = auth as jest.Mock;
 const mockFindFirst = prisma.issue.findFirst as jest.Mock;
-const mockUpdate = prisma.issue.update as jest.Mock;
+const mockDeleteMany = prisma.issue.deleteMany as jest.Mock;
 
 const SESSION = { user: { id: "user-1", email: "u@example.com", role: "USER" } };
 
 const MOCK_ISSUE = {
   id: "issue-1",
   externalId: "42",
-  status: "OPEN",
   project: {
     id: "project-1",
     externalId: "owner/repo",
@@ -59,44 +57,22 @@ describe("PATCH /api/issues/[id]", () => {
     mockAuth.mockResolvedValue(SESSION);
   });
 
-  it("returns 200 and updates status on success", async () => {
+  it("returns 200 and deletes issue on success", async () => {
     mockFindFirst.mockResolvedValue(MOCK_ISSUE);
-    mockUpdate.mockResolvedValue({ ...MOCK_ISSUE, status: "CLOSED" });
+    mockDeleteMany.mockResolvedValue({ count: 1 });
 
-    const req = makeRequest("issue-1", { status: "CLOSED" });
+    const req = makeRequest("issue-1", { closed: true });
     const res = await PATCH(req, { params: Promise.resolve({ id: "issue-1" }) });
     const json = await res.json();
 
     expect(res.status).toBe(200);
-    expect(mockUpdate).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: { status: "CLOSED", todayFlag: false, todayOrder: null, todayAddedAt: null },
-      })
+    expect(json.data.id).toBe("issue-1");
+    expect(mockDeleteMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: "issue-1" } })
     );
   });
 
-  it("clears today fields when closing an issue that was marked for today", async () => {
-    const todayIssue = {
-      ...MOCK_ISSUE,
-      todayFlag: true,
-      todayOrder: 2,
-      todayAddedAt: new Date(),
-    };
-    mockFindFirst.mockResolvedValue(todayIssue);
-    mockUpdate.mockResolvedValue({ id: "issue-1", status: "CLOSED", todayFlag: false, todayOrder: null, todayAddedAt: null });
-
-    const req = makeRequest("issue-1", { status: "CLOSED" });
-    const res = await PATCH(req, { params: Promise.resolve({ id: "issue-1" }) });
-
-    expect(res.status).toBe(200);
-    expect(mockUpdate).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: { status: "CLOSED", todayFlag: false, todayOrder: null, todayAddedAt: null },
-      })
-    );
-  });
-
-  it("returns 502 and does not update DB when external call fails", async () => {
+  it("returns 502 and does not delete from DB when external call fails", async () => {
     mockFindFirst.mockResolvedValue(MOCK_ISSUE);
 
     const { createAdapter } = jest.requireMock("@/services/issue-provider/factory");
@@ -104,17 +80,17 @@ describe("PATCH /api/issues/[id]", () => {
       closeIssue: jest.fn().mockRejectedValue(new Error("External failure")),
     });
 
-    const req = makeRequest("issue-1", { status: "CLOSED" });
+    const req = makeRequest("issue-1", { closed: true });
     const res = await PATCH(req, { params: Promise.resolve({ id: "issue-1" }) });
 
     expect(res.status).toBe(502);
-    expect(mockUpdate).not.toHaveBeenCalled();
+    expect(mockDeleteMany).not.toHaveBeenCalled();
   });
 
   it("returns 403 when issue belongs to different user", async () => {
     mockFindFirst.mockResolvedValue(null);
 
-    const req = makeRequest("issue-1", { status: "CLOSED" });
+    const req = makeRequest("issue-1", { closed: true });
     const res = await PATCH(req, { params: Promise.resolve({ id: "issue-1" }) });
 
     expect(res.status).toBe(403);
@@ -123,10 +99,29 @@ describe("PATCH /api/issues/[id]", () => {
   it("returns 401 when not authenticated", async () => {
     mockAuth.mockResolvedValue(null);
 
-    const req = makeRequest("issue-1", { status: "CLOSED" });
+    const req = makeRequest("issue-1", { closed: true });
     const res = await PATCH(req, { params: Promise.resolve({ id: "issue-1" }) });
 
     expect(res.status).toBe(401);
+  });
+
+  it("returns 400 when closed is false", async () => {
+    const req = makeRequest("issue-1", { closed: false });
+    const res = await PATCH(req, { params: Promise.resolve({ id: "issue-1" }) });
+    const json = await res.json();
+
+    expect(res.status).toBe(400);
+    expect(json.error).toBe("INVALID_INPUT");
+  });
+
+  it("returns 404 when issue was already deleted by concurrent request", async () => {
+    mockFindFirst.mockResolvedValue(MOCK_ISSUE);
+    mockDeleteMany.mockResolvedValue({ count: 0 });
+
+    const req = makeRequest("issue-1", { closed: true });
+    const res = await PATCH(req, { params: Promise.resolve({ id: "issue-1" }) });
+
+    expect(res.status).toBe(404);
   });
 
   it("passes baseUrl from issueProvider to createAdapter for Jira", async () => {
@@ -143,10 +138,10 @@ describe("PATCH /api/issues/[id]", () => {
       },
     };
     mockFindFirst.mockResolvedValue(jiraIssue);
-    mockUpdate.mockResolvedValue({ id: "issue-1", status: "CLOSED" });
+    mockDeleteMany.mockResolvedValue({ count: 1 });
 
     const { createAdapter } = jest.requireMock("@/services/issue-provider/factory");
-    const req = makeRequest("issue-1", { status: "CLOSED" });
+    const req = makeRequest("issue-1", { closed: true });
     await PATCH(req, { params: Promise.resolve({ id: "issue-1" }) });
 
     expect(createAdapter).toHaveBeenCalledWith(
@@ -160,7 +155,7 @@ describe("PATCH /api/issues/[id]", () => {
     const { decrypt } = jest.requireMock("@/lib/encryption");
     decrypt.mockImplementationOnce(() => { throw new Error("Decryption failed"); });
 
-    const req = makeRequest("issue-1", { status: "CLOSED" });
+    const req = makeRequest("issue-1", { closed: true });
     const res = await PATCH(req, { params: Promise.resolve({ id: "issue-1" }) });
     const json = await res.json();
 

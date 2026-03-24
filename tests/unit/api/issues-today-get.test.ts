@@ -23,7 +23,6 @@ const TODAY_ISSUE = {
   id: "i1",
   externalId: "42",
   title: "Today task",
-  status: "OPEN",
   dueDate: null,
   externalUrl: "https://github.com/x/y/issues/42",
   isUnassigned: false,
@@ -58,7 +57,7 @@ describe("GET /api/issues/today", () => {
     expect(json.data.items[0].id).toBe("i1");
   });
 
-  it("queries only todayFlag=true and status=OPEN issues for the current user", async () => {
+  it("queries only todayFlag=true issues for the current user", async () => {
     mockFindMany.mockResolvedValue([]);
 
     await GET(makeRequest());
@@ -67,7 +66,6 @@ describe("GET /api/issues/today", () => {
       expect.objectContaining({
         where: expect.objectContaining({
           todayFlag: true,
-          status: "OPEN",
           project: { issueProvider: { userId: "user-1" } },
         }),
       })

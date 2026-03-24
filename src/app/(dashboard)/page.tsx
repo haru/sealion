@@ -20,13 +20,10 @@ import SyncStatus from "@/components/todo/SyncStatus";
 import CompleteIssueModal from "@/components/todo/CompleteIssueModal";
 import TodayTasksArea, { TODAY_DROP_ZONE_ID } from "@/components/today-tasks/TodayTasksArea";
 import { allProjectsSynced, shouldThrottleSync, SYNC_THROTTLE_MS } from "@/lib/sync-utils";
-import type { Status } from "@/lib/types";
-
 interface Issue {
   id: string;
   externalId: string;
   title: string;
-  status: Status;
   dueDate: string | null;
   externalUrl: string;
   isUnassigned: boolean;
@@ -217,21 +214,15 @@ export default function DashboardPage() {
    */
   async function handleModalConfirm(issueId: string, comment: string) {
     const originalInToday = todayIssues.find((i) => i.id === issueId);
+    const originalInIssues = issues.find((i) => i.id === issueId);
 
-    // Optimistic update: remove from today list and insert into the regular list as CLOSED
+    // Optimistic update: remove from both lists (closing deletes the issue)
     if (originalInToday) {
       setTodayIssues((prev) => prev.filter((i) => i.id !== issueId));
-      setIssues((prev) => [
-        { ...originalInToday, status: "CLOSED" as Status, todayFlag: false, todayOrder: null, todayAddedAt: null },
-        ...prev,
-      ]);
-    } else {
-      setIssues((prev) =>
-        prev.map((issue) => (issue.id === issueId ? { ...issue, status: "CLOSED" as Status } : issue))
-      );
     }
+    setIssues((prev) => prev.filter((issue) => issue.id !== issueId));
 
-    const body: Record<string, unknown> = { status: "CLOSED" };
+    const body: Record<string, unknown> = { closed: true };
     if (comment.trim()) body.comment = comment.trim();
 
     const res = await fetch(`/api/issues/${issueId}`, {
@@ -243,17 +234,15 @@ export default function DashboardPage() {
     if (!res.ok) {
       // Rollback optimistic update
       if (originalInToday) {
-        setIssues((prev) => prev.filter((i) => i.id !== issueId));
         setTodayIssues((prev) => {
           const exists = prev.some((i) => i.id === issueId);
           return exists
             ? prev.map((i) => (i.id === issueId ? originalInToday : i))
             : [...prev, originalInToday];
         });
-      } else {
-        setIssues((prev) =>
-          prev.map((issue) => (issue.id === issueId ? { ...issue, status: "OPEN" as Status } : issue))
-        );
+      }
+      if (originalInIssues) {
+        setIssues((prev) => [originalInIssues, ...prev.filter((i) => i.id !== issueId)]);
       }
       throw new Error("EXTERNAL_UPDATE_FAILED");
     }
@@ -471,7 +460,6 @@ export default function DashboardPage() {
               id={activeIssue.id}
               externalId={activeIssue.externalId}
               title={activeIssue.title}
-              status={activeIssue.status}
               dueDate={activeIssue.dueDate}
               externalUrl={activeIssue.externalUrl}
               isUnassigned={activeIssue.isUnassigned}

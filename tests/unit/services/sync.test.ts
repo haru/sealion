@@ -33,7 +33,6 @@ jest.mock("@/services/issue-provider/factory", () => ({
       {
         externalId: "42",
         title: "Fix the bug",
-        status: "OPEN",
         dueDate: null,
         externalUrl: "https://github.com/test/repo/issues/42",
         isUnassigned: false,
@@ -117,8 +116,8 @@ describe("syncProviders", () => {
     const { createAdapter } = jest.requireMock("@/services/issue-provider/factory");
     createAdapter.mockReturnValueOnce({
       fetchAssignedIssues: jest.fn().mockResolvedValue([
-        { externalId: "1", title: "Issue 1", status: "OPEN", dueDate: null, externalUrl: "https://example.com/1", isUnassigned: false },
-        { externalId: "2", title: "Issue 2", status: "OPEN", dueDate: null, externalUrl: "https://example.com/2", isUnassigned: false },
+        { externalId: "1", title: "Issue 1", dueDate: null, externalUrl: "https://example.com/1", isUnassigned: false },
+        { externalId: "2", title: "Issue 2", dueDate: null, externalUrl: "https://example.com/2", isUnassigned: false },
       ]),
       fetchUnassignedIssues: jest.fn().mockResolvedValue([]),
     });
@@ -178,7 +177,7 @@ describe("syncProviders", () => {
     // Only issue "10" is returned — issue "99" was closed externally
     createAdapter.mockReturnValueOnce({
       fetchAssignedIssues: jest.fn().mockResolvedValue([
-        { externalId: "10", title: "Still open", status: "OPEN", dueDate: null, externalUrl: "https://redmine.example.com/issues/10", isUnassigned: false },
+        { externalId: "10", title: "Still open", dueDate: null, externalUrl: "https://redmine.example.com/issues/10", isUnassigned: false },
       ]),
       fetchUnassignedIssues: jest.fn().mockResolvedValue([]),
     });
@@ -245,10 +244,10 @@ describe("syncProviders", () => {
     ]);
 
     const mockFetchAssigned = jest.fn().mockResolvedValue([
-      { externalId: "1", title: "Assigned", status: "OPEN", dueDate: null, externalUrl: "https://ex.com/1", isUnassigned: false },
+      { externalId: "1", title: "Assigned", dueDate: null, externalUrl: "https://ex.com/1", isUnassigned: false },
     ]);
     const mockFetchUnassigned = jest.fn().mockResolvedValue([
-      { externalId: "2", title: "Unassigned", status: "OPEN", dueDate: null, externalUrl: "https://ex.com/2", isUnassigned: true },
+      { externalId: "2", title: "Unassigned", dueDate: null, externalUrl: "https://ex.com/2", isUnassigned: true },
     ]);
 
     const { createAdapter } = jest.requireMock("@/services/issue-provider/factory");
@@ -265,50 +264,6 @@ describe("syncProviders", () => {
 
     expect(mockFetchUnassigned).toHaveBeenCalledWith("owner/repo");
     expect(mockUpsert).toHaveBeenCalledTimes(2);
-  });
-
-  it("resets todayFlag/todayOrder/todayAddedAt when issue is upserted with CLOSED status", async () => {
-    mockFindMany.mockResolvedValue([
-      {
-        id: "provider-1",
-        type: "GITHUB",
-        encryptedCredentials: "encrypted",
-        userId: "user-1",
-        projects: [{ id: "project-1", externalId: "owner/repo", includeUnassigned: false }],
-      },
-    ]);
-
-    const { createAdapter } = jest.requireMock("@/services/issue-provider/factory");
-    createAdapter.mockReturnValueOnce({
-      fetchAssignedIssues: jest.fn().mockResolvedValue([
-        {
-          externalId: "42",
-          title: "Closed issue",
-          status: "CLOSED",
-          dueDate: null,
-          externalUrl: "https://github.com/test/repo/issues/42",
-          isUnassigned: false,
-        },
-      ]),
-      fetchUnassignedIssues: jest.fn().mockResolvedValue([]),
-    });
-
-    const mockUpsert = prisma.issue.upsert as jest.Mock;
-    mockUpsert.mockResolvedValue({});
-    (prisma.project.update as jest.Mock).mockResolvedValue({});
-
-    await syncProviders("user-1");
-
-    expect(mockUpsert).toHaveBeenCalledWith(
-      expect.objectContaining({
-        update: expect.objectContaining({
-          status: "CLOSED",
-          todayFlag: false,
-          todayOrder: null,
-          todayAddedAt: null,
-        }),
-      })
-    );
   });
 
   it("does not call fetchUnassignedIssues when project.includeUnassigned is false", async () => {
@@ -348,8 +303,8 @@ describe("syncProviders", () => {
       },
     ]);
 
-    const assignedIssue = { externalId: "42", title: "Bug", status: "OPEN", dueDate: null, externalUrl: "https://ex.com/42", isUnassigned: false };
-    const unassignedIssue = { externalId: "42", title: "Bug", status: "OPEN", dueDate: null, externalUrl: "https://ex.com/42", isUnassigned: true };
+    const assignedIssue = { externalId: "42", title: "Bug", dueDate: null, externalUrl: "https://ex.com/42", isUnassigned: false };
+    const unassignedIssue = { externalId: "42", title: "Bug", dueDate: null, externalUrl: "https://ex.com/42", isUnassigned: true };
 
     const { createAdapter } = jest.requireMock("@/services/issue-provider/factory");
     createAdapter.mockReturnValueOnce({
@@ -392,7 +347,6 @@ describe("syncProviders", () => {
         {
           externalId: "42",
           title: "Fix the bug",
-          status: "OPEN",
           dueDate: null,
           externalUrl: "https://github.com/test/repo/issues/42",
           isUnassigned: false,
@@ -439,7 +393,6 @@ describe("syncProviders", () => {
         {
           externalId: "42",
           title: "Fix the bug",
-          status: "OPEN",
           dueDate: null,
           externalUrl: "https://github.com/test/repo/issues/42",
           isUnassigned: false,
@@ -480,7 +433,7 @@ describe("syncProviders", () => {
     const { createAdapter } = jest.requireMock("@/services/issue-provider/factory");
     createAdapter.mockReturnValueOnce({
       fetchAssignedIssues: jest.fn().mockResolvedValue([
-        { externalId: "1", title: "Assigned", status: "OPEN", dueDate: null, externalUrl: "https://ex.com/1", isUnassigned: false },
+        { externalId: "1", title: "Assigned", dueDate: null, externalUrl: "https://ex.com/1", isUnassigned: false },
       ]),
       fetchUnassignedIssues: jest.fn().mockRejectedValue(new Error("Unassigned fetch failed")),
     });
