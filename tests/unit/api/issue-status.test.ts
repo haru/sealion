@@ -87,6 +87,43 @@ describe("PATCH /api/issues/[id]", () => {
     expect(mockDeleteMany).not.toHaveBeenCalled();
   });
 
+  it("does not log sensitive data (e.g. Authorization headers) when external call fails", async () => {
+    mockFindFirst.mockResolvedValue(MOCK_ISSUE);
+
+    // Simulate an Axios-like error that carries Authorization header data.
+    const axiosLikeError = Object.assign(new Error("Request failed with status 403"), {
+      response: { status: 403 },
+      config: { headers: { Authorization: "Basic supersecret123" } },
+    });
+
+    const { createAdapter } = jest.requireMock("@/services/issue-provider/factory");
+    createAdapter.mockReturnValueOnce({
+      closeIssue: jest.fn().mockRejectedValue(axiosLikeError),
+      addComment: jest.fn(),
+    });
+
+    const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+
+    const req = makeRequest("issue-1", { closed: true });
+    await PATCH(req, { params: Promise.resolve({ id: "issue-1" }) });
+
+    expect(consoleSpy).toHaveBeenCalled();
+    const loggedArgs = consoleSpy.mock.calls[0];
+
+    // The raw error object must NOT be passed to console.error.
+    const rawErrorLogged = loggedArgs.some(
+      (arg) => arg instanceof Error && (arg as unknown as { config?: { headers?: { Authorization?: string } } }).config?.headers?.Authorization !== undefined
+    );
+    expect(rawErrorLogged).toBe(false);
+
+    // The logged context must not contain any Authorization header value.
+    const loggedJson = JSON.stringify(loggedArgs);
+    expect(loggedJson).not.toContain("supersecret123");
+    expect(loggedJson).not.toContain("Authorization");
+
+    consoleSpy.mockRestore();
+  });
+
   it("returns 403 when issue belongs to different user", async () => {
     mockFindFirst.mockResolvedValue(null);
 
