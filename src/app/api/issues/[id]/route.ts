@@ -54,7 +54,21 @@ async function handleCloseIssue(id: string, userId: string, comment?: string) {
     if (comment && comment.trim()) {
       await adapter.addComment(issue.project.externalId, issue.externalId, comment.trim());
     }
-  } catch {
+  } catch (err) {
+    const message =
+      err instanceof Error ? err.message : typeof err === "string" ? err : "Unknown error";
+    // Best-effort HTTP status extraction (e.g., from AxiosError) without logging headers or URLs.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const status: number | undefined = typeof err === "object" && err !== null && (err as any).response ? (err as any).response.status : undefined;
+    // Avoid logging the raw error object to prevent leaking sensitive data (e.g., Authorization headers).
+    // Log only sanitized, non-sensitive context for debugging.
+    console.error("[closeIssue] External provider call failed", {
+      providerType: issue.project.issueProvider.type,
+      projectExternalId: issue.project.externalId,
+      issueExternalId: issue.externalId,
+      message,
+      status,
+    });
     return fail("EXTERNAL_UPDATE_FAILED", 502);
   }
 

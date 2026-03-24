@@ -141,6 +141,17 @@ export class JiraAdapter implements IssueProviderAdapter {
 
   /** {@inheritDoc} */
   async addComment(_projectExternalId: string, issueExternalId: string, comment: string): Promise<void> {
-    await this.client.post(`/issue/${issueExternalId}/comment`, { body: comment });
+    await this.client.post(`/issue/${issueExternalId}/comment`, {
+      body: {
+        type: "doc",
+        version: 1,
+        content: [
+          {
+            type: "paragraph",
+            content: [{ type: "text", text: comment }],
+          },
+        ],
+      },
+    });
   }
 }
