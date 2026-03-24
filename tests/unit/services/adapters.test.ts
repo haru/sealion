@@ -92,9 +92,9 @@ describe("GitHubAdapter", () => {
       expect(issues[0]).toMatchObject({
         externalId: "42",
         title: "Fix bug",
-        status: "OPEN",
       });
       expect(issues[0]).not.toHaveProperty("priority");
+      expect(issues[0]).not.toHaveProperty("status");
       expect(issues[0].dueDate).toBeInstanceOf(Date);
     });
 
@@ -124,15 +124,6 @@ describe("GitHubAdapter", () => {
       expect(userCalls).toHaveLength(1);
     });
 
-    it("maps closed state correctly", async () => {
-      mockAxiosInstance.get.mockResolvedValueOnce({ data: { login: "testuser" } });
-      mockAxiosInstance.get.mockResolvedValueOnce({
-        data: [{ number: 1, title: "Closed", state: "closed", html_url: "https://gh.com/1" }],
-      });
-
-      const issues = await adapter.fetchAssignedIssues("owner/repo");
-      expect(issues[0].status).toBe("CLOSED");
-    });
   });
 
   describe("fetchUnassignedIssues", () => {
@@ -306,30 +297,11 @@ describe("JiraAdapter", () => {
       expect(issues[0]).toMatchObject({
         externalId: "PROJ-1",
         title: "Fix login",
-        status: "OPEN",
       });
       expect(issues[0]).not.toHaveProperty("priority");
+      expect(issues[0]).not.toHaveProperty("status");
     });
 
-    it("maps done status to CLOSED", async () => {
-      mockAxiosInstance.post.mockResolvedValue({
-        data: {
-          issues: [
-            {
-              id: "1",
-              key: "PROJ-1",
-              fields: {
-                summary: "Done issue",
-                status: { statusCategory: { key: "done" } },
-              },
-            },
-          ],
-        },
-      });
-
-      const issues = await adapter.fetchAssignedIssues("PROJ");
-      expect(issues[0].status).toBe("CLOSED");
-    });
   });
 
   describe("fetchUnassignedIssues", () => {
@@ -689,9 +661,9 @@ describe("RedmineAdapter", () => {
       expect(issues[0]).toMatchObject({
         externalId: "123",
         title: "Fix server",
-        status: "OPEN",
       });
       expect(issues[0]).not.toHaveProperty("priority");
+      expect(issues[0]).not.toHaveProperty("status");
     });
   });
 

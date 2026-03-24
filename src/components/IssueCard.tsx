@@ -17,8 +17,6 @@ import { useTranslations } from "next-intl";
 import ProviderIcon from "@/components/ProviderIcon";
 import type { DraggableSyntheticListeners, DraggableAttributes } from "@dnd-kit/core";
 import type { CSSProperties, ReactNode, Ref } from "react";
-import type { Status } from "@/lib/types";
-
 /** Props for {@link IssueCard}. */
 interface IssueCardProps {
   /** Internal issue ID. */
@@ -27,8 +25,6 @@ interface IssueCardProps {
   externalId: string;
   /** Issue title. */
   title: string;
-  /** Current status of the issue. */
-  status: Status;
   /** ISO 8601 due date string, or `null`. */
   dueDate: string | null;
   /** URL to the issue on the external provider. */
@@ -67,7 +63,6 @@ export default function IssueCard({
   id,
   externalId,
   title,
-  status,
   dueDate,
   externalUrl,
   isUnassigned,
@@ -88,7 +83,6 @@ export default function IssueCard({
   const t = useTranslations("todo");
   const tModal = useTranslations("completeModal");
 
-  const isComplete = status === "CLOSED";
   const dueDateFormatted = dueDate
     ? t("dueDate", { date: new Date(dueDate).toLocaleDateString() })
     : null;
@@ -104,7 +98,7 @@ export default function IssueCard({
       ref={dragContainerRef}
       style={dragStyle}
       variant="outlined"
-      sx={{ opacity: isGhost ? 0.15 : isComplete || isDragging ? 0.6 : 1, mb: 1 }}
+      sx={{ opacity: isGhost ? 0.15 : isDragging ? 0.6 : 1, mb: 1 }}
     >
       <CardContent sx={{ pb: "16px !important" }}>
         <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1 }}>
@@ -119,7 +113,7 @@ export default function IssueCard({
           <Box sx={{ flex: 1, minWidth: 0 }}>
             <Typography
               variant="body1"
-              sx={{ textDecoration: isComplete ? "line-through" : "none", wordBreak: "break-word" }}
+              sx={{ wordBreak: "break-word" }}
             >
               {`#${externalId} ${title}`}
             </Typography>
@@ -148,7 +142,7 @@ export default function IssueCard({
             </Stack>
           </Box>
 
-          {!isComplete && onComplete && (
+          {onComplete && (
             <Button
               size="small"
               variant="outlined"

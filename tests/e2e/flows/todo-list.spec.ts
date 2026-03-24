@@ -62,7 +62,7 @@ test.describe("TODO List Display", () => {
     // /api/issues returns the item only after sync has completed (pollCount >= 3)
     await page.route("/api/issues*", async (route) => {
       const items = pollCount >= 3
-        ? [{ id: "i1", title: "Synced Issue", status: "OPEN", dueDate: null, externalUrl: "https://example.com", providerCreatedAt: "2026-01-15T10:30:00.000Z", providerUpdatedAt: "2026-03-10T14:00:00.000Z", project: { displayName: "repo", issueProvider: { iconUrl: null, displayName: "GitHub" } } }]
+        ? [{ id: "i1", title: "Synced Issue", dueDate: null, externalUrl: "https://example.com", providerCreatedAt: "2026-01-15T10:30:00.000Z", providerUpdatedAt: "2026-03-10T14:00:00.000Z", project: { displayName: "repo", issueProvider: { iconUrl: null, displayName: "GitHub" } } }]
         : [];
       await route.fulfill({
         status: 200,
@@ -107,7 +107,6 @@ test.describe("TODO List Display", () => {
               id: "i1",
               externalId: "42",
               title: "Date Display Issue",
-              status: "OPEN",
               dueDate: null,
               externalUrl: "https://example.com",
               isUnassigned: false,
@@ -175,7 +174,6 @@ test.describe("TODO List Display", () => {
               id: "i1",
               externalId: "42",
               title: "Priority Test Issue",
-              status: "OPEN",
               dueDate: null,
               externalUrl: "https://example.com",
               isUnassigned: false,

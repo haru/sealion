@@ -1,6 +1,5 @@
 import axios from "axios";
 import { IssueProviderAdapter, NormalizedIssue, ExternalProject } from "@/lib/types";
-import { IssueStatus } from "@prisma/client";
 
 interface JiraIssue {
   id: string;
@@ -98,11 +97,9 @@ export class JiraAdapter implements IssueProviderAdapter {
     }
 
     return issues.map((issue) => {
-      const isDone = issue.fields.status.statusCategory.key === "done";
       return {
         externalId: issue.key,
         title: issue.fields.summary,
-        status: isDone ? IssueStatus.CLOSED : IssueStatus.OPEN,
         dueDate: issue.fields.duedate ? new Date(issue.fields.duedate) : null,
         externalUrl: `${this.baseUrl}/browse/${issue.key}`,
         isUnassigned,

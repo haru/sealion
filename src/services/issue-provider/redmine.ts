@@ -1,6 +1,5 @@
 import axios from "axios";
 import { IssueProviderAdapter, NormalizedIssue, ExternalProject } from "@/lib/types";
-import { IssueStatus } from "@prisma/client";
 
 interface RedmineIssue {
   id: number;
@@ -86,7 +85,6 @@ export class RedmineAdapter implements IssueProviderAdapter {
     return issues.map((issue) => ({
       externalId: String(issue.id),
       title: issue.subject,
-      status: issue.status.is_closed ? IssueStatus.CLOSED : IssueStatus.OPEN,
       dueDate: issue.due_date ? new Date(issue.due_date) : null,
       externalUrl: `${this.baseUrl}/issues/${issue.id}`,
       isUnassigned: false,
@@ -142,7 +140,6 @@ export class RedmineAdapter implements IssueProviderAdapter {
       .map((issue) => ({
         externalId: String(issue.id),
         title: issue.subject,
-        status: issue.status.is_closed ? IssueStatus.CLOSED : IssueStatus.OPEN,
         dueDate: issue.due_date ? new Date(issue.due_date) : null,
         externalUrl: `${this.baseUrl}/issues/${issue.id}`,
         isUnassigned: true,

@@ -24,14 +24,11 @@ const OPEN_ISSUE = {
   id: "i1",
   externalId: "42",
   title: "Bug",
-  status: "OPEN",
   dueDate: new Date("2026-04-01"),
   externalUrl: "https://github.com/x/y/issues/42",
   isUnassigned: false,
   project: { displayName: "repo", issueProvider: { type: "GITHUB", displayName: "My GH" } },
 };
-
-const CLOSED_ISSUE = { ...OPEN_ISSUE, id: "i2", status: "CLOSED", dueDate: null };
 
 describe("GET /api/issues", () => {
   beforeEach(() => {
@@ -55,32 +52,6 @@ describe("GET /api/issues", () => {
     mockAuth.mockResolvedValue(null);
     const res = await GET(makeRequest());
     expect(res.status).toBe(401);
-  });
-
-  it("sorts OPEN before CLOSED", async () => {
-    mockFindMany.mockResolvedValue([OPEN_ISSUE, CLOSED_ISSUE]);
-
-    const res = await GET(makeRequest());
-    const json = await res.json();
-    const statuses = json.data.items.map((i: { status: string }) => i.status);
-
-    expect(statuses[0]).toBe("OPEN");
-  });
-
-  it("filters by status when provided", async () => {
-    mockFindMany.mockResolvedValue([OPEN_ISSUE]);
-    mockCount.mockResolvedValue(1);
-
-    const res = await GET(makeRequest("?status=OPEN"));
-    const json = await res.json();
-
-    expect(res.status).toBe(200);
-    // Verify findMany was called with status filter
-    expect(mockFindMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: expect.objectContaining({ status: "OPEN" }),
-      })
-    );
   });
 
   it("includes isUnassigned field in each issue item", async () => {
@@ -138,7 +109,7 @@ describe("GET /api/issues", () => {
     );
   });
 
-  it("excludes today-flagged OPEN issues from paginated list and total count", async () => {
+  it("excludes today-flagged issues from paginated list and total count", async () => {
     mockFindMany.mockResolvedValue([]);
     mockCount.mockResolvedValue(0);
 
@@ -146,31 +117,16 @@ describe("GET /api/issues", () => {
 
     const findManyCall = mockFindMany.mock.calls[0][0];
     expect(findManyCall.where).toMatchObject({
-      OR: [{ todayFlag: { not: true } }, { status: { not: "OPEN" } }],
+      todayFlag: { not: true },
     });
 
     const regularCountCall = mockCount.mock.calls.find(
-      ([arg]: [{ where: Record<string, unknown> }]) => arg?.where?.OR !== undefined
+      ([arg]: [{ where: Record<string, unknown> }]) => arg?.where?.todayFlag !== undefined
     );
     expect(regularCountCall).toBeDefined();
     expect(regularCountCall[0].where).toMatchObject({
-      OR: [{ todayFlag: { not: true } }, { status: { not: "OPEN" } }],
+      todayFlag: { not: true },
     });
-  });
-
-  it("counts totalToday independently of status filter", async () => {
-    mockFindMany.mockResolvedValue([]);
-    mockCount.mockResolvedValue(0);
-
-    await GET(makeRequest("?status=CLOSED"));
-
-    const todayCountCall = mockCount.mock.calls.find(
-      ([arg]: [{ where: Record<string, unknown> }]) =>
-        arg?.where?.todayFlag === true && arg?.where?.status === "OPEN"
-    );
-    expect(todayCountCall).toBeDefined();
-    // totalToday where must not include the CLOSED status filter
-    expect(todayCountCall[0].where).not.toHaveProperty("NOT");
   });
 
   it("does not use priority as an orderBy key", async () => {

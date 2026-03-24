@@ -19,11 +19,6 @@ enum ProviderType {
   REDMINE
 }
 
-enum IssueStatus {
-  OPEN
-  CLOSED
-}
-
 // ─── Models ─────────────────────────────────────────────────────────────────
 
 model User {
@@ -79,7 +74,6 @@ model Issue {
   projectId    String
   externalId   String
   title        String
-  status       IssueStatus   @default(OPEN)
   dueDate      DateTime?
   externalUrl   String
   isUnassigned  Boolean       @default(false)
@@ -100,7 +94,7 @@ model Issue {
 
   @@unique([projectId, externalId])
   @@index([projectId])
-  @@index([status, dueDate])
+  @@index([dueDate])
   @@index([todayFlag, todayOrder])
   @@index([dueDate, providerUpdatedAt, providerCreatedAt])
 }

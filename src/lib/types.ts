@@ -1,19 +1,13 @@
-import { IssueStatus } from "@prisma/client";
-
-/** Re-export of Prisma's {@link IssueStatus} enum for use across the application. */
-export type Status = IssueStatus;
-
 /**
  * Normalized issue data returned by an {@link IssueProviderAdapter}.
  * All adapters must produce this shape for the sync pipeline.
+ * All issues returned by adapters are open; closed issues are removed from the DB during sync.
  */
 export interface NormalizedIssue {
   /** Unique identifier from the external provider. */
   externalId: string;
   /** Human-readable title of the issue. */
   title: string;
-  /** Current status mapped to the internal enum. */
-  status: IssueStatus;
   /** Optional due date from the provider, or `null` if not set. */
   dueDate: Date | null;
   /** URL to the issue on the provider's website. */

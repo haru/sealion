@@ -5,13 +5,11 @@ import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable"
 import { useDroppable } from "@dnd-kit/core";
 import { useTranslations } from "next-intl";
 import TodayTaskItem from "./TodayTaskItem";
-import type { Status } from "@/lib/types";
 
 interface TodayIssue {
   id: string;
   externalId: string;
   title: string;
-  status: Status;
   dueDate: string | null;
   externalUrl: string;
   isUnassigned: boolean;
@@ -88,7 +86,6 @@ export default function TodayTasksArea({ items, onRemove, onComplete }: TodayTas
                 id={issue.id}
                 externalId={issue.externalId}
                 title={issue.title}
-                status={issue.status}
                 dueDate={issue.dueDate}
                 externalUrl={issue.externalUrl}
                 isUnassigned={issue.isUnassigned}

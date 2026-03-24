@@ -5,7 +5,6 @@ import TodayIcon from "@mui/icons-material/Today";
 import { useDraggable } from "@dnd-kit/core";
 import { useTranslations } from "next-intl";
 import IssueCard from "@/components/IssueCard";
-import type { Status } from "@/lib/types";
 
 /** Props for {@link TodoItem}. */
 interface TodoItemProps {
@@ -15,8 +14,6 @@ interface TodoItemProps {
   externalId: string;
   /** Issue title. */
   title: string;
-  /** Current issue status. */
-  status: Status;
   /** ISO 8601 due date string, or `null`. */
   dueDate: string | null;
   /** URL to the issue on the external provider. */
@@ -47,7 +44,6 @@ export default function TodoItem({
   id,
   externalId,
   title,
-  status,
   dueDate,
   externalUrl,
   isUnassigned,
@@ -66,10 +62,8 @@ export default function TodoItem({
     data: { type: "todo-item", issueId: id },
   });
 
-  const isComplete = status === "CLOSED";
-
   const actionButton =
-    onAddToToday && !isComplete ? (
+    onAddToToday ? (
       <Tooltip title={tToday("addToToday")}>
         <IconButton
           size="small"
@@ -86,7 +80,6 @@ export default function TodoItem({
       id={id}
       externalId={externalId}
       title={title}
-      status={status}
       dueDate={dueDate}
       externalUrl={externalUrl}
       isUnassigned={isUnassigned}

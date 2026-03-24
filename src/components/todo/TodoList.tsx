@@ -4,13 +4,11 @@ import { Box, Pagination, Typography } from "@mui/material";
 import { useTranslations } from "next-intl";
 import TodoItem from "./TodoItem";
 import TodoListSkeleton from "./TodoListSkeleton";
-import type { Status } from "@/lib/types";
 
 interface Issue {
   id: string;
   externalId: string;
   title: string;
-  status: Status;
   dueDate: string | null;
   externalUrl: string;
   isUnassigned: boolean;
@@ -82,7 +80,6 @@ export default function TodoList({
           id={issue.id}
           externalId={issue.externalId}
           title={issue.title}
-          status={issue.status}
           dueDate={issue.dueDate}
           externalUrl={issue.externalUrl}
           isUnassigned={issue.isUnassigned}
