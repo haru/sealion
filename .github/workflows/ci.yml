@@ -23,6 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
     steps:
       - uses: actions/checkout@v4
@@ -43,7 +44,15 @@ jobs:
         run: npm run lint
 
       - name: Test
-        run: npm test -- --ci --passWithNoTests
+        run: npm test -- --ci --passWithNoTests --coverage
+
+      - name: Upload coverage to Codecov
+        if: env.CODECOV_TOKEN != ''
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage/lcov.info
+          fail_ci_if_error: false
 
       - name: Build
         run: npm run build
