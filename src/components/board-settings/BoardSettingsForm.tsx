@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Alert, Box, Button, CircularProgress, Snackbar, Typography } from "@mui/material";
+import { Alert, Box, Button, CircularProgress, Typography } from "@mui/material";
 import { useTranslations } from "next-intl";
 import { BoardSettings, DEFAULT_BOARD_SETTINGS, SortCriterion } from "@/lib/types";
 import DisplayItemsSection from "./DisplayItemsSection";
 import SortOrderSection from "./SortOrderSection";
+import { useMessageQueue } from "@/hooks/useMessageQueue";
 
 /**
  * Client component that fetches the user's board settings and renders
@@ -15,10 +16,10 @@ import SortOrderSection from "./SortOrderSection";
 export default function BoardSettingsForm() {
   const t = useTranslations("boardSettings");
 
+  const { addMessage } = useMessageQueue();
   const [settings, setSettings] = useState<BoardSettings>(DEFAULT_BOARD_SETTINGS);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [successOpen, setSuccessOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -66,7 +67,7 @@ export default function BoardSettingsForm() {
         setError(t("saveError"));
       } else {
         setSettings(json.data as BoardSettings);
-        setSuccessOpen(true);
+        addMessage("information", t("saveSuccess"));
       }
     } catch {
       setError(t("saveError"));
@@ -123,12 +124,6 @@ export default function BoardSettingsForm() {
         </Button>
       </Box>
 
-      <Snackbar
-        open={successOpen}
-        autoHideDuration={3000}
-        onClose={() => setSuccessOpen(false)}
-        message={t("saveSuccess")}
-      />
     </Box>
   );
 }

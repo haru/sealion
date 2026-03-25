@@ -40,4 +40,16 @@ const config: Config = {
   },
 };
 
-export default createJestConfig(config);
+// createJestConfig overrides transformIgnorePatterns, so we wrap it
+// to re-apply our pattern that allows next-intl (ESM) to be transformed.
+const jestConfig = createJestConfig(config);
+const resolvedConfig = async () => {
+  const base = await (jestConfig as () => Promise<Config>)();
+  return {
+    ...base,
+    transformIgnorePatterns: [
+      "/node_modules/",
+    ],
+  };
+};
+export default resolvedConfig;

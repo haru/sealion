@@ -13,6 +13,7 @@ import { SignOutButton } from "@/components/ui/SignOutButton";
 import Sidebar from "@/components/layout/Sidebar";
 import { useMediaQuery, useTheme } from "@mui/material";
 import { useTranslations } from "next-intl";
+import { MessageQueueProvider } from "@/components/MessageQueue";
 
 interface DashboardShellProps {
   email: string;
@@ -27,6 +28,7 @@ export default function DashboardShell({ email, children }: DashboardShellProps)
   const t = useTranslations("auth");
 
   return (
+    <MessageQueueProvider>
     <Box sx={{ display: "flex" }}>
       <AppBar position="fixed" sx={{ zIndex: theme.zIndex.drawer + 1 }}>
         <Toolbar>
@@ -79,5 +81,6 @@ export default function DashboardShell({ email, children }: DashboardShellProps)
       {/* Spacer that mirrors sidebar width to center content on the full viewport */}
       <Box sx={{ display: { xs: "none", md: "block" }, width: 240, flexShrink: 0 }} />
     </Box>
+    </MessageQueueProvider>
   );
 }

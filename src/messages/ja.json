@@ -185,9 +185,19 @@
     "RATE_LIMITED": "APIのレート制限に達しました。しばらくしてから再試行してください。",
     "CONNECTION_TEST_FAILED": "issue管理システムに接続できませんでした。認証情報を確認してください。",
     "EMAIL_ALREADY_EXISTS": "このメールアドレスはすでに登録されています",
-    "INVALID_EMAIL": "有効なメールアドレスを入力してください",
+  "INVALID_EMAIL": "有効なメールアドレスを入力してください",
     "PASSWORD_TOO_SHORT": "パスワードは8文字以上で入力してください",
     "INVALID_INPUT": "入力値が正しくありません",
     "CONFLICT": "このプロジェクトはすでに登録されています"
+  },
+    "message": {
+      "close": "閉じる",
+      "type": {
+        "information": "情報",
+        "warning": "警告",
+        "error": "エラー"
+      }
+    }
+}
   }
 }
