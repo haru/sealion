@@ -50,6 +50,13 @@ export const VALID_SORT_CRITERIA: readonly SortCriterion[] = [
 ] as const;
 
 /**
+ * Maximum number of active sort criteria allowed in board settings.
+ * Enforced in both the PUT /api/board-settings validation and the
+ * GET /api/issues `sortOrder` query parameter parsing.
+ */
+export const MAX_SORT_CRITERIA = 3;
+
+/**
  * Board display and sort settings for the authenticated user.
  * Controls which timestamps are shown on issue cards and how issues are ordered.
  */
@@ -69,7 +76,7 @@ export const DEFAULT_BOARD_SETTINGS: BoardSettings = {
   showCreatedAt: true,
   showUpdatedAt: false,
   sortOrder: ["dueDate_asc", "providerUpdatedAt_desc"],
-} as const;
+};
 
 /**
  * Adapter interface that each issue provider (GitHub, Jira, Redmine) must implement.

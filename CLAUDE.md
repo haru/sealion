@@ -165,10 +165,7 @@ Uses **VSCode Dev Containers**. Open in the container before starting developmen
 
 
 ## Active Technologies
-- TypeScript 5 / Node.js 20 LTS + Next.js 16 (App Router), React, MUI v7, Prisma 7, next-intl 4, Jest, Playwright, dnd-kit
-- PostgreSQL 16 via Prisma 7
-- TypeScript 5 / Node.js 20 LTS + Next.js 16 (App Router), MUI v7, Prisma 7, next-intl 4, dnd-kit (既存) (013-board-settings)
-- PostgreSQL 16 via Prisma 7 — 新規 `BoardSettings` テーブルを追加 (013-board-settings)
+- TypeScript 5 / Node.js 20 LTS, Next.js 16 (App Router), React, MUI v7, Prisma 7 with PostgreSQL 16, next-intl 4, Jest, Playwright, dnd-kit; recent additions include the `BoardSettings` table (013-board-settings).
 
 ## Recent Changes
 - 009-task-display-cleanup: Removed `priority` field from Issue model; added `providerCreatedAt` / `providerUpdatedAt` fields; added Today tasks area with drag-and-drop reorder (dnd-kit)

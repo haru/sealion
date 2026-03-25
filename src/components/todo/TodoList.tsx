@@ -34,9 +34,9 @@ interface TodoListProps {
   loading?: boolean;
   /** Called when the user navigates to a different page. */
   onPageChange?: (page: number) => void;
-  /** When true, the provider creation timestamp chip is rendered on each card. Defaults to true. */
+  /** When true, the provider creation timestamp chip is rendered on each card. Defaults to false. */
   showCreatedAt?: boolean;
-  /** When true, the provider update timestamp chip is rendered on each card. Defaults to true. */
+  /** When true, the provider update timestamp chip is rendered on each card. Defaults to false. */
   showUpdatedAt?: boolean;
   /**
    * Called when the user clicks the "Complete" button on an issue card.

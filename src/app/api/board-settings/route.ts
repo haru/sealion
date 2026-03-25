@@ -5,6 +5,7 @@ import {
   BoardSettings,
   DEFAULT_BOARD_SETTINGS,
   VALID_SORT_CRITERIA,
+  MAX_SORT_CRITERIA,
   SortCriterion,
 } from "@/lib/types";
 
@@ -31,9 +32,10 @@ export async function GET() {
   }
 
   const rawSortOrder = Array.isArray(record.sortOrder)
-    ? (record.sortOrder as string[]).filter((v): v is SortCriterion =>
-        VALID_SORT_CRITERIA.includes(v as SortCriterion)
-      )
+    ? (record.sortOrder as string[])
+        .filter((v): v is SortCriterion => VALID_SORT_CRITERIA.includes(v as SortCriterion))
+        .filter((v, i, arr) => arr.indexOf(v) === i)
+        .slice(0, MAX_SORT_CRITERIA)
     : [];
   const sortOrder = rawSortOrder.length > 0 ? rawSortOrder : DEFAULT_BOARD_SETTINGS.sortOrder;
 
@@ -82,7 +84,7 @@ export async function PUT(req: Request) {
   if (
     !Array.isArray(sortOrder) ||
     sortOrder.length < 1 ||
-    sortOrder.length > 3 ||
+    sortOrder.length > MAX_SORT_CRITERIA ||
     !sortOrder.every((v) => VALID_SORT_CRITERIA.includes(v as SortCriterion)) ||
     new Set(sortOrder).size !== sortOrder.length
   ) {

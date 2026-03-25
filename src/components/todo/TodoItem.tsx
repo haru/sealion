@@ -30,9 +30,9 @@ interface TodoItemProps {
   providerCreatedAt: string | null;
   /** ISO 8601 datetime string from the issue provider, or `null` if unavailable. */
   providerUpdatedAt: string | null;
-  /** When true, the provider creation timestamp chip is rendered. Defaults to true. */
+  /** When true, the provider creation timestamp chip is rendered. Defaults to false. */
   showCreatedAt?: boolean;
-  /** When true, the provider update timestamp chip is rendered. Defaults to true. */
+  /** When true, the provider update timestamp chip is rendered. Defaults to false. */
   showUpdatedAt?: boolean;
   /**
    * Called when the user clicks the "Complete" button on the issue card.

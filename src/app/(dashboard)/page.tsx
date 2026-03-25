@@ -182,18 +182,31 @@ export default function DashboardPage() {
 
       // Fetch board settings first so we can pass sortOrder to fetchIssues
       let initialSortOrder: SortCriterion[] = DEFAULT_BOARD_SETTINGS.sortOrder;
-      const bsRes = await fetch("/api/board-settings");
-      if (bsRes.ok) {
-        const bsJson = await bsRes.json();
-        if (bsJson.data) {
-          const bs = bsJson.data as BoardSettings;
-          setBoardSettings(bs);
-          boardSettingsSortOrderRef.current = bs.sortOrder;
-          initialSortOrder = bs.sortOrder;
+      try {
+        const bsRes = await fetch("/api/board-settings");
+        if (!bsRes.ok) {
+          console.error("Failed to fetch board settings, falling back to defaults");
+          showToast(tBoardSettings("loadError"), "error");
+        } else {
+          const bsJson = await bsRes.json();
+          if (bsJson.error) {
+            console.error(
+              "Board settings API returned an error, falling back to defaults:",
+              bsJson.error
+            );
+            showToast(tBoardSettings("loadError"), "error");
+          } else if (bsJson.data) {
+            const bs = bsJson.data as BoardSettings;
+            setBoardSettings(bs);
+            boardSettingsSortOrderRef.current = bs.sortOrder;
+            initialSortOrder = bs.sortOrder;
+          }
         }
-      } else {
-        console.error("Failed to fetch board settings, falling back to defaults");
-        showToast(tBoardSettings("loadError"), "error");
+      } catch (err) {
+        console.error(
+          "Unexpected error while fetching board settings, falling back to defaults",
+          err instanceof Error ? err.message : String(err)
+        );
       }
 
       await Promise.all([

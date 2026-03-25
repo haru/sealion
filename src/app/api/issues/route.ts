@@ -3,9 +3,9 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { ok, fail } from "@/lib/api-response";
 import { getProviderIconUrl } from "@/services/issue-provider/factory";
-import { VALID_SORT_CRITERIA, SortCriterion } from "@/lib/types";
+import { VALID_SORT_CRITERIA, MAX_SORT_CRITERIA, SortCriterion } from "@/lib/types";
 
-type PrismaOrderBy = Record<string, { sort: string; nulls: string }>;
+type PrismaOrderBy = Record<string, { sort: string; nulls?: string }>;
 
 /** Default sort order when no `sortOrder` query parameter is provided. */
 const DEFAULT_SORT_CRITERIA: SortCriterion[] = ["dueDate_asc", "providerUpdatedAt_desc"];
@@ -26,24 +26,32 @@ function criterionToOrderBy(criterion: SortCriterion): PrismaOrderBy {
   }
 }
 
+/** Deterministic tie-breaker appended to every sort to ensure stable pagination. */
+const TIEBREAKER_ORDER_BY: PrismaOrderBy = { id: { sort: "asc" } };
+
 /**
  * Parses the `sortOrder` query parameter into an ordered list of Prisma `orderBy` entries.
  * Falls back to {@link DEFAULT_SORT_CRITERIA} if the parameter is missing or contains no valid values.
+ * Always appends a deterministic `id asc` tie-breaker to guarantee stable pagination.
  * @param raw - Raw comma-separated string from the query parameter.
- * @returns An array of Prisma orderBy objects.
+ * @returns An array of Prisma orderBy objects ending with the tie-breaker.
  */
 function parseSortOrder(raw: string | null): PrismaOrderBy[] {
-  if (!raw) return DEFAULT_SORT_CRITERIA.map(criterionToOrderBy);
+  if (!raw) {
+    return [...DEFAULT_SORT_CRITERIA.map(criterionToOrderBy), TIEBREAKER_ORDER_BY];
+  }
 
   const criteria = raw
     .split(",")
     .map((v) => v.trim())
     .filter((v): v is SortCriterion => VALID_SORT_CRITERIA.includes(v as SortCriterion))
     .filter((v, i, arr) => arr.indexOf(v) === i)
-    .slice(0, VALID_SORT_CRITERIA.length);
+    .slice(0, MAX_SORT_CRITERIA);
 
-  if (criteria.length === 0) return DEFAULT_SORT_CRITERIA.map(criterionToOrderBy);
-  return criteria.map(criterionToOrderBy);
+  if (criteria.length === 0) {
+    return [...DEFAULT_SORT_CRITERIA.map(criterionToOrderBy), TIEBREAKER_ORDER_BY];
+  }
+  return [...criteria.map(criterionToOrderBy), TIEBREAKER_ORDER_BY];
 }
 
 /**

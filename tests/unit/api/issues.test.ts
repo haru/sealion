@@ -147,8 +147,8 @@ describe("GET /api/issues", () => {
     await GET(makeRequest());
 
     const call = mockFindMany.mock.calls[0][0];
-    const orderByKeys = call.orderBy.flatMap((o: Record<string, unknown>) => Object.keys(o));
-    expect(orderByKeys).not.toContain("priority");
+    const selectKeys = Object.keys(call.select ?? {});
+    expect(selectKeys).not.toContain("priority");
   });
 
   it("includes providerCreatedAt and providerUpdatedAt in select", async () => {
@@ -221,10 +221,11 @@ describe("GET /api/issues", () => {
 
       const call = mockFindMany.mock.calls[0][0];
       const orderByKeys = call.orderBy.map((o: Record<string, unknown>) => Object.keys(o)[0]);
-      expect(orderByKeys).toEqual(["dueDate", "providerUpdatedAt"]);
+      // Deduplicated user criteria + tiebreaker (id)
+      expect(orderByKeys).toEqual(["dueDate", "providerUpdatedAt", "id"]);
     });
 
-    it("caps excessive sortOrder values at 3 entries", async () => {
+    it("caps excessive sortOrder values at MAX_SORT_CRITERIA entries (excluding tiebreaker)", async () => {
       mockFindMany.mockResolvedValue([]);
       mockCount.mockResolvedValue(0);
 
@@ -232,7 +233,22 @@ describe("GET /api/issues", () => {
       await GET(makeRequest(`?sortOrder=${encodeURIComponent(manyValues)}`));
 
       const call = mockFindMany.mock.calls[0][0];
-      expect(call.orderBy.length).toBeLessThanOrEqual(3);
+      // At most MAX_SORT_CRITERIA user criteria + 1 tiebreaker
+      expect(call.orderBy.length).toBeLessThanOrEqual(4);
+      // The last entry must be the tiebreaker
+      const lastKey = Object.keys(call.orderBy[call.orderBy.length - 1])[0];
+      expect(lastKey).toBe("id");
+    });
+
+    it("always appends id tiebreaker as the last orderBy entry for stable pagination", async () => {
+      mockFindMany.mockResolvedValue([]);
+      mockCount.mockResolvedValue(0);
+
+      await GET(makeRequest("?sortOrder=providerCreatedAt_desc"));
+
+      const call = mockFindMany.mock.calls[0][0];
+      const lastKey = Object.keys(call.orderBy[call.orderBy.length - 1])[0];
+      expect(lastKey).toBe("id");
     });
   });
 });

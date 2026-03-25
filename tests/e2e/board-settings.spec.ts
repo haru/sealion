@@ -177,10 +177,11 @@ test.describe("Board Settings — Sort Order (US3)", () => {
   });
 
   test("sort order is preserved on reload", async ({ page }) => {
+    // Start with default settings; PUT will update to user-modified order
     let savedSettings = {
       showCreatedAt: true,
       showUpdatedAt: false,
-      sortOrder: ["providerUpdatedAt_desc", "dueDate_asc"],
+      sortOrder: ["dueDate_asc", "providerUpdatedAt_desc"],
     };
 
     await page.route("**/api/board-settings", async (route) => {
@@ -200,8 +201,18 @@ test.describe("Board Settings — Sort Order (US3)", () => {
     });
 
     await page.goto("/settings/board");
-    // After reload, the order should reflect the saved state (Updated At first)
+
+    // Move "Updated At" (index 1) to rank 1 via the move-up button
     const activeItems = page.locator("[data-testid='sort-active-item']");
+    await activeItems.nth(1).click();
+    await page.locator("[data-testid='sort-move-up']").click();
+
+    // Save — this triggers a PUT with the new order
+    await page.getByRole("button", { name: /save/i }).click();
+    await expect(page.getByText(/saved successfully/i)).toBeVisible();
+
+    // Reload and assert the persisted order (Updated At first)
+    await page.reload();
     await expect(activeItems.nth(0)).toContainText(/updated at/i);
     await expect(activeItems.nth(1)).toContainText(/due date/i);
   });

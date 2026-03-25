@@ -24,14 +24,24 @@ export default function BoardSettingsForm() {
   useEffect(() => {
     let cancelled = false;
     fetch("/api/board-settings")
-      .then((res) => res.json())
-      .then((json) => {
-        if (!cancelled && json.data) {
-          setSettings(json.data as BoardSettings);
+      .then(async (res) => {
+        if (!res.ok) {
+          setError(t("loadError"));
+          return;
+        }
+        const json = await res.json();
+        if (!cancelled) {
+          if (json.error) {
+            setError(t("loadError"));
+          } else if (json.data) {
+            setSettings(json.data as BoardSettings);
+          }
         }
       })
       .catch(() => {
-        // Keep defaults on fetch failure
+        if (!cancelled) {
+          setError(t("loadError"));
+        }
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -39,7 +49,7 @@ export default function BoardSettingsForm() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [t]);
 
   /** Handles save button click — sends PUT /api/board-settings. */
   async function handleSave() {
