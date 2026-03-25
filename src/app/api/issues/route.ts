@@ -5,7 +5,7 @@ import { ok, fail } from "@/lib/api-response";
 import { getProviderIconUrl } from "@/services/issue-provider/factory";
 import { VALID_SORT_CRITERIA, MAX_SORT_CRITERIA, SortCriterion } from "@/lib/types";
 
-type PrismaOrderBy = Record<string, { sort: string; nulls?: string }>;
+type PrismaOrderBy = Record<string, { sort: string; nulls?: string } | string>;
 
 /** Default sort order when no `sortOrder` query parameter is provided. */
 const DEFAULT_SORT_CRITERIA: SortCriterion[] = ["dueDate_asc", "providerUpdatedAt_desc"];
@@ -27,7 +27,7 @@ function criterionToOrderBy(criterion: SortCriterion): PrismaOrderBy {
 }
 
 /** Deterministic tie-breaker appended to every sort to ensure stable pagination. */
-const TIEBREAKER_ORDER_BY: PrismaOrderBy = { id: { sort: "asc" } };
+const TIEBREAKER_ORDER_BY = { id: "asc" as const };
 
 /**
  * Parses the `sortOrder` query parameter into an ordered list of Prisma `orderBy` entries.
