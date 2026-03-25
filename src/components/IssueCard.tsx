@@ -52,7 +52,7 @@ interface IssueCardProps {
   isGhost?: boolean;
   /** When true, the provider creation timestamp chip is rendered. Defaults to true. */
   showCreatedAt?: boolean;
-  /** When true, the provider update timestamp chip is rendered. Defaults to true. */
+  /** When true, the provider update timestamp chip is rendered. Defaults to false. */
   showUpdatedAt?: boolean;
   /**
    * Called when the user clicks the "Complete" button.
@@ -83,7 +83,7 @@ export default function IssueCard({
   isDragging,
   isGhost,
   showCreatedAt = true,
-  showUpdatedAt = true,
+  showUpdatedAt = false,
   onComplete,
 }: IssueCardProps) {
   const t = useTranslations("todo");

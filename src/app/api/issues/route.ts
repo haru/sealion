@@ -38,7 +38,9 @@ function parseSortOrder(raw: string | null): PrismaOrderBy[] {
   const criteria = raw
     .split(",")
     .map((v) => v.trim())
-    .filter((v): v is SortCriterion => VALID_SORT_CRITERIA.includes(v as SortCriterion));
+    .filter((v): v is SortCriterion => VALID_SORT_CRITERIA.includes(v as SortCriterion))
+    .filter((v, i, arr) => arr.indexOf(v) === i)
+    .slice(0, VALID_SORT_CRITERIA.length);
 
   if (criteria.length === 0) return DEFAULT_SORT_CRITERIA.map(criterionToOrderBy);
   return criteria.map(criterionToOrderBy);

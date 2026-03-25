@@ -212,5 +212,27 @@ describe("GET /api/issues", () => {
       const orderByKeys = call.orderBy.map((o: Record<string, unknown>) => Object.keys(o)[0]);
       expect(orderByKeys[0]).toBe("dueDate");
     });
+
+    it("deduplicates repeated sortOrder values", async () => {
+      mockFindMany.mockResolvedValue([]);
+      mockCount.mockResolvedValue(0);
+
+      await GET(makeRequest("?sortOrder=dueDate_asc%2CdueDate_asc%2CproviderUpdatedAt_desc"));
+
+      const call = mockFindMany.mock.calls[0][0];
+      const orderByKeys = call.orderBy.map((o: Record<string, unknown>) => Object.keys(o)[0]);
+      expect(orderByKeys).toEqual(["dueDate", "providerUpdatedAt"]);
+    });
+
+    it("caps excessive sortOrder values at 3 entries", async () => {
+      mockFindMany.mockResolvedValue([]);
+      mockCount.mockResolvedValue(0);
+
+      const manyValues = Array(10).fill("dueDate_asc,providerUpdatedAt_desc,providerCreatedAt_desc").join(",");
+      await GET(makeRequest(`?sortOrder=${encodeURIComponent(manyValues)}`));
+
+      const call = mockFindMany.mock.calls[0][0];
+      expect(call.orderBy.length).toBeLessThanOrEqual(3);
+    });
   });
 });

@@ -21,6 +21,7 @@ import CompleteIssueModal from "@/components/todo/CompleteIssueModal";
 import TodayTasksArea, { TODAY_DROP_ZONE_ID } from "@/components/today-tasks/TodayTasksArea";
 import { allProjectsSynced, shouldThrottleSync, SYNC_THROTTLE_MS } from "@/lib/sync-utils";
 import { BoardSettings, DEFAULT_BOARD_SETTINGS, SortCriterion } from "@/lib/types";
+
 interface Issue {
   id: string;
   externalId: string;
@@ -64,6 +65,7 @@ interface Toast {
 export default function DashboardPage() {
   const t = useTranslations("todo");
   const tToday = useTranslations("todayTasks");
+  const tBoardSettings = useTranslations("boardSettings");
 
   const [issues, setIssues] = useState<Issue[]>([]);
   const [todayIssues, setTodayIssues] = useState<Issue[]>([]);
@@ -189,6 +191,9 @@ export default function DashboardPage() {
           boardSettingsSortOrderRef.current = bs.sortOrder;
           initialSortOrder = bs.sortOrder;
         }
+      } else {
+        console.error("Failed to fetch board settings, falling back to defaults");
+        showToast(tBoardSettings("loadError"), "error");
       }
 
       await Promise.all([
@@ -207,7 +212,7 @@ export default function DashboardPage() {
       }
     }
     void init();
-  }, [fetchIssues, fetchTodayIssues, startSync]);
+  }, [fetchIssues, fetchTodayIssues, startSync, tBoardSettings]);
 
   /** Fetches the requested page of issues. */
   async function handlePageChange(newPage: number) {

@@ -62,11 +62,7 @@ test.describe("Board Settings — Navigation (US1)", () => {
 test.describe("Board Settings — Display Items (US2)", () => {
   test.beforeEach(async ({ page }) => {
     await page.route("**/api/board-settings", (route) => {
-      if (route.request().method() === "GET") {
-        route.fulfill({ contentType: "application/json", body: DEFAULT_BOARD_SETTINGS });
-      } else {
-        route.fulfill({ contentType: "application/json", body: DEFAULT_BOARD_SETTINGS });
-      }
+      route.fulfill({ contentType: "application/json", body: DEFAULT_BOARD_SETTINGS });
     });
     await page.route("**/api/issues**", (route) => {
       route.fulfill({ contentType: "application/json", body: EMPTY_ISSUES });

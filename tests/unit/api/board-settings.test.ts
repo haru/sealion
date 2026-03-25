@@ -32,10 +32,6 @@ const STORED_RECORD = {
   updatedAt: new Date(),
 };
 
-function makeGetRequest(): NextRequest {
-  return new NextRequest("http://localhost/api/board-settings");
-}
-
 function makePutRequest(body: unknown): NextRequest {
   return new NextRequest("http://localhost/api/board-settings", {
     method: "PUT",
@@ -52,7 +48,7 @@ describe("GET /api/board-settings", () => {
 
   it("returns 401 when not authenticated", async () => {
     mockAuth.mockResolvedValue(null);
-    const res = await GET(makeGetRequest());
+    const res = await GET();
     expect(res.status).toBe(401);
     const json = await res.json();
     expect(json.error).toBe("UNAUTHORIZED");
@@ -61,7 +57,7 @@ describe("GET /api/board-settings", () => {
   it("returns default values when no DB record exists", async () => {
     mockFindUnique.mockResolvedValue(null);
 
-    const res = await GET(makeGetRequest());
+    const res = await GET();
     const json = await res.json();
 
     expect(res.status).toBe(200);
@@ -72,7 +68,7 @@ describe("GET /api/board-settings", () => {
   it("returns stored values when record exists", async () => {
     mockFindUnique.mockResolvedValue(STORED_RECORD);
 
-    const res = await GET(makeGetRequest());
+    const res = await GET();
     const json = await res.json();
 
     expect(res.status).toBe(200);
@@ -127,6 +123,13 @@ describe("PUT /api/board-settings", () => {
 
   it("returns 400 when sortOrder is an empty array", async () => {
     const res = await PUT(makePutRequest({ showCreatedAt: true, showUpdatedAt: false, sortOrder: [] }));
+    const json = await res.json();
+    expect(res.status).toBe(400);
+    expect(json.error).toBe("INVALID_INPUT");
+  });
+
+  it("returns 400 when sortOrder contains duplicate criteria", async () => {
+    const res = await PUT(makePutRequest({ showCreatedAt: true, showUpdatedAt: false, sortOrder: ["dueDate_asc", "dueDate_asc"] }));
     const json = await res.json();
     expect(res.status).toBe(400);
     expect(json.error).toBe("INVALID_INPUT");

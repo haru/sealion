@@ -30,9 +30,12 @@ export async function GET() {
     return ok<BoardSettings>(DEFAULT_BOARD_SETTINGS);
   }
 
-  const sortOrder = Array.isArray(record.sortOrder)
-    ? (record.sortOrder as SortCriterion[])
-    : (DEFAULT_BOARD_SETTINGS.sortOrder as SortCriterion[]);
+  const rawSortOrder = Array.isArray(record.sortOrder)
+    ? (record.sortOrder as string[]).filter((v): v is SortCriterion =>
+        VALID_SORT_CRITERIA.includes(v as SortCriterion)
+      )
+    : [];
+  const sortOrder = rawSortOrder.length > 0 ? rawSortOrder : DEFAULT_BOARD_SETTINGS.sortOrder;
 
   return ok<BoardSettings>({
     showCreatedAt: record.showCreatedAt,
@@ -80,7 +83,8 @@ export async function PUT(req: Request) {
     !Array.isArray(sortOrder) ||
     sortOrder.length < 1 ||
     sortOrder.length > 3 ||
-    !sortOrder.every((v) => VALID_SORT_CRITERIA.includes(v as SortCriterion))
+    !sortOrder.every((v) => VALID_SORT_CRITERIA.includes(v as SortCriterion)) ||
+    new Set(sortOrder).size !== sortOrder.length
   ) {
     return fail("INVALID_INPUT", 400);
   }
