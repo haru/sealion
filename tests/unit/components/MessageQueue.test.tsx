@@ -2,7 +2,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MessageQueueProvider, useMessageQueue } from '@/components/MessageQueue';
 
 describe('MessageQueue component - concurrent message rendering (T077)', () => {
-  it('renders multiple messages simultaneously', () => {
+  it('renders multiple messages simultaneously', async () => {
     const TestComponent = () => {
       const { addMessage } = useMessageQueue();
 
@@ -27,22 +27,22 @@ describe('MessageQueue component - concurrent message rendering (T077)', () => {
 
     // Add three messages with small delays to bypass throttling
     fireEvent.click(button1);
-    waitFor(() => {
+    await waitFor(() => {
       expect(screen.getByText('Info 1')).toBeInTheDocument();
     }, { timeout: 100 });
 
     fireEvent.click(button2);
-    waitFor(() => {
+    await waitFor(() => {
       expect(screen.getByText('Warning 1')).toBeInTheDocument();
-    }, { timeout: 100 });
+    }, { timeout: 1000 });
 
     fireEvent.click(button3);
-    waitFor(() => {
+    await waitFor(() => {
       expect(screen.getByText('Error 1')).toBeInTheDocument();
-    }, { timeout: 100 });
+    }, { timeout: 1000 });
   });
 
-  it('renders messages with different severity levels', () => {
+  it('renders messages with different severity levels', async () => {
     const TestComponent = () => {
       const { addMessage } = useMessageQueue();
 
@@ -65,17 +65,17 @@ describe('MessageQueue component - concurrent message rendering (T077)', () => {
     fireEvent.click(screen.getByText('Add Warning'));
     fireEvent.click(screen.getByText('Add Error'));
 
-    // Verify all three messages are rendered
-    waitFor(() => {
+    // Verify all three messages are rendered (some may be throttled to queue)
+    await waitFor(() => {
       expect(screen.getByText('Info')).toBeInTheDocument();
       expect(screen.getByText('Warning')).toBeInTheDocument();
       expect(screen.getByText('Error')).toBeInTheDocument();
-    }, { timeout: 1000 });
+    }, { timeout: 3000 });
   });
 });
 
 describe('MessageQueue component - message shift on dismiss (T078)', () => {
-  it('removes correct message when dismissed', () => {
+  it('removes correct message when dismissed', async () => {
     const TestComponent = () => {
       const { addMessage, messages, dismissMessage } = useMessageQueue();
 
@@ -103,7 +103,7 @@ describe('MessageQueue component - message shift on dismiss (T078)', () => {
     fireEvent.click(screen.getByText('Add 1'));
     fireEvent.click(screen.getByText('Add 2'));
 
-    waitFor(() => {
+    await waitFor(() => {
       expect(screen.getByText('Dismiss Message 1')).toBeInTheDocument();
       expect(screen.getByText('Dismiss Message 2')).toBeInTheDocument();
     }, { timeout: 1000 });
@@ -112,13 +112,13 @@ describe('MessageQueue component - message shift on dismiss (T078)', () => {
     fireEvent.click(screen.getByText('Dismiss Message 1'));
 
     // Only second message should remain
-    waitFor(() => {
+    await waitFor(() => {
       expect(screen.queryByText('Dismiss Message 1')).not.toBeInTheDocument();
       expect(screen.getByText('Dismiss Message 2')).toBeInTheDocument();
     }, { timeout: 100 });
   });
 
-  it('maintains order of remaining messages after dismissal', () => {
+  it('maintains order of remaining messages after dismissal', async () => {
     const TestComponent = () => {
       const { addMessage, dismissMessage, messages } = useMessageQueue();
 
@@ -156,17 +156,17 @@ describe('MessageQueue component - message shift on dismiss (T078)', () => {
     fireEvent.click(button3);
     fireEvent.click(button4);
 
-    waitFor(() => {
+    await waitFor(() => {
       expect(screen.getByTestId('msg-0')).toHaveTextContent('Msg 1');
       expect(screen.getByTestId('msg-1')).toHaveTextContent('Msg 2');
       expect(screen.getByTestId('msg-2')).toHaveTextContent('Msg 3');
       expect(screen.getByTestId('msg-3')).toHaveTextContent('Msg 4');
-    }, { timeout: 1000 });
+    }, { timeout: 3000 });
 
     // Dismiss the second message (Msg 2)
     fireEvent.click(screen.getByText('Dismiss Second'));
 
-    waitFor(() => {
+    await waitFor(() => {
       // Messages should shift, maintaining order
       expect(screen.getByTestId('msg-0')).toHaveTextContent('Msg 1');
       expect(screen.getByTestId('msg-1')).toHaveTextContent('Msg 3');

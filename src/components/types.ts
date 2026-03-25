@@ -1,7 +1,13 @@
 /**
+ * All valid message severity type values. This is the single source of truth
+ * used for both the `MessageType` union and runtime validation.
+ */
+export const MESSAGE_TYPES = ['information', 'warning', 'error'] as const;
+
+/**
  * Message severity types for user notifications.
  */
-export type MessageType = 'information' | 'warning' | 'error';
+export type MessageType = (typeof MESSAGE_TYPES)[number];
 
 /**
  * Message Queue Context
@@ -10,6 +16,10 @@ export interface MessageQueueContextType {
   messages: MessageData[];
   addMessage: (type: MessageType, message: string) => void;
   dismissMessage: (id: string) => void;
+  /**
+   * Dismisses all active messages and clears the pending queue.
+   * Note: queued (not-yet-displayed) messages are also discarded.
+   */
   closeAllMessages: () => void;
 }
 
@@ -77,7 +87,7 @@ export function isValidMessage(message: MessageData): boolean {
   return (
     typeof message.id === 'string' &&
     message.id.length > 0 &&
-    ['information', 'warning', 'error'].includes(message.type) &&
+    (MESSAGE_TYPES as readonly string[]).includes(message.type) &&
     typeof message.message === 'string' &&
     message.message.length > 0 &&
     typeof message.timestamp === 'number' &&
@@ -92,5 +102,5 @@ export function isValidMessage(message: MessageData): boolean {
  * @returns true if valid MessageType, false otherwise
  */
 export function isValidMessageType(type: string): type is MessageType {
-  return ['information', 'warning', 'error'].includes(type);
+  return (MESSAGE_TYPES as readonly string[]).includes(type);
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
-import { MessageData, MessageQueueContextType, MessageType, isValidMessage, isValidMessageType } from './types';
+import { MessageData, MessageQueueContextType, MessageType, DISPLAY_CONSTRAINTS, isValidMessage, isValidMessageType } from './types';
 import { addMessage, dismissMessage as dismissMessageUtil, closeAllMessages as closeAllMessagesUtil, processQueue } from '@/lib/message-queue';
 import MessageSnackbar from './MessageSnackbar';
 
@@ -46,13 +46,13 @@ export function MessageQueueProvider({ children }: MessageQueueProviderProps) {
    * This effect runs whenever queue state changes.
    */
   useEffect(() => {
-    if (state.queue.length === 0 || state.messages.length >= 5) {
+    if (state.queue.length === 0 || state.messages.length >= DISPLAY_CONSTRAINTS.maxMessages) {
       return;
     }
 
     const timer = setTimeout(() => {
       setState(prev => processQueue(prev));
-    }, 500);
+    }, DISPLAY_CONSTRAINTS.minIntervalMs);
 
     return () => clearTimeout(timer);
   }, [state.queue, state.messages]);
@@ -74,11 +74,12 @@ export function MessageQueueProvider({ children }: MessageQueueProviderProps) {
       return;
     }
 
+    const now = Date.now();
     const newMessage: MessageData = {
-      id: Date.now().toString(),
+      id: crypto.randomUUID(),
       type,
       message: message.trim(),
-      timestamp: Date.now(),
+      timestamp: now,
     };
 
     if (!isValidMessage(newMessage)) {

@@ -57,11 +57,6 @@ export default function MessageSnackbar({ message, onClose }: MessageSnackbarPro
       autoHideDuration={autoHideDuration}
       anchorOrigin={DISPLAY_CONSTRAINTS.displayPosition}
       onClose={handleClose}
-      sx={{
-        '& .MuiSnackbar-root': {
-          top: '16px',
-        },
-      }}
     >
       <Alert
         severity={getSeverity(message.type)}

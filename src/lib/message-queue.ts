@@ -64,18 +64,6 @@ export const dismissMessage = (
 ): { messages: MessageData[]; queue: MessageData[]; lastMessageTime: number | null } => {
   const updatedMessages = messages.filter(msg => msg.id !== messageId);
 
-  // Process pending queue after a delay to respect throttle interval
-  setTimeout(() => {
-    const nextMessage = queue.shift();
-    if (nextMessage) {
-      return {
-        messages: [...updatedMessages, nextMessage],
-        queue,
-        lastMessageTime: Date.now(),
-      };
-    }
-  }, DISPLAY_CONSTRAINTS.minIntervalMs);
-
   return {
     messages: updatedMessages,
     queue,
