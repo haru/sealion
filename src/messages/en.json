@@ -87,7 +87,34 @@
   },
   "sidebar": {
     "todo": "TODO",
-    "projectManagement": "Project Management"
+    "projectManagement": "Project Management",
+    "boardSettings": "Board Settings"
+  },
+  "boardSettings": {
+    "title": "Board Settings",
+    "displayItems": {
+      "sectionTitle": "Display Items",
+      "showCreatedAt": "Show Created At",
+      "showUpdatedAt": "Show Updated At"
+    },
+    "sortOrder": {
+      "sectionTitle": "Sort Order",
+      "availableLabel": "Available",
+      "activeLabel": "Active",
+      "providerCreatedAt_desc": "Created At (newest first)",
+      "providerUpdatedAt_desc": "Updated At (newest first)",
+      "dueDate_asc": "Due Date (earliest first)",
+      "addAriaLabel": "Add selected item to active sort",
+      "removeAriaLabel": "Remove selected item from active sort",
+      "moveTopAriaLabel": "Move to top",
+      "moveUpAriaLabel": "Move up",
+      "moveDownAriaLabel": "Move down",
+      "moveBottomAriaLabel": "Move to bottom"
+    },
+    "save": "Save",
+    "saveSuccess": "Settings saved successfully",
+    "saveError": "Failed to save settings. Please try again.",
+    "loadError": "Failed to load board settings. Using defaults."
   },
   "projects": {
     "title": "Projects",

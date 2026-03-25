@@ -33,6 +33,19 @@ model User {
   issueProviders IssueProvider[]
   accounts       Account[]
   sessions       Session[]
+  boardSettings  BoardSettings?
+}
+
+model BoardSettings {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  showCreatedAt Boolean  @default(true)
+  showUpdatedAt Boolean  @default(false)
+  sortOrder     Json     @default("[\"dueDate_asc\",\"providerUpdatedAt_desc\"]")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model IssueProvider {
