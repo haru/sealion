@@ -62,3 +62,10 @@ Run `npm run lint` after every code change. ESLint config extends `eslint-config
 ## Development Environment
 
 This project uses **VSCode Dev Containers**. Open in the dev container before starting development.
+
+## Active Technologies
+- TypeScript 5 / Next.js 16 (App Router) + MUI v6 (Snackbar, Alert, Material Icons) (014-message-standardization)
+- N/A (no data persistence required - in-memory UI state) (014-message-standardization)
+
+## Recent Changes
+- 014-message-standardization: Added TypeScript 5 / Next.js 16 (App Router) + MUI v6 (Snackbar, Alert, Material Icons)

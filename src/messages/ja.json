@@ -189,5 +189,13 @@
     "PASSWORD_TOO_SHORT": "パスワードは8文字以上で入力してください",
     "INVALID_INPUT": "入力値が正しくありません",
     "CONFLICT": "このプロジェクトはすでに登録されています"
+  },
+  "message": {
+    "close": "閉じる",
+    "type": {
+      "information": "情報",
+      "warning": "警告",
+      "error": "エラー"
+    }
   }
 }

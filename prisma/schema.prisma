@@ -22,13 +22,13 @@ enum ProviderType {
 // ─── Models ─────────────────────────────────────────────────────────────────
 
 model User {
-  id           String    @id @default(cuid())
-  email        String    @unique
+  id           String   @id @default(cuid())
+  email        String   @unique
   passwordHash String
-  role         UserRole  @default(USER)
-  isActive     Boolean   @default(true)
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  role         UserRole @default(USER)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   issueProviders IssueProvider[]
   accounts       Account[]
@@ -65,9 +65,9 @@ model IssueProvider {
 }
 
 model Project {
-  id              String    @id @default(cuid())
-  issueProviderId String
-  externalId      String
+  id                String    @id @default(cuid())
+  issueProviderId   String
+  externalId        String
   displayName       String
   includeUnassigned Boolean   @default(false)
   lastSyncedAt      DateTime?
@@ -83,16 +83,16 @@ model Project {
 }
 
 model Issue {
-  id           String        @id @default(cuid())
+  id           String    @id @default(cuid())
   projectId    String
   externalId   String
   title        String
   dueDate      DateTime?
-  externalUrl   String
-  isUnassigned  Boolean       @default(false)
-  lastSyncedAt  DateTime      @default(now())
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  externalUrl  String
+  isUnassigned Boolean   @default(false)
+  lastSyncedAt DateTime  @default(now())
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
   // Today Tasks feature fields
   todayFlag    Boolean   @default(false)

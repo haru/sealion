@@ -189,5 +189,13 @@
     "PASSWORD_TOO_SHORT": "Password must be at least 8 characters",
     "INVALID_INPUT": "Invalid input",
     "CONFLICT": "This project is already registered"
+  },
+  "message": {
+    "close": "Close",
+    "type": {
+      "information": "Information",
+      "warning": "Warning",
+      "error": "Error"
+    }
   }
 }
