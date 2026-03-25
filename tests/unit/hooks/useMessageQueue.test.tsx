@@ -1,9 +1,10 @@
 import { renderHook, act } from '@testing-library/react';
+import { ReactNode } from 'react';
 import { useMessageQueue } from '@/hooks/useMessageQueue';
 import { MessageQueueProvider } from '@/components/MessageQueue';
 
 describe('useMessageQueue - addMessage', () => {
-  const wrapper = ({ children }) => (
+  const wrapper = ({ children }: { children: ReactNode }) => (
     <MessageQueueProvider>{children}</MessageQueueProvider>
   );
 
@@ -77,7 +78,7 @@ describe('useMessageQueue - addMessage', () => {
 });
 
 describe('useMessageQueue - dismissMessage', () => {
-  const wrapper = ({ children }) => (
+  const wrapper = ({ children }: { children: ReactNode }) => (
     <MessageQueueProvider>{children}</MessageQueueProvider>
   );
 
@@ -113,7 +114,7 @@ describe('useMessageQueue - dismissMessage', () => {
 });
 
 describe('useMessageQueue - closeAllMessages', () => {
-  const wrapper = ({ children }) => (
+  const wrapper = ({ children }: { children: ReactNode }) => (
     <MessageQueueProvider>{children}</MessageQueueProvider>
   );
 

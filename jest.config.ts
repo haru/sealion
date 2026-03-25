@@ -41,14 +41,15 @@ const config: Config = {
 };
 
 // createJestConfig overrides transformIgnorePatterns, so we wrap it
-// to re-apply our pattern that allows next-intl (ESM) to be transformed.
+// to re-apply a pattern that ignores node_modules by default but
+// allows next-intl (ESM) to be transformed by Babel/SWC.
 const jestConfig = createJestConfig(config);
 const resolvedConfig = async () => {
   const base = await (jestConfig as () => Promise<Config>)();
   return {
     ...base,
     transformIgnorePatterns: [
-      "/node_modules/",
+      "/node_modules/(?!(next-intl)/)",
     ],
   };
 };

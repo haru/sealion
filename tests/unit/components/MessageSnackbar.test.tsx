@@ -2,9 +2,14 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import MessageSnackbar from '@/components/MessageSnackbar';
 import { AUTO_DISMISS_DURATION } from '@/components/types';
 
-jest.useFakeTimers();
-
 describe('MessageSnackbar - auto-dismiss timeout management (T064)', () => {
+  beforeEach(() => {
+    jest.useFakeTimers();
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
   it('INFO message auto-dismisses after 6000ms', () => {
     const mockOnClose = jest.fn();
     const message = {
@@ -78,6 +83,14 @@ describe('MessageSnackbar - auto-dismiss timeout management (T064)', () => {
 });
 
 describe('MessageSnackbar - timeout cleanup on manual dismiss (T065)', () => {
+  beforeEach(() => {
+    jest.useFakeTimers();
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
   it('manual dismiss cancels auto-dismiss timeout', () => {
     const mockOnClose = jest.fn();
     const message = {

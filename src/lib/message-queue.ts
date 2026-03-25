@@ -63,10 +63,11 @@ export const dismissMessage = (
   messageId: string,
 ): { messages: MessageData[]; queue: MessageData[]; lastMessageTime: number | null } => {
   const updatedMessages = messages.filter(msg => msg.id !== messageId);
+  const updatedQueue = queue.filter(msg => msg.id !== messageId);
 
   return {
     messages: updatedMessages,
-    queue,
+    queue: updatedQueue,
     lastMessageTime,
   };
 };
@@ -110,6 +111,6 @@ export const processQueue = (
   return {
     messages: [...state.messages, nextMessage],
     queue: state.queue.slice(1),
-    lastMessageTime: state.lastMessageTime,
+    lastMessageTime: Date.now(),
   };
 };

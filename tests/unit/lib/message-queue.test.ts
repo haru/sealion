@@ -123,6 +123,40 @@ describe('message-queue - dismissMessage', () => {
 
     expect(result.messages).toEqual(messages);
   });
+
+  it('also removes a matching id from the pending queue', () => {
+    // A queued message can be dismissed before it becomes visible.
+    // dismissMessage must filter both messages and queue so the
+    // message is never promoted to visible after dismissal.
+    const messages: MessageData[] = [
+      { id: '1', type: 'information', message: 'Active', timestamp: 1 },
+    ];
+    const queue: MessageData[] = [
+      { id: '2', type: 'warning', message: 'Queued', timestamp: 2 },
+      { id: '3', type: 'error', message: 'Also queued', timestamp: 3 },
+    ];
+
+    const result = dismissMessage(messages, queue, null, '2');
+
+    expect(result.messages).toHaveLength(1);
+    expect(result.queue).toHaveLength(1);
+    expect(result.queue[0].id).toBe('3');
+  });
+
+  it('leaves queue unchanged when dismissed id is only in messages', () => {
+    const messages: MessageData[] = [
+      { id: '1', type: 'information', message: 'Active', timestamp: 1 },
+    ];
+    const queue: MessageData[] = [
+      { id: '2', type: 'warning', message: 'Queued', timestamp: 2 },
+    ];
+
+    const result = dismissMessage(messages, queue, null, '1');
+
+    expect(result.messages).toHaveLength(0);
+    expect(result.queue).toHaveLength(1);
+    expect(result.queue[0].id).toBe('2');
+  });
 });
 
 describe('message-queue - closeAllMessages', () => {
@@ -186,6 +220,25 @@ describe('message-queue - processQueue', () => {
 
     expect(result.messages).toHaveLength(5);
     expect(result.queue).toHaveLength(1); // Queued message stays
+  });
+
+  it('updates lastMessageTime when a queued message is promoted to visible', () => {
+    // processQueue must update lastMessageTime so subsequent addMessage
+    // calls use the correct throttle baseline. Without this fix any message
+    // added after processQueue runs can bypass the 500ms interval.
+    const now = 5000;
+    const state = {
+      messages: [],
+      queue: [{ id: '1', type: 'information', message: 'Queued', timestamp: now }],
+      lastMessageTime: null,
+    };
+
+    const result = processQueue(state);
+
+    expect(result.messages).toHaveLength(1);
+    expect(result.lastMessageTime).not.toBeNull();
+    // lastMessageTime must be at least as recent as the processing call
+    expect(result.lastMessageTime).toBeGreaterThanOrEqual(now);
   });
 });
 

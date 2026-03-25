@@ -53,11 +53,13 @@ describe('message-queue utilities', () => {
     });
 
     it('sets current timestamp', () => {
-      const beforeTime = Date.now();
       jest.useFakeTimers();
+      const fixedTime = 1_700_000_000_000;
+      jest.setSystemTime(fixedTime);
+
       const msg = messageData('information', 'Test');
 
-      expect(msg.timestamp).toBeGreaterThanOrEqual(beforeTime);
+      expect(msg.timestamp).toBeGreaterThanOrEqual(fixedTime);
 
       jest.useRealTimers();
     });
