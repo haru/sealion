@@ -30,6 +30,10 @@ interface TodoItemProps {
   providerCreatedAt: string | null;
   /** ISO 8601 datetime string from the issue provider, or `null` if unavailable. */
   providerUpdatedAt: string | null;
+  /** When true, the provider creation timestamp chip is rendered. Defaults to true. */
+  showCreatedAt?: boolean;
+  /** When true, the provider update timestamp chip is rendered. Defaults to true. */
+  showUpdatedAt?: boolean;
   /**
    * Called when the user clicks the "Complete" button on the issue card.
    * @param id - Internal issue ID.
@@ -52,6 +56,8 @@ export default function TodoItem({
   projectName,
   providerCreatedAt,
   providerUpdatedAt,
+  showCreatedAt,
+  showUpdatedAt,
   onComplete,
   onAddToToday,
 }: TodoItemProps) {
@@ -88,6 +94,8 @@ export default function TodoItem({
       projectName={projectName}
       providerCreatedAt={providerCreatedAt}
       providerUpdatedAt={providerUpdatedAt}
+      showCreatedAt={showCreatedAt}
+      showUpdatedAt={showUpdatedAt}
       actionButton={actionButton}
       dragContainerRef={setNodeRef}
       dragHandleAttributes={attributes}

@@ -95,11 +95,11 @@ describe("GET /api/issues", () => {
     );
   });
 
-  it("orders by providerCreatedAt desc nulls last as fourth orderBy key", async () => {
+  it("sortOrder=providerCreatedAt_desc sorts by providerCreatedAt desc nulls last", async () => {
     mockFindMany.mockResolvedValue([]);
     mockCount.mockResolvedValue(0);
 
-    await GET(makeRequest());
+    await GET(makeRequest("?sortOrder=providerCreatedAt_desc"));
 
     const call = mockFindMany.mock.calls[0][0];
     expect(call.orderBy).toEqual(
@@ -147,7 +147,8 @@ describe("GET /api/issues", () => {
     await GET(makeRequest());
 
     const call = mockFindMany.mock.calls[0][0];
-    expect(call.select).not.toHaveProperty("priority");
+    const orderByKeys = call.orderBy.flatMap((o: Record<string, unknown>) => Object.keys(o));
+    expect(orderByKeys).not.toContain("priority");
   });
 
   it("includes providerCreatedAt and providerUpdatedAt in select", async () => {
@@ -159,5 +160,57 @@ describe("GET /api/issues", () => {
     const call = mockFindMany.mock.calls[0][0];
     expect(call.select.providerCreatedAt).toBe(true);
     expect(call.select.providerUpdatedAt).toBe(true);
+  });
+
+  describe("sortOrder query parameter", () => {
+    it("no sortOrder param uses default order: first key is dueDate, second is providerUpdatedAt", async () => {
+      mockFindMany.mockResolvedValue([]);
+      mockCount.mockResolvedValue(0);
+
+      await GET(makeRequest());
+
+      const call = mockFindMany.mock.calls[0][0];
+      const orderByKeys = call.orderBy.map((o: Record<string, unknown>) => Object.keys(o)[0]);
+      expect(orderByKeys[0]).toBe("dueDate");
+      expect(orderByKeys[1]).toBe("providerUpdatedAt");
+    });
+
+    it("sortOrder=providerUpdatedAt_desc uses single-criterion sort (only providerUpdatedAt as first key)", async () => {
+      mockFindMany.mockResolvedValue([]);
+      mockCount.mockResolvedValue(0);
+
+      await GET(makeRequest("?sortOrder=providerUpdatedAt_desc"));
+
+      const call = mockFindMany.mock.calls[0][0];
+      const orderByKeys = call.orderBy.map((o: Record<string, unknown>) => Object.keys(o)[0]);
+      expect(orderByKeys[0]).toBe("providerUpdatedAt");
+      // Single criterion: dueDate should NOT be first
+      expect(orderByKeys[0]).not.toBe("dueDate");
+    });
+
+    it("sortOrder=dueDate_asc,providerUpdatedAt_desc uses multi-criterion with dueDate first and NULLS LAST", async () => {
+      mockFindMany.mockResolvedValue([]);
+      mockCount.mockResolvedValue(0);
+
+      await GET(makeRequest("?sortOrder=dueDate_asc%2CproviderUpdatedAt_desc"));
+
+      const call = mockFindMany.mock.calls[0][0];
+      const orderByKeys = call.orderBy.map((o: Record<string, unknown>) => Object.keys(o)[0]);
+      expect(orderByKeys[0]).toBe("dueDate");
+      expect(orderByKeys[1]).toBe("providerUpdatedAt");
+      expect(call.orderBy[0].dueDate).toMatchObject({ sort: "asc", nulls: "last" });
+    });
+
+    it("invalid sortOrder value falls back to default (dueDate first)", async () => {
+      mockFindMany.mockResolvedValue([]);
+      mockCount.mockResolvedValue(0);
+
+      await GET(makeRequest("?sortOrder=invalid_criterion"));
+
+      const call = mockFindMany.mock.calls[0][0];
+      // Should fall back to default — dueDate must be first
+      const orderByKeys = call.orderBy.map((o: Record<string, unknown>) => Object.keys(o)[0]);
+      expect(orderByKeys[0]).toBe("dueDate");
+    });
   });
 });

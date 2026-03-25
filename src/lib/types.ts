@@ -29,6 +29,49 @@ export interface ExternalProject {
 }
 
 /**
+ * Valid sort criterion values for board settings.
+ * - `"providerCreatedAt_desc"`: Sort by creation date, newest first.
+ * - `"providerUpdatedAt_desc"`: Sort by last update date, newest first.
+ * - `"dueDate_asc"`: Sort by due date, earliest first (nulls last).
+ */
+export type SortCriterion =
+  | "providerCreatedAt_desc"
+  | "providerUpdatedAt_desc"
+  | "dueDate_asc";
+
+/**
+ * All valid sort criteria that can be used in board settings.
+ * Used for validation of user input.
+ */
+export const VALID_SORT_CRITERIA: readonly SortCriterion[] = [
+  "providerCreatedAt_desc",
+  "providerUpdatedAt_desc",
+  "dueDate_asc",
+] as const;
+
+/**
+ * Board display and sort settings for the authenticated user.
+ * Controls which timestamps are shown on issue cards and how issues are ordered.
+ */
+export interface BoardSettings {
+  /** Whether to display the provider-side creation timestamp on issue cards. */
+  showCreatedAt: boolean;
+  /** Whether to display the provider-side update timestamp on issue cards. */
+  showUpdatedAt: boolean;
+  /** Ordered list of sort criteria; earlier entries take priority. */
+  sortOrder: SortCriterion[];
+}
+
+/**
+ * Default board settings returned when the user has no saved settings.
+ */
+export const DEFAULT_BOARD_SETTINGS: BoardSettings = {
+  showCreatedAt: true,
+  showUpdatedAt: false,
+  sortOrder: ["dueDate_asc", "providerUpdatedAt_desc"],
+} as const;
+
+/**
  * Adapter interface that each issue provider (GitHub, Jira, Redmine) must implement.
  * The sync pipeline uses these methods to fetch and mutate issues on external services.
  */

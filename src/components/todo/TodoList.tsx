@@ -34,6 +34,10 @@ interface TodoListProps {
   loading?: boolean;
   /** Called when the user navigates to a different page. */
   onPageChange?: (page: number) => void;
+  /** When true, the provider creation timestamp chip is rendered on each card. Defaults to true. */
+  showCreatedAt?: boolean;
+  /** When true, the provider update timestamp chip is rendered on each card. Defaults to true. */
+  showUpdatedAt?: boolean;
   /**
    * Called when the user clicks the "Complete" button on an issue card.
    * @param id - Internal issue ID.
@@ -50,6 +54,8 @@ export default function TodoList({
   page,
   limit,
   loading,
+  showCreatedAt,
+  showUpdatedAt,
   onPageChange,
   onComplete,
   onAddToToday,
@@ -88,6 +94,8 @@ export default function TodoList({
           providerIconUrl={issue.project.issueProvider.iconUrl}
           providerName={issue.project.issueProvider.displayName}
           projectName={issue.project.displayName}
+          showCreatedAt={showCreatedAt}
+          showUpdatedAt={showUpdatedAt}
           onComplete={onComplete}
           onAddToToday={onAddToToday}
         />

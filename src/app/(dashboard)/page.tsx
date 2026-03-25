@@ -20,6 +20,7 @@ import SyncStatus from "@/components/todo/SyncStatus";
 import CompleteIssueModal from "@/components/todo/CompleteIssueModal";
 import TodayTasksArea, { TODAY_DROP_ZONE_ID } from "@/components/today-tasks/TodayTasksArea";
 import { allProjectsSynced, shouldThrottleSync, SYNC_THROTTLE_MS } from "@/lib/sync-utils";
+import { BoardSettings, DEFAULT_BOARD_SETTINGS, SortCriterion } from "@/lib/types";
 interface Issue {
   id: string;
   externalId: string;
@@ -75,6 +76,8 @@ export default function DashboardPage() {
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
   const [isDraggingOutside, setIsDraggingOutside] = useState(false);
   const [completeModalIssueId, setCompleteModalIssueId] = useState<string | null>(null);
+  const [boardSettings, setBoardSettings] = useState<BoardSettings>(DEFAULT_BOARD_SETTINGS);
+  const boardSettingsSortOrderRef = useRef<SortCriterion[]>(DEFAULT_BOARD_SETTINGS.sortOrder);
   const syncStartedAtRef = useRef<Date | null>(null);
 
   const sensors = useSensors(useSensor(PointerSensor));
@@ -97,8 +100,10 @@ export default function DashboardPage() {
     setToast({ open: true, message, severity });
   }
 
-  const fetchIssues = useCallback(async (p: number) => {
-    const res = await fetch(`/api/issues?page=${p}&limit=20`);
+  const fetchIssues = useCallback(async (p: number, sortOrder?: SortCriterion[]) => {
+    const order = sortOrder ?? boardSettingsSortOrderRef.current;
+    const sortParam = order.join(",");
+    const res = await fetch(`/api/issues?page=${p}&limit=20&sortOrder=${encodeURIComponent(sortParam)}`);
     if (res.ok) {
       const json = await res.json();
       setIssues(json.data.items);
@@ -172,8 +177,22 @@ export default function DashboardPage() {
     async function init() {
       setLoading(true);
       let fetchedProviders: SyncProvider[] = [];
+
+      // Fetch board settings first so we can pass sortOrder to fetchIssues
+      let initialSortOrder: SortCriterion[] = DEFAULT_BOARD_SETTINGS.sortOrder;
+      const bsRes = await fetch("/api/board-settings");
+      if (bsRes.ok) {
+        const bsJson = await bsRes.json();
+        if (bsJson.data) {
+          const bs = bsJson.data as BoardSettings;
+          setBoardSettings(bs);
+          boardSettingsSortOrderRef.current = bs.sortOrder;
+          initialSortOrder = bs.sortOrder;
+        }
+      }
+
       await Promise.all([
-        fetchIssues(1),
+        fetchIssues(1, initialSortOrder),
         fetchTodayIssues(),
         fetch("/api/sync").then(async (res) => {
           if (res.ok) {
@@ -439,6 +458,8 @@ export default function DashboardPage() {
             page={page}
             limit={20}
             loading={loading}
+            showCreatedAt={boardSettings.showCreatedAt}
+            showUpdatedAt={boardSettings.showUpdatedAt}
             onPageChange={handlePageChange}
             onComplete={handleComplete}
             onAddToToday={handleAddToToday}
@@ -468,6 +489,8 @@ export default function DashboardPage() {
               providerIconUrl={activeIssue.project.issueProvider.iconUrl}
               providerName={activeIssue.project.issueProvider.displayName}
               projectName={activeIssue.project.displayName}
+              showCreatedAt={boardSettings.showCreatedAt}
+              showUpdatedAt={boardSettings.showUpdatedAt}
               actionButton={null}
               dragContainerRef={undefined}
               dragHandleAttributes={undefined}

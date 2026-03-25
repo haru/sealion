@@ -50,6 +50,10 @@ interface IssueCardProps {
   isDragging?: boolean;
   /** When true, the card is rendered as a semi-transparent ghost placeholder (opacity 0.15). */
   isGhost?: boolean;
+  /** When true, the provider creation timestamp chip is rendered. Defaults to true. */
+  showCreatedAt?: boolean;
+  /** When true, the provider update timestamp chip is rendered. Defaults to true. */
+  showUpdatedAt?: boolean;
   /**
    * Called when the user clicks the "Complete" button.
    * Only shown for open (non-closed) issues.
@@ -78,6 +82,8 @@ export default function IssueCard({
   dragStyle,
   isDragging,
   isGhost,
+  showCreatedAt = true,
+  showUpdatedAt = true,
   onComplete,
 }: IssueCardProps) {
   const t = useTranslations("todo");
@@ -127,8 +133,12 @@ export default function IssueCard({
               {dueDateFormatted && (
                 <Chip label={dueDateFormatted} size="small" variant="outlined" />
               )}
-              <Chip label={createdFormatted} size="small" variant="outlined" />
-              <Chip label={updatedFormatted} size="small" variant="outlined" />
+              {showCreatedAt && (
+                <Chip label={createdFormatted} size="small" variant="outlined" />
+              )}
+              {showUpdatedAt && (
+                <Chip label={updatedFormatted} size="small" variant="outlined" />
+              )}
               {isUnassigned && (
                 <Tooltip title={t("unassignedChipTooltip")}>
                   <Chip
