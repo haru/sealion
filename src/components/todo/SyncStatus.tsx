@@ -6,8 +6,10 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import ErrorIcon from "@mui/icons-material/Error";
 import WarningIcon from "@mui/icons-material/Warning";
 import { useTranslations } from "next-intl";
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useMessageQueue } from "@/components/MessageQueue";
+import { SyncErrorCause, SyncErrorInfo } from "@/lib/types";
+import { formatSyncErrorMessage, parseSyncErrorInfo } from "@/lib/error-utils";
 
 interface Project {
   id: string;
@@ -33,26 +35,33 @@ interface SyncStatusProps {
 /** Displays the sync status chip and a "Sync Now" button. Errors are shown via the shared message queue. */
 export default function SyncStatus({ providers, isSyncing, onSyncNow }: SyncStatusProps) {
   const t = useTranslations("todo");
-  const tErrors = useTranslations("errors");
+  const tSync = useTranslations("sync");
   const { addMessage } = useMessageQueue();
 
-  const allProjects = providers.flatMap((p) => p.projects);
-  const hasRateLimit = allProjects.some((p) => p.syncError === "RATE_LIMITED");
-  const hasSyncFailed = allProjects.some((p) => p.syncError === "SYNC_FAILED");
+  const allProjects = useMemo(() => providers.flatMap((p) => p.projects), [providers]);
+  const allSyncErrors = useMemo(
+    () => allProjects.map((p) => parseSyncErrorInfo(p.syncError)).filter((e): e is SyncErrorInfo => e !== null),
+    [allProjects]
+  );
 
   const prevIsSyncing = useRef(isSyncing);
   /** Tracks whether the initial-mount notification has already been emitted. */
   const initialNotificationSent = useRef(false);
 
   useEffect(() => {
+    /** Emits one message per sync error into the shared message queue. */
+    function emitErrors() {
+      for (const errorInfo of allSyncErrors) {
+        const isRateLimit = errorInfo.cause === SyncErrorCause.RATE_LIMIT;
+        addMessage(isRateLimit ? "warning" : "error", formatSyncErrorMessage(errorInfo, tSync));
+      }
+    }
+
     // On initial mount: if not currently syncing and errors already exist,
     // emit notifications immediately so users see them without needing a sync cycle.
     if (!initialNotificationSent.current) {
       initialNotificationSent.current = true;
-      if (!isSyncing) {
-        if (hasRateLimit) addMessage("warning", tErrors("RATE_LIMITED"));
-        if (hasSyncFailed) addMessage("error", tErrors("SYNC_FAILED"));
-      }
+      if (!isSyncing) emitErrors();
       return;
     }
 
@@ -60,9 +69,8 @@ export default function SyncStatus({ providers, isSyncing, onSyncNow }: SyncStat
     const wasJustFinished = prevIsSyncing.current && !isSyncing;
     prevIsSyncing.current = isSyncing;
     if (!wasJustFinished) return;
-    if (hasRateLimit) addMessage("warning", tErrors("RATE_LIMITED"));
-    if (hasSyncFailed) addMessage("error", tErrors("SYNC_FAILED"));
-  }, [isSyncing, hasRateLimit, hasSyncFailed, addMessage, tErrors]);
+    emitErrors();
+  }, [isSyncing, allSyncErrors, addMessage, tSync]);
 
   if (providers.length === 0) return null;
 
@@ -72,7 +80,7 @@ export default function SyncStatus({ providers, isSyncing, onSyncNow }: SyncStat
     .sort()
     .at(-1);
 
-  const hasError = allProjects.some((p) => p.syncError !== null);
+  const hasError = allSyncErrors.length > 0;
 
   const icon = isSyncing ? (
     <SyncIcon

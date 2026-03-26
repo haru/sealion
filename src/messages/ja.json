@@ -191,6 +191,20 @@
     "INVALID_INPUT": "入力値が正しくありません",
     "CONFLICT": "このプロジェクトはすでに登録されています"
   },
+  "sync": {
+    "error": {
+      "cause": {
+        "authentication": "認証に失敗しました",
+        "rate_limit": "API制限を超過しました",
+        "not_found": "リソースが見つかりません",
+        "server_error": "サーバーエラーが発生しました",
+        "client_error": "無効なリクエストです",
+        "network_error": "接続に失敗しました",
+        "unknown": "不明なエラー"
+      },
+      "status": "ステータス: {code}"
+    }
+  },
   "message": {
     "close": "閉じる",
     "type": {

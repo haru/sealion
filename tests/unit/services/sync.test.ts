@@ -1,5 +1,6 @@
 /** @jest-environment node */
 import { syncProviders } from "@/services/sync";
+import { SyncErrorCause, SyncErrorInfo } from "@/lib/types";
 
 jest.mock("@/lib/db", () => ({
   prisma: {
@@ -131,7 +132,7 @@ describe("syncProviders", () => {
     expect(mockUpsert).toHaveBeenCalledTimes(2);
   });
 
-  it("handles sync error by recording SYNC_FAILED on project", async () => {
+  it("handles sync error by recording error info on project", async () => {
     mockFindMany.mockResolvedValue([
       {
         id: "provider-1",
@@ -152,14 +153,11 @@ describe("syncProviders", () => {
 
     await syncProviders("user-1");
 
-    expect(mockProjectUpdate).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({
-          syncError: "SYNC_FAILED",
-          lastSyncedAt: expect.any(Date),
-        }),
-      })
-    );
+    const call = (prisma.project.update as jest.Mock).mock.calls[0][0];
+    const syncError: SyncErrorInfo = JSON.parse(call.data.syncError);
+    expect(syncError.cause).toBe(SyncErrorCause.UNKNOWN);
+    expect(syncError.projectName).toBe("owner/repo");
+    expect(call.data.lastSyncedAt).toBeInstanceOf(Date);
   });
 
   it("deletes issues that are no longer returned by the adapter", async () => {
@@ -198,7 +196,7 @@ describe("syncProviders", () => {
     });
   });
 
-  it("handles rate limit error by recording RATE_LIMITED", async () => {
+  it("handles rate limit error by recording RATE_LIMIT cause", async () => {
     mockFindMany.mockResolvedValue([
       {
         id: "provider-1",
@@ -211,6 +209,7 @@ describe("syncProviders", () => {
 
     const { createAdapter } = jest.requireMock("@/services/issue-provider/factory");
     const rateLimitError = Object.assign(new Error("Request failed with status 429"), {
+      isAxiosError: true,
       response: { status: 429 },
     });
     createAdapter.mockReturnValueOnce({
@@ -222,14 +221,10 @@ describe("syncProviders", () => {
 
     await syncProviders("user-1");
 
-    expect(mockProjectUpdate).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({
-          syncError: "RATE_LIMITED",
-          lastSyncedAt: expect.any(Date),
-        }),
-      })
-    );
+    const call = (prisma.project.update as jest.Mock).mock.calls[0][0];
+    const syncError: SyncErrorInfo = JSON.parse(call.data.syncError);
+    expect(syncError.cause).toBe(SyncErrorCause.RATE_LIMIT);
+    expect(syncError.statusCode).toBe(429);
   });
 
   it("calls fetchUnassignedIssues when project.includeUnassigned is true", async () => {
@@ -446,12 +441,113 @@ describe("syncProviders", () => {
 
     // Unassigned fetch failure is fatal — no upserts should occur (avoids deleting valid issues)
     expect(mockUpsert).not.toHaveBeenCalled();
-    // Project should be marked as failed
-    expect(prisma.project.update).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: { id: "project-1" },
-        data: expect.objectContaining({ syncError: "SYNC_FAILED" }),
-      })
-    );
+    // Project should be marked as failed with structured error info
+    const updateCall = (prisma.project.update as jest.Mock).mock.calls[0][0];
+    expect(updateCall.where).toEqual({ id: "project-1" });
+    const syncError: SyncErrorInfo = JSON.parse(updateCall.data.syncError);
+    expect(syncError.cause).toBe(SyncErrorCause.UNKNOWN);
+  });
+
+  it("returns empty array when all projects sync successfully", async () => {
+    mockFindMany.mockResolvedValue([
+      {
+        id: "provider-1",
+        type: "GITHUB",
+        encryptedCredentials: "encrypted",
+        userId: "user-1",
+        projects: [{ id: "project-1", externalId: "owner/repo", includeUnassigned: false }],
+      },
+    ]);
+
+    (prisma.issue.upsert as jest.Mock).mockResolvedValue({});
+    (prisma.project.update as jest.Mock).mockResolvedValue({});
+
+    const errors = await syncProviders("user-1");
+
+    expect(errors).toHaveLength(0);
+  });
+
+  it("returns SyncErrorInfo with provider name and project name when a project fails", async () => {
+    mockFindMany.mockResolvedValue([
+      {
+        id: "provider-1",
+        type: "GITHUB",
+        displayName: "My GitHub",
+        encryptedCredentials: "encrypted",
+        userId: "user-1",
+        projects: [{ id: "project-1", externalId: "owner/repo", displayName: "My Repo", includeUnassigned: false }],
+      },
+    ]);
+
+    const { createAdapter } = jest.requireMock("@/services/issue-provider/factory");
+    createAdapter.mockReturnValueOnce({
+      fetchAssignedIssues: jest.fn().mockRejectedValue(
+        Object.assign(new Error("Unauthorized"), { isAxiosError: true, response: { status: 401, data: { message: "Bad credentials" }, statusText: "Unauthorized" } })
+      ),
+      fetchUnassignedIssues: jest.fn().mockResolvedValue([]),
+    });
+    (prisma.project.update as jest.Mock).mockResolvedValue({});
+
+    const errors = await syncProviders("user-1");
+
+    expect(errors).toHaveLength(1);
+    expect(errors[0].providerName).toBe("My GitHub");
+    expect(errors[0].projectName).toBe("My Repo");
+    expect(errors[0].cause).toBe(SyncErrorCause.AUTHENTICATION);
+    expect(errors[0].statusCode).toBe(401);
+    expect(errors[0].providerMessage).toBe("Bad credentials");
+  });
+
+  it("does not persist technicalMessage in project.syncError JSON", async () => {
+    mockFindMany.mockResolvedValue([
+      {
+        id: "provider-1",
+        type: "GITHUB",
+        encryptedCredentials: "encrypted",
+        userId: "user-1",
+        projects: [{ id: "project-1", externalId: "owner/repo", includeUnassigned: false }],
+      },
+    ]);
+
+    const { createAdapter } = jest.requireMock("@/services/issue-provider/factory");
+    createAdapter.mockReturnValueOnce({
+      fetchAssignedIssues: jest.fn().mockRejectedValue(new Error("secret internal detail")),
+      fetchUnassignedIssues: jest.fn().mockResolvedValue([]),
+    });
+    mockProjectUpdate.mockResolvedValue({});
+
+    await syncProviders("user-1");
+
+    const call = (prisma.project.update as jest.Mock).mock.calls[0][0];
+    const stored: Record<string, unknown> = JSON.parse(call.data.syncError);
+    expect(stored).not.toHaveProperty("technicalMessage");
+  });
+
+  it("collects errors from multiple failed projects", async () => {
+    mockFindMany.mockResolvedValue([
+      {
+        id: "provider-1",
+        type: "GITHUB",
+        encryptedCredentials: "encrypted",
+        userId: "user-1",
+        projects: [
+          { id: "project-1", externalId: "owner/repo1", includeUnassigned: false },
+          { id: "project-2", externalId: "owner/repo2", includeUnassigned: false },
+        ],
+      },
+    ]);
+
+    const { createAdapter } = jest.requireMock("@/services/issue-provider/factory");
+    const authError = Object.assign(new Error("Unauthorized"), { isAxiosError: true, response: { status: 401, data: null, statusText: "Unauthorized" } });
+    createAdapter.mockReturnValueOnce({
+      fetchAssignedIssues: jest.fn().mockRejectedValue(authError),
+      fetchUnassignedIssues: jest.fn().mockResolvedValue([]),
+    });
+    (prisma.project.update as jest.Mock).mockResolvedValue({});
+
+    const errors = await syncProviders("user-1");
+
+    expect(errors).toHaveLength(2);
+    expect(errors.every((e) => e.cause === SyncErrorCause.AUTHENTICATION)).toBe(true);
   });
 });

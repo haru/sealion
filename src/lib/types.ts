@@ -129,3 +129,41 @@ export interface IssueProviderAdapter {
     comment: string
   ): Promise<void>;
 }
+
+/**
+ * Categories of sync operation errors for user-facing display.
+ */
+export enum SyncErrorCause {
+  /** Authentication/authorization failure (HTTP 401, 403). */
+  AUTHENTICATION = 'AUTHENTICATION',
+  /** Rate limit exceeded (HTTP 429). */
+  RATE_LIMIT = 'RATE_LIMIT',
+  /** Resource not found (HTTP 404). */
+  NOT_FOUND = 'NOT_FOUND',
+  /** Server-side error (HTTP 5xx). */
+  SERVER_ERROR = 'SERVER_ERROR',
+  /** Other client error (HTTP 4xx, excluding handled cases). */
+  CLIENT_ERROR = 'CLIENT_ERROR',
+  /** Network failure (no response received). */
+  NETWORK_ERROR = 'NETWORK_ERROR',
+  /** Unclassified error. */
+  UNKNOWN = 'UNKNOWN',
+}
+
+/**
+ * Structured error information for sync operations with external providers.
+ */
+export interface SyncErrorInfo {
+  /** Provider name (e.g., "GitHub", "Jira", "Redmine"). */
+  providerName: string;
+  /** Project/Repository name. */
+  projectName: string;
+  /** Categorized error cause. */
+  cause: SyncErrorCause;
+  /** HTTP status code (undefined for network errors). */
+  statusCode?: number;
+  /** Provider-specific error message (extracted from API response). */
+  providerMessage?: string;
+  /** Technical error message (for debugging, not displayed to users). */
+  technicalMessage?: string;
+}

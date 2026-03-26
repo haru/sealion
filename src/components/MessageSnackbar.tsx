@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Box from '@mui/material/Box';
 import Snackbar from '@mui/material/Snackbar';
 import Alert from '@mui/material/Alert';
 import IconButton from '@mui/material/IconButton';
@@ -71,7 +72,9 @@ export default function MessageSnackbar({ message, onClose }: MessageSnackbarPro
           </IconButton>
         }
       >
-        {message.message}
+        <Box component="span" sx={{ display: "block", whiteSpace: "pre-line" }}>
+          {message.message}
+        </Box>
       </Alert>
     </Snackbar>
   );
