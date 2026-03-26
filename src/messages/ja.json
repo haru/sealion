@@ -53,7 +53,7 @@
   "providers": {
     "title": "issue管理システム設定",
     "addProvider": "issue管理システムを追加",
-    "addProviderTitle": "プロバイダーを追加",
+    "addProviderTitle": "issue管理システムを追加",
     "noProviders": "まだissue管理システムが接続されていません。",
     "type": {
       "GITHUB": "GitHub",

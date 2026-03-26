@@ -15,7 +15,7 @@ async function loginAndGoToProviders(page: Page): Promise<void> {
 
 /** Opens the Add Provider modal and waits for it to be visible. */
 async function openAddProviderDialog(page: Page): Promise<void> {
-  await page.getByRole("button", { name: /add provider/i }).click();
+  await page.getByRole("button", { name: /add issue tracker/i }).click();
   await expect(page.locator('[role="dialog"]')).toBeVisible();
 }
 
@@ -26,17 +26,48 @@ test.describe("Provider settings - modal UI", () => {
 
   // T002: Add button is visible on providers settings page
   test("Add button is visible on providers settings page", async ({ page }) => {
-    await expect(page.getByRole("button", { name: /add provider/i })).toBeVisible();
+    await expect(page.getByRole("button", { name: /add issue tracker/i })).toBeVisible();
   });
 
   // T003: Clicking Add button opens AddProvider modal dialog
   test("clicking Add button opens AddProvider modal dialog", async ({ page }) => {
-    await page.getByRole("button", { name: /add provider/i }).click();
+    await page.getByRole("button", { name: /add issue tracker/i }).click();
     await expect(page.locator('[role="dialog"]')).toBeVisible();
   });
 
   // T004: Submitting valid form adds provider, closes modal, updates list
   test("submitting valid form adds provider, closes modal, updates list", async ({ page }) => {
+    // Mock the POST to avoid hitting the real external API
+    await page.route("**/api/providers", (route) => {
+      if (route.request().method() === "POST") {
+        void route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({
+            data: {
+              id: "mock-provider-id",
+              type: "GITHUB",
+              displayName: "Test GitHub Provider",
+            },
+          }),
+        });
+      } else {
+        void route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({
+            data: [
+              {
+                id: "mock-provider-id",
+                type: "GITHUB",
+                displayName: "Test GitHub Provider",
+              },
+            ],
+          }),
+        });
+      }
+    });
+
     await openAddProviderDialog(page);
     const dialog = page.locator('[role="dialog"]');
 
@@ -47,6 +78,9 @@ test.describe("Provider settings - modal UI", () => {
 
     // Modal should close
     await expect(dialog).not.toBeVisible({ timeout: 5000 });
+
+    // Providers list should show the newly added provider
+    await expect(page.getByText("Test GitHub Provider")).toBeVisible();
   });
 
   // T005: Inline add form is NOT present on provider settings page
@@ -86,8 +120,8 @@ test.describe("Provider settings - modal close (US2)", () => {
   // T010: Clicking modal overlay closes modal without changes
   test("clicking modal overlay closes modal without changes", async ({ page }) => {
     const dialog = page.locator('[role="dialog"]');
-    // Click on the backdrop (outside the dialog paper)
-    await page.mouse.click(10, 10);
+    // Click on the MUI backdrop element (overlay outside the dialog paper)
+    await page.locator(".MuiBackdrop-root").click();
     await expect(dialog).not.toBeVisible();
   });
 });
