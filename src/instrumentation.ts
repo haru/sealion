@@ -4,10 +4,11 @@
  *
  * Proxy logging uses Node.js-only modules (hpagent) and is guarded behind a
  * runtime check so it never runs in the Edge runtime, which does not support
- * Node.js built-ins.
+ * Node.js built-ins. The guard uses `!== "edge"` rather than `=== "nodejs"`
+ * so that plain Node.js processes where `NEXT_RUNTIME` is unset still log.
  */
 export async function register(): Promise<void> {
-  if (process.env.NEXT_RUNTIME === "nodejs") {
+  if (process.env.NEXT_RUNTIME !== "edge") {
     const { logProxyConfig } = await import("@/lib/proxy");
     logProxyConfig();
   }
