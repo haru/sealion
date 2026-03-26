@@ -41,8 +41,22 @@ export default function SyncStatus({ providers, isSyncing, onSyncNow }: SyncStat
   const hasSyncFailed = allProjects.some((p) => p.syncError === "SYNC_FAILED");
 
   const prevIsSyncing = useRef(isSyncing);
+  /** Tracks whether the initial-mount notification has already been emitted. */
+  const initialNotificationSent = useRef(false);
 
   useEffect(() => {
+    // On initial mount: if not currently syncing and errors already exist,
+    // emit notifications immediately so users see them without needing a sync cycle.
+    if (!initialNotificationSent.current) {
+      initialNotificationSent.current = true;
+      if (!isSyncing) {
+        if (hasRateLimit) addMessage("warning", tErrors("RATE_LIMITED"));
+        if (hasSyncFailed) addMessage("error", tErrors("SYNC_FAILED"));
+      }
+      return;
+    }
+
+    // On subsequent renders: emit notifications when a sync transitions from running to finished.
     const wasJustFinished = prevIsSyncing.current && !isSyncing;
     prevIsSyncing.current = isSyncing;
     if (!wasJustFinished) return;

@@ -1,6 +1,6 @@
-# AGENT.md
+# AGENTS.md
 
-This file provides guidance to AI Agent when working with code in this repository.
+This file provides guidance to an AI agent when working with code in this repository.
 
 ## Project Overview
 

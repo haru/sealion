@@ -145,6 +145,111 @@ test.describe("Sync Throttle — auto-sync on page load", () => {
   });
 });
 
+test.describe("SyncStatus — initial-mount error notification", () => {
+  test("shows SYNC_FAILED error message on page load when project has syncError and is not syncing", async ({
+    page,
+  }) => {
+    const recentLastSyncedAt = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+
+    await page.route("**/api/sync", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: makeSyncResponse(recentLastSyncedAt, "SYNC_FAILED"),
+      });
+    });
+
+    await page.route("**/api/issues*", async (route) => {
+      await route.fulfill({ status: 200, contentType: "application/json", body: EMPTY_ISSUES });
+    });
+
+    await page.route("**/api/board-settings", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ data: { showCreatedAt: true, showUpdatedAt: false, sortOrder: [] }, error: null }),
+      });
+    });
+
+    await login(page);
+
+    // The SYNC_FAILED error message should appear in the notification queue
+    // even though no sync transition (true→false) occurred on this page load
+    await expect(
+      page.getByText("Sync failed for one or more projects. Check your credentials and repository access.")
+    ).toBeVisible({ timeout: 5000 });
+  });
+
+  test("shows RATE_LIMITED warning on page load when project has rate-limit error and is not syncing", async ({
+    page,
+  }) => {
+    const recentLastSyncedAt = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+
+    await page.route("**/api/sync", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: makeSyncResponse(recentLastSyncedAt, "RATE_LIMITED"),
+      });
+    });
+
+    await page.route("**/api/issues*", async (route) => {
+      await route.fulfill({ status: 200, contentType: "application/json", body: EMPTY_ISSUES });
+    });
+
+    await page.route("**/api/board-settings", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ data: { showCreatedAt: true, showUpdatedAt: false, sortOrder: [] }, error: null }),
+      });
+    });
+
+    await login(page);
+
+    await expect(
+      page.getByText("API rate limit reached. Please try again later.")
+    ).toBeVisible({ timeout: 5000 });
+  });
+
+  test("does not show error notification on page load when there are no sync errors", async ({
+    page,
+  }) => {
+    const recentLastSyncedAt = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+
+    await page.route("**/api/sync", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: makeSyncResponse(recentLastSyncedAt, null),
+      });
+    });
+
+    await page.route("**/api/issues*", async (route) => {
+      await route.fulfill({ status: 200, contentType: "application/json", body: EMPTY_ISSUES });
+    });
+
+    await page.route("**/api/board-settings", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ data: { showCreatedAt: true, showUpdatedAt: false, sortOrder: [] }, error: null }),
+      });
+    });
+
+    await login(page);
+
+    // Wait for the page to settle, then confirm no error notification appears
+    await page.waitForTimeout(1000);
+    await expect(
+      page.getByText("Sync failed for one or more projects. Check your credentials and repository access.")
+    ).not.toBeVisible();
+    await expect(
+      page.getByText("API rate limit reached. Please try again later.")
+    ).not.toBeVisible();
+  });
+});
+
 test.describe("Sync Throttle — Sync Now button", () => {
   test("Sync Now button is visible when providers exist", async ({ page }) => {
     const recentLastSyncedAt = new Date(Date.now() - 5 * 60 * 1000).toISOString();
