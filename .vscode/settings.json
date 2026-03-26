@@ -3,6 +3,15 @@
         "/^cd /workspaces/sealion && bash -n \\.devcontainer/post-create\\.sh$/": {
             "approve": true,
             "matchCommandLine": true
-        }
+        },
+        ".specify/scripts/bash/": true,
+        ".specify/scripts/powershell/": true
+    },
+    "chat.promptFilesRecommendations": {
+        "speckit.constitution": true,
+        "speckit.specify": true,
+        "speckit.plan": true,
+        "speckit.tasks": true,
+        "speckit.implement": true
     }
 }
