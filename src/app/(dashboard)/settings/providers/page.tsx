@@ -42,7 +42,11 @@ export default function ProvidersPage() {
     try {
       const res = await fetch("/api/providers");
       const json = await res.json();
-      if (res.ok) setProviders(json.data);
+      if (res.ok) {
+        setProviders(json.data);
+      } else {
+        addMessage("error", tCommon("error"));
+      }
     } catch {
       addMessage("error", tCommon("error"));
     }

@@ -513,7 +513,6 @@ export default function DashboardPage() {
         onConfirm={handleModalConfirm}
         onCancel={handleModalCancel}
       />
-
     </DndContext>
   );
 }
