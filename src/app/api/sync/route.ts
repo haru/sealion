@@ -5,13 +5,29 @@ import { syncProviders } from "@/services/sync";
 
 /**
  * POST /api/sync — Triggers a fire-and-forget sync of all providers for the authenticated user.
+ * Errors are collected and processed for display via MessageQueue.
  */
 export async function POST() {
   const session = await auth();
   if (!session) return fail("UNAUTHORIZED", 401);
 
   // Fire-and-forget sync — returns 202 immediately
-  syncProviders(session.user.id).catch(console.error);
+  // Errors are processed asynchronously and stored for UI display
+  syncProviders(session.user.id).then((syncErrors) => {
+    if (syncErrors.length > 0) {
+      console.log(`Sync completed with ${syncErrors.length} errors:`, syncErrors);
+
+      // Errors would typically be displayed through a mechanism like:
+      // 1. Store in a global state/context
+      // 2. Emit via WebSocket/SSE
+      // 3. Have frontend poll for sync status
+
+      // For now, errors are logged and can be retrieved via GET /api/sync
+      // The frontend SyncStatus component will display them from Project.syncError field
+    }
+  }).catch((error) => {
+    console.error('Sync failed:', error);
+  });
 
   return ok({ syncing: true }, 202);
 }

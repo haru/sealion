@@ -181,15 +181,29 @@
     "UNAUTHORIZED": "Please log in to continue",
     "FORBIDDEN": "You do not have permission to perform this action",
     "NOT_FOUND": "Resource not found",
-    "EXTERNAL_UPDATE_FAILED": "Failed to update the issue in the external tracker",
+    "EXTERNAL_UPDATE_FAILED": "Failed to update issue in external tracker",
     "SYNC_FAILED": "Sync failed for one or more projects. Check your credentials and repository access.",
     "RATE_LIMITED": "API rate limit reached. Please try again later.",
-    "CONNECTION_TEST_FAILED": "Could not connect to the issue tracker. Please check your credentials.",
+    "CONNECTION_TEST_FAILED": "Could not connect to issue tracker. Please check your credentials.",
     "EMAIL_ALREADY_EXISTS": "This email address is already registered",
     "INVALID_EMAIL": "Please enter a valid email address",
-    "PASSWORD_TOO_SHORT": "Password must be at least 8 characters",
+    "PASSWORD_TOO_SHORT": "Password must be at least8 characters",
     "INVALID_INPUT": "Invalid input",
     "CONFLICT": "This project is already registered"
+  },
+  "sync": {
+    "error": {
+      "cause": {
+        "authentication": "Authentication failed",
+        "rate_limit": "Rate limit exceeded",
+        "not_found": "Resource not found",
+        "server_error": "Server error occurred",
+        "client_error": "Invalid request",
+        "network_error": "Connection failed",
+        "unknown": "Unknown error"
+      },
+      "status": "Status: {code}"
+    }
   },
   "message": {
     "close": "Close",

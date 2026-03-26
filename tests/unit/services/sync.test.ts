@@ -211,6 +211,7 @@ describe("syncProviders", () => {
 
     const { createAdapter } = jest.requireMock("@/services/issue-provider/factory");
     const rateLimitError = Object.assign(new Error("Request failed with status 429"), {
+      isAxiosError: true,
       response: { status: 429 },
     });
     createAdapter.mockReturnValueOnce({

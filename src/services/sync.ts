@@ -1,25 +1,27 @@
 import pLimit from "p-limit";
-import type { AxiosError } from "axios";
 import { prisma } from "@/lib/db";
 import { decrypt } from "@/lib/encryption";
 import { createAdapter } from "@/services/issue-provider/factory";
+import { SyncErrorInfo, SyncErrorCause } from "@/lib/types";
+import { createSyncErrorInfo } from "@/lib/error-utils";
 
 const PROVIDER_CONCURRENCY = 3;
 const PROJECT_CONCURRENCY = 5;
 
 /**
- * Syncs issues for all enabled projects belonging to the given user.
- * External service is the source of truth — all returned issues are upserted;
- * issues no longer returned by the adapter are deleted from the local DB.
+ * Syncs issues for all enabled projects belonging to given user.
+ * External service is source of truth — all returned issues are upserted;
+ * issues no longer returned by adapter are deleted from local DB.
  * DB invariant: only issues considered open by providers are stored locally (adapters return only open issues).
- * @param userId - ID of the user whose providers and projects are synced.
+ * @param userId - ID of user whose providers and projects are synced.
+ * @returns Array of detailed sync errors that occurred during sync.
  */
-export async function syncProviders(userId: string): Promise<void> {
+export async function syncProviders(userId: string): Promise<SyncErrorInfo[]> {
   const providers = await prisma.issueProvider.findMany({
     where: { userId },
     include: {
       projects: {
-        select: { id: true, externalId: true, includeUnassigned: true },
+        select: { id: true, externalId: true, includeUnassigned: true, displayName: true },
       },
     },
   });
@@ -27,12 +29,16 @@ export async function syncProviders(userId: string): Promise<void> {
   const providerLimit = pLimit(PROVIDER_CONCURRENCY);
   const projectLimit = pLimit(PROJECT_CONCURRENCY);
 
+  const syncErrors: SyncErrorInfo[] = [];
+
   await Promise.all(
     providers.map((provider) =>
       providerLimit(async () => {
         const decryptedCredentials = JSON.parse(decrypt(provider.encryptedCredentials));
         const credentials = { ...decryptedCredentials, ...(provider.baseUrl ? { baseUrl: provider.baseUrl } : {}) };
         const adapter = createAdapter(provider.type, credentials);
+
+        const providerName = provider.displayName || provider.type;
 
         await Promise.all(
           provider.projects.map((project) =>
@@ -106,7 +112,12 @@ export async function syncProviders(userId: string): Promise<void> {
                   });
                 });
               } catch (err) {
-                const isRateLimit = (err as AxiosError)?.response?.status === 429;
+                const projectName = project.displayName || project.externalId;
+
+                const errorInfo = createSyncErrorInfo(providerName, projectName, err);
+                syncErrors.push(errorInfo);
+
+                const isRateLimit = errorInfo.cause === SyncErrorCause.RATE_LIMIT;
 
                 await prisma.project.update({
                   where: { id: project.id },
@@ -122,4 +133,6 @@ export async function syncProviders(userId: string): Promise<void> {
       })
     )
   );
+
+  return syncErrors;
 }
