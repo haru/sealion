@@ -5,7 +5,6 @@ import {
   Container,
   Typography,
   Paper,
-  Divider,
   Alert,
   Dialog,
   DialogTitle,
@@ -13,10 +12,13 @@ import {
   DialogContentText,
   DialogActions,
   Button,
+  Box,
 } from "@mui/material";
+import AddIcon from "@mui/icons-material/Add";
 import { useTranslations } from "next-intl";
 import ProviderList from "@/components/providers/ProviderList";
-import ProviderForm from "@/components/providers/ProviderForm";
+import AddProviderDialog from "@/components/providers/AddProviderDialog";
+import type { ProviderFormData } from "@/components/providers/ProviderForm";
 
 interface Provider {
   id: string;
@@ -34,6 +36,7 @@ export default function ProvidersPage() {
   const [providers, setProviders] = useState<Provider[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   const fetchProviders = useCallback(async () => {
     try {
@@ -51,11 +54,7 @@ export default function ProvidersPage() {
   }, [fetchProviders]);
 
   /** Sends a new provider to the API and refreshes the list on success. */
-  async function handleAddProvider(data: {
-    type: "GITHUB" | "JIRA" | "REDMINE";
-    displayName: string;
-    credentials: Record<string, string>;
-  }) {
+  async function handleAddProvider(data: ProviderFormData) {
     const res = await fetch("/api/providers", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -96,6 +95,15 @@ export default function ProvidersPage() {
       )}
 
       <Paper sx={{ p: 3, mb: 3 }}>
+        <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 2 }}>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => setDialogOpen(true)}
+          >
+            {t("addProvider")}
+          </Button>
+        </Box>
         <ProviderList
           providers={providers}
           onDelete={(id) => setDeleteId(id)}
@@ -105,13 +113,11 @@ export default function ProvidersPage() {
         />
       </Paper>
 
-      <Paper sx={{ p: 3 }}>
-        <Typography variant="h6" gutterBottom>
-          {t("addProvider")}
-        </Typography>
-        <Divider sx={{ mb: 2 }} />
-        <ProviderForm onSubmit={handleAddProvider} />
-      </Paper>
+      <AddProviderDialog
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        onSubmit={handleAddProvider}
+      />
 
       <Dialog open={!!deleteId} onClose={() => setDeleteId(null)}>
         <DialogTitle>{tCommon("delete")}</DialogTitle>

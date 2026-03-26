@@ -162,6 +162,12 @@ CREDENTIALS_ENCRYPTION_KEY    # 64-char hex string (32 bytes) for AES-256-GCM
 
 Uses **VSCode Dev Containers**. Open in the container before starting development.
 
+### Playwright MCP Server — accessing the local app
+
+This environment runs in a devcontainer with a separate `browserless` container for Playwright MCP. When using Playwright MCP tools to test or interact with the local dev server, **do not use `http://localhost:3000`**. The browserless container cannot resolve `localhost` as the app container.
+
+Use `http://app:3000` instead — `app` is the hostname of the Next.js dev container as defined in `.devcontainer/docker-compose.yml`.
+
 
 
 ## Active Technologies
@@ -172,3 +178,4 @@ Uses **VSCode Dev Containers**. Open in the container before starting developmen
 - 010-sync-throttle: Introduced sync throttling logic and related tests; no database schema changes required.
 - 011-close-issue-modal: Added `addComment()` to adapter interface; new Complete Issue modal; no schema changes required.
 - 012-remove-issue-status: Removed `status` column from Issue table (`ALTER TABLE Issue DROP COLUMN status; DROP TYPE IssueStatus`); removed `reopenIssue` from adapter interface; closing an issue now always deletes it from the local DB.
+- 015-provider-ui-modal: Replaced inline ProviderForm with AddProviderDialog modal; no schema or API changes.
