@@ -1,12 +1,14 @@
-import { logProxyConfig } from "@/lib/proxy";
-
 /**
- * Next.js instrumentation hook — runs once when the Node.js server process starts,
+ * Next.js instrumentation hook — runs once when the server process starts,
  * before any requests are handled.
  *
- * Logs the detected proxy configuration to the server console so administrators
- * can verify proxy settings immediately on startup without waiting for the first sync.
+ * Proxy logging uses Node.js-only modules (hpagent) and is guarded behind a
+ * runtime check so it never runs in the Edge runtime, which does not support
+ * Node.js built-ins.
  */
 export async function register(): Promise<void> {
-  logProxyConfig();
+  if (process.env.NEXT_RUNTIME === "nodejs") {
+    const { logProxyConfig } = await import("@/lib/proxy");
+    logProxyConfig();
+  }
 }
