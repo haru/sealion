@@ -53,6 +53,7 @@
   "providers": {
     "title": "Issue Tracker Settings",
     "addProvider": "Add Issue Tracker",
+    "addProviderTitle": "Add Provider",
     "noProviders": "No issue trackers connected yet.",
     "type": {
       "GITHUB": "GitHub",
