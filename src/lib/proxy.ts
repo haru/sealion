@@ -77,11 +77,12 @@ function isNoProxy(hostname: string, port?: number): boolean {
 
 /**
  * Replaces the `user:pass@` segment of a URL string with `***:***@` for safe logging.
+ * Uses a greedy match to correctly handle passwords that contain `@` characters.
  * @param url - The proxy URL string, potentially containing credentials.
  * @returns The URL with credentials masked, or the original string if no credentials found.
  */
 function maskCredentials(url: string): string {
-  return url.replace(/\/\/[^@]*@/, "//" + "***:***@");
+  return url.replace(/\/\/.*@/, "//" + "***:***@");
 }
 
 /**
@@ -96,6 +97,10 @@ function maskCredentials(url: string): string {
  * @param baseUrl - The base URL of the external service (e.g. `https://api.github.com`).
  *   Used to determine scheme and extract hostname for `no_proxy` matching.
  * @returns `ProxyAgentConfig` — either `{ httpAgent, httpsAgent }` or `{}`.
+ * @remarks
+ *   When the target scheme is `https` and `https_proxy` / `HTTPS_PROXY` is unset,
+ *   the function falls back to `http_proxy` / `HTTP_PROXY`. This matches curl behaviour
+ *   but means that setting only `http_proxy` also proxies HTTPS traffic.
  */
 export function buildAxiosProxyConfig(baseUrl: string): ProxyAgentConfig {
   let parsed: URL;
@@ -116,12 +121,12 @@ export function buildAxiosProxyConfig(baseUrl: string): ProxyAgentConfig {
 
   // Validate the proxy URL: must be a valid http/https URL with a hostname
   try {
-    const parsed = new URL(proxyUrl);
-    if (!["http:", "https:"].includes(parsed.protocol) || !parsed.hostname) {
-      throw new Error(`Invalid proxy URL protocol or missing hostname: ${proxyUrl}`);
+    const proxyParsed = new URL(proxyUrl);
+    if (!["http:", "https:"].includes(proxyParsed.protocol) || !proxyParsed.hostname) {
+      throw new Error(`Invalid proxy URL protocol or missing hostname: ${maskCredentials(proxyUrl)}`);
     }
-  } catch (err) {
-    console.warn("[proxy] Malformed proxy URL — proxy disabled:", err);
+  } catch {
+    console.warn("[proxy] Malformed proxy URL — proxy disabled:", maskCredentials(proxyUrl));
     return {};
   }
 
@@ -129,8 +134,8 @@ export function buildAxiosProxyConfig(baseUrl: string): ProxyAgentConfig {
     const httpAgent = new HttpProxyAgent({ proxy: proxyUrl });
     const httpsAgent = new HttpsProxyAgent({ proxy: proxyUrl });
     return { httpAgent, httpsAgent };
-  } catch (err) {
-    console.warn("[proxy] Failed to construct proxy agents:", err);
+  } catch {
+    console.warn("[proxy] Failed to construct proxy agents:", maskCredentials(proxyUrl));
     return {};
   }
 }

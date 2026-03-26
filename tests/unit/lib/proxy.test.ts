@@ -79,6 +79,16 @@ describe("buildAxiosProxyConfig — US1: proxy env var reading", () => {
     warnSpy.mockRestore();
   });
 
+  it("does not log credentials in warning when proxy URL has unsupported scheme with credentials", () => {
+    process.env.https_proxy = "ftp://user:secret@proxy.example.com:21";
+    const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
+    buildAxiosProxyConfig("https://api.github.com");
+    const warned = warnSpy.mock.calls.map((c: unknown[]) => JSON.stringify(c)).join("\n");
+    expect(warned).not.toContain("secret");
+    expect(warned).not.toContain("user:");
+    warnSpy.mockRestore();
+  });
+
   it("returns {} when baseUrl itself is not a valid URL", () => {
     process.env.https_proxy = "http://proxy.example.com:8080";
     const config = buildAxiosProxyConfig("not-a-url");
@@ -187,6 +197,14 @@ describe("logProxyConfig — US3: startup logging", () => {
     const output = logSpy.mock.calls.map((c: unknown[]) => c.join(" ")).join("\n");
     expect(output).toContain("***:***@proxy.example.com:8080");
     expect(output).not.toContain("user:pass");
+  });
+
+  it("masks credentials when password contains @ character", () => {
+    process.env.https_proxy = "http://user:p%40ss@proxy.example.com:8080";
+    logProxyConfig();
+    const output = logSpy.mock.calls.map((c: unknown[]) => c.join(" ")).join("\n");
+    expect(output).toContain("***:***@proxy.example.com:8080");
+    expect(output).not.toContain("user:");
   });
 
   it("logs 'Proxy active' line when proxy is configured", () => {

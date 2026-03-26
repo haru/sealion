@@ -745,6 +745,31 @@ describe("proxy agent injection — adapters receive httpAgent/httpsAgent when h
   });
 });
 
+describe("proxy agent injection — adapters receive httpAgent/httpsAgent when only http_proxy is set (HTTP targets)", () => {
+  let savedProxy: string | undefined;
+
+  beforeEach(() => {
+    savedProxy = process.env.http_proxy;
+    delete process.env.https_proxy;
+    delete process.env.HTTPS_PROXY;
+    process.env.http_proxy = "http://proxy.example.com:8080";
+    jest.clearAllMocks();
+    (axios.create as jest.Mock).mockReturnValue(mockAxiosInstance);
+  });
+
+  afterEach(() => {
+    if (savedProxy === undefined) delete process.env.http_proxy;
+    else process.env.http_proxy = savedProxy;
+  });
+
+  it("RedmineAdapter passes httpAgent and httpsAgent when only http_proxy is set and base URL is HTTP", () => {
+    new RedmineAdapter("http://redmine.internal.com", "key");
+    expect(axios.create).toHaveBeenCalledWith(
+      expect.objectContaining({ httpAgent: expect.anything(), httpsAgent: expect.anything() })
+    );
+  });
+});
+
 describe("proxy agent injection — adapters do NOT pass agents when no proxy env vars set", () => {
   beforeEach(() => {
     delete process.env.https_proxy;
