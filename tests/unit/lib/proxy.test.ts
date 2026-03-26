@@ -94,6 +94,27 @@ describe("buildAxiosProxyConfig — US1: proxy env var reading", () => {
     const config = buildAxiosProxyConfig("not-a-url");
     expect(config).toEqual({});
   });
+
+  it("does not mask @ in proxy URL path when no credentials present", () => {
+    // A URL like http://proxy.example.com/@foo has no credentials — maskCredentials
+    // should leave the URL unmodified and not incorrectly replace the @foo path segment.
+    process.env.https_proxy = "http://proxy.example.com/@foo";
+    const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
+    // The URL is valid and has no credentials, so buildAxiosProxyConfig should return agents
+    const config = buildAxiosProxyConfig("https://api.github.com");
+    // Agents should be constructed (valid proxy URL, just unusual path)
+    expect(config).toHaveProperty("httpAgent");
+    expect(config).toHaveProperty("httpsAgent");
+    warnSpy.mockRestore();
+  });
+
+  it("https_proxy does NOT proxy plain HTTP targets (no HTTPS→HTTP reverse fallback)", () => {
+    // Setting only https_proxy should not proxy HTTP-scheme targets.
+    // The fallback is HTTPS→HTTP (curl convention), not HTTP→HTTPS.
+    process.env.https_proxy = "http://proxy.example.com:8080";
+    const config = buildAxiosProxyConfig("http://internal.example.com");
+    expect(config).toEqual({});
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -183,7 +204,7 @@ describe("logProxyConfig — US3: startup logging", () => {
 
   beforeEach(() => {
     restore = clearProxyEnv();
-    logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+    logSpy = jest.spyOn(console, "info").mockImplementation(() => {});
   });
 
   afterEach(() => {

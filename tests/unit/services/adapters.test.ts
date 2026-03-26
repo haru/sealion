@@ -746,20 +746,28 @@ describe("proxy agent injection — adapters receive httpAgent/httpsAgent when h
 });
 
 describe("proxy agent injection — adapters receive httpAgent/httpsAgent when only http_proxy is set (HTTP targets)", () => {
-  let savedProxy: string | undefined;
+  const proxyEnvKeys = ["https_proxy", "HTTPS_PROXY", "http_proxy", "HTTP_PROXY"] as const;
+  const originalProxyEnv: Partial<NodeJS.ProcessEnv> = {};
 
   beforeEach(() => {
-    savedProxy = process.env.http_proxy;
-    delete process.env.https_proxy;
-    delete process.env.HTTPS_PROXY;
+    proxyEnvKeys.forEach((key) => {
+      originalProxyEnv[key] = process.env[key];
+      delete process.env[key];
+    });
     process.env.http_proxy = "http://proxy.example.com:8080";
     jest.clearAllMocks();
     (axios.create as jest.Mock).mockReturnValue(mockAxiosInstance);
   });
 
   afterEach(() => {
-    if (savedProxy === undefined) delete process.env.http_proxy;
-    else process.env.http_proxy = savedProxy;
+    proxyEnvKeys.forEach((key) => {
+      const value = originalProxyEnv[key];
+      if (typeof value === "undefined") {
+        delete process.env[key];
+      } else {
+        process.env[key] = value;
+      }
+    });
   });
 
   it("RedmineAdapter passes httpAgent and httpsAgent when only http_proxy is set and base URL is HTTP", () => {
@@ -771,13 +779,27 @@ describe("proxy agent injection — adapters receive httpAgent/httpsAgent when o
 });
 
 describe("proxy agent injection — adapters do NOT pass agents when no proxy env vars set", () => {
+  const proxyEnvKeys = ["https_proxy", "HTTPS_PROXY", "http_proxy", "HTTP_PROXY"] as const;
+  const originalProxyEnv: Partial<NodeJS.ProcessEnv> = {};
+
   beforeEach(() => {
-    delete process.env.https_proxy;
-    delete process.env.HTTPS_PROXY;
-    delete process.env.http_proxy;
-    delete process.env.HTTP_PROXY;
+    proxyEnvKeys.forEach((key) => {
+      originalProxyEnv[key] = process.env[key];
+      delete process.env[key];
+    });
     jest.clearAllMocks();
     (axios.create as jest.Mock).mockReturnValue(mockAxiosInstance);
+  });
+
+  afterEach(() => {
+    proxyEnvKeys.forEach((key) => {
+      const value = originalProxyEnv[key];
+      if (typeof value === "undefined") {
+        delete process.env[key];
+      } else {
+        process.env[key] = value;
+      }
+    });
   });
 
   it("GitHubAdapter does not pass httpAgent/httpsAgent when no proxy env vars set", () => {
@@ -806,7 +828,6 @@ describe("proxy agent injection — adapters do NOT pass agents when no proxy en
 // Additional factory tests
 // ---------------------------------------------------------------------------
 
-// Additional factory tests
 describe("createAdapter factory", () => {
   it("creates GitHubAdapter for GITHUB type", async () => {
     const { createAdapter } = await import("@/services/issue-provider/factory");

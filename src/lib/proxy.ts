@@ -76,13 +76,30 @@ function isNoProxy(hostname: string, port?: number): boolean {
 }
 
 /**
- * Replaces the `user:pass@` segment of a URL string with `***:***@` for safe logging.
- * Uses a greedy match to correctly handle passwords that contain `@` characters.
+ * Replaces the username and password in a proxy URL with `***` for safe logging.
+ * Parses the URL with `new URL()` so that only actual credentials in the authority
+ * section are masked — `@` characters in the path or query are left untouched.
  * @param url - The proxy URL string, potentially containing credentials.
- * @returns The URL with credentials masked, or the original string if no credentials found.
+ * @returns The URL with credentials masked, or the original string if no credentials
+ *   are present or the string cannot be parsed as an absolute URL.
  */
 function maskCredentials(url: string): string {
-  return url.replace(/\/\/.*@/, "//" + "***:***@");
+  try {
+    const parsed = new URL(url);
+    if (!parsed.username && !parsed.password) {
+      return url;
+    }
+    if (parsed.username) {
+      parsed.username = "***";
+    }
+    if (parsed.password) {
+      parsed.password = "***";
+    }
+    return parsed.toString();
+  } catch {
+    // If the URL constructor cannot parse the input, return the original string unchanged.
+    return url;
+  }
 }
 
 /**
@@ -101,6 +118,9 @@ function maskCredentials(url: string): string {
  *   When the target scheme is `https` and `https_proxy` / `HTTPS_PROXY` is unset,
  *   the function falls back to `http_proxy` / `HTTP_PROXY`. This matches curl behaviour
  *   but means that setting only `http_proxy` also proxies HTTPS traffic.
+ *
+ *   The reverse fallback (HTTP target falling back to `https_proxy`) is intentionally
+ *   NOT performed — `https_proxy` must not silently proxy plain HTTP traffic.
  */
 export function buildAxiosProxyConfig(baseUrl: string): ProxyAgentConfig {
   let parsed: URL;
@@ -116,7 +136,12 @@ export function buildAxiosProxyConfig(baseUrl: string): ProxyAgentConfig {
 
   if (isNoProxy(hostname, port)) return {};
 
-  const proxyUrl = getProxyUrl(scheme) ?? getProxyUrl(scheme === "https" ? "http" : "https");
+  // HTTPS targets fall back to http_proxy when https_proxy is unset (curl convention).
+  // HTTP targets do NOT fall back to https_proxy — that direction is non-standard.
+  const proxyUrl =
+    scheme === "https"
+      ? (getProxyUrl("https") ?? getProxyUrl("http"))
+      : getProxyUrl("http");
   if (!proxyUrl) return {};
 
   // Validate the proxy URL: must be a valid http/https URL with a hostname
@@ -141,7 +166,7 @@ export function buildAxiosProxyConfig(baseUrl: string): ProxyAgentConfig {
 }
 
 /**
- * Logs the current proxy configuration to `console.log`.
+ * Logs the current proxy configuration to `console.info`.
  * Intended to be called once at server startup from `src/instrumentation.ts`.
  * Masks any credentials found in proxy URLs before logging.
  */
@@ -151,21 +176,21 @@ export function logProxyConfig(): void {
   const noProxy = process.env.no_proxy ?? process.env.NO_PROXY ?? null;
 
   if (!httpsProxy && !httpProxy) {
-    console.log("[proxy] No proxy environment variables detected. Direct connections will be used.");
+    console.info("[proxy] No proxy environment variables detected. Direct connections will be used.");
     return;
   }
 
   if (httpsProxy) {
     const key = process.env.https_proxy ? "https_proxy" : "HTTPS_PROXY";
-    console.log(`[proxy] ${key}=${maskCredentials(httpsProxy)}`);
+    console.info(`[proxy] ${key}=${maskCredentials(httpsProxy)}`);
   }
   if (httpProxy) {
     const key = process.env.http_proxy ? "http_proxy" : "HTTP_PROXY";
-    console.log(`[proxy] ${key}=${maskCredentials(httpProxy)}`);
+    console.info(`[proxy] ${key}=${maskCredentials(httpProxy)}`);
   }
   if (noProxy) {
     const key = process.env.no_proxy ? "no_proxy" : "NO_PROXY";
-    console.log(`[proxy] ${key}=${noProxy}`);
+    console.info(`[proxy] ${key}=${noProxy}`);
   }
-  console.log("[proxy] Proxy active for external providers.");
+  console.info("[proxy] Proxy active for external providers.");
 }
