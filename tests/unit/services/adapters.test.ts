@@ -704,7 +704,130 @@ describe("RedmineAdapter", () => {
   });
 });
 
+// ---------------------------------------------------------------------------
+// Proxy agent injection tests (T004)
+// ---------------------------------------------------------------------------
+
+describe("proxy agent injection — adapters receive httpAgent/httpsAgent when https_proxy is set", () => {
+  let savedProxy: string | undefined;
+
+  beforeEach(() => {
+    savedProxy = process.env.https_proxy;
+    process.env.https_proxy = "http://proxy.example.com:8080";
+    jest.clearAllMocks();
+    (axios.create as jest.Mock).mockReturnValue(mockAxiosInstance);
+  });
+
+  afterEach(() => {
+    if (savedProxy === undefined) delete process.env.https_proxy;
+    else process.env.https_proxy = savedProxy;
+  });
+
+  it("GitHubAdapter passes httpAgent and httpsAgent to axios.create when https_proxy is set", () => {
+    new GitHubAdapter("token");
+    expect(axios.create).toHaveBeenCalledWith(
+      expect.objectContaining({ httpAgent: expect.anything(), httpsAgent: expect.anything() })
+    );
+  });
+
+  it("JiraAdapter passes httpAgent and httpsAgent to axios.create when https_proxy is set", () => {
+    new JiraAdapter("https://example.atlassian.net", "user@ex.com", "api-token");
+    expect(axios.create).toHaveBeenCalledWith(
+      expect.objectContaining({ httpAgent: expect.anything(), httpsAgent: expect.anything() })
+    );
+  });
+
+  it("RedmineAdapter passes httpAgent and httpsAgent to axios.create when https_proxy is set", () => {
+    new RedmineAdapter("https://redmine.example.com", "key");
+    expect(axios.create).toHaveBeenCalledWith(
+      expect.objectContaining({ httpAgent: expect.anything(), httpsAgent: expect.anything() })
+    );
+  });
+});
+
+describe("proxy agent injection — adapters receive httpAgent/httpsAgent when only http_proxy is set (HTTP targets)", () => {
+  const proxyEnvKeys = ["https_proxy", "HTTPS_PROXY", "http_proxy", "HTTP_PROXY"] as const;
+  const originalProxyEnv: Partial<NodeJS.ProcessEnv> = {};
+
+  beforeEach(() => {
+    proxyEnvKeys.forEach((key) => {
+      originalProxyEnv[key] = process.env[key];
+      delete process.env[key];
+    });
+    process.env.http_proxy = "http://proxy.example.com:8080";
+    jest.clearAllMocks();
+    (axios.create as jest.Mock).mockReturnValue(mockAxiosInstance);
+  });
+
+  afterEach(() => {
+    proxyEnvKeys.forEach((key) => {
+      const value = originalProxyEnv[key];
+      if (typeof value === "undefined") {
+        delete process.env[key];
+      } else {
+        process.env[key] = value;
+      }
+    });
+  });
+
+  it("RedmineAdapter passes httpAgent and httpsAgent when only http_proxy is set and base URL is HTTP", () => {
+    new RedmineAdapter("http://redmine.internal.com", "key");
+    expect(axios.create).toHaveBeenCalledWith(
+      expect.objectContaining({ httpAgent: expect.anything(), httpsAgent: expect.anything() })
+    );
+  });
+});
+
+describe("proxy agent injection — adapters do NOT pass agents when no proxy env vars set", () => {
+  const proxyEnvKeys = ["https_proxy", "HTTPS_PROXY", "http_proxy", "HTTP_PROXY"] as const;
+  const originalProxyEnv: Partial<NodeJS.ProcessEnv> = {};
+
+  beforeEach(() => {
+    proxyEnvKeys.forEach((key) => {
+      originalProxyEnv[key] = process.env[key];
+      delete process.env[key];
+    });
+    jest.clearAllMocks();
+    (axios.create as jest.Mock).mockReturnValue(mockAxiosInstance);
+  });
+
+  afterEach(() => {
+    proxyEnvKeys.forEach((key) => {
+      const value = originalProxyEnv[key];
+      if (typeof value === "undefined") {
+        delete process.env[key];
+      } else {
+        process.env[key] = value;
+      }
+    });
+  });
+
+  it("GitHubAdapter does not pass httpAgent/httpsAgent when no proxy env vars set", () => {
+    new GitHubAdapter("token");
+    const call = (axios.create as jest.Mock).mock.calls[0][0] as Record<string, unknown>;
+    expect(call).not.toHaveProperty("httpAgent");
+    expect(call).not.toHaveProperty("httpsAgent");
+  });
+
+  it("JiraAdapter does not pass httpAgent/httpsAgent when no proxy env vars set", () => {
+    new JiraAdapter("https://example.atlassian.net", "user@ex.com", "api-token");
+    const call = (axios.create as jest.Mock).mock.calls[0][0] as Record<string, unknown>;
+    expect(call).not.toHaveProperty("httpAgent");
+    expect(call).not.toHaveProperty("httpsAgent");
+  });
+
+  it("RedmineAdapter does not pass httpAgent/httpsAgent when no proxy env vars set", () => {
+    new RedmineAdapter("https://redmine.example.com", "key");
+    const call = (axios.create as jest.Mock).mock.calls[0][0] as Record<string, unknown>;
+    expect(call).not.toHaveProperty("httpAgent");
+    expect(call).not.toHaveProperty("httpsAgent");
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Additional factory tests
+// ---------------------------------------------------------------------------
+
 describe("createAdapter factory", () => {
   it("creates GitHubAdapter for GITHUB type", async () => {
     const { createAdapter } = await import("@/services/issue-provider/factory");
