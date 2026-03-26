@@ -2,7 +2,7 @@ import pLimit from "p-limit";
 import { prisma } from "@/lib/db";
 import { decrypt } from "@/lib/encryption";
 import { createAdapter } from "@/services/issue-provider/factory";
-import { SyncErrorInfo, SyncErrorCause } from "@/lib/types";
+import { SyncErrorInfo } from "@/lib/types";
 import { createSyncErrorInfo } from "@/lib/error-utils";
 
 const PROVIDER_CONCURRENCY = 3;
@@ -117,12 +117,10 @@ export async function syncProviders(userId: string): Promise<SyncErrorInfo[]> {
                 const errorInfo = createSyncErrorInfo(providerName, projectName, err);
                 syncErrors.push(errorInfo);
 
-                const isRateLimit = errorInfo.cause === SyncErrorCause.RATE_LIMIT;
-
                 await prisma.project.update({
                   where: { id: project.id },
                   data: {
-                    syncError: isRateLimit ? "RATE_LIMITED" : "SYNC_FAILED",
+                    syncError: JSON.stringify(errorInfo),
                     lastSyncedAt: new Date(),
                   },
                 });

@@ -187,7 +187,7 @@
     "CONNECTION_TEST_FAILED": "Could not connect to issue tracker. Please check your credentials.",
     "EMAIL_ALREADY_EXISTS": "This email address is already registered",
     "INVALID_EMAIL": "Please enter a valid email address",
-    "PASSWORD_TOO_SHORT": "Password must be at least8 characters",
+    "PASSWORD_TOO_SHORT": "Password must be at least 8 characters",
     "INVALID_INPUT": "Invalid input",
     "CONFLICT": "This project is already registered"
   },

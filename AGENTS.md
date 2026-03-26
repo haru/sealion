@@ -196,7 +196,7 @@ Use `http://app:3000` instead — `app` is the hostname of the Next.js dev conta
 - TypeScript 5 / Node.js 20 LTS, Next.js 16 (App Router), React, MUI v7, Prisma 7 with PostgreSQL 16, next-intl 4, Jest, Playwright, dnd-kit; recent additions include the `BoardSettings` table (013-board-settings).
 - TypeScript 5 / Node.js 20 LTS + axios (existing), hpagent (new — provides `HttpProxyAgent` / `HttpsProxyAgent` for Node.js http/https stacks) (016-proxy-support)
 - N/A — no database schema changes (016-proxy-support)
-- Node.js 20 LTS / TypeScript 5 + Next.js 16 (App Router), MUI v6, Prisma 7, next-intl 4 (017-detailed-sync-errors)
+- N/A — no new dependencies (017-detailed-sync-errors)
 - PostgreSQL 16 (no schema changes required) (017-detailed-sync-errors)
 
 ## Recent Changes

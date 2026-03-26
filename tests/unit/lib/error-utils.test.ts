@@ -1,7 +1,12 @@
 /** @jest-environment node */
 import { describe, it, expect } from '@jest/globals';
-import { SyncErrorCause } from '@/lib/types';
-import { classifyAxiosError, createSyncErrorInfo, formatSyncErrorMessage } from '@/lib/error-utils';
+import { SyncErrorCause, SyncErrorInfo } from '@/lib/types';
+import {
+  classifyAxiosError,
+  createSyncErrorInfo,
+  extractProviderMessage,
+  formatSyncErrorMessage,
+} from '@/lib/error-utils';
 
 describe('classifyAxiosError', () => {
   it('classifies 401 as AUTHENTICATION', () => {
@@ -111,6 +116,22 @@ describe('createSyncErrorInfo', () => {
 });
 
 describe('formatSyncErrorMessage', () => {
+  // Translation function scoped to the "sync" namespace (relative keys, no "sync." prefix)
+  function makeT(overrides: Record<string, string> = {}) {
+    return (key: string, params?: Record<string, string | number | Date>) => {
+      if (key in overrides) return overrides[key];
+      if (key === 'error.cause.authentication') return 'Authentication failed';
+      if (key === 'error.cause.rate_limit') return 'Rate limit exceeded';
+      if (key === 'error.cause.not_found') return 'Resource not found';
+      if (key === 'error.cause.server_error') return 'Server error occurred';
+      if (key === 'error.cause.client_error') return 'Invalid request';
+      if (key === 'error.cause.network_error') return 'Connection failed';
+      if (key === 'error.cause.unknown') return 'Unknown error';
+      if (key === 'error.status') return `Status: ${params?.code}`;
+      return key;
+    };
+  }
+
   it('includes provider name in formatted message', () => {
     const errorInfo: SyncErrorInfo = {
       providerName: 'GitHub',
@@ -119,13 +140,8 @@ describe('formatSyncErrorMessage', () => {
       statusCode: 401,
       providerMessage: 'Bad credentials',
     };
-    const t = (key: string, params?: Record<string, unknown>) => {
-      if (key === 'sync.error.cause.authentication') return 'Authentication failed';
-      if (key === 'sync.error.status') return `Status: ${params?.code}`;
-      return key;
-    };
 
-    const message = formatSyncErrorMessage(errorInfo, t);
+    const message = formatSyncErrorMessage(errorInfo, makeT());
 
     expect(message).toContain('GitHub: owner/repo');
   });
@@ -137,13 +153,8 @@ describe('formatSyncErrorMessage', () => {
       cause: SyncErrorCause.AUTHENTICATION,
       statusCode: 401,
     };
-    const t = (key: string) => {
-      if (key === 'sync.error.cause.authentication') return 'Authentication failed';
-      if (key === 'sync.error.status') return 'Status: 401';
-      return key;
-    };
 
-    const message = formatSyncErrorMessage(errorInfo, t);
+    const message = formatSyncErrorMessage(errorInfo, makeT());
 
     expect(message).toContain('owner/repo');
   });
@@ -155,13 +166,8 @@ describe('formatSyncErrorMessage', () => {
       cause: SyncErrorCause.AUTHENTICATION,
       statusCode: 401,
     };
-    const t = (key: string) => {
-      if (key === 'sync.error.cause.authentication') return 'Authentication failed';
-      if (key === 'sync.error.status') return 'Status: 401';
-      return key;
-    };
 
-    const message = formatSyncErrorMessage(errorInfo, t);
+    const message = formatSyncErrorMessage(errorInfo, makeT());
 
     expect(message).toContain('Authentication failed');
   });
@@ -174,13 +180,8 @@ describe('formatSyncErrorMessage', () => {
       statusCode: 401,
       providerMessage: 'Bad credentials',
     };
-    const t = (key: string) => {
-      if (key === 'sync.error.cause.authentication') return 'Authentication failed';
-      if (key === 'sync.error.status') return 'Status: 401';
-      return key;
-    };
 
-    const message = formatSyncErrorMessage(errorInfo, t);
+    const message = formatSyncErrorMessage(errorInfo, makeT());
 
     expect(message).toContain('"Bad credentials"');
   });
@@ -192,13 +193,8 @@ describe('formatSyncErrorMessage', () => {
       cause: SyncErrorCause.AUTHENTICATION,
       statusCode: 401,
     };
-    const t = (key: string) => {
-      if (key === 'sync.error.cause.authentication') return 'Authentication failed';
-      if (key === 'sync.error.status') return 'Status: 401';
-      return key;
-    };
 
-    const message = formatSyncErrorMessage(errorInfo, t);
+    const message = formatSyncErrorMessage(errorInfo, makeT());
 
     expect(message).toContain('Status: 401');
   });
@@ -209,12 +205,8 @@ describe('formatSyncErrorMessage', () => {
       projectName: 'owner/repo',
       cause: SyncErrorCause.NETWORK_ERROR,
     };
-    const t = (key: string) => {
-      if (key === 'sync.error.cause.network_error') return 'Connection failed';
-      return key;
-    };
 
-    const message = formatSyncErrorMessage(errorInfo, t);
+    const message = formatSyncErrorMessage(errorInfo, makeT());
 
     expect(message).not.toContain('"');
   });
@@ -225,12 +217,8 @@ describe('formatSyncErrorMessage', () => {
       projectName: 'owner/repo',
       cause: SyncErrorCause.NETWORK_ERROR,
     };
-    const t = (key: string) => {
-      if (key === 'sync.error.cause.network_error') return 'Connection failed';
-      return key;
-    };
 
-    const message = formatSyncErrorMessage(errorInfo, t);
+    const message = formatSyncErrorMessage(errorInfo, makeT());
 
     expect(message).not.toContain('Status:');
   });
@@ -243,13 +231,8 @@ describe('formatSyncErrorMessage', () => {
       statusCode: 401,
       providerMessage: 'Bad credentials',
     };
-    const t = (key: string) => {
-      if (key === 'sync.error.cause.authentication') return 'Authentication failed';
-      if (key === 'sync.error.status') return 'Status: 401';
-      return key;
-    };
 
-    const message = formatSyncErrorMessage(errorInfo, t);
+    const message = formatSyncErrorMessage(errorInfo, makeT());
 
     const lines = message.split('\n');
     expect(lines).toHaveLength(4);
@@ -263,7 +246,6 @@ describe('formatSyncErrorMessage', () => {
 describe('extractProviderMessage', () => {
   it('extracts message from GitHub API response', () => {
     const error = createAxiosError({ data: { message: 'Not Found' } });
-    const { extractProviderMessage } = require('@/lib/error-utils');
     expect(extractProviderMessage(error)).toBe('Not Found');
   });
 
@@ -271,20 +253,17 @@ describe('extractProviderMessage', () => {
     const error = createAxiosError({
       data: { errorMessages: ['Project not found'] }
     });
-    const { extractProviderMessage } = require('@/lib/error-utils');
     expect(extractProviderMessage(error)).toBe('Project not found');
   });
 
   it('extracts message from Redmine API response', () => {
     const error = createAxiosError({ data: 'Invalid request' });
-    const { extractProviderMessage } = require('@/lib/error-utils');
     expect(extractProviderMessage(error)).toBe('Invalid request');
   });
 
   it('truncates long Redmine messages', () => {
     const longMessage = 'A'.repeat(250);
     const error = createAxiosError({ data: longMessage });
-    const { extractProviderMessage } = require('@/lib/error-utils');
     const result = extractProviderMessage(error);
     expect(result).toHaveLength(203); // 200 + '...'
     expect(result).toContain('...');
@@ -292,19 +271,16 @@ describe('extractProviderMessage', () => {
 
   it('returns undefined for non-axios errors', () => {
     const error = new Error('Some error');
-    const { extractProviderMessage } = require('@/lib/error-utils');
     expect(extractProviderMessage(error)).toBeUndefined();
   });
 
   it('returns undefined for errors without data', () => {
     const error = createAxiosError({ data: null });
-    const { extractProviderMessage } = require('@/lib/error-utils');
     expect(extractProviderMessage(error)).toBeUndefined();
   });
 
   it('falls back to statusText if no message found', () => {
     const error = createAxiosError({ data: {}, statusText: 'Not Found' });
-    const { extractProviderMessage } = require('@/lib/error-utils');
     expect(extractProviderMessage(error)).toBe('Not Found');
   });
 });
@@ -313,7 +289,7 @@ function createAxiosError({
   status = 500,
   data = null,
   statusText = 'Internal Server Error',
-}: any) {
+}: { status?: number; data?: unknown; statusText?: string }) {
   const error = new Error('Axios error') as any;
   error.isAxiosError = true;
   error.response = { status, data, statusText };

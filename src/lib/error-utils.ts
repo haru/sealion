@@ -127,17 +127,28 @@ export function createSyncErrorInfo(
   };
 }
 
+/** Maps each SyncErrorCause to its translation key, relative to the "sync" namespace. */
+const CAUSE_KEY_MAP: Record<SyncErrorCause, string> = {
+  [SyncErrorCause.AUTHENTICATION]: 'error.cause.authentication',
+  [SyncErrorCause.RATE_LIMIT]: 'error.cause.rate_limit',
+  [SyncErrorCause.NOT_FOUND]: 'error.cause.not_found',
+  [SyncErrorCause.SERVER_ERROR]: 'error.cause.server_error',
+  [SyncErrorCause.CLIENT_ERROR]: 'error.cause.client_error',
+  [SyncErrorCause.NETWORK_ERROR]: 'error.cause.network_error',
+  [SyncErrorCause.UNKNOWN]: 'error.cause.unknown',
+};
+
 /**
  * Formats a SyncErrorInfo into a user-friendly multi-line message
  * for display in MUI notifications.
  *
  * @param errorInfo - The structured error information.
- * @param t - Translation function.
- * @returns Formatted message string with line breaks.
+ * @param t - Translation function scoped to the "sync" namespace.
+ * @returns Formatted message string with newline separators.
  */
 export function formatSyncErrorMessage(
   errorInfo: SyncErrorInfo,
-  t: (key: string, params?: Record<string, unknown>) => string,
+  t: (key: string, params?: Record<string, string | number | Date>) => string,
 ): string {
   const lines: string[] = [];
 
@@ -145,8 +156,7 @@ export function formatSyncErrorMessage(
   lines.push(`${errorInfo.providerName}: ${errorInfo.projectName}`);
 
   // Error cause (translated)
-  const causeKey = `sync.error.cause.${errorInfo.cause.toLowerCase()}`;
-  lines.push(t(causeKey));
+  lines.push(t(CAUSE_KEY_MAP[errorInfo.cause]));
 
   // Provider-specific message (if available)
   if (errorInfo.providerMessage) {
@@ -155,7 +165,7 @@ export function formatSyncErrorMessage(
 
   // HTTP status code (if available)
   if (errorInfo.statusCode) {
-    lines.push(t('sync.error.status', { code: errorInfo.statusCode }));
+    lines.push(t('error.status', { code: errorInfo.statusCode }));
   }
 
   return lines.join('\n');
