@@ -498,6 +498,31 @@ describe("syncProviders", () => {
     expect(errors[0].providerMessage).toBe("Bad credentials");
   });
 
+  it("does not persist technicalMessage in project.syncError JSON", async () => {
+    mockFindMany.mockResolvedValue([
+      {
+        id: "provider-1",
+        type: "GITHUB",
+        encryptedCredentials: "encrypted",
+        userId: "user-1",
+        projects: [{ id: "project-1", externalId: "owner/repo", includeUnassigned: false }],
+      },
+    ]);
+
+    const { createAdapter } = jest.requireMock("@/services/issue-provider/factory");
+    createAdapter.mockReturnValueOnce({
+      fetchAssignedIssues: jest.fn().mockRejectedValue(new Error("secret internal detail")),
+      fetchUnassignedIssues: jest.fn().mockResolvedValue([]),
+    });
+    mockProjectUpdate.mockResolvedValue({});
+
+    await syncProviders("user-1");
+
+    const call = (prisma.project.update as jest.Mock).mock.calls[0][0];
+    const stored: Record<string, unknown> = JSON.parse(call.data.syncError);
+    expect(stored).not.toHaveProperty("technicalMessage");
+  });
+
   it("collects errors from multiple failed projects", async () => {
     mockFindMany.mockResolvedValue([
       {

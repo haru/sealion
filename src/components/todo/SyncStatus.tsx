@@ -9,7 +9,7 @@ import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useRef } from "react";
 import { useMessageQueue } from "@/components/MessageQueue";
 import { SyncErrorCause, SyncErrorInfo } from "@/lib/types";
-import { formatSyncErrorMessage } from "@/lib/error-utils";
+import { formatSyncErrorMessage, parseSyncErrorInfo } from "@/lib/error-utils";
 
 interface Project {
   id: string;
@@ -30,21 +30,6 @@ interface SyncStatusProps {
   isSyncing: boolean;
   /** Callback invoked when the user clicks the "Sync Now" button. */
   onSyncNow: () => void;
-}
-
-/**
- * Parses a JSON-encoded SyncErrorInfo stored in a project's syncError DB field.
- *
- * @param syncError - Raw syncError string from the project record.
- * @returns Parsed SyncErrorInfo, or null if the field is empty or unparseable.
- */
-function parseSyncErrorInfo(syncError: string | null): SyncErrorInfo | null {
-  if (!syncError) return null;
-  try {
-    return JSON.parse(syncError) as SyncErrorInfo;
-  } catch {
-    return null;
-  }
 }
 
 /** Displays the sync status chip and a "Sync Now" button. Errors are shown via the shared message queue. */

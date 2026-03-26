@@ -68,7 +68,7 @@ export function classifyAxiosError(error: unknown): SyncErrorCause {
  * @returns The extracted message or undefined if none found.
  */
 export function extractProviderMessage(error: unknown): string | undefined {
-  if (!isAxiosError(error) || !error.response?.data) {
+  if (!isAxiosError(error) || !error.response || error.response.data == null) {
     return undefined;
   }
 
@@ -100,12 +100,15 @@ export function extractProviderMessage(error: unknown): string | undefined {
 }
 
 /**
- * Creates a structured SyncErrorInfo from an axios error.
+ * Creates a structured SyncErrorInfo suitable for persistence and client display.
+ * The `technicalMessage` is intentionally omitted from the returned object to prevent
+ * leaking internal error details (e.g. stack traces, credentials) to the client.
+ * Callers that need to log the technical detail should do so before calling this function.
  *
  * @param providerName - Name of the provider.
  * @param projectName - Name of the project.
- * @param error - The axios error.
- * @returns Structured error information.
+ * @param error - The error thrown during sync.
+ * @returns Structured error information safe for persistence and client exposure.
  */
 export function createSyncErrorInfo(
   providerName: string,
@@ -115,7 +118,6 @@ export function createSyncErrorInfo(
   const cause = classifyAxiosError(error);
   const statusCode = isAxiosError(error) ? error.response?.status : undefined;
   const providerMessage = extractProviderMessage(error);
-  const technicalMessage = error instanceof Error ? error.message : String(error);
 
   return {
     providerName,
@@ -123,8 +125,65 @@ export function createSyncErrorInfo(
     cause,
     statusCode,
     providerMessage,
-    technicalMessage,
   };
+}
+
+/**
+ * Parses a SyncErrorInfo stored in a project's syncError DB field.
+ *
+ * Supports both the current JSON-encoded format and legacy plain-string codes
+ * such as "SYNC_FAILED" or "RATE_LIMITED". For legacy values a minimal
+ * SyncErrorInfo is synthesised so existing projects still display an appropriate
+ * error chip/notification without requiring a re-sync.
+ *
+ * @param syncError - Raw syncError string from the project record.
+ * @returns Parsed SyncErrorInfo, or null if the field is empty.
+ */
+export function parseSyncErrorInfo(syncError: string | null): SyncErrorInfo | null {
+  if (!syncError) {
+    return null;
+  }
+
+  // First, try to parse the current JSON-encoded format.
+  try {
+    const parsed = JSON.parse(syncError) as unknown;
+    // Only accept objects that look like SyncErrorInfo (must have a "cause" field).
+    // If JSON.parse succeeds but the result is not a SyncErrorInfo-shaped object,
+    // return null rather than falling through to legacy handling.
+    if (parsed !== null && typeof parsed === 'object' && 'cause' in (parsed as object)) {
+      return parsed as SyncErrorInfo;
+    }
+    return null;
+  } catch {
+    // Not valid JSON — fall through to legacy plain-string handling below.
+  }
+
+  // Legacy format: plain string codes such as "SYNC_FAILED" or "RATE_LIMITED".
+  const legacyCode = syncError.trim().toUpperCase();
+  if (!legacyCode) {
+    return null;
+  }
+
+  switch (legacyCode) {
+    case 'RATE_LIMITED':
+      return {
+        providerName: '',
+        projectName: '',
+        cause: SyncErrorCause.RATE_LIMIT,
+      };
+    case 'SYNC_FAILED':
+      return {
+        providerName: '',
+        projectName: '',
+        cause: SyncErrorCause.UNKNOWN,
+      };
+    default:
+      return {
+        providerName: '',
+        projectName: '',
+        cause: SyncErrorCause.UNKNOWN,
+      };
+  }
 }
 
 /** Maps each SyncErrorCause to its translation key, relative to the "sync" namespace. */

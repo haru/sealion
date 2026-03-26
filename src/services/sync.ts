@@ -29,9 +29,7 @@ export async function syncProviders(userId: string): Promise<SyncErrorInfo[]> {
   const providerLimit = pLimit(PROVIDER_CONCURRENCY);
   const projectLimit = pLimit(PROJECT_CONCURRENCY);
 
-  const syncErrors: SyncErrorInfo[] = [];
-
-  await Promise.all(
+  const providerErrorLists = await Promise.all(
     providers.map((provider) =>
       providerLimit(async () => {
         const decryptedCredentials = JSON.parse(decrypt(provider.encryptedCredentials));
@@ -40,9 +38,9 @@ export async function syncProviders(userId: string): Promise<SyncErrorInfo[]> {
 
         const providerName = provider.displayName || provider.type;
 
-        await Promise.all(
+        const projectErrorLists = await Promise.all(
           provider.projects.map((project) =>
-            projectLimit(async () => {
+            projectLimit(async (): Promise<SyncErrorInfo[]> => {
               try {
                 const assignedIssues = await adapter.fetchAssignedIssues(project.externalId);
 
@@ -111,11 +109,17 @@ export async function syncProviders(userId: string): Promise<SyncErrorInfo[]> {
                     data: { lastSyncedAt: now, syncError: null },
                   });
                 });
+
+                return [];
               } catch (err) {
                 const projectName = project.displayName || project.externalId;
+                // Log the technical detail server-side before stripping it from the persisted payload.
+                const technicalMessage = err instanceof Error ? err.message : String(err);
+                console.error(
+                  `[sync] ${providerName}/${projectName} failed: ${technicalMessage}`
+                );
 
                 const errorInfo = createSyncErrorInfo(providerName, projectName, err);
-                syncErrors.push(errorInfo);
 
                 await prisma.project.update({
                   where: { id: project.id },
@@ -124,13 +128,23 @@ export async function syncProviders(userId: string): Promise<SyncErrorInfo[]> {
                     lastSyncedAt: new Date(),
                   },
                 });
+
+                return [errorInfo];
               }
             })
           )
         );
+
+        return projectErrorLists.flat();
       })
     )
   );
 
-  return syncErrors;
+  // Flatten and sort by providerName then projectName for stable, deterministic ordering.
+  const allErrors = providerErrorLists.flat();
+  allErrors.sort((a, b) => {
+    const providerCmp = a.providerName.localeCompare(b.providerName);
+    return providerCmp !== 0 ? providerCmp : a.projectName.localeCompare(b.projectName);
+  });
+  return allErrors;
 }

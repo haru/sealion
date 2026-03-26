@@ -162,6 +162,50 @@ describe('syncProviders error collection integration', () => {
     expect(projectNames).toContain('Repo 2');
   });
 
+  it('returns errors sorted by providerName then projectName for stable ordering', async () => {
+    mockFindMany.mockResolvedValue([
+      {
+        id: 'provider-1',
+        type: 'GITHUB',
+        displayName: 'My GitHub',
+        encryptedCredentials: 'encrypted',
+        baseUrl: null,
+        userId: 'user-1',
+        projects: [
+          { id: 'project-b', externalId: 'owner/repo-b', displayName: 'Repo B', includeUnassigned: false },
+          { id: 'project-a', externalId: 'owner/repo-a', displayName: 'Repo A', includeUnassigned: false },
+        ],
+      },
+    ]);
+    const { createAdapter } = jest.requireMock('@/services/issue-provider/factory');
+    createAdapter.mockReturnValueOnce({
+      fetchAssignedIssues: jest.fn().mockRejectedValue(makeAxiosError(500)),
+      fetchUnassignedIssues: jest.fn().mockResolvedValue([]),
+    });
+
+    const errors = await syncProviders('user-1');
+
+    expect(errors).toHaveLength(2);
+    // Results must be sorted: Repo A before Repo B regardless of Promise resolution order
+    expect(errors[0].projectName).toBe('Repo A');
+    expect(errors[1].projectName).toBe('Repo B');
+  });
+
+  it('does not persist technicalMessage in project.syncError JSON', async () => {
+    mockFindMany.mockResolvedValue([makeProvider()]);
+    const { createAdapter } = jest.requireMock('@/services/issue-provider/factory');
+    createAdapter.mockReturnValueOnce({
+      fetchAssignedIssues: jest.fn().mockRejectedValue(new Error('secret internal detail')),
+      fetchUnassignedIssues: jest.fn().mockResolvedValue([]),
+    });
+
+    await syncProviders('user-1');
+
+    const call = mockProjectUpdate.mock.calls[0][0];
+    const stored: Record<string, unknown> = JSON.parse(call.data.syncError);
+    expect(stored).not.toHaveProperty('technicalMessage');
+  });
+
   it('includes provider message from API response in returned error', async () => {
     mockFindMany.mockResolvedValue([makeProvider()]);
     const { createAdapter } = jest.requireMock('@/services/issue-provider/factory');

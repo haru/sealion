@@ -6,7 +6,58 @@ import {
   createSyncErrorInfo,
   extractProviderMessage,
   formatSyncErrorMessage,
+  parseSyncErrorInfo,
 } from '@/lib/error-utils';
+
+describe('parseSyncErrorInfo', () => {
+  it('returns null for null input', () => {
+    expect(parseSyncErrorInfo(null)).toBeNull();
+  });
+
+  it('returns null for empty string', () => {
+    expect(parseSyncErrorInfo('')).toBeNull();
+  });
+
+  it('parses valid JSON-encoded SyncErrorInfo', () => {
+    const info: SyncErrorInfo = {
+      providerName: 'GitHub',
+      projectName: 'owner/repo',
+      cause: SyncErrorCause.AUTHENTICATION,
+      statusCode: 401,
+    };
+    const result = parseSyncErrorInfo(JSON.stringify(info));
+    expect(result).not.toBeNull();
+    expect(result!.cause).toBe(SyncErrorCause.AUTHENTICATION);
+    expect(result!.providerName).toBe('GitHub');
+    expect(result!.projectName).toBe('owner/repo');
+    expect(result!.statusCode).toBe(401);
+  });
+
+  it('maps legacy "RATE_LIMITED" string to RATE_LIMIT cause', () => {
+    const result = parseSyncErrorInfo('RATE_LIMITED');
+    expect(result).not.toBeNull();
+    expect(result!.cause).toBe(SyncErrorCause.RATE_LIMIT);
+  });
+
+  it('maps legacy "SYNC_FAILED" string to UNKNOWN cause', () => {
+    const result = parseSyncErrorInfo('SYNC_FAILED');
+    expect(result).not.toBeNull();
+    expect(result!.cause).toBe(SyncErrorCause.UNKNOWN);
+  });
+
+  it('maps any unrecognized non-JSON string to UNKNOWN cause', () => {
+    const result = parseSyncErrorInfo('SOME_OLD_ERROR_CODE');
+    expect(result).not.toBeNull();
+    expect(result!.cause).toBe(SyncErrorCause.UNKNOWN);
+  });
+
+  it('returns null for valid JSON that is not a SyncErrorInfo object', () => {
+    // Plain JSON values without a "cause" field should not be treated as SyncErrorInfo
+    expect(parseSyncErrorInfo('"just a string"')).toBeNull();
+    expect(parseSyncErrorInfo('42')).toBeNull();
+    expect(parseSyncErrorInfo('{"foo":"bar"}')).toBeNull();
+  });
+});
 
 describe('classifyAxiosError', () => {
   it('classifies 401 as AUTHENTICATION', () => {
@@ -107,11 +158,13 @@ describe('createSyncErrorInfo', () => {
     expect(errorInfo.cause).toBe(SyncErrorCause.NETWORK_ERROR);
   });
 
-  it('captures technical message', () => {
+  it('does not include technicalMessage in returned SyncErrorInfo', () => {
+    // technicalMessage must be stripped before the object is persisted / sent to the client
+    // to avoid leaking internal error details. Callers log it server-side instead.
     const error = createAxiosError({ status: 500 });
     const errorInfo = createSyncErrorInfo('GitHub', 'owner/repo', error);
 
-    expect(errorInfo.technicalMessage).toBe('Axios error');
+    expect(errorInfo).not.toHaveProperty('technicalMessage');
   });
 });
 
@@ -282,6 +335,17 @@ describe('extractProviderMessage', () => {
   it('falls back to statusText if no message found', () => {
     const error = createAxiosError({ data: {}, statusText: 'Not Found' });
     expect(extractProviderMessage(error)).toBe('Not Found');
+  });
+
+  it('falls back to statusText when data is an empty string', () => {
+    // An empty string is falsy but not null/undefined — the fallback must still apply
+    const error = createAxiosError({ data: '', statusText: 'Bad Request' });
+    expect(extractProviderMessage(error)).toBe('Bad Request');
+  });
+
+  it('returns undefined when data is an empty string and statusText is empty', () => {
+    const error = createAxiosError({ data: '', statusText: '' });
+    expect(extractProviderMessage(error)).toBeUndefined();
   });
 });
 
