@@ -1,5 +1,6 @@
 import axios from "axios";
 import { IssueProviderAdapter, NormalizedIssue, ExternalProject } from "@/lib/types";
+import { buildAxiosProxyConfig } from "@/lib/proxy";
 
 interface RedmineIssue {
   id: number;
@@ -38,6 +39,7 @@ export class RedmineAdapter implements IssueProviderAdapter {
         "X-Redmine-API-Key": apiKey,
         "Content-Type": "application/json",
       },
+      ...buildAxiosProxyConfig(this.baseUrl),
     });
   }
 
