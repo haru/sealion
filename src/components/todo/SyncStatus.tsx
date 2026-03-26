@@ -1,12 +1,13 @@
 "use client";
 
-import { Box, Button, Chip, Snackbar, Alert } from "@mui/material";
+import { Box, Button, Chip } from "@mui/material";
 import SyncIcon from "@mui/icons-material/Sync";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import ErrorIcon from "@mui/icons-material/Error";
 import WarningIcon from "@mui/icons-material/Warning";
 import { useTranslations } from "next-intl";
-import { useEffect, useState } from "react";
+import { useEffect, useRef } from "react";
+import { useMessageQueue } from "@/components/MessageQueue";
 
 interface Project {
   id: string;
@@ -29,27 +30,25 @@ interface SyncStatusProps {
   onSyncNow: () => void;
 }
 
-/** Displays the sync status chip, a "Sync Now" button, and error snackbars for all providers. */
+/** Displays the sync status chip and a "Sync Now" button. Errors are shown via the shared message queue. */
 export default function SyncStatus({ providers, isSyncing, onSyncNow }: SyncStatusProps) {
   const t = useTranslations("todo");
   const tErrors = useTranslations("errors");
-
-  const [openRateLimit, setOpenRateLimit] = useState(false);
-  const [openSyncFailed, setOpenSyncFailed] = useState(false);
+  const { addMessage } = useMessageQueue();
 
   const allProjects = providers.flatMap((p) => p.projects);
   const hasRateLimit = allProjects.some((p) => p.syncError === "RATE_LIMITED");
   const hasSyncFailed = allProjects.some((p) => p.syncError === "SYNC_FAILED");
 
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (!isSyncing && hasRateLimit) setOpenRateLimit(true);
-  }, [isSyncing, hasRateLimit]);
+  const prevIsSyncing = useRef(isSyncing);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (!isSyncing && hasSyncFailed) setOpenSyncFailed(true);
-  }, [isSyncing, hasSyncFailed]);
+    const wasJustFinished = prevIsSyncing.current && !isSyncing;
+    prevIsSyncing.current = isSyncing;
+    if (!wasJustFinished) return;
+    if (hasRateLimit) addMessage("warning", tErrors("RATE_LIMITED"));
+    if (hasSyncFailed) addMessage("error", tErrors("SYNC_FAILED"));
+  }, [isSyncing, hasRateLimit, hasSyncFailed, addMessage, tErrors]);
 
   if (providers.length === 0) return null;
 
@@ -86,55 +85,31 @@ export default function SyncStatus({ providers, isSyncing, onSyncNow }: SyncStat
       : t("notSyncedYet");
 
   return (
-    <>
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
-        <Chip icon={icon} label={label} size="small" variant="outlined" />
-        <Button
-          variant="outlined"
-          size="small"
-          disabled={isSyncing || providers.length === 0}
-          onClick={onSyncNow}
-          startIcon={
-            <SyncIcon
-              sx={
-                isSyncing
-                  ? {
-                      animation: "spin 1s linear infinite",
-                      "@keyframes spin": {
-                        "0%": { transform: "rotate(0deg)" },
-                        "100%": { transform: "rotate(360deg)" },
-                      },
-                    }
-                  : undefined
-              }
-            />
-          }
-        >
-          {t("syncNow")}
-        </Button>
-      </Box>
-
-      <Snackbar
-        open={openRateLimit}
-        autoHideDuration={6000}
-        onClose={() => setOpenRateLimit(false)}
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+      <Chip icon={icon} label={label} size="small" variant="outlined" />
+      <Button
+        variant="outlined"
+        size="small"
+        disabled={isSyncing || providers.length === 0}
+        onClick={onSyncNow}
+        startIcon={
+          <SyncIcon
+            sx={
+              isSyncing
+                ? {
+                    animation: "spin 1s linear infinite",
+                    "@keyframes spin": {
+                      "0%": { transform: "rotate(0deg)" },
+                      "100%": { transform: "rotate(360deg)" },
+                    },
+                  }
+                : undefined
+            }
+          />
+        }
       >
-        <Alert onClose={() => setOpenRateLimit(false)} severity="warning" sx={{ width: "100%" }}>
-          {tErrors("RATE_LIMITED")}
-        </Alert>
-      </Snackbar>
-
-      <Snackbar
-        open={openSyncFailed}
-        autoHideDuration={8000}
-        onClose={() => setOpenSyncFailed(false)}
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-      >
-        <Alert onClose={() => setOpenSyncFailed(false)} severity="error" sx={{ width: "100%" }}>
-          {tErrors("SYNC_FAILED")}
-        </Alert>
-      </Snackbar>
-    </>
+        {t("syncNow")}
+      </Button>
+    </Box>
   );
 }

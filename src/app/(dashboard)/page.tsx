@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import { Box, Container, Snackbar, Alert, Typography } from "@mui/material";
+import { Box, Container, Typography } from "@mui/material";
+import { useMessageQueue } from "@/components/MessageQueue";
 import { useTranslations } from "next-intl";
 import {
   DndContext,
@@ -54,18 +55,12 @@ interface SyncProvider {
   projects: SyncProject[];
 }
 
-type ToastSeverity = "success" | "error";
-interface Toast {
-  open: boolean;
-  message: string;
-  severity: ToastSeverity;
-}
-
 /** Main dashboard page showing today's tasks and the full issue list with drag-and-drop support. */
 export default function DashboardPage() {
   const t = useTranslations("todo");
   const tToday = useTranslations("todayTasks");
   const tBoardSettings = useTranslations("boardSettings");
+  const { addMessage } = useMessageQueue();
 
   const [issues, setIssues] = useState<Issue[]>([]);
   const [todayIssues, setTodayIssues] = useState<Issue[]>([]);
@@ -74,7 +69,6 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncProviders, setSyncProviders] = useState<SyncProvider[]>([]);
-  const [toast, setToast] = useState<Toast>({ open: false, message: "", severity: "success" });
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
   const [isDraggingOutside, setIsDraggingOutside] = useState(false);
   const [completeModalIssueId, setCompleteModalIssueId] = useState<string | null>(null);
@@ -96,11 +90,6 @@ export default function DashboardPage() {
     () => (activeDragId ? [...issues, ...todayIssues].find((i) => i.id === activeDragId) : undefined),
     [activeDragId, issues, todayIssues]
   );
-
-  /** Shows a toast notification with the given message and severity. */
-  function showToast(message: string, severity: ToastSeverity) {
-    setToast({ open: true, message, severity });
-  }
 
   const fetchIssues = useCallback(async (p: number, sortOrder?: SortCriterion[]) => {
     const order = sortOrder ?? boardSettingsSortOrderRef.current;
@@ -186,7 +175,7 @@ export default function DashboardPage() {
         const bsRes = await fetch("/api/board-settings");
         if (!bsRes.ok) {
           console.error("Failed to fetch board settings, falling back to defaults");
-          showToast(tBoardSettings("loadError"), "error");
+          addMessage("error", tBoardSettings("loadError"));
         } else {
           const bsJson = await bsRes.json();
           if (bsJson.error) {
@@ -194,7 +183,7 @@ export default function DashboardPage() {
               "Board settings API returned an error, falling back to defaults:",
               bsJson.error
             );
-            showToast(tBoardSettings("loadError"), "error");
+            addMessage("error", tBoardSettings("loadError"));
           } else if (bsJson.data) {
             const bs = bsJson.data as BoardSettings;
             setBoardSettings(bs);
@@ -225,7 +214,7 @@ export default function DashboardPage() {
       }
     }
     void init();
-  }, [fetchIssues, fetchTodayIssues, startSync, tBoardSettings]);
+  }, [fetchIssues, fetchTodayIssues, startSync, tBoardSettings, addMessage]);
 
   /** Fetches the requested page of issues. */
   async function handlePageChange(newPage: number) {
@@ -324,12 +313,12 @@ export default function DashboardPage() {
             : issue
         )
       );
-      showToast(tToday("addSuccess"), "success");
+      addMessage("information", tToday("addSuccess"));
     } else {
       // Rollback
       setTodayIssues((prev) => prev.filter((i) => i.id !== id));
       setIssues((prev) => [...prev, issueToAdd]);
-      showToast(tToday("addError"), "error");
+      addMessage("error", tToday("addError"));
     }
   }
 
@@ -350,11 +339,11 @@ export default function DashboardPage() {
     if (res.ok) {
       // Refetch regular issues so the item appears back in the list
       await fetchIssues(page);
-      showToast(tToday("removeSuccess"), "success");
+      addMessage("information", tToday("removeSuccess"));
     } else {
       // Rollback
       setTodayIssues((prev) => [...prev, issue]);
-      showToast(tToday("removeError"), "error");
+      addMessage("error", tToday("removeError"));
     }
   }
 
@@ -379,7 +368,7 @@ export default function DashboardPage() {
 
     if (!res.ok) {
       setTodayIssues(prevTodayIssues);
-      showToast(tToday("reorderError"), "error");
+      addMessage("error", tToday("reorderError"));
     }
   }
 
@@ -525,19 +514,6 @@ export default function DashboardPage() {
         onCancel={handleModalCancel}
       />
 
-      <Snackbar
-        open={toast.open}
-        autoHideDuration={4000}
-        onClose={() => setToast((prev) => ({ ...prev, open: false }))}
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-      >
-        <Alert
-          severity={toast.severity}
-          onClose={() => setToast((prev) => ({ ...prev, open: false }))}
-        >
-          {toast.message}
-        </Alert>
-      </Snackbar>
     </DndContext>
   );
 }
