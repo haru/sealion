@@ -5,7 +5,6 @@ import {
   Container,
   Typography,
   Paper,
-  Alert,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -19,6 +18,7 @@ import { useTranslations } from "next-intl";
 import ProviderList from "@/components/providers/ProviderList";
 import AddProviderDialog from "@/components/providers/AddProviderDialog";
 import type { ProviderFormData } from "@/components/providers/ProviderForm";
+import { useMessageQueue } from "@/components/MessageQueue";
 
 interface Provider {
   id: string;
@@ -33,8 +33,8 @@ export default function ProvidersPage() {
   const t = useTranslations("providers");
   const tCommon = useTranslations("common");
 
+  const { addMessage } = useMessageQueue();
   const [providers, setProviders] = useState<Provider[]>([]);
-  const [error, setError] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
 
@@ -42,11 +42,15 @@ export default function ProvidersPage() {
     try {
       const res = await fetch("/api/providers");
       const json = await res.json();
-      if (res.ok) setProviders(json.data);
+      if (res.ok) {
+        setProviders(json.data);
+      } else {
+        addMessage("error", tCommon("error"));
+      }
     } catch {
-      setError(tCommon("error"));
+      addMessage("error", tCommon("error"));
     }
-  }, [tCommon]);
+  }, [tCommon, addMessage]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -77,7 +81,7 @@ export default function ProvidersPage() {
     if (res.ok) {
       setProviders((prev) => prev.filter((p) => p.id !== deleteId));
     } else {
-      setError(tCommon("error"));
+      addMessage("error", tCommon("error"));
     }
     setDeleteId(null);
   }
@@ -87,12 +91,6 @@ export default function ProvidersPage() {
       <Typography variant="h4" component="h1" gutterBottom>
         {t("title")}
       </Typography>
-
-      {error && (
-        <Alert severity="error" onClose={() => setError(null)} sx={{ mb: 2 }}>
-          {error}
-        </Alert>
-      )}
 
       <Paper sx={{ p: 3, mb: 3 }}>
         <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 2 }}>

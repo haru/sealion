@@ -85,6 +85,28 @@ Runs on every non-static request. Enforces:
 
 All UI strings live in `src/messages/en.json` and `src/messages/ja.json`. Use `next-intl`'s `useTranslations` / `getTranslations` — never hardcode display strings.
 
+### User-facing messages (notifications)
+
+Use the shared `MessageQueueProvider` / `useMessageQueue` hook for all transient notifications. **Never add standalone `Snackbar` or floating `Alert` components.**
+
+```tsx
+const { addMessage } = useMessageQueue();
+
+addMessage("information", t("someSuccess")); // success / info
+addMessage("warning",     t("someWarning")); // non-critical warning
+addMessage("error",       t("someError"));   // operation failed
+```
+
+`MessageQueueProvider` is mounted in `DashboardShell` and covers all `(dashboard)` routes.
+
+**When to use `useMessageQueue` vs. inline `Alert`:**
+
+| Situation | Pattern |
+|-----------|---------|
+| Transient result of a user action (save, delete, sync, …) | `useMessageQueue` |
+| Form validation / submission error (shown inside the form) | Inline `<Alert>` within the form |
+| Auth page errors (login, signup — no Provider available) | Inline `<Alert>` within the page |
+
 ## Development Rules
 
 ### Language
