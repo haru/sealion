@@ -1,16 +1,27 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
 
 const E2E_EMAIL = process.env.E2E_USER_EMAIL ?? "admin@example.com";
 const E2E_PASSWORD = process.env.E2E_USER_PASSWORD ?? "password123";
 
+/** Logs in and navigates to the providers settings page. */
+async function loginAndGoToProviders(page: Page): Promise<void> {
+  await page.goto("/login");
+  await page.fill('[name="email"]', E2E_EMAIL);
+  await page.fill('[name="password"]', E2E_PASSWORD);
+  await page.click('button[type="submit"]');
+  await page.waitForURL("/");
+  await page.goto("/settings/providers");
+}
+
+/** Opens the Add Provider modal and waits for it to be visible. */
+async function openAddProviderDialog(page: Page): Promise<void> {
+  await page.getByRole("button", { name: /add provider/i }).click();
+  await expect(page.locator('[role="dialog"]')).toBeVisible();
+}
+
 test.describe("Provider settings - modal UI", () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto("/login");
-    await page.fill('[name="email"]', E2E_EMAIL);
-    await page.fill('[name="password"]', E2E_PASSWORD);
-    await page.click('button[type="submit"]');
-    await page.waitForURL("/");
-    await page.goto("/settings/providers");
+    await loginAndGoToProviders(page);
   });
 
   // T002: Add button is visible on providers settings page
@@ -26,19 +37,12 @@ test.describe("Provider settings - modal UI", () => {
 
   // T004: Submitting valid form adds provider, closes modal, updates list
   test("submitting valid form adds provider, closes modal, updates list", async ({ page }) => {
-    await page.getByRole("button", { name: /add provider/i }).click();
+    await openAddProviderDialog(page);
     const dialog = page.locator('[role="dialog"]');
-    await expect(dialog).toBeVisible();
 
-    // Fill display name
-    const displayNameInput = dialog.locator('input[name="providerName"]');
-    await displayNameInput.fill("Test GitHub Provider");
+    await dialog.locator('[data-testid="provider-name-input"]').fill("Test GitHub Provider");
+    await dialog.locator('[data-testid="github-token-input"]').fill("ghp_testtoken123456");
 
-    // GitHub token
-    const tokenInput = dialog.locator('input[type="password"]').first();
-    await tokenInput.fill("ghp_testtoken123456");
-
-    // Submit
     await dialog.getByRole("button", { name: /add issue tracker/i }).click();
 
     // Modal should close
@@ -47,7 +51,6 @@ test.describe("Provider settings - modal UI", () => {
 
   // T005: Inline add form is NOT present on provider settings page
   test("inline add form is NOT present on provider settings page", async ({ page }) => {
-    // The old inline form was inside a Paper section with "Add Issue Tracker" heading
     // After refactoring, the form should only exist inside a modal dialog
     const dialogs = page.locator('[role="dialog"]');
     await expect(dialogs).toHaveCount(0);
@@ -62,14 +65,8 @@ test.describe("Provider settings - modal UI", () => {
 
 test.describe("Provider settings - modal close (US2)", () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto("/login");
-    await page.fill('[name="email"]', E2E_EMAIL);
-    await page.fill('[name="password"]', E2E_PASSWORD);
-    await page.click('button[type="submit"]');
-    await page.waitForURL("/");
-    await page.goto("/settings/providers");
-    await page.getByRole("button", { name: /add provider/i }).click();
-    await expect(page.locator('[role="dialog"]')).toBeVisible();
+    await loginAndGoToProviders(page);
+    await openAddProviderDialog(page);
   });
 
   // T008: Cancel button closes modal without changes
@@ -97,20 +94,13 @@ test.describe("Provider settings - modal close (US2)", () => {
 
 test.describe("Provider settings - form validation in modal (US3)", () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto("/login");
-    await page.fill('[name="email"]', E2E_EMAIL);
-    await page.fill('[name="password"]', E2E_PASSWORD);
-    await page.click('button[type="submit"]');
-    await page.waitForURL("/");
-    await page.goto("/settings/providers");
-    await page.getByRole("button", { name: /add provider/i }).click();
-    await expect(page.locator('[role="dialog"]')).toBeVisible();
+    await loginAndGoToProviders(page);
+    await openAddProviderDialog(page);
   });
 
   // T012: Saving with empty required fields shows validation error inside modal
   test("saving with empty required fields shows validation error inside modal", async ({ page }) => {
     const dialog = page.locator('[role="dialog"]');
-    // Click submit without filling any required fields
     // The HTML5 `required` attribute prevents submission; dialog stays open
     await dialog.getByRole("button", { name: /add issue tracker/i }).click();
     await expect(dialog).toBeVisible();
@@ -120,10 +110,8 @@ test.describe("Provider settings - form validation in modal (US3)", () => {
   test("API error on save shows error message inside modal without closing", async ({ page }) => {
     const dialog = page.locator('[role="dialog"]');
 
-    // Fill required fields
-    await dialog.locator('input[name="providerName"]').fill("Bad Provider");
-    const tokenInput = dialog.locator('input[type="password"]').first();
-    await tokenInput.fill("invalid_token");
+    await dialog.locator('[data-testid="provider-name-input"]').fill("Bad Provider");
+    await dialog.locator('[data-testid="github-token-input"]').fill("invalid_token");
 
     // Intercept API call to return an error
     await page.route("/api/providers", (route) => {

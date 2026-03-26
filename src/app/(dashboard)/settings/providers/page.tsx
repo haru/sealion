@@ -18,6 +18,7 @@ import AddIcon from "@mui/icons-material/Add";
 import { useTranslations } from "next-intl";
 import ProviderList from "@/components/providers/ProviderList";
 import AddProviderDialog from "@/components/providers/AddProviderDialog";
+import type { ProviderFormData } from "@/components/providers/ProviderForm";
 
 interface Provider {
   id: string;
@@ -53,11 +54,7 @@ export default function ProvidersPage() {
   }, [fetchProviders]);
 
   /** Sends a new provider to the API and refreshes the list on success. */
-  async function handleAddProvider(data: {
-    type: "GITHUB" | "JIRA" | "REDMINE";
-    displayName: string;
-    credentials: Record<string, string>;
-  }) {
+  async function handleAddProvider(data: ProviderFormData) {
     const res = await fetch("/api/providers", {
       method: "POST",
       headers: { "Content-Type": "application/json" },

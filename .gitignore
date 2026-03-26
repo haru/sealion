@@ -47,3 +47,6 @@ next-env.d.ts
 /test-results/
 
 .claude/agent-memory/
+
+# playwright-mcp runtime logs
+.playwright-mcp/

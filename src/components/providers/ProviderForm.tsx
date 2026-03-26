@@ -15,9 +15,11 @@ import {
 } from "@mui/material";
 import { useTranslations } from "next-intl";
 
-type ProviderType = "GITHUB" | "JIRA" | "REDMINE";
+/** Provider type identifier. */
+export type ProviderType = "GITHUB" | "JIRA" | "REDMINE";
 
-interface ProviderFormData {
+/** Data shape submitted by {@link ProviderForm}. */
+export interface ProviderFormData {
   type: ProviderType;
   displayName: string;
   credentials: Record<string, string>;
@@ -47,6 +49,7 @@ function GitHubFields({
       onChange={(e) => onChange("token", e.target.value)}
       required
       fullWidth
+      inputProps={{ "data-testid": "github-token-input" }}
     />
   );
 }
@@ -195,6 +198,7 @@ export default function ProviderForm({ onSubmit }: ProviderFormProps) {
           fullWidth
           name="providerName"
           autoComplete="organization"
+          inputProps={{ "data-testid": "provider-name-input" }}
         />
 
         {type === "GITHUB" && (
