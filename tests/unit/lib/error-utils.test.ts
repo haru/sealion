@@ -5,9 +5,11 @@ import {
   classifyAxiosError,
   createSyncErrorInfo,
   extractProviderMessage,
+  formatConnectionTestError,
   formatSyncErrorMessage,
   parseSyncErrorInfo,
 } from '@/lib/error-utils';
+import type { ConnectionTestErrorDetails } from '@/lib/error-utils';
 
 describe('parseSyncErrorInfo', () => {
   it('returns null for null input', () => {
@@ -332,6 +334,22 @@ describe('extractProviderMessage', () => {
     expect(extractProviderMessage(error)).toBeUndefined();
   });
 
+  it('returns error message when axios error has no response (e.g. proxy CONNECT failure)', () => {
+    // hpagent throws Error("Bad response: 403") when proxy rejects CONNECT;
+    // there is no error.response, so we fall back to error.message.
+    const error = new Error('Bad response: 403') as any;
+    error.isAxiosError = true;
+    error.response = undefined;
+    expect(extractProviderMessage(error)).toBe('Bad response: 403');
+  });
+
+  it('returns undefined when axios error has no response and empty message', () => {
+    const error = new Error('') as any;
+    error.isAxiosError = true;
+    error.response = undefined;
+    expect(extractProviderMessage(error)).toBeUndefined();
+  });
+
   it('falls back to statusText if no message found', () => {
     const error = createAxiosError({ data: {}, statusText: 'Not Found' });
     expect(extractProviderMessage(error)).toBe('Not Found');
@@ -346,6 +364,81 @@ describe('extractProviderMessage', () => {
   it('returns undefined when data is an empty string and statusText is empty', () => {
     const error = createAxiosError({ data: '', statusText: '' });
     expect(extractProviderMessage(error)).toBeUndefined();
+  });
+});
+
+describe('formatConnectionTestError', () => {
+  function makeT(overrides: Record<string, string> = {}) {
+    return (key: string, params?: Record<string, string | number | Date>) => {
+      if (key in overrides) return overrides[key];
+      if (key === 'error.cause.authentication') return 'Authentication failed';
+      if (key === 'error.cause.rate_limit') return 'Rate limit exceeded';
+      if (key === 'error.cause.not_found') return 'Resource not found';
+      if (key === 'error.cause.server_error') return 'Server error occurred';
+      if (key === 'error.cause.client_error') return 'Invalid request';
+      if (key === 'error.cause.network_error') return 'Connection failed';
+      if (key === 'error.cause.unknown') return 'Unknown error';
+      if (key === 'error.status') return `Status: ${params?.code}`;
+      return key;
+    };
+  }
+
+  it('includes translated cause', () => {
+    const details: ConnectionTestErrorDetails = {
+      cause: SyncErrorCause.AUTHENTICATION,
+      statusCode: 401,
+    };
+    const message = formatConnectionTestError(details, makeT());
+    expect(message).toContain('Authentication failed');
+  });
+
+  it('includes provider message when present', () => {
+    const details: ConnectionTestErrorDetails = {
+      cause: SyncErrorCause.AUTHENTICATION,
+      statusCode: 401,
+      providerMessage: 'Bad credentials',
+    };
+    const message = formatConnectionTestError(details, makeT());
+    expect(message).toContain('"Bad credentials"');
+  });
+
+  it('includes status code when present', () => {
+    const details: ConnectionTestErrorDetails = {
+      cause: SyncErrorCause.AUTHENTICATION,
+      statusCode: 401,
+    };
+    const message = formatConnectionTestError(details, makeT());
+    expect(message).toContain('Status: 401');
+  });
+
+  it('omits provider message when not present', () => {
+    const details: ConnectionTestErrorDetails = {
+      cause: SyncErrorCause.NETWORK_ERROR,
+    };
+    const message = formatConnectionTestError(details, makeT());
+    expect(message).not.toContain('"');
+  });
+
+  it('omits status code when not present', () => {
+    const details: ConnectionTestErrorDetails = {
+      cause: SyncErrorCause.NETWORK_ERROR,
+    };
+    const message = formatConnectionTestError(details, makeT());
+    expect(message).not.toContain('Status:');
+  });
+
+  it('formats full message with newlines', () => {
+    const details: ConnectionTestErrorDetails = {
+      cause: SyncErrorCause.AUTHENTICATION,
+      statusCode: 401,
+      providerMessage: 'Bad credentials',
+    };
+    const message = formatConnectionTestError(details, makeT());
+    const lines = message.split('\n');
+    expect(lines).toHaveLength(3);
+    expect(lines[0]).toBe('Authentication failed');
+    expect(lines[1]).toBe('"Bad credentials"');
+    expect(lines[2]).toBe('Status: 401');
   });
 });
 

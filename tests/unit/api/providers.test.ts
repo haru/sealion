@@ -197,6 +197,32 @@ describe("POST /api/providers", () => {
     expect(res.status).toBe(422);
   });
 
+  it("returns errorDetails in 422 response when connection test fails with axios error", async () => {
+    const { GitHubAdapter } = jest.requireMock("@/services/issue-provider/github");
+    const axiosError = Object.assign(new Error("Unauthorized"), {
+      isAxiosError: true,
+      response: { status: 401, data: { message: "Bad credentials" }, statusText: "Unauthorized" },
+    });
+    GitHubAdapter.mockImplementationOnce(() => ({
+      testConnection: jest.fn().mockRejectedValue(axiosError),
+    }));
+
+    const req = makeRequest("POST", {
+      type: "GITHUB",
+      displayName: "Bad GitHub",
+      credentials: { token: "invalid-token" },
+    });
+    const res = await POST(req);
+    const json = await res.json();
+
+    expect(res.status).toBe(422);
+    expect(json.error).toBe("CONNECTION_TEST_FAILED");
+    expect(json.errorDetails).toBeDefined();
+    expect(json.errorDetails.cause).toBe("AUTHENTICATION");
+    expect(json.errorDetails.statusCode).toBe(401);
+    expect(json.errorDetails.providerMessage).toBe("Bad credentials");
+  });
+
   it("returns 401 when not authenticated", async () => {
     mockAuth.mockResolvedValue(null);
 
@@ -457,6 +483,30 @@ describe("PATCH /api/providers/[id]", () => {
     const res = await PATCH(req, { params: Promise.resolve({ id: "p1" }) });
 
     expect(res.status).toBe(422);
+  });
+
+  it("returns errorDetails in 422 response when connection test fails with axios error", async () => {
+    const { GitHubAdapter } = jest.requireMock("@/services/issue-provider/github");
+    const axiosError = Object.assign(new Error("Unauthorized"), {
+      isAxiosError: true,
+      response: { status: 401, data: { message: "Bad credentials" }, statusText: "Unauthorized" },
+    });
+    GitHubAdapter.mockImplementationOnce(() => ({
+      testConnection: jest.fn().mockRejectedValue(axiosError),
+    }));
+
+    mockFindFirst.mockResolvedValue({ id: "p1", userId: "user-1", type: "GITHUB", encryptedCredentials: "enc", baseUrl: null });
+    mockDecrypt.mockReturnValue(JSON.stringify({ token: "old-token" }));
+
+    const req = makeRequest("PATCH", { displayName: "X", changeCredentials: false }, "http://localhost/api/providers/p1");
+    const res = await PATCH(req, { params: Promise.resolve({ id: "p1" }) });
+    const json = await res.json();
+
+    expect(res.status).toBe(422);
+    expect(json.error).toBe("CONNECTION_TEST_FAILED");
+    expect(json.errorDetails).toBeDefined();
+    expect(json.errorDetails.cause).toBe("AUTHENTICATION");
+    expect(json.errorDetails.statusCode).toBe(401);
   });
 
   it("strips baseUrl from credentials before encrypting on PATCH (Jira)", async () => {

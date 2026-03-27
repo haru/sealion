@@ -173,7 +173,11 @@ export default function ProviderForm({ onSubmit }: ProviderFormProps) {
       <input type="text" name="username" style={{ display: "none" }} autoComplete="username" readOnly />
       <input type="password" name="password" style={{ display: "none" }} autoComplete="current-password" readOnly />
       <Stack spacing={2}>
-        {error && <Alert severity="error">{error}</Alert>}
+        {error && (
+          <Alert severity="error">
+            <Box component="span" sx={{ display: "block", whiteSpace: "pre-line" }}>{error}</Box>
+          </Alert>
+        )}
 
         <FormControl fullWidth required>
           <InputLabel>{t("fields.type")}</InputLabel>
