@@ -591,4 +591,43 @@ describe("syncProviders", () => {
     expect(errors[0].projectName).toBe("Repo 1");
     expect(errors[0].cause).toBe(SyncErrorCause.UNKNOWN);
   });
+
+  it("persists syncError on project records when credential decryption fails", async () => {
+    mockFindMany.mockResolvedValue([
+      {
+        id: "provider-1",
+        type: "GITHUB",
+        displayName: "Broken Provider",
+        encryptedCredentials: "corrupted",
+        userId: "user-1",
+        projects: [
+          { id: "project-1", externalId: "owner/repo1", displayName: "Repo 1", includeUnassigned: false },
+          { id: "project-2", externalId: "owner/repo2", displayName: "Repo 2", includeUnassigned: false },
+        ],
+      },
+    ]);
+
+    const { decrypt } = jest.requireMock("@/lib/encryption");
+    decrypt.mockImplementation((encrypted: string) => {
+      if (encrypted === "corrupted") {
+        throw new Error("Decryption failed");
+      }
+      return JSON.stringify({ token: "test-token" });
+    });
+
+    (prisma.project.update as jest.Mock).mockResolvedValue({});
+
+    const errors = await syncProviders("user-1");
+
+    expect(errors).toHaveLength(2);
+    expect(prisma.project.update).toHaveBeenCalledTimes(2);
+    expect(prisma.project.update).toHaveBeenCalledWith({
+      where: { id: "project-1" },
+      data: { syncError: expect.any(String), lastSyncedAt: expect.any(Date) },
+    });
+    expect(prisma.project.update).toHaveBeenCalledWith({
+      where: { id: "project-2" },
+      data: { syncError: expect.any(String), lastSyncedAt: expect.any(Date) },
+    });
+  });
 });

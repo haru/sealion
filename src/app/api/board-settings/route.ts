@@ -107,7 +107,8 @@ export async function PUT(req: Request) {
         sortOrder: sortOrder as SortCriterion[],
       },
     });
-  } catch {
+  } catch (err) {
+    console.error(`[board-settings] PUT failed for userId=${session.user.id}`, err instanceof Error ? err.message : err);
     return fail("INTERNAL_ERROR", 500);
   }
 

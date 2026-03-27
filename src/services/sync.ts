@@ -45,11 +45,27 @@ export async function syncProviders(userId: string): Promise<SyncErrorInfo[]> {
             const projectName = project.displayName || project.externalId;
             return createSyncErrorInfo(providerName, projectName, decryptErr);
           });
+
+          await Promise.all(
+            provider.projects.map((project) =>
+              prisma.project.update({
+                where: { id: project.id },
+                data: {
+                  syncError: JSON.stringify(createSyncErrorInfo(
+                    providerName,
+                    project.displayName || project.externalId,
+                    decryptErr,
+                  )),
+                  lastSyncedAt: new Date(),
+                },
+              })
+            )
+          );
+
           return credentialErrors;
         }
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const credentials: any = { ...decryptedCredentials, ...(provider.baseUrl ? { baseUrl: provider.baseUrl } : {}) };
+        const credentials = { ...decryptedCredentials, ...(provider.baseUrl ? { baseUrl: provider.baseUrl } : {}) };
         const adapter = createAdapter(provider.type, credentials as ProviderCredentials);
 
         const projectErrorLists = await Promise.all(

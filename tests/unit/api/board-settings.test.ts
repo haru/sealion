@@ -204,4 +204,20 @@ describe("PUT /api/board-settings", () => {
     expect(res.status).toBe(400);
     expect(json.error).toBe("INVALID_INPUT");
   });
+
+  it("logs error and returns 500 when prisma upsert throws", async () => {
+    const consoleSpy = jest.spyOn(console, "error").mockImplementation();
+    mockUpsert.mockRejectedValue(new Error("DB connection lost"));
+
+    const res = await PUT(makePutRequest({ showCreatedAt: true, showUpdatedAt: false, sortOrder: ["dueDate_asc"] }));
+    const json = await res.json();
+
+    expect(res.status).toBe(500);
+    expect(json.error).toBe("INTERNAL_ERROR");
+    expect(consoleSpy).toHaveBeenCalledWith(
+      expect.stringContaining("user-1"),
+      expect.anything()
+    );
+    consoleSpy.mockRestore();
+  });
 });
