@@ -1,7 +1,7 @@
 import pLimit from "p-limit";
 import { prisma } from "@/lib/db";
 import { decrypt } from "@/lib/encryption";
-import { createAdapter } from "@/services/issue-provider/factory";
+import { createAdapter, ProviderCredentials } from "@/services/issue-provider/factory";
 import { SyncErrorInfo } from "@/lib/types";
 import { createSyncErrorInfo } from "@/lib/error-utils";
 
@@ -31,12 +31,26 @@ export async function syncProviders(userId: string): Promise<SyncErrorInfo[]> {
 
   const providerErrorLists = await Promise.all(
     providers.map((provider) =>
-      providerLimit(async () => {
-        const decryptedCredentials = JSON.parse(decrypt(provider.encryptedCredentials));
-        const credentials = { ...decryptedCredentials, ...(provider.baseUrl ? { baseUrl: provider.baseUrl } : {}) };
-        const adapter = createAdapter(provider.type, credentials);
-
+      providerLimit(async (): Promise<SyncErrorInfo[]> => {
         const providerName = provider.displayName || provider.type;
+
+        let decryptedCredentials: Record<string, unknown>;
+        try {
+          decryptedCredentials = JSON.parse(decrypt(provider.encryptedCredentials));
+        } catch (decryptErr) {
+          const technicalMessage = decryptErr instanceof Error ? decryptErr.message : String(decryptErr);
+          console.error(`[sync] ${providerName}: credential decryption failed — ${technicalMessage}`);
+
+          const credentialErrors = provider.projects.map((project) => {
+            const projectName = project.displayName || project.externalId;
+            return createSyncErrorInfo(providerName, projectName, decryptErr);
+          });
+          return credentialErrors;
+        }
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const credentials: any = { ...decryptedCredentials, ...(provider.baseUrl ? { baseUrl: provider.baseUrl } : {}) };
+        const adapter = createAdapter(provider.type, credentials as ProviderCredentials);
 
         const projectErrorLists = await Promise.all(
           provider.projects.map((project) =>
@@ -46,17 +60,12 @@ export async function syncProviders(userId: string): Promise<SyncErrorInfo[]> {
 
                 let allIssues = assignedIssues;
                 if (project.includeUnassigned) {
-                  try {
-                    const unassignedIssues = await adapter.fetchUnassignedIssues(project.externalId);
-                    const assignedIds = new Set(assignedIssues.map((i) => i.externalId));
-                    const filteredUnassigned = unassignedIssues.filter(
-                      (i) => !assignedIds.has(i.externalId)
-                    );
-                    allIssues = [...assignedIssues, ...filteredUnassigned];
-                  } catch (unassignedError) {
-                    // Treat fetchUnassignedIssues failure as fatal to avoid deleting valid unassigned issues.
-                    throw unassignedError;
-                  }
+                  const unassignedIssues = await adapter.fetchUnassignedIssues(project.externalId);
+                  const assignedIds = new Set(assignedIssues.map((i) => i.externalId));
+                  const filteredUnassigned = unassignedIssues.filter(
+                    (i) => !assignedIds.has(i.externalId)
+                  );
+                  allIssues = [...assignedIssues, ...filteredUnassigned];
                 }
 
                 const now = new Date();

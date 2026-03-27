@@ -26,6 +26,7 @@ export default function DashboardShell({ email, children }: DashboardShellProps)
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [drawerOpen, setDrawerOpen] = useState(false);
   const t = useTranslations("auth");
+  const tA11y = useTranslations("a11y");
 
   return (
     <MessageQueueProvider>
@@ -35,7 +36,7 @@ export default function DashboardShell({ email, children }: DashboardShellProps)
           {isMobile && (
             <IconButton
               color="inherit"
-              aria-label="open menu"
+              aria-label={tA11y("openMenu")}
               edge="start"
               onClick={() => setDrawerOpen(true)}
               sx={{ mr: 1 }}
@@ -52,7 +53,7 @@ export default function DashboardShell({ email, children }: DashboardShellProps)
             {email}
           </Typography>
           <Link href="/settings/providers">
-            <IconButton color="inherit" aria-label="settings">
+            <IconButton color="inherit" aria-label={tA11y("settings")}>
               <SettingsIcon />
             </IconButton>
           </Link>

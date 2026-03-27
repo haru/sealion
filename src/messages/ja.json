@@ -215,5 +215,9 @@
       "warning": "警告",
       "error": "エラー"
     }
+  },
+  "a11y": {
+    "openMenu": "メニューを開く",
+    "settings": "設定"
   }
 }

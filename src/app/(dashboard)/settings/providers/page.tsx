@@ -18,7 +18,7 @@ import { useTranslations } from "next-intl";
 import ProviderList from "@/components/providers/ProviderList";
 import AddProviderDialog from "@/components/providers/AddProviderDialog";
 import type { ProviderFormData } from "@/components/providers/ProviderForm";
-import { useMessageQueue } from "@/components/MessageQueue";
+import { useMessageQueue } from "@/hooks/useMessageQueue";
 
 interface Provider {
   id: string;

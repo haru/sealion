@@ -7,7 +7,7 @@ import ErrorIcon from "@mui/icons-material/Error";
 import WarningIcon from "@mui/icons-material/Warning";
 import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useRef } from "react";
-import { useMessageQueue } from "@/components/MessageQueue";
+import { useMessageQueue } from "@/hooks/useMessageQueue";
 import { SyncErrorCause, SyncErrorInfo } from "@/lib/types";
 import { formatSyncErrorMessage, parseSyncErrorInfo } from "@/lib/error-utils";
 
@@ -44,7 +44,7 @@ export default function SyncStatus({ providers, isSyncing, onSyncNow }: SyncStat
     [allProjects]
   );
 
-  const prevIsSyncing = useRef(isSyncing);
+  const prevIsSyncingRef = useRef(isSyncing);
   /** Tracks whether the initial-mount notification has already been emitted. */
   const initialNotificationSent = useRef(false);
 
@@ -66,11 +66,15 @@ export default function SyncStatus({ providers, isSyncing, onSyncNow }: SyncStat
     }
 
     // On subsequent renders: emit notifications when a sync transitions from running to finished.
-    const wasJustFinished = prevIsSyncing.current && !isSyncing;
-    prevIsSyncing.current = isSyncing;
+    const wasJustFinished = prevIsSyncingRef.current && !isSyncing;
     if (!wasJustFinished) return;
     emitErrors();
   }, [isSyncing, allSyncErrors, addMessage, tSync]);
+
+  // Update ref after the effect so it always reflects the latest render value.
+  useEffect(() => {
+    prevIsSyncingRef.current = isSyncing;
+  }, [isSyncing]);
 
   if (providers.length === 0) return null;
 

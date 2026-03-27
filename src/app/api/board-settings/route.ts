@@ -91,20 +91,25 @@ export async function PUT(req: Request) {
     return fail("INVALID_INPUT", 400);
   }
 
-  const saved = await prisma.boardSettings.upsert({
-    where: { userId: session.user.id },
-    create: {
-      userId: session.user.id,
-      showCreatedAt,
-      showUpdatedAt,
-      sortOrder: sortOrder as SortCriterion[],
-    },
-    update: {
-      showCreatedAt,
-      showUpdatedAt,
-      sortOrder: sortOrder as SortCriterion[],
-    },
-  });
+  let saved;
+  try {
+    saved = await prisma.boardSettings.upsert({
+      where: { userId: session.user.id },
+      create: {
+        userId: session.user.id,
+        showCreatedAt,
+        showUpdatedAt,
+        sortOrder: sortOrder as SortCriterion[],
+      },
+      update: {
+        showCreatedAt,
+        showUpdatedAt,
+        sortOrder: sortOrder as SortCriterion[],
+      },
+    });
+  } catch {
+    return fail("INTERNAL_ERROR", 500);
+  }
 
   const savedSortOrder = Array.isArray(saved.sortOrder)
     ? (saved.sortOrder as SortCriterion[])

@@ -77,6 +77,76 @@ describe("GET /api/board-settings", () => {
     expect(json.data.sortOrder).toEqual(["providerUpdatedAt_desc"]);
     expect(json.error).toBeNull();
   });
+
+  it("sanitizes sortOrder with invalid values mixed in", async () => {
+    mockFindUnique.mockResolvedValue({
+      ...STORED_RECORD,
+      sortOrder: ["dueDate_asc", "invalid_criterion", "providerUpdatedAt_desc"],
+    });
+
+    const res = await GET();
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(json.data.sortOrder).toEqual(["dueDate_asc", "providerUpdatedAt_desc"]);
+    expect(json.error).toBeNull();
+  });
+
+  it("deduplicates sortOrder from DB", async () => {
+    mockFindUnique.mockResolvedValue({
+      ...STORED_RECORD,
+      sortOrder: ["dueDate_asc", "dueDate_asc"],
+    });
+
+    const res = await GET();
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(json.data.sortOrder).toEqual(["dueDate_asc"]);
+    expect(json.error).toBeNull();
+  });
+
+  it("falls back to defaults when sortOrder exceeds MAX_SORT_CRITERIA", async () => {
+    mockFindUnique.mockResolvedValue({
+      ...STORED_RECORD,
+      sortOrder: ["dueDate_asc", "providerUpdatedAt_desc", "providerCreatedAt_desc", "dueDate_asc"],
+    });
+
+    const res = await GET();
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(json.data.sortOrder).toEqual(["dueDate_asc", "providerUpdatedAt_desc", "providerCreatedAt_desc"]);
+    expect(json.error).toBeNull();
+  });
+
+  it("falls back to defaults when sortOrder is non-array", async () => {
+    mockFindUnique.mockResolvedValue({
+      ...STORED_RECORD,
+      sortOrder: "not_an_array",
+    });
+
+    const res = await GET();
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(json.data.sortOrder).toEqual(DEFAULT_RESPONSE.sortOrder);
+    expect(json.error).toBeNull();
+  });
+
+  it("falls back to defaults when sortOrder is empty array", async () => {
+    mockFindUnique.mockResolvedValue({
+      ...STORED_RECORD,
+      sortOrder: [],
+    });
+
+    const res = await GET();
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(json.data.sortOrder).toEqual(DEFAULT_RESPONSE.sortOrder);
+    expect(json.error).toBeNull();
+  });
 });
 
 describe("PUT /api/board-settings", () => {

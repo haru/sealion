@@ -98,13 +98,23 @@ async function handlePinnedToggle(id: string, pinned: boolean, userId: string) {
 
   if (!issue) return fail("FORBIDDEN", 403);
 
-  const updated = await prisma.issue.update({
-    where: { id },
-    data: { pinned },
-    select: { id: true, pinned: true },
-  });
+  try {
+    const updated = await prisma.issue.update({
+      where: { id },
+      data: { pinned },
+      select: { id: true, pinned: true },
+    });
 
-  return ok(updated);
+    return ok(updated);
+  } catch (err) {
+    // Handle concurrent deletion (P2025) gracefully.
+    const isRecordNotFound =
+      typeof err === "object" &&
+      err !== null &&
+      (err as { code?: string }).code === "P2025";
+    if (isRecordNotFound) return fail("NOT_FOUND", 404);
+    throw err;
+  }
 }
 
 /**
