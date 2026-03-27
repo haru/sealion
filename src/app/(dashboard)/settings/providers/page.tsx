@@ -19,7 +19,7 @@ import ProviderList from "@/components/providers/ProviderList";
 import AddProviderDialog from "@/components/providers/AddProviderDialog";
 import type { ProviderFormData } from "@/components/providers/ProviderForm";
 import { useMessageQueue } from "@/hooks/useMessageQueue";
-import { formatConnectionTestError } from "@/lib/error-utils";
+import { formatProviderApiError } from "@/lib/error-utils";
 
 interface Provider {
   id: string;
@@ -69,10 +69,7 @@ export default function ProvidersPage() {
     const json = await res.json();
 
     if (!res.ok) {
-      if (json.error === "CONNECTION_TEST_FAILED" && json.errorDetails) {
-        throw new Error(formatConnectionTestError(json.errorDetails, tSync));
-      }
-      throw new Error(json.error ?? tCommon("error"));
+      throw new Error(formatProviderApiError(json, tSync, tCommon("error")));
     }
 
     await fetchProviders();

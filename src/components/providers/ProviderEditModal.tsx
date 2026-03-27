@@ -16,7 +16,7 @@ import {
   CircularProgress,
 } from "@mui/material";
 import { useTranslations } from "next-intl";
-import { formatConnectionTestError } from "@/lib/error-utils";
+import { formatProviderApiError } from "@/lib/error-utils";
 
 type ProviderType = "GITHUB" | "JIRA" | "REDMINE";
 
@@ -81,10 +81,7 @@ export default function ProviderEditModal({
       const json = await res.json();
 
       if (!res.ok) {
-        if (json.error === "CONNECTION_TEST_FAILED" && json.errorDetails) {
-          throw new Error(formatConnectionTestError(json.errorDetails, tSync));
-        }
-        throw new Error(json.error ?? tCommon("error"));
+        throw new Error(formatProviderApiError(json, tSync, tCommon("error")));
       }
 
       onUpdated(json.data);

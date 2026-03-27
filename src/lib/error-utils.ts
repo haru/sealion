@@ -220,7 +220,7 @@ export function createConnectionTestErrorDetails(error: unknown): ConnectionTest
   const cause = classifyAxiosError(error);
   const statusCode = isAxiosError(error) ? error.response?.status : undefined;
   const providerMessage = extractProviderMessage(error);
-  return { cause, ...(statusCode !== undefined ? { statusCode } : {}), ...(providerMessage ? { providerMessage } : {}) };
+  return { cause, statusCode, providerMessage };
 }
 
 /** Maps each SyncErrorCause to its translation key, relative to the "sync" namespace. */
@@ -291,3 +291,41 @@ export function formatConnectionTestError(
   }
   return lines.join('\n');
 }
+
+/**
+ * Shape of a JSON response body returned by provider API routes on error.
+ */
+interface ProviderApiErrorResponse {
+  error?: string | null;
+  errorDetails?: ConnectionTestErrorDetails | unknown;
+}
+
+/**
+ * Extracts a user-friendly error message from a provider API error response.
+ * Handles the special `CONNECTION_TEST_FAILED` code with structured details,
+ * falling back to the raw error string or a supplied default.
+ *
+ * @param json - The parsed JSON response from the provider API.
+ * @param tSync - Translation function scoped to the "sync" namespace.
+ * @param fallbackMessage - Default message when no error information is available.
+ * @returns A formatted error message string safe for display.
+ */
+export function formatProviderApiError(
+  json: ProviderApiErrorResponse,
+  tSync: (key: string, params?: Record<string, string | number | Date>) => string,
+  fallbackMessage: string,
+): string {
+  if (
+    json.error === 'CONNECTION_TEST_FAILED' &&
+    json.errorDetails != null &&
+    typeof json.errorDetails === 'object' &&
+    'cause' in (json.errorDetails as object)
+  ) {
+    return formatConnectionTestError(json.errorDetails as ConnectionTestErrorDetails, tSync);
+  }
+  if (json.error === 'CONNECTION_TEST_FAILED') {
+    return fallbackMessage;
+  }
+  return json.error ?? fallbackMessage;
+}
+

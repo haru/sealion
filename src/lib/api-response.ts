@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 
-export interface ApiResponse<T> {
+export interface ApiResponse<T, D = never> {
   data: T | null;
   error: string | null;
+  /** Optional structured error details attached to error responses. */
+  errorDetails?: D;
 }
 
 /**
@@ -21,4 +23,15 @@ export function ok<T>(data: T, status = 200): NextResponse<ApiResponse<T>> {
  */
 export function fail(error: string, status: number): NextResponse<ApiResponse<null>> {
   return NextResponse.json({ data: null, error }, { status });
+}
+
+/**
+ * Returns an error JSON response with additional structured details.
+ *
+ * @param error - The error message.
+ * @param details - Structured error details to include in the response.
+ * @param status - HTTP status code.
+ */
+export function failWithDetails<D>(error: string, details: D, status: number): NextResponse<ApiResponse<null, D>> {
+  return NextResponse.json({ data: null, error, errorDetails: details }, { status });
 }

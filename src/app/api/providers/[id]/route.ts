@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { encrypt, decrypt } from "@/lib/encryption";
-import { ok, fail } from "@/lib/api-response";
+import { ok, fail, failWithDetails } from "@/lib/api-response";
 import { createAdapter, getProviderIconUrl } from "@/services/issue-provider/factory";
 import { ProviderType } from "@prisma/client";
 import { createConnectionTestErrorDetails } from "@/lib/error-utils";
@@ -90,7 +90,7 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
   } catch (error) {
     console.error("[provider] Connection test failed:", error instanceof Error ? error.message : String(error));
     const errorDetails = createConnectionTestErrorDetails(error);
-    return NextResponse.json({ data: null, error: "CONNECTION_TEST_FAILED", errorDetails }, { status: 422 });
+    return failWithDetails("CONNECTION_TEST_FAILED", errorDetails, 422);
   }
 
   const updated = await prisma.issueProvider.update({

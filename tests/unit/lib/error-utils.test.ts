@@ -6,6 +6,7 @@ import {
   createSyncErrorInfo,
   extractProviderMessage,
   formatConnectionTestError,
+  formatProviderApiError,
   formatSyncErrorMessage,
   parseSyncErrorInfo,
 } from '@/lib/error-utils';
@@ -439,6 +440,48 @@ describe('formatConnectionTestError', () => {
     expect(lines[0]).toBe('Authentication failed');
     expect(lines[1]).toBe('"Bad credentials"');
     expect(lines[2]).toBe('Status: 401');
+  });
+});
+
+describe('formatProviderApiError', () => {
+  function makeT(overrides: Record<string, string> = {}) {
+    return (key: string, params?: Record<string, string | number | Date>) => {
+      if (key in overrides) return overrides[key];
+      if (key === 'error.cause.authentication') return 'Authentication failed';
+      if (key === 'error.cause.network_error') return 'Connection failed';
+      if (key === 'error.cause.unknown') return 'Unknown error';
+      return key;
+    };
+  }
+
+  it('returns formatted connection test error when error is CONNECTION_TEST_FAILED with details', () => {
+    const json = { error: 'CONNECTION_TEST_FAILED', errorDetails: { cause: SyncErrorCause.AUTHENTICATION, statusCode: 401 } };
+    const result = formatProviderApiError(json, makeT(), 'Default error');
+    expect(result).toContain('Authentication failed');
+  });
+
+  it('returns json.error when error is not CONNECTION_TEST_FAILED', () => {
+    const json = { error: 'SOME_OTHER_ERROR' };
+    const result = formatProviderApiError(json, makeT(), 'Default error');
+    expect(result).toBe('SOME_OTHER_ERROR');
+  });
+
+  it('returns fallback when error is null', () => {
+    const json = { error: null };
+    const result = formatProviderApiError(json, makeT(), 'Default error');
+    expect(result).toBe('Default error');
+  });
+
+  it('returns fallback when json.error is undefined', () => {
+    const json = {};
+    const result = formatProviderApiError(json, makeT(), 'Default error');
+    expect(result).toBe('Default error');
+  });
+
+  it('returns fallback when errorDetails has no cause field', () => {
+    const json = { error: 'CONNECTION_TEST_FAILED', errorDetails: { foo: 'bar' } };
+    const result = formatProviderApiError(json, makeT(), 'Default error');
+    expect(result).toBe('Default error');
   });
 });
 
