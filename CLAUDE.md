@@ -85,6 +85,28 @@ Runs on every non-static request. Enforces:
 
 All UI strings live in `src/messages/en.json` and `src/messages/ja.json`. Use `next-intl`'s `useTranslations` / `getTranslations` — never hardcode display strings.
 
+### User-facing messages (notifications)
+
+Use the shared `MessageQueueProvider` / `useMessageQueue` hook for all transient notifications. **Never add standalone `Snackbar` or floating `Alert` components.**
+
+```tsx
+const { addMessage } = useMessageQueue();
+
+addMessage("information", t("someSuccess")); // success / info
+addMessage("warning",     t("someWarning")); // non-critical warning
+addMessage("error",       t("someError"));   // operation failed
+```
+
+`MessageQueueProvider` is mounted in `DashboardShell` and covers all `(dashboard)` routes.
+
+**When to use `useMessageQueue` vs. inline `Alert`:**
+
+| Situation | Pattern |
+|-----------|---------|
+| Transient result of a user action (save, delete, sync, …) | `useMessageQueue` |
+| Form validation / submission error (shown inside the form) | Inline `<Alert>` within the form |
+| Auth page errors (login, signup — no Provider available) | Inline `<Alert>` within the page |
+
 ## Development Rules
 
 ### Language
@@ -162,14 +184,24 @@ CREDENTIALS_ENCRYPTION_KEY    # 64-char hex string (32 bytes) for AES-256-GCM
 
 Uses **VSCode Dev Containers**. Open in the container before starting development.
 
+### Playwright MCP Server — accessing the local app
+
+This environment runs in a devcontainer with a separate `browserless` container for Playwright MCP. When using Playwright MCP tools to test or interact with the local dev server, **do not use `http://localhost:3000`**. The browserless container cannot resolve `localhost` as the app container.
+
+Use `http://app:3000` instead — `app` is the hostname of the Next.js dev container as defined in `.devcontainer/docker-compose.yml`.
+
 
 
 ## Active Technologies
-- TypeScript 5 / Node.js 20 LTS + Next.js 16 (App Router), React, MUI v7, Prisma 7, next-intl 4, Jest, Playwright, dnd-kit
-- PostgreSQL 16 via Prisma 7
+- TypeScript 5 / Node.js 20 LTS, Next.js 16 (App Router), React, MUI v7, Prisma 7 with PostgreSQL 16, next-intl 4, Jest, Playwright, dnd-kit; recent additions include the `BoardSettings` table (013-board-settings).
+- TypeScript 5 / Node.js 20 LTS + axios (existing), hpagent (new — provides `HttpProxyAgent` / `HttpsProxyAgent` for Node.js http/https stacks) (016-proxy-support)
+- N/A — no database schema changes (016-proxy-support)
+- TypeScript 5 / Node.js 20 LTS + Next.js 16 (App Router), MUI v7, Prisma 7, next-intl 4, dnd-kit (既存) (018-task-pin)
+- PostgreSQL 16 via Prisma 7 — `Issue` テーブルに `pinned Boolean` カラム追加 (018-task-pin)
 
 ## Recent Changes
 - 009-task-display-cleanup: Removed `priority` field from Issue model; added `providerCreatedAt` / `providerUpdatedAt` fields; added Today tasks area with drag-and-drop reorder (dnd-kit)
 - 010-sync-throttle: Introduced sync throttling logic and related tests; no database schema changes required.
 - 011-close-issue-modal: Added `addComment()` to adapter interface; new Complete Issue modal; no schema changes required.
 - 012-remove-issue-status: Removed `status` column from Issue table (`ALTER TABLE Issue DROP COLUMN status; DROP TYPE IssueStatus`); removed `reopenIssue` from adapter interface; closing an issue now always deletes it from the local DB.
+- 015-provider-ui-modal: Replaced inline ProviderForm with AddProviderDialog modal; no schema or API changes.

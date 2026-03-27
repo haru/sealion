@@ -14,6 +14,8 @@ interface Issue {
   isUnassigned: boolean;
   providerCreatedAt: string | null;
   providerUpdatedAt: string | null;
+  /** Whether the issue is pinned to the top of the list. */
+  pinned: boolean;
   project: {
     displayName: string;
     issueProvider: { iconUrl: string | null; displayName: string };
@@ -34,6 +36,10 @@ interface TodoListProps {
   loading?: boolean;
   /** Called when the user navigates to a different page. */
   onPageChange?: (page: number) => void;
+  /** When true, the provider creation timestamp chip is rendered on each card. Defaults to false. */
+  showCreatedAt?: boolean;
+  /** When true, the provider update timestamp chip is rendered on each card. Defaults to false. */
+  showUpdatedAt?: boolean;
   /**
    * Called when the user clicks the "Complete" button on an issue card.
    * @param id - Internal issue ID.
@@ -41,18 +47,27 @@ interface TodoListProps {
   onComplete?: (id: string) => void;
   /** Called when the user adds an issue to today's task list. */
   onAddToToday?: (id: string) => void;
+  /**
+   * Called when the user toggles the pin state of an issue.
+   * @param id - Internal issue ID.
+   * @param pinned - The new pinned state to apply.
+   */
+  onTogglePin?: (id: string, pinned: boolean) => void;
 }
 
-/** Paginated issue list with loading skeleton, complete button, and add-to-today callbacks. */
+/** Paginated issue list with loading skeleton, pin, complete, and add-to-today callbacks. */
 export default function TodoList({
   items,
   total,
   page,
   limit,
   loading,
+  showCreatedAt,
+  showUpdatedAt,
   onPageChange,
   onComplete,
   onAddToToday,
+  onTogglePin,
 }: TodoListProps) {
   const t = useTranslations("todo");
   const totalPages = Math.ceil(total / limit);
@@ -88,8 +103,12 @@ export default function TodoList({
           providerIconUrl={issue.project.issueProvider.iconUrl}
           providerName={issue.project.issueProvider.displayName}
           projectName={issue.project.displayName}
+          showCreatedAt={showCreatedAt}
+          showUpdatedAt={showUpdatedAt}
+          pinned={issue.pinned}
           onComplete={onComplete}
           onAddToToday={onAddToToday}
+          onTogglePin={onTogglePin}
         />
       ))}
 

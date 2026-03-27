@@ -40,4 +40,17 @@ const config: Config = {
   },
 };
 
-export default createJestConfig(config);
+// createJestConfig overrides transformIgnorePatterns, so we wrap it
+// to re-apply a pattern that ignores node_modules by default but
+// allows next-intl (ESM) to be transformed by Babel/SWC.
+const jestConfig = createJestConfig(config);
+const resolvedConfig = async () => {
+  const base = await (jestConfig as () => Promise<Config>)();
+  return {
+    ...base,
+    transformIgnorePatterns: [
+      "/node_modules/(?!(next-intl)/)",
+    ],
+  };
+};
+export default resolvedConfig;

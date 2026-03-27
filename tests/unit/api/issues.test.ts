@@ -95,11 +95,11 @@ describe("GET /api/issues", () => {
     );
   });
 
-  it("orders by providerCreatedAt desc nulls last as fourth orderBy key", async () => {
+  it("sortOrder=providerCreatedAt_desc sorts by providerCreatedAt desc nulls last", async () => {
     mockFindMany.mockResolvedValue([]);
     mockCount.mockResolvedValue(0);
 
-    await GET(makeRequest());
+    await GET(makeRequest("?sortOrder=providerCreatedAt_desc"));
 
     const call = mockFindMany.mock.calls[0][0];
     expect(call.orderBy).toEqual(
@@ -147,7 +147,8 @@ describe("GET /api/issues", () => {
     await GET(makeRequest());
 
     const call = mockFindMany.mock.calls[0][0];
-    expect(call.select).not.toHaveProperty("priority");
+    const selectKeys = Object.keys(call.select ?? {});
+    expect(selectKeys).not.toContain("priority");
   });
 
   it("includes providerCreatedAt and providerUpdatedAt in select", async () => {
@@ -159,5 +160,146 @@ describe("GET /api/issues", () => {
     const call = mockFindMany.mock.calls[0][0];
     expect(call.select.providerCreatedAt).toBe(true);
     expect(call.select.providerUpdatedAt).toBe(true);
+  });
+
+  it("uses pinned: desc as the first orderBy entry regardless of sort params", async () => {
+    mockFindMany.mockResolvedValue([]);
+    mockCount.mockResolvedValue(0);
+
+    await GET(makeRequest());
+
+    const call = mockFindMany.mock.calls[0][0];
+    expect(call.orderBy[0]).toEqual({ pinned: "desc" });
+  });
+
+  it("uses pinned: desc as first entry even when explicit sortOrder param is provided", async () => {
+    mockFindMany.mockResolvedValue([]);
+    mockCount.mockResolvedValue(0);
+
+    await GET(makeRequest("?sortOrder=providerUpdatedAt_desc"));
+
+    const call = mockFindMany.mock.calls[0][0];
+    expect(call.orderBy[0]).toEqual({ pinned: "desc" });
+  });
+
+  it("includes pinned in select clause", async () => {
+    mockFindMany.mockResolvedValue([]);
+    mockCount.mockResolvedValue(0);
+
+    await GET(makeRequest());
+
+    const call = mockFindMany.mock.calls[0][0];
+    expect(call.select.pinned).toBe(true);
+  });
+
+  it("returns pinned field in each issue item", async () => {
+    const issueWithPin = {
+      ...OPEN_ISSUE,
+      pinned: true,
+      todayFlag: false,
+      todayOrder: null,
+      todayAddedAt: null,
+      providerCreatedAt: null,
+      providerUpdatedAt: null,
+    };
+    mockFindMany.mockResolvedValue([issueWithPin]);
+    mockCount.mockResolvedValue(1);
+
+    const res = await GET(makeRequest());
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(json.data.items[0].pinned).toBe(true);
+  });
+
+  describe("sortOrder query parameter", () => {
+    it("no sortOrder param uses default order: pinned first, then dueDate, then providerUpdatedAt", async () => {
+      mockFindMany.mockResolvedValue([]);
+      mockCount.mockResolvedValue(0);
+
+      await GET(makeRequest());
+
+      const call = mockFindMany.mock.calls[0][0];
+      const orderByKeys = call.orderBy.map((o: Record<string, unknown>) => Object.keys(o)[0]);
+      expect(orderByKeys[0]).toBe("pinned");
+      expect(orderByKeys[1]).toBe("dueDate");
+      expect(orderByKeys[2]).toBe("providerUpdatedAt");
+    });
+
+    it("sortOrder=providerUpdatedAt_desc uses pinned first, then providerUpdatedAt", async () => {
+      mockFindMany.mockResolvedValue([]);
+      mockCount.mockResolvedValue(0);
+
+      await GET(makeRequest("?sortOrder=providerUpdatedAt_desc"));
+
+      const call = mockFindMany.mock.calls[0][0];
+      const orderByKeys = call.orderBy.map((o: Record<string, unknown>) => Object.keys(o)[0]);
+      expect(orderByKeys[0]).toBe("pinned");
+      expect(orderByKeys[1]).toBe("providerUpdatedAt");
+    });
+
+    it("sortOrder=dueDate_asc,providerUpdatedAt_desc uses pinned first, then dueDate with NULLS LAST", async () => {
+      mockFindMany.mockResolvedValue([]);
+      mockCount.mockResolvedValue(0);
+
+      await GET(makeRequest("?sortOrder=dueDate_asc%2CproviderUpdatedAt_desc"));
+
+      const call = mockFindMany.mock.calls[0][0];
+      const orderByKeys = call.orderBy.map((o: Record<string, unknown>) => Object.keys(o)[0]);
+      expect(orderByKeys[0]).toBe("pinned");
+      expect(orderByKeys[1]).toBe("dueDate");
+      expect(orderByKeys[2]).toBe("providerUpdatedAt");
+      expect(call.orderBy[1].dueDate).toMatchObject({ sort: "asc", nulls: "last" });
+    });
+
+    it("invalid sortOrder value falls back to default (pinned first, then dueDate)", async () => {
+      mockFindMany.mockResolvedValue([]);
+      mockCount.mockResolvedValue(0);
+
+      await GET(makeRequest("?sortOrder=invalid_criterion"));
+
+      const call = mockFindMany.mock.calls[0][0];
+      const orderByKeys = call.orderBy.map((o: Record<string, unknown>) => Object.keys(o)[0]);
+      expect(orderByKeys[0]).toBe("pinned");
+      expect(orderByKeys[1]).toBe("dueDate");
+    });
+
+    it("deduplicates repeated sortOrder values", async () => {
+      mockFindMany.mockResolvedValue([]);
+      mockCount.mockResolvedValue(0);
+
+      await GET(makeRequest("?sortOrder=dueDate_asc%2CdueDate_asc%2CproviderUpdatedAt_desc"));
+
+      const call = mockFindMany.mock.calls[0][0];
+      const orderByKeys = call.orderBy.map((o: Record<string, unknown>) => Object.keys(o)[0]);
+      // Pinned always first + deduplicated user criteria + tiebreaker (id)
+      expect(orderByKeys).toEqual(["pinned", "dueDate", "providerUpdatedAt", "id"]);
+    });
+
+    it("caps excessive sortOrder values at MAX_SORT_CRITERIA entries (excluding pinned prefix and tiebreaker)", async () => {
+      mockFindMany.mockResolvedValue([]);
+      mockCount.mockResolvedValue(0);
+
+      const manyValues = Array(10).fill("dueDate_asc,providerUpdatedAt_desc,providerCreatedAt_desc").join(",");
+      await GET(makeRequest(`?sortOrder=${encodeURIComponent(manyValues)}`));
+
+      const call = mockFindMany.mock.calls[0][0];
+      // pinned prefix + at most MAX_SORT_CRITERIA user criteria + 1 tiebreaker
+      expect(call.orderBy.length).toBeLessThanOrEqual(5);
+      // The last entry must be the tiebreaker
+      const lastKey = Object.keys(call.orderBy[call.orderBy.length - 1])[0];
+      expect(lastKey).toBe("id");
+    });
+
+    it("always appends id tiebreaker as the last orderBy entry for stable pagination", async () => {
+      mockFindMany.mockResolvedValue([]);
+      mockCount.mockResolvedValue(0);
+
+      await GET(makeRequest("?sortOrder=providerCreatedAt_desc"));
+
+      const call = mockFindMany.mock.calls[0][0];
+      const lastKey = Object.keys(call.orderBy[call.orderBy.length - 1])[0];
+      expect(lastKey).toBe("id");
+    });
   });
 });

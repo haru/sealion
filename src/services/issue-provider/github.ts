@@ -1,5 +1,6 @@
 import axios from "axios";
 import { IssueProviderAdapter, NormalizedIssue, ExternalProject } from "@/lib/types";
+import { buildAxiosProxyConfig } from "@/lib/proxy";
 
 interface GitHubIssue {
   number: number;
@@ -28,13 +29,15 @@ export class GitHubAdapter implements IssueProviderAdapter {
   private loginPromise: Promise<string> | null = null;
 
   constructor(token: string) {
+    const BASE_URL = "https://api.github.com";
     this.client = axios.create({
-      baseURL: "https://api.github.com",
+      baseURL: BASE_URL,
       headers: {
         Authorization: `Bearer ${token}`,
         Accept: "application/vnd.github+json",
         "X-GitHub-Api-Version": "2022-11-28",
       },
+      ...buildAxiosProxyConfig(BASE_URL),
     });
   }
 

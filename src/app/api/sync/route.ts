@@ -5,6 +5,7 @@ import { syncProviders } from "@/services/sync";
 
 /**
  * POST /api/sync — Triggers a fire-and-forget sync of all providers for the authenticated user.
+ * Sync errors are stored per-project in the DB and surfaced to the client via GET /api/sync polling.
  */
 export async function POST() {
   const session = await auth();

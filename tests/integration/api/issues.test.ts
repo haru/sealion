@@ -173,6 +173,176 @@ beforeEach(() => {
   jest.clearAllMocks();
 });
 
+describe("PATCH /api/issues/[id] — pinned toggle", () => {
+  it("returns 200 with { id, pinned: true } when pinned is set to true", async () => {
+    if (!dbAvailable) return;
+
+    const issueId = await seedTestIssue();
+    const { PATCH } = await importIssueIdRoute(prisma);
+
+    const req = new NextRequest(`http://localhost/api/issues/${issueId}`, {
+      method: "PATCH",
+      body: JSON.stringify({ pinned: true }),
+      headers: { "Content-Type": "application/json" },
+    });
+
+    const res = await PATCH(req, { params: Promise.resolve({ id: issueId }) });
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(json.data.id).toBe(issueId);
+    expect(json.data.pinned).toBe(true);
+
+    // Verify persisted in DB
+    const updated = await prisma.issue.findUnique({ where: { id: issueId } });
+    expect(updated?.pinned).toBe(true);
+  });
+
+  it("returns 200 with { id, pinned: false } when pinned is set to false", async () => {
+    if (!dbAvailable) return;
+
+    const issueId = await seedTestIssue();
+    // Seed with pinned=true first
+    await prisma.issue.update({ where: { id: issueId }, data: { pinned: true } });
+
+    const { PATCH } = await importIssueIdRoute(prisma);
+
+    const req = new NextRequest(`http://localhost/api/issues/${issueId}`, {
+      method: "PATCH",
+      body: JSON.stringify({ pinned: false }),
+      headers: { "Content-Type": "application/json" },
+    });
+
+    const res = await PATCH(req, { params: Promise.resolve({ id: issueId }) });
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(json.data.id).toBe(issueId);
+    expect(json.data.pinned).toBe(false);
+
+    const updated = await prisma.issue.findUnique({ where: { id: issueId } });
+    expect(updated?.pinned).toBe(false);
+  });
+
+  it("returns 401 when not authenticated", async () => {
+    if (!dbAvailable) return;
+
+    jest.resetModules();
+    jest.doMock("@/lib/db", () => ({ prisma }));
+    jest.doMock("@/lib/auth", () => ({
+      auth: jest.fn().mockResolvedValue(null),
+    }));
+    const { PATCH } = await import("@/app/api/issues/[id]/route");
+
+    const req = new NextRequest(`http://localhost/api/issues/nonexistent`, {
+      method: "PATCH",
+      body: JSON.stringify({ pinned: true }),
+      headers: { "Content-Type": "application/json" },
+    });
+
+    const res = await PATCH(req, { params: Promise.resolve({ id: "nonexistent" }) });
+
+    expect(res.status).toBe(401);
+  });
+
+  it("returns 403 when issue belongs to a different user", async () => {
+    if (!dbAvailable) return;
+
+    const issueId = await seedTestIssue();
+
+    // Import with a different user ID
+    jest.resetModules();
+    jest.doMock("@/lib/db", () => ({ prisma }));
+    jest.doMock("@/lib/auth", () => ({
+      auth: jest.fn().mockResolvedValue({
+        user: { id: "different-user-id", email: "other@test.com", role: "USER" },
+      }),
+    }));
+    jest.doMock("@/services/issue-provider/github", () => ({
+      GitHubAdapter: Object.assign(jest.fn().mockImplementation(() => ({})), { iconUrl: "/github.svg" }),
+    }));
+    jest.doMock("@/services/issue-provider/jira", () => ({
+      JiraAdapter: Object.assign(jest.fn().mockImplementation(() => ({})), { iconUrl: "/jira.svg" }),
+    }));
+    jest.doMock("@/services/issue-provider/redmine", () => ({
+      RedmineAdapter: Object.assign(jest.fn().mockImplementation(() => ({})), { iconUrl: "/redmine.svg" }),
+    }));
+    const { PATCH } = await import("@/app/api/issues/[id]/route");
+
+    const req = new NextRequest(`http://localhost/api/issues/${issueId}`, {
+      method: "PATCH",
+      body: JSON.stringify({ pinned: true }),
+      headers: { "Content-Type": "application/json" },
+    });
+
+    const res = await PATCH(req, { params: Promise.resolve({ id: issueId }) });
+
+    expect(res.status).toBe(403);
+  });
+
+  it("returns 400 when pinned is not a boolean", async () => {
+    if (!dbAvailable) return;
+
+    const issueId = await seedTestIssue();
+    const { PATCH } = await importIssueIdRoute(prisma);
+
+    const req = new NextRequest(`http://localhost/api/issues/${issueId}`, {
+      method: "PATCH",
+      body: JSON.stringify({ pinned: "yes" }),
+      headers: { "Content-Type": "application/json" },
+    });
+
+    const res = await PATCH(req, { params: Promise.resolve({ id: issueId }) });
+
+    expect(res.status).toBe(400);
+  });
+});
+
+describe("PATCH /api/issues/[id] — unpin direction (US2)", () => {
+  it("returns 200 with pinned: false after unpinning a previously pinned issue", async () => {
+    if (!dbAvailable) return;
+
+    const issueId = await seedTestIssue();
+    await prisma.issue.update({ where: { id: issueId }, data: { pinned: true } });
+
+    const { PATCH } = await importIssueIdRoute(prisma);
+
+    const req = new NextRequest(`http://localhost/api/issues/${issueId}`, {
+      method: "PATCH",
+      body: JSON.stringify({ pinned: false }),
+      headers: { "Content-Type": "application/json" },
+    });
+
+    const res = await PATCH(req, { params: Promise.resolve({ id: issueId }) });
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(json.data.pinned).toBe(false);
+  });
+
+  it("client must not persist the change when PATCH returns 400 (non-boolean)", async () => {
+    if (!dbAvailable) return;
+
+    const issueId = await seedTestIssue();
+    await prisma.issue.update({ where: { id: issueId }, data: { pinned: true } });
+
+    const { PATCH } = await importIssueIdRoute(prisma);
+
+    const req = new NextRequest(`http://localhost/api/issues/${issueId}`, {
+      method: "PATCH",
+      body: JSON.stringify({ pinned: "false" }),
+      headers: { "Content-Type": "application/json" },
+    });
+
+    const res = await PATCH(req, { params: Promise.resolve({ id: issueId }) });
+    expect(res.status).toBe(400);
+
+    // Verify pinned state was NOT changed in DB (rollback contract)
+    const unchanged = await prisma.issue.findUnique({ where: { id: issueId } });
+    expect(unchanged?.pinned).toBe(true);
+  });
+});
+
 describe("PATCH /api/issues/[id] — status update", () => {
   it("closes issue without comment when comment is omitted", async () => {
     if (!dbAvailable) return;

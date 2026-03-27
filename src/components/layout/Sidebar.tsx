@@ -10,6 +10,7 @@ import {
 } from "@mui/material";
 import FolderOpenIcon from "@mui/icons-material/FolderOpen";
 import FormatListBulletedIcon from "@mui/icons-material/FormatListBulleted";
+import TuneIcon from "@mui/icons-material/Tune";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -52,6 +53,17 @@ export default function Sidebar({ open, onClose, variant }: SidebarProps) {
             <FolderOpenIcon />
           </ListItemIcon>
           <ListItemText primary={t("projectManagement")} />
+        </ListItemButton>
+        <ListItemButton
+          component={Link}
+          href="/settings/board"
+          selected={pathname === "/settings/board"}
+          onClick={variant === "temporary" ? onClose : undefined}
+        >
+          <ListItemIcon>
+            <TuneIcon />
+          </ListItemIcon>
+          <ListItemText primary={t("boardSettings")} />
         </ListItemButton>
       </List>
     </>

@@ -48,11 +48,15 @@
     "unassignedChipLabel": "担当者未設定",
     "unassignedChipTooltip": "担当者が設定されていません",
     "statusChangeError": "ステータスの更新に失敗しました。再試行してください。",
-    "syncNow": "今すぐ同期"
+    "syncNow": "今すぐ同期",
+    "pin": "上部に固定",
+    "unpin": "固定を解除",
+    "pinToggleError": "ピン留めの更新に失敗しました。再試行してください。"
   },
   "providers": {
     "title": "issue管理システム設定",
     "addProvider": "issue管理システムを追加",
+    "addProviderTitle": "issue管理システムを追加",
     "noProviders": "まだissue管理システムが接続されていません。",
     "type": {
       "GITHUB": "GitHub",
@@ -87,7 +91,34 @@
   },
   "sidebar": {
     "todo": "TODO",
-    "projectManagement": "プロジェクト管理"
+    "projectManagement": "プロジェクト管理",
+    "boardSettings": "ボード設定"
+  },
+  "boardSettings": {
+    "title": "ボード設定",
+    "displayItems": {
+      "sectionTitle": "表示項目",
+      "showCreatedAt": "作成日時を表示",
+      "showUpdatedAt": "更新日時を表示"
+    },
+    "sortOrder": {
+      "sectionTitle": "ソート順",
+      "availableLabel": "未使用",
+      "activeLabel": "使用中",
+      "providerCreatedAt_desc": "作成日時（新しい順）",
+      "providerUpdatedAt_desc": "更新日時（新しい順）",
+      "dueDate_asc": "期限（早い順）",
+      "addAriaLabel": "選択した項目をソートに追加",
+      "removeAriaLabel": "選択した項目をソートから削除",
+      "moveTopAriaLabel": "先頭へ移動",
+      "moveUpAriaLabel": "上へ移動",
+      "moveDownAriaLabel": "下へ移動",
+      "moveBottomAriaLabel": "末尾へ移動"
+    },
+    "save": "保存",
+    "saveSuccess": "設定を保存しました",
+    "saveError": "設定の保存に失敗しました。再試行してください。",
+    "loadError": "ボード設定の読み込みに失敗しました。デフォルト設定を使用します。"
   },
   "projects": {
     "title": "プロジェクト",
@@ -162,5 +193,31 @@
     "PASSWORD_TOO_SHORT": "パスワードは8文字以上で入力してください",
     "INVALID_INPUT": "入力値が正しくありません",
     "CONFLICT": "このプロジェクトはすでに登録されています"
+  },
+  "sync": {
+    "error": {
+      "cause": {
+        "authentication": "認証に失敗しました",
+        "rate_limit": "API制限を超過しました",
+        "not_found": "リソースが見つかりません",
+        "server_error": "サーバーエラーが発生しました",
+        "client_error": "無効なリクエストです",
+        "network_error": "接続に失敗しました",
+        "unknown": "不明なエラー"
+      },
+      "status": "ステータス: {code}"
+    }
+  },
+  "message": {
+    "close": "閉じる",
+    "type": {
+      "information": "情報",
+      "warning": "警告",
+      "error": "エラー"
+    }
+  },
+  "a11y": {
+    "openMenu": "メニューを開く",
+    "settings": "設定"
   }
 }

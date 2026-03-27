@@ -20,6 +20,7 @@ services:
     build:
       context: ..
       dockerfile: docker/Dockerfile
+    image: haru/sealion
     environment:
       DATABASE_URL: "postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-password}@db:5432/${POSTGRES_DB:-sealion_dev}"
       AUTH_SECRET: "${AUTH_SECRET}"

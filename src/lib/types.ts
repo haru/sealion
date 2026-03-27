@@ -29,6 +29,56 @@ export interface ExternalProject {
 }
 
 /**
+ * Valid sort criterion values for board settings.
+ * - `"providerCreatedAt_desc"`: Sort by creation date, newest first.
+ * - `"providerUpdatedAt_desc"`: Sort by last update date, newest first.
+ * - `"dueDate_asc"`: Sort by due date, earliest first (nulls last).
+ */
+export type SortCriterion =
+  | "providerCreatedAt_desc"
+  | "providerUpdatedAt_desc"
+  | "dueDate_asc";
+
+/**
+ * All valid sort criteria that can be used in board settings.
+ * Used for validation of user input.
+ */
+export const VALID_SORT_CRITERIA: readonly SortCriterion[] = [
+  "providerCreatedAt_desc",
+  "providerUpdatedAt_desc",
+  "dueDate_asc",
+] as const;
+
+/**
+ * Maximum number of active sort criteria allowed in board settings.
+ * Enforced in both the PUT /api/board-settings validation and the
+ * GET /api/issues `sortOrder` query parameter parsing.
+ */
+export const MAX_SORT_CRITERIA = 3;
+
+/**
+ * Board display and sort settings for the authenticated user.
+ * Controls which timestamps are shown on issue cards and how issues are ordered.
+ */
+export interface BoardSettings {
+  /** Whether to display the provider-side creation timestamp on issue cards. */
+  showCreatedAt: boolean;
+  /** Whether to display the provider-side update timestamp on issue cards. */
+  showUpdatedAt: boolean;
+  /** Ordered list of sort criteria; earlier entries take priority. */
+  sortOrder: SortCriterion[];
+}
+
+/**
+ * Default board settings returned when the user has no saved settings.
+ */
+export const DEFAULT_BOARD_SETTINGS: BoardSettings = {
+  showCreatedAt: true,
+  showUpdatedAt: false,
+  sortOrder: ["dueDate_asc", "providerUpdatedAt_desc"],
+};
+
+/**
  * Adapter interface that each issue provider (GitHub, Jira, Redmine) must implement.
  * The sync pipeline uses these methods to fetch and mutate issues on external services.
  */
@@ -78,4 +128,42 @@ export interface IssueProviderAdapter {
     issueExternalId: string,
     comment: string
   ): Promise<void>;
+}
+
+/**
+ * Categories of sync operation errors for user-facing display.
+ */
+export enum SyncErrorCause {
+  /** Authentication/authorization failure (HTTP 401, 403). */
+  AUTHENTICATION = 'AUTHENTICATION',
+  /** Rate limit exceeded (HTTP 429). */
+  RATE_LIMIT = 'RATE_LIMIT',
+  /** Resource not found (HTTP 404). */
+  NOT_FOUND = 'NOT_FOUND',
+  /** Server-side error (HTTP 5xx). */
+  SERVER_ERROR = 'SERVER_ERROR',
+  /** Other client error (HTTP 4xx, excluding handled cases). */
+  CLIENT_ERROR = 'CLIENT_ERROR',
+  /** Network failure (no response received). */
+  NETWORK_ERROR = 'NETWORK_ERROR',
+  /** Unclassified error. */
+  UNKNOWN = 'UNKNOWN',
+}
+
+/**
+ * Structured error information for sync operations with external providers.
+ */
+export interface SyncErrorInfo {
+  /** Provider name (e.g., "GitHub", "Jira", "Redmine"). */
+  providerName: string;
+  /** Project/Repository name. */
+  projectName: string;
+  /** Categorized error cause. */
+  cause: SyncErrorCause;
+  /** HTTP status code (undefined for network errors). */
+  statusCode?: number;
+  /** Provider-specific error message (extracted from API response). */
+  providerMessage?: string;
+  /** Technical error message (for debugging, not displayed to users). */
+  technicalMessage?: string;
 }

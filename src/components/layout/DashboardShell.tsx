@@ -13,6 +13,7 @@ import { SignOutButton } from "@/components/ui/SignOutButton";
 import Sidebar from "@/components/layout/Sidebar";
 import { useMediaQuery, useTheme } from "@mui/material";
 import { useTranslations } from "next-intl";
+import { MessageQueueProvider } from "@/components/MessageQueue";
 
 interface DashboardShellProps {
   email: string;
@@ -25,15 +26,17 @@ export default function DashboardShell({ email, children }: DashboardShellProps)
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [drawerOpen, setDrawerOpen] = useState(false);
   const t = useTranslations("auth");
+  const tA11y = useTranslations("a11y");
 
   return (
+    <MessageQueueProvider>
     <Box sx={{ display: "flex" }}>
       <AppBar position="fixed" sx={{ zIndex: theme.zIndex.drawer + 1 }}>
         <Toolbar>
           {isMobile && (
             <IconButton
               color="inherit"
-              aria-label="open menu"
+              aria-label={tA11y("openMenu")}
               edge="start"
               onClick={() => setDrawerOpen(true)}
               sx={{ mr: 1 }}
@@ -50,7 +53,7 @@ export default function DashboardShell({ email, children }: DashboardShellProps)
             {email}
           </Typography>
           <Link href="/settings/providers">
-            <IconButton color="inherit" aria-label="settings">
+            <IconButton color="inherit" aria-label={tA11y("settings")}>
               <SettingsIcon />
             </IconButton>
           </Link>
@@ -79,5 +82,6 @@ export default function DashboardShell({ email, children }: DashboardShellProps)
       {/* Spacer that mirrors sidebar width to center content on the full viewport */}
       <Box sx={{ display: { xs: "none", md: "block" }, width: 240, flexShrink: 0 }} />
     </Box>
+    </MessageQueueProvider>
   );
 }

@@ -1,5 +1,6 @@
 import axios from "axios";
 import { IssueProviderAdapter, NormalizedIssue, ExternalProject } from "@/lib/types";
+import { buildAxiosProxyConfig } from "@/lib/proxy";
 
 interface JiraIssue {
   id: string;
@@ -62,6 +63,7 @@ export class JiraAdapter implements IssueProviderAdapter {
         Accept: "application/json",
         "Content-Type": "application/json",
       },
+      ...buildAxiosProxyConfig(this.baseUrl),
     });
   }
 

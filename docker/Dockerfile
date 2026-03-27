@@ -1,4 +1,4 @@
-FROM node:20-alpine
+FROM node:24-alpine
 
 WORKDIR /app
 
@@ -12,14 +12,10 @@ RUN npm ci
 COPY . .
 RUN npm run build
 
-RUN addgroup --system --gid 1001 nodejs && \
-    adduser --system --uid 1001 nextjs && \
-    chown -R nextjs:nodejs /app
-
 COPY docker/entrypoint.sh ./entrypoint.sh
 RUN chmod +x ./entrypoint.sh
 
-USER nextjs
+USER node
 
 EXPOSE 3000
 ENV PORT=3000
