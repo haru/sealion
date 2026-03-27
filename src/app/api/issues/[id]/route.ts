@@ -81,6 +81,33 @@ async function handleCloseIssue(id: string, userId: string, comment?: string) {
 }
 
 /**
+ * Sets or clears the pinned flag on an issue.
+ * @param id - Internal issue ID.
+ * @param pinned - Whether to pin or unpin the issue.
+ * @param userId - ID of the authenticated user (for ownership check).
+ * @returns 200 with `{ id, pinned }` on success, 403 if issue not found or not owned by user.
+ */
+async function handlePinnedToggle(id: string, pinned: boolean, userId: string) {
+  const issue = await prisma.issue.findFirst({
+    where: {
+      id,
+      project: { issueProvider: { userId } },
+    },
+    select: { id: true },
+  });
+
+  if (!issue) return fail("FORBIDDEN", 403);
+
+  const updated = await prisma.issue.update({
+    where: { id },
+    data: { pinned },
+    select: { id: true, pinned: true },
+  });
+
+  return ok(updated);
+}
+
+/**
  * Sets or clears the today flag on an issue, assigning an order position when flagging.
  * @param id - Internal issue ID.
  * @param todayFlag - Whether to add or remove the issue from today's list.
@@ -139,9 +166,10 @@ async function handleTodayFlagUpdate(id: string, todayFlag: boolean, userId: str
 }
 
 /**
- * PATCH /api/issues/[id] — Closes or updates the today flag of an issue.
+ * PATCH /api/issues/[id] — Closes or updates the today flag or pinned state of an issue.
  * - `{ closed: true, comment?: string }` — closes the issue on the provider and deletes it locally.
  * - `{ todayFlag: boolean }` — sets or clears the today flag.
+ * - `{ pinned: boolean }` — sets or clears the pinned flag.
  */
 export async function PATCH(req: NextRequest, { params }: Params) {
   const session = await auth();
@@ -150,6 +178,11 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   const { id } = await params;
   const body = await req.json().catch(() => null);
   if (!body) return fail("INVALID_BODY", 400);
+
+  if ("pinned" in body) {
+    if (typeof body.pinned !== "boolean") return fail("INVALID_INPUT", 400);
+    return handlePinnedToggle(id, body.pinned as boolean, session.user.id);
+  }
 
   if ("todayFlag" in body) {
     if (typeof body.todayFlag !== "boolean") return fail("INVALID_INPUT", 400);

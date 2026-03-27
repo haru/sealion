@@ -31,6 +31,12 @@ interface TodayTaskItemProps {
   providerCreatedAt: string | null;
   /** ISO 8601 datetime string from the issue provider, or `null` if unavailable. */
   providerUpdatedAt: string | null;
+  /**
+   * Whether the issue is currently pinned.
+   * Accepted for type correctness when flowing issues from the main list into the today area.
+   * A pin button is intentionally NOT rendered here — pinning is only available in the main task list.
+   */
+  pinned: boolean;
   /** Called when the user removes the issue from today's list. */
   onRemove: (id: string) => void;
   /**

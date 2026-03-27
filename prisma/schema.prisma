@@ -103,6 +103,9 @@ model Issue {
   providerCreatedAt DateTime?
   providerUpdatedAt DateTime?
 
+  // Task pin feature (018-task-pin)
+  pinned Boolean @default(false)
+
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@unique([projectId, externalId])
@@ -110,6 +113,7 @@ model Issue {
   @@index([dueDate])
   @@index([todayFlag, todayOrder])
   @@index([dueDate, providerUpdatedAt, providerCreatedAt])
+  @@index([pinned])
 }
 
 // ─── Auth.js required tables ─────────────────────────────────────────────────

@@ -35,6 +35,8 @@ interface Issue {
   todayAddedAt: string | null;
   providerCreatedAt: string | null;
   providerUpdatedAt: string | null;
+  /** Whether the user has pinned this issue to the top of the list. */
+  pinned: boolean;
   project: {
     displayName: string;
     issueProvider: { iconUrl: string | null; displayName: string };
@@ -220,6 +222,32 @@ export default function DashboardPage() {
   async function handlePageChange(newPage: number) {
     setPage(newPage);
     await fetchIssues(newPage);
+  }
+
+  /**
+   * Optimistically toggles the pinned state of an issue and persists it via the API.
+   * On failure, rolls back the local state and shows an error notification.
+   * @param id - Internal issue ID.
+   * @param pinned - The new pinned state to apply.
+   */
+  async function handleTogglePin(id: string, pinned: boolean) {
+    const original = issues.find((i) => i.id === id);
+    if (!original) return;
+
+    // Optimistic update
+    setIssues((prev) => prev.map((i) => (i.id === id ? { ...i, pinned } : i)));
+
+    const res = await fetch(`/api/issues/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pinned }),
+    });
+
+    if (!res.ok) {
+      // Rollback
+      setIssues((prev) => prev.map((i) => (i.id === id ? { ...i, pinned: original.pinned } : i)));
+      addMessage("error", t("pinToggleError"));
+    }
   }
 
   /** Opens the complete-issue modal for the given issue ID. */
@@ -470,6 +498,7 @@ export default function DashboardPage() {
             onPageChange={handlePageChange}
             onComplete={handleComplete}
             onAddToToday={handleAddToToday}
+            onTogglePin={handleTogglePin}
           />
         </Box>
       </Container>
