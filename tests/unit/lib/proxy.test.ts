@@ -54,6 +54,18 @@ describe("buildAxiosProxyConfig — US1: proxy env var reading", () => {
     expect(config).toHaveProperty("httpsAgent");
   });
 
+  it("returns proxy: false when agents are configured to disable Axios built-in proxy handling", () => {
+    process.env.https_proxy = "http://proxy.example.com:8080";
+    const config = buildAxiosProxyConfig("https://api.github.com");
+    expect(config).toHaveProperty("proxy", false);
+  });
+
+  it("does not include proxy: false when no agents are returned", () => {
+    const config = buildAxiosProxyConfig("https://api.github.com");
+    expect(config).toEqual({});
+    expect(config).not.toHaveProperty("proxy");
+  });
+
   it("returns agents when HTTP_PROXY (uppercase) is set and lowercase is absent", () => {
     process.env.HTTP_PROXY = "http://proxy.example.com:8080";
     const config = buildAxiosProxyConfig("http://redmine.example.com");

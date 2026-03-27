@@ -19,6 +19,7 @@ import ProviderList from "@/components/providers/ProviderList";
 import AddProviderDialog from "@/components/providers/AddProviderDialog";
 import type { ProviderFormData } from "@/components/providers/ProviderForm";
 import { useMessageQueue } from "@/hooks/useMessageQueue";
+import { formatProviderApiError } from "@/lib/error-utils";
 
 interface Provider {
   id: string;
@@ -32,6 +33,7 @@ interface Provider {
 export default function ProvidersPage() {
   const t = useTranslations("providers");
   const tCommon = useTranslations("common");
+  const tSync = useTranslations("sync");
 
   const { addMessage } = useMessageQueue();
   const [providers, setProviders] = useState<Provider[]>([]);
@@ -67,7 +69,7 @@ export default function ProvidersPage() {
     const json = await res.json();
 
     if (!res.ok) {
-      throw new Error(json.error ?? tCommon("error"));
+      throw new Error(formatProviderApiError(json, tSync, tCommon("error")));
     }
 
     await fetchProviders();

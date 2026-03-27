@@ -4,10 +4,15 @@ import { HttpsProxyAgent } from "hpagent";
 /**
  * Axios-compatible proxy agent configuration to be spread into `axios.create()`.
  * Empty object (`{}`) when no proxy is configured — a safe no-op spread.
+ *
+ * `proxy: false` is included when agents are configured to prevent Axios from
+ * also applying its own built-in proxy handling (which reads the same env vars
+ * and would override the hpagent CONNECT-tunnel agents with plain HTTP forwarding).
  */
 export type ProxyAgentConfig = {
   httpAgent?: InstanceType<typeof HttpProxyAgent>;
   httpsAgent?: InstanceType<typeof HttpsProxyAgent>;
+  proxy?: false;
 };
 
 /**
@@ -158,7 +163,10 @@ export function buildAxiosProxyConfig(baseUrl: string): ProxyAgentConfig {
   try {
     const httpAgent = new HttpProxyAgent({ proxy: proxyUrl });
     const httpsAgent = new HttpsProxyAgent({ proxy: proxyUrl });
-    return { httpAgent, httpsAgent };
+    // proxy: false disables Axios's built-in proxy handling, which would otherwise
+    // read the same env vars and override our hpagent CONNECT-tunnel agents with
+    // plain HTTP forwarding (sending GET https://... instead of CONNECT).
+    return { httpAgent, httpsAgent, proxy: false };
   } catch {
     console.warn("[proxy] Failed to construct proxy agents:", maskCredentials(proxyUrl));
     return {};

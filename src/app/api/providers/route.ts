@@ -2,9 +2,10 @@ import { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { encrypt } from "@/lib/encryption";
-import { ok, fail } from "@/lib/api-response";
+import { ok, fail, failWithDetails } from "@/lib/api-response";
 import { createAdapter, getProviderIconUrl } from "@/services/issue-provider/factory";
 import { ProviderType } from "@prisma/client";
+import { createConnectionTestErrorDetails } from "@/lib/error-utils";
 
 /**
  * GET /api/providers — Returns all issue providers for the authenticated user.
@@ -53,8 +54,10 @@ export async function POST(req: NextRequest) {
   try {
     const adapter = createAdapter(type as ProviderType, credentials as never);
     await adapter.testConnection();
-  } catch {
-    return fail("CONNECTION_TEST_FAILED", 422);
+  } catch (error) {
+    console.error("[provider] Connection test failed:", error instanceof Error ? error.message : String(error));
+    const errorDetails = createConnectionTestErrorDetails(error);
+    return failWithDetails("CONNECTION_TEST_FAILED", errorDetails, 422);
   }
 
   const encryptedCredentials = encrypt(JSON.stringify(credentialsWithoutUrl));

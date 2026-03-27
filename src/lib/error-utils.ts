@@ -68,7 +68,18 @@ export function classifyAxiosError(error: unknown): SyncErrorCause {
  * @returns The extracted message or undefined if none found.
  */
 export function extractProviderMessage(error: unknown): string | undefined {
-  if (!isAxiosError(error) || !error.response || error.response.data == null) {
+  if (!isAxiosError(error)) {
+    return undefined;
+  }
+
+  // No response received (e.g. hpagent proxy CONNECT failure throws Error("Bad response: 403")
+  // without populating error.response). Fall back to the error message itself.
+  if (!error.response) {
+    const msg = typeof error.message === 'string' ? error.message.trim() : '';
+    return msg || undefined;
+  }
+
+  if (error.response.data == null) {
     return undefined;
   }
 
@@ -186,6 +197,32 @@ export function parseSyncErrorInfo(syncError: string | null): SyncErrorInfo | nu
   }
 }
 
+/**
+ * Structured details of a failed provider connection test, safe for client exposure.
+ * Mirrors the relevant subset of {@link SyncErrorInfo} but without provider/project context.
+ */
+export interface ConnectionTestErrorDetails {
+  /** Classified reason for the failure. */
+  cause: SyncErrorCause;
+  /** HTTP status code returned by the provider, if available. */
+  statusCode?: number;
+  /** User-facing message from the provider response, if available. */
+  providerMessage?: string;
+}
+
+/**
+ * Creates {@link ConnectionTestErrorDetails} from an error thrown during `testConnection()`.
+ *
+ * @param error - The error thrown by the adapter.
+ * @returns Structured error details safe for client exposure.
+ */
+export function createConnectionTestErrorDetails(error: unknown): ConnectionTestErrorDetails {
+  const cause = classifyAxiosError(error);
+  const statusCode = isAxiosError(error) ? error.response?.status : undefined;
+  const providerMessage = extractProviderMessage(error);
+  return { cause, statusCode, providerMessage };
+}
+
 /** Maps each SyncErrorCause to its translation key, relative to the "sync" namespace. */
 const CAUSE_KEY_MAP: Record<SyncErrorCause, string> = {
   [SyncErrorCause.AUTHENTICATION]: 'error.cause.authentication',
@@ -229,3 +266,66 @@ export function formatSyncErrorMessage(
 
   return lines.join('\n');
 }
+
+/**
+ * Formats {@link ConnectionTestErrorDetails} into a user-friendly multi-line message
+ * for display in a form Alert when a provider connection test fails.
+ * Unlike {@link formatSyncErrorMessage}, this omits the provider/project header
+ * since that context is not available during initial provider creation.
+ *
+ * @param details - The structured connection test error details.
+ * @param t - Translation function scoped to the "sync" namespace.
+ * @returns Formatted message string with newline separators.
+ */
+export function formatConnectionTestError(
+  details: ConnectionTestErrorDetails,
+  t: (key: string, params?: Record<string, string | number | Date>) => string,
+): string {
+  const lines: string[] = [];
+  lines.push(t(CAUSE_KEY_MAP[details.cause]));
+  if (details.providerMessage) {
+    lines.push(`"${details.providerMessage}"`);
+  }
+  if (details.statusCode) {
+    lines.push(t('error.status', { code: details.statusCode }));
+  }
+  return lines.join('\n');
+}
+
+/**
+ * Shape of a JSON response body returned by provider API routes on error.
+ */
+interface ProviderApiErrorResponse {
+  error?: string | null;
+  errorDetails?: ConnectionTestErrorDetails | unknown;
+}
+
+/**
+ * Extracts a user-friendly error message from a provider API error response.
+ * Handles the special `CONNECTION_TEST_FAILED` code with structured details,
+ * falling back to the raw error string or a supplied default.
+ *
+ * @param json - The parsed JSON response from the provider API.
+ * @param tSync - Translation function scoped to the "sync" namespace.
+ * @param fallbackMessage - Default message when no error information is available.
+ * @returns A formatted error message string safe for display.
+ */
+export function formatProviderApiError(
+  json: ProviderApiErrorResponse,
+  tSync: (key: string, params?: Record<string, string | number | Date>) => string,
+  fallbackMessage: string,
+): string {
+  if (
+    json.error === 'CONNECTION_TEST_FAILED' &&
+    json.errorDetails != null &&
+    typeof json.errorDetails === 'object' &&
+    'cause' in (json.errorDetails as object)
+  ) {
+    return formatConnectionTestError(json.errorDetails as ConnectionTestErrorDetails, tSync);
+  }
+  if (json.error === 'CONNECTION_TEST_FAILED') {
+    return fallbackMessage;
+  }
+  return json.error ?? fallbackMessage;
+}
+

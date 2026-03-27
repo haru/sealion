@@ -16,6 +16,7 @@ import {
   CircularProgress,
 } from "@mui/material";
 import { useTranslations } from "next-intl";
+import { formatProviderApiError } from "@/lib/error-utils";
 
 type ProviderType = "GITHUB" | "JIRA" | "REDMINE";
 
@@ -43,6 +44,7 @@ export default function ProviderEditModal({
 }: ProviderEditModalProps) {
   const t = useTranslations("providers");
   const tCommon = useTranslations("common");
+  const tSync = useTranslations("sync");
 
   const [displayName, setDisplayName] = useState(provider.displayName);
   const [baseUrl, setBaseUrl] = useState(provider.baseUrl ?? "");
@@ -79,7 +81,7 @@ export default function ProviderEditModal({
       const json = await res.json();
 
       if (!res.ok) {
-        throw new Error(json.error ?? tCommon("error"));
+        throw new Error(formatProviderApiError(json, tSync, tCommon("error")));
       }
 
       onUpdated(json.data);
@@ -98,7 +100,11 @@ export default function ProviderEditModal({
       <DialogContent>
         <Box component="form" id="provider-edit-form" onSubmit={handleSubmit} sx={{ pt: 1 }}>
           <Stack spacing={2}>
-            {error && <Alert severity="error">{error}</Alert>}
+            {error && (
+              <Alert severity="error">
+                <Box component="span" sx={{ display: "block", whiteSpace: "pre-line" }}>{error}</Box>
+              </Alert>
+            )}
 
             <TextField
               label={t("fields.displayName")}
