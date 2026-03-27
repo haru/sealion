@@ -48,13 +48,13 @@ export const addMessage = (
 };
 
 /**
- * Dismisses a message by ID and processes pending queue.
+ * Dismisses a message by ID, removing it from both the active and pending queues.
  *
  * @param messages - Current active messages array
  * @param queue - Pending messages waiting for throttle interval
  * @param lastMessageTime - Timestamp of last displayed message
  * @param messageId - The ID of message to dismiss
- * @returns Updated state with message removed and queue processed
+ * @returns Updated state with the message removed from both active and pending queues
  */
 export const dismissMessage = (
   messages: MessageData[],

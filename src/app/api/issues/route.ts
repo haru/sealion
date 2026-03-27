@@ -29,16 +29,20 @@ function criterionToOrderBy(criterion: SortCriterion): PrismaOrderBy {
 /** Deterministic tie-breaker appended to every sort to ensure stable pagination. */
 const TIEBREAKER_ORDER_BY = { id: "asc" as const };
 
+/** Pinned issues are always sorted to the top, ahead of any user-defined sort criteria. */
+const PINNED_ORDER_BY: PrismaOrderBy = { pinned: "desc" };
+
 /**
  * Parses the `sortOrder` query parameter into an ordered list of Prisma `orderBy` entries.
  * Falls back to {@link DEFAULT_SORT_CRITERIA} if the parameter is missing or contains no valid values.
+ * Always prepends `{ pinned: 'desc' }` so pinned issues appear first regardless of other criteria.
  * Always appends a deterministic `id asc` tie-breaker to guarantee stable pagination.
  * @param raw - Raw comma-separated string from the query parameter.
- * @returns An array of Prisma orderBy objects ending with the tie-breaker.
+ * @returns An array of Prisma orderBy objects starting with pinned and ending with the tie-breaker.
  */
 function parseSortOrder(raw: string | null): PrismaOrderBy[] {
   if (!raw) {
-    return [...DEFAULT_SORT_CRITERIA.map(criterionToOrderBy), TIEBREAKER_ORDER_BY];
+    return [PINNED_ORDER_BY, ...DEFAULT_SORT_CRITERIA.map(criterionToOrderBy), TIEBREAKER_ORDER_BY];
   }
 
   const criteria = raw
@@ -49,9 +53,9 @@ function parseSortOrder(raw: string | null): PrismaOrderBy[] {
     .slice(0, MAX_SORT_CRITERIA);
 
   if (criteria.length === 0) {
-    return [...DEFAULT_SORT_CRITERIA.map(criterionToOrderBy), TIEBREAKER_ORDER_BY];
+    return [PINNED_ORDER_BY, ...DEFAULT_SORT_CRITERIA.map(criterionToOrderBy), TIEBREAKER_ORDER_BY];
   }
-  return [...criteria.map(criterionToOrderBy), TIEBREAKER_ORDER_BY];
+  return [PINNED_ORDER_BY, ...criteria.map(criterionToOrderBy), TIEBREAKER_ORDER_BY];
 }
 
 /**
@@ -106,6 +110,7 @@ export async function GET(req: NextRequest) {
         todayAddedAt: true,
         providerCreatedAt: true,
         providerUpdatedAt: true,
+        pinned: true,
         project: {
           select: {
             displayName: true,

@@ -14,6 +14,8 @@ interface Issue {
   isUnassigned: boolean;
   providerCreatedAt: string | null;
   providerUpdatedAt: string | null;
+  /** Whether the issue is pinned to the top of the list. */
+  pinned: boolean;
   project: {
     displayName: string;
     issueProvider: { iconUrl: string | null; displayName: string };
@@ -45,9 +47,15 @@ interface TodoListProps {
   onComplete?: (id: string) => void;
   /** Called when the user adds an issue to today's task list. */
   onAddToToday?: (id: string) => void;
+  /**
+   * Called when the user toggles the pin state of an issue.
+   * @param id - Internal issue ID.
+   * @param pinned - The new pinned state to apply.
+   */
+  onTogglePin?: (id: string, pinned: boolean) => void;
 }
 
-/** Paginated issue list with loading skeleton, complete button, and add-to-today callbacks. */
+/** Paginated issue list with loading skeleton, pin, complete, and add-to-today callbacks. */
 export default function TodoList({
   items,
   total,
@@ -59,6 +67,7 @@ export default function TodoList({
   onPageChange,
   onComplete,
   onAddToToday,
+  onTogglePin,
 }: TodoListProps) {
   const t = useTranslations("todo");
   const totalPages = Math.ceil(total / limit);
@@ -96,8 +105,10 @@ export default function TodoList({
           projectName={issue.project.displayName}
           showCreatedAt={showCreatedAt}
           showUpdatedAt={showUpdatedAt}
+          pinned={issue.pinned}
           onComplete={onComplete}
           onAddToToday={onAddToToday}
+          onTogglePin={onTogglePin}
         />
       ))}
 

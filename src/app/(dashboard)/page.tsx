@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { Box, Container, Typography } from "@mui/material";
-import { useMessageQueue } from "@/components/MessageQueue";
+import { useMessageQueue } from "@/hooks/useMessageQueue";
 import { useTranslations } from "next-intl";
 import {
   DndContext,
@@ -35,6 +35,8 @@ interface Issue {
   todayAddedAt: string | null;
   providerCreatedAt: string | null;
   providerUpdatedAt: string | null;
+  /** Whether the user has pinned this issue to the top of the list. */
+  pinned: boolean;
   project: {
     displayName: string;
     issueProvider: { iconUrl: string | null; displayName: string };
@@ -94,27 +96,40 @@ export default function DashboardPage() {
   const fetchIssues = useCallback(async (p: number, sortOrder?: SortCriterion[]) => {
     const order = sortOrder ?? boardSettingsSortOrderRef.current;
     const sortParam = order.join(",");
-    const res = await fetch(`/api/issues?page=${p}&limit=20&sortOrder=${encodeURIComponent(sortParam)}`);
-    if (res.ok) {
-      const json = await res.json();
-      setIssues(json.data.items);
-      setTotal(json.data.total);
+    try {
+      const res = await fetch(`/api/issues?page=${p}&limit=20&sortOrder=${encodeURIComponent(sortParam)}`);
+      if (res.ok) {
+        const json = await res.json();
+        setIssues(json.data.items);
+        setTotal(json.data.total);
+      }
+    } catch {
+      // Silently skip — the polling loop or user will retry
     }
   }, []);
 
   const fetchTodayIssues = useCallback(async () => {
-    const res = await fetch("/api/issues/today");
-    if (res.ok) {
-      const json = await res.json();
-      setTodayIssues(json.data.items);
+    try {
+      const res = await fetch("/api/issues/today");
+      if (res.ok) {
+        const json = await res.json();
+        setTodayIssues(json.data.items);
+      }
+    } catch {
+      // Silently skip — the polling loop or user will retry
     }
   }, []);
 
   const startSync = useCallback(async () => {
     syncStartedAtRef.current = new Date();
     setIsSyncing(true);
-    await fetch("/api/sync", { method: "POST" });
-  }, []);
+    try {
+      await fetch("/api/sync", { method: "POST" });
+    } catch {
+      setIsSyncing(false);
+      addMessage("error", t("syncNow"));
+    }
+  }, [addMessage, t]);
 
   useEffect(() => {
     if (!isSyncing) return;
@@ -198,16 +213,21 @@ export default function DashboardPage() {
         );
       }
 
-      await Promise.all([
-        fetchIssues(1, initialSortOrder),
-        fetchTodayIssues(),
-        fetch("/api/sync").then(async (res) => {
-          if (res.ok) {
-            fetchedProviders = (await res.json()).data;
-            setSyncProviders(fetchedProviders);
-          }
-        }),
-      ]);
+      try {
+        await Promise.all([
+          fetchIssues(1, initialSortOrder),
+          fetchTodayIssues(),
+          fetch("/api/sync").then(async (res) => {
+            if (res.ok) {
+              fetchedProviders = (await res.json()).data;
+              setSyncProviders(fetchedProviders);
+            }
+          }),
+        ]);
+      } catch {
+        // Individual fetch errors are handled inside each callback;
+        // this guards against unexpected rejections from Promise.all itself.
+      }
       setLoading(false);
       if (!shouldThrottleSync(fetchedProviders, SYNC_THROTTLE_MS)) {
         void startSync();
@@ -220,6 +240,37 @@ export default function DashboardPage() {
   async function handlePageChange(newPage: number) {
     setPage(newPage);
     await fetchIssues(newPage);
+  }
+
+  /**
+   * Optimistically toggles the pinned state of an issue and persists it via the API.
+   * On failure, rolls back the local state and shows an error notification.
+   * @param id - Internal issue ID.
+   * @param pinned - The new pinned state to apply.
+   */
+  async function handleTogglePin(id: string, pinned: boolean) {
+    const original = issues.find((i) => i.id === id);
+    if (!original) return;
+
+    // Optimistic update
+    setIssues((prev) => prev.map((i) => (i.id === id ? { ...i, pinned } : i)));
+
+    try {
+      const res = await fetch(`/api/issues/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pinned }),
+      });
+
+      if (!res.ok) {
+        // Rollback
+        setIssues((prev) => prev.map((i) => (i.id === id ? { ...i, pinned: original.pinned } : i)));
+        addMessage("error", t("pinToggleError"));
+      }
+    } catch {
+      setIssues((prev) => prev.map((i) => (i.id === id ? { ...i, pinned: original.pinned } : i)));
+      addMessage("error", t("pinToggleError"));
+    }
   }
 
   /** Opens the complete-issue modal for the given issue ID. */
@@ -251,26 +302,44 @@ export default function DashboardPage() {
     const body: Record<string, unknown> = { closed: true };
     if (comment.trim()) body.comment = comment.trim();
 
-    const res = await fetch(`/api/issues/${issueId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
+    try {
+      const res = await fetch(`/api/issues/${issueId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
 
-    if (!res.ok) {
-      // Rollback optimistic update
-      if (originalInToday) {
-        setTodayIssues((prev) => {
-          const exists = prev.some((i) => i.id === issueId);
-          return exists
-            ? prev.map((i) => (i.id === issueId ? originalInToday : i))
-            : [...prev, originalInToday];
-        });
+      if (!res.ok) {
+        // Rollback optimistic update
+        if (originalInToday) {
+          setTodayIssues((prev) => {
+            const exists = prev.some((i) => i.id === issueId);
+            return exists
+              ? prev.map((i) => (i.id === issueId ? originalInToday : i))
+              : [...prev, originalInToday];
+          });
+        }
+        if (originalInIssues) {
+          setIssues((prev) => [originalInIssues, ...prev.filter((i) => i.id !== issueId)]);
+        }
+        throw new Error("EXTERNAL_UPDATE_FAILED");
       }
-      if (originalInIssues) {
-        setIssues((prev) => [originalInIssues, ...prev.filter((i) => i.id !== issueId)]);
+    } catch (err) {
+      // Rollback on network error (but not if already rolled back above)
+      if (!(err instanceof Error && err.message === "EXTERNAL_UPDATE_FAILED")) {
+        if (originalInToday) {
+          setTodayIssues((prev) => {
+            const exists = prev.some((i) => i.id === issueId);
+            return exists
+              ? prev.map((i) => (i.id === issueId ? originalInToday : i))
+              : [...prev, originalInToday];
+          });
+        }
+        if (originalInIssues) {
+          setIssues((prev) => [originalInIssues, ...prev.filter((i) => i.id !== issueId)]);
+        }
       }
-      throw new Error("EXTERNAL_UPDATE_FAILED");
+      throw err;
     }
 
     setCompleteModalIssueId(null);
@@ -293,29 +362,35 @@ export default function DashboardPage() {
     setIssues((prev) => prev.filter((i) => i.id !== id));
     setTodayIssues((prev) => [...prev, optimisticItem]);
 
-    const res = await fetch(`/api/issues/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ todayFlag: true }),
-    });
+    try {
+      const res = await fetch(`/api/issues/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ todayFlag: true }),
+      });
 
-    if (res.ok) {
-      const json = await res.json();
-      setTodayIssues((prev) =>
-        prev.map((issue) =>
-          issue.id === id
-            ? {
-                ...issue,
-                todayFlag: json.data.todayFlag,
-                todayOrder: json.data.todayOrder,
-                todayAddedAt: json.data.todayAddedAt,
-              }
-            : issue
-        )
-      );
-      addMessage("information", tToday("addSuccess"));
-    } else {
-      // Rollback
+      if (res.ok) {
+        const json = await res.json();
+        setTodayIssues((prev) =>
+          prev.map((issue) =>
+            issue.id === id
+              ? {
+                  ...issue,
+                  todayFlag: json.data.todayFlag,
+                  todayOrder: json.data.todayOrder,
+                  todayAddedAt: json.data.todayAddedAt,
+                }
+              : issue
+          )
+        );
+        addMessage("information", tToday("addSuccess"));
+      } else {
+        // Rollback
+        setTodayIssues((prev) => prev.filter((i) => i.id !== id));
+        setIssues((prev) => [...prev, issueToAdd]);
+        addMessage("error", tToday("addError"));
+      }
+    } catch {
       setTodayIssues((prev) => prev.filter((i) => i.id !== id));
       setIssues((prev) => [...prev, issueToAdd]);
       addMessage("error", tToday("addError"));
@@ -330,18 +405,23 @@ export default function DashboardPage() {
     // Optimistic update: remove from today
     setTodayIssues((prev) => prev.filter((i) => i.id !== id));
 
-    const res = await fetch(`/api/issues/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ todayFlag: false }),
-    });
+    try {
+      const res = await fetch(`/api/issues/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ todayFlag: false }),
+      });
 
-    if (res.ok) {
-      // Refetch regular issues so the item appears back in the list
-      await fetchIssues(page);
-      addMessage("information", tToday("removeSuccess"));
-    } else {
-      // Rollback
+      if (res.ok) {
+        // Refetch regular issues so the item appears back in the list
+        await fetchIssues(page);
+        addMessage("information", tToday("removeSuccess"));
+      } else {
+        // Rollback
+        setTodayIssues((prev) => [...prev, issue]);
+        addMessage("error", tToday("removeError"));
+      }
+    } catch {
       setTodayIssues((prev) => [...prev, issue]);
       addMessage("error", tToday("removeError"));
     }
@@ -366,7 +446,12 @@ export default function DashboardPage() {
       body: JSON.stringify({ orderedIds }),
     });
 
-    if (!res.ok) {
+    try {
+      if (!res.ok) {
+        setTodayIssues(prevTodayIssues);
+        addMessage("error", tToday("reorderError"));
+      }
+    } catch {
       setTodayIssues(prevTodayIssues);
       addMessage("error", tToday("reorderError"));
     }
@@ -470,6 +555,7 @@ export default function DashboardPage() {
             onPageChange={handlePageChange}
             onComplete={handleComplete}
             onAddToToday={handleAddToToday}
+            onTogglePin={handleTogglePin}
           />
         </Box>
       </Container>

@@ -39,19 +39,6 @@ export interface MessageData {
 }
 
 /**
- * State structure for message queue provider.
- *
- * - `messages`: Array of active messages (max 5)
- * - `queue`: Pending messages waiting for throttle interval
- * - `lastMessageTime`: Timestamp of last displayed message
- */
-export interface MessageQueueState {
-  messages: MessageData[];
-  queue: MessageData[];
-  lastMessageTime: number | null;
-}
-
-/**
  * Auto-dismiss duration in milliseconds for each message type.
  *
  * - Information: 6000ms (6 seconds) per FR-005
@@ -78,20 +65,22 @@ export const DISPLAY_CONSTRAINTS = {
 } as const;
 
 /**
- * Validates a MessageData object.
+ * Validates a value as a MessageData object.
  *
- * @param message - The message data to validate
- * @returns true if valid, false otherwise
+ * @param message - The value to validate
+ * @returns true if the value is a valid MessageData, false otherwise
  */
-export function isValidMessage(message: MessageData): boolean {
+export function isValidMessage(message: unknown): message is MessageData {
+  if (typeof message !== 'object' || message === null) return false;
+  const m = message as Record<string, unknown>;
   return (
-    typeof message.id === 'string' &&
-    message.id.length > 0 &&
-    (MESSAGE_TYPES as readonly string[]).includes(message.type) &&
-    typeof message.message === 'string' &&
-    message.message.length > 0 &&
-    typeof message.timestamp === 'number' &&
-    message.timestamp > 0
+    typeof m.id === 'string' &&
+    m.id.length > 0 &&
+    (MESSAGE_TYPES as readonly string[]).includes(m.type as string) &&
+    typeof m.message === 'string' &&
+    m.message.length > 0 &&
+    typeof m.timestamp === 'number' &&
+    m.timestamp > 0
   );
 }
 

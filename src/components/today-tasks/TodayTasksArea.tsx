@@ -16,6 +16,11 @@ interface TodayIssue {
   todayOrder: number;
   providerCreatedAt: string | null;
   providerUpdatedAt: string | null;
+  /**
+   * Pin state carried through from the main issue list for type correctness.
+   * The today area does not render a pin button — pin actions are only in the main task list.
+   */
+  pinned: boolean;
   project: {
     displayName: string;
     issueProvider: { iconUrl: string | null; displayName: string };
@@ -94,6 +99,7 @@ export default function TodayTasksArea({ items, onRemove, onComplete }: TodayTas
                 providerIconUrl={issue.project.issueProvider.iconUrl}
                 providerName={issue.project.issueProvider.displayName}
                 projectName={issue.project.displayName}
+                pinned={issue.pinned}
                 onRemove={onRemove}
                 onComplete={onComplete}
               />

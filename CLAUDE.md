@@ -196,6 +196,8 @@ Use `http://app:3000` instead — `app` is the hostname of the Next.js dev conta
 - TypeScript 5 / Node.js 20 LTS, Next.js 16 (App Router), React, MUI v7, Prisma 7 with PostgreSQL 16, next-intl 4, Jest, Playwright, dnd-kit; recent additions include the `BoardSettings` table (013-board-settings).
 - TypeScript 5 / Node.js 20 LTS + axios (existing), hpagent (new — provides `HttpProxyAgent` / `HttpsProxyAgent` for Node.js http/https stacks) (016-proxy-support)
 - N/A — no database schema changes (016-proxy-support)
+- TypeScript 5 / Node.js 20 LTS + Next.js 16 (App Router), MUI v7, Prisma 7, next-intl 4, dnd-kit (既存) (018-task-pin)
+- PostgreSQL 16 via Prisma 7 — `Issue` テーブルに `pinned Boolean` カラム追加 (018-task-pin)
 
 ## Recent Changes
 - 009-task-display-cleanup: Removed `priority` field from Issue model; added `providerCreatedAt` / `providerUpdatedAt` fields; added Today tasks area with drag-and-drop reorder (dnd-kit)

@@ -48,7 +48,10 @@
     "unassignedChipLabel": "Unassigned",
     "unassignedChipTooltip": "No assignee",
     "statusChangeError": "Failed to update status. Please try again.",
-    "syncNow": "Sync Now"
+    "syncNow": "Sync Now",
+    "pin": "Pin to top",
+    "unpin": "Unpin",
+    "pinToggleError": "Failed to update pin. Please try again."
   },
   "providers": {
     "title": "Issue Tracker Settings",
@@ -212,5 +215,9 @@
       "warning": "Warning",
       "error": "Error"
     }
+  },
+  "a11y": {
+    "openMenu": "Open menu",
+    "settings": "Settings"
   }
 }
