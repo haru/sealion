@@ -261,8 +261,8 @@ export default function DashboardPage() {
           }
         }
       } catch {
-        // Board settings unavailable; addMessage already called in the inner error branches.
-        // The outer catch silently falls through so issue loading continues with defaults.
+        // Board settings unavailable (e.g. network error before response received).
+        addMessage("error", tBoardSettings("loadError"));
       }
 
       try {

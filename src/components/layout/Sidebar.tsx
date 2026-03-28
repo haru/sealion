@@ -204,15 +204,15 @@ export default function Sidebar({ open, onClose, variant, email }: SidebarProps)
         >
           {email}
         </Typography>
-        <Link href="/settings/providers">
-          <IconButton
-            size="small"
-            aria-label={t("settings")}
-            sx={{ color: "text.secondary", p: 0.5 }}
-          >
-            <SettingsIcon sx={{ fontSize: 15 }} />
-          </IconButton>
-        </Link>
+        <IconButton
+          component={Link}
+          href="/settings/providers"
+          size="small"
+          aria-label={t("settings")}
+          sx={{ color: "text.secondary", p: 0.5 }}
+        >
+          <SettingsIcon sx={{ fontSize: 15 }} />
+        </IconButton>
         <IconButton
           size="small"
           aria-label={tAuth("logout")}
