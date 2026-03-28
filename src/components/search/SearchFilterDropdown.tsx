@@ -9,7 +9,7 @@ import UpdateIcon from "@mui/icons-material/Update";
 import PersonIcon from "@mui/icons-material/Person";
 import { useTranslations } from "next-intl";
 import type { TaskFilterState } from "@/hooks/useTaskSearch";
-import type { DateRangePreset } from "@/lib/search-parser";
+import type { DateRangePreset, CreatedUpdatedPreset } from "@/lib/search-parser";
 
 /** The ordered list of filterable keys shown in selectKey mode. */
 const FILTER_KEYS: (keyof TaskFilterState)[] = [
@@ -278,7 +278,7 @@ function buildValueItems(
     }
 
     case "createdFilter": {
-      const opts = [
+      const opts: { preset: CreatedUpdatedPreset; label: string }[] = [
         { preset: "today",      label: t("today") },
         { preset: "past7days",  label: t("past7days") },
         { preset: "past30days", label: t("past30days") },
@@ -291,12 +291,12 @@ function buildValueItems(
         filterValue:
           activeFilters.createdFilter?.preset === preset
             ? undefined
-            : { preset: preset as DateRangePreset },
+            : { preset },
       }));
     }
 
     case "updatedFilter": {
-      const opts = [
+      const opts: { preset: CreatedUpdatedPreset; label: string }[] = [
         { preset: "today",      label: t("today") },
         { preset: "past7days",  label: t("past7days") },
         { preset: "past30days", label: t("past30days") },
@@ -309,7 +309,7 @@ function buildValueItems(
         filterValue:
           activeFilters.updatedFilter?.preset === preset
             ? undefined
-            : { preset: preset as DateRangePreset },
+            : { preset },
       }));
     }
 

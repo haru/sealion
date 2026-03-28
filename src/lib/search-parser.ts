@@ -9,10 +9,13 @@ export type DateRangePreset = "today" | "thisWeek" | "thisMonth" | "pastYear" | 
 /** Valid date range presets for created/updated filters (no "none" option). */
 export type CreatedUpdatedPreset = "today" | "past7days" | "past30days" | "pastYear";
 
+/** Union of all valid date range presets across all date filter types. */
+export type AnyDatePreset = DateRangePreset | CreatedUpdatedPreset;
+
 /** A single date filter selection. */
 export interface DateFilter {
   /** The selected preset value. */
-  preset: DateRangePreset;
+  preset: AnyDatePreset;
 }
 
 /**
@@ -153,11 +156,11 @@ export function parseSearchQuery(raw: string): ParsedQuery {
         continue;
       }
       if (key === "createdDate" && CREATED_UPDATED_PRESETS.has(value)) {
-        result.createdFilter = { preset: value as DateRangePreset };
+        result.createdFilter = { preset: value as CreatedUpdatedPreset };
         continue;
       }
       if (key === "updatedDate" && CREATED_UPDATED_PRESETS.has(value)) {
-        result.updatedFilter = { preset: value as DateRangePreset };
+        result.updatedFilter = { preset: value as CreatedUpdatedPreset };
         continue;
       }
     }
@@ -167,4 +170,17 @@ export function parseSearchQuery(raw: string): ParsedQuery {
   }
 
   return result;
+}
+
+/**
+ * Serializes an array of keywords back into a space-separated query string.
+ * Multi-word keywords (containing spaces) are wrapped in double quotes
+ * so they round-trip correctly through {@link parseSearchQuery}.
+ * @param keywords - Array of keyword strings to serialize.
+ * @returns A space-separated string with multi-word phrases properly quoted.
+ */
+export function serializeKeywords(keywords: string[]): string {
+  return keywords
+    .map((kw) => (kw.includes(" ") ? `"${kw}"` : kw))
+    .join(" ");
 }

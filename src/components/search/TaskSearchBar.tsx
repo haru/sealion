@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef } from "react";
+import type { KeyboardEvent } from "react";
 import { TextField, InputAdornment, IconButton, Box } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import ClearIcon from "@mui/icons-material/Clear";
@@ -263,7 +264,7 @@ export default function TaskSearchBar({
    * - `Escape` in selectKey → close dropdown (closed phase)
    * - `Escape` in closed → nothing special beyond blur
    */
-  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+  function handleKeyDown(e: KeyboardEvent<HTMLInputElement>) {
     if (e.key === "Escape") {
       if (phase === "selectValue") {
         setPhase("selectKey");

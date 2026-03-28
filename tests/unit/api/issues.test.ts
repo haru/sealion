@@ -302,4 +302,41 @@ describe("GET /api/issues", () => {
       expect(lastKey).toBe("id");
     });
   });
+
+  describe("q parameter with embedded filters", () => {
+    it("applies provider filter parsed from q when explicit provider param is absent", async () => {
+      mockFindMany.mockResolvedValue([]);
+      mockCount.mockResolvedValue(0);
+
+      await GET(makeRequest("?q=provider%3AGITHUB%20bug"));
+
+      const call = mockFindMany.mock.calls[0][0];
+      const where = call.where;
+      // Provider filter should be applied from the parsed q parameter
+      expect(where.project.issueProvider.type).toBe("GITHUB");
+      // Keyword should be applied
+      expect(where.OR).toEqual([{ title: { contains: "bug", mode: "insensitive" } }]);
+    });
+
+    it("explicit provider param takes precedence over provider in q", async () => {
+      mockFindMany.mockResolvedValue([]);
+      mockCount.mockResolvedValue(0);
+
+      await GET(makeRequest("?q=provider%3AREDMINE%20bug&provider=JIRA"));
+
+      const call = mockFindMany.mock.calls[0][0];
+      // Explicit param should win
+      expect(call.where.project.issueProvider.type).toBe("JIRA");
+    });
+
+    it("applies assignee filter parsed from q when explicit param is absent", async () => {
+      mockFindMany.mockResolvedValue([]);
+      mockCount.mockResolvedValue(0);
+
+      await GET(makeRequest("?q=assignee%3Aunassigned"));
+
+      const call = mockFindMany.mock.calls[0][0];
+      expect(call.where.isUnassigned).toBe(true);
+    });
+  });
 });

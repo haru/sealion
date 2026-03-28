@@ -25,6 +25,7 @@ import { allProjectsProcessed, shouldThrottleSync, SYNC_THROTTLE_MS } from "@/li
 import { sortIssues } from "@/lib/sort-utils";
 import { BoardSettings, DEFAULT_BOARD_SETTINGS, SortCriterion } from "@/lib/types";
 import { useTaskSearch } from "@/hooks/useTaskSearch";
+import { serializeKeywords } from "@/lib/search-parser";
 
 interface Issue {
   id: string;
@@ -131,7 +132,7 @@ export default function DashboardPage() {
         sortOrder: sortParam,
       });
 
-      if (q.keywords.length > 0) params.set("q", q.keywords.join(" "));
+      if (q.keywords.length > 0) params.set("q", serializeKeywords(q.keywords));
       if (q.provider) params.set("provider", q.provider);
       if (q.project) params.set("project", q.project);
       if (q.dueDateFilter) params.set("dueDateRange", q.dueDateFilter.preset);

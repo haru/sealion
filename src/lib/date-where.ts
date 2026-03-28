@@ -11,7 +11,10 @@ export function buildDateWhere(
   const now = new Date();
 
   if (preset === "none") {
-    return { [field]: null };
+    if (field === "dueDate") {
+      return { [field]: null };
+    }
+    return {};
   }
 
   const start = new Date(now);

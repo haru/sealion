@@ -615,4 +615,22 @@ describe("PATCH /api/providers/[id]", () => {
 
     expect(res.status).toBe(500);
   });
+
+  it("returns 500 when encrypt fails on PATCH with changeCredentials", async () => {
+    mockFindFirst.mockResolvedValue({ id: "p1", userId: "user-1", type: "GITHUB", encryptedCredentials: "enc", baseUrl: null });
+    mockEncrypt.mockImplementationOnce(() => {
+      throw new Error("CREDENTIALS_ENCRYPTION_KEY is missing or invalid");
+    });
+
+    const req = makeRequest("PATCH", {
+      displayName: "Updated",
+      changeCredentials: true,
+      credentials: { token: "new-token" },
+    }, "http://localhost/api/providers/p1");
+    const res = await PATCH(req, { params: Promise.resolve({ id: "p1" }) });
+
+    expect(res.status).toBe(500);
+    const json = await res.json();
+    expect(json.error).toBe("INTERNAL_ERROR");
+  });
 });

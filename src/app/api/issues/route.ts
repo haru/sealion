@@ -64,7 +64,11 @@ function parseSortOrder(raw: string | null): PrismaOrderBy[] {
  * GET /api/issues — Returns a paginated list of issues for the authenticated user.
  * Issues in the today list (todayFlag=true) are excluded — those are shown in the Today widget.
  * Supports optional search and filter parameters:
- *   - `q`: keyword search on issue title (space-separated OR, double-quote phrase)
+ *   - `q`: keyword search on issue title (space-separated OR, double-quote phrase).
+ *     Also supports embedded filter tokens (`provider:GITHUB`, `assignee:unassigned`,
+ *     `dueDate:today`, `createdDate:past7days`, `updatedDate:past30days`, `project:name`)
+ *     which are applied as fallbacks when the corresponding explicit query params are absent.
+ *     Explicit query params always take precedence over embedded tokens in `q`.
  *   - `provider`: filter by provider type (GITHUB / JIRA / REDMINE)
  *   - `project`: filter by project display name (partial match)
  *   - `dueDateRange`: filter by due date preset (today / thisWeek / thisMonth / pastYear / none)
@@ -94,6 +98,14 @@ export async function GET(req: NextRequest) {
 
   const parsed = parseSearchQuery(rawQ);
 
+  // Explicit query params take precedence over filters parsed from q
+  const effectiveProvider = provider ?? parsed.provider;
+  const effectiveProject = project ?? parsed.project;
+  const effectiveDueDateRange = dueDateRange ?? parsed.dueDateFilter?.preset;
+  const effectiveCreatedRange = createdRange ?? parsed.createdFilter?.preset;
+  const effectiveUpdatedRange = updatedRange ?? parsed.updatedFilter?.preset;
+  const effectiveAssignee = assignee ?? parsed.assignee;
+
   // Build keyword conditions (OR per keyword, ANDed with filters)
   const keywordWhere =
     parsed.keywords.length > 0
@@ -105,36 +117,36 @@ export async function GET(req: NextRequest) {
       : {};
 
   // Build date filter conditions
-  const dueDateWhere = dueDateRange ? buildDateWhere("dueDate", dueDateRange) : {};
-  const createdWhere = createdRange ? buildDateWhere("providerCreatedAt", createdRange) : {};
-  const updatedWhere = updatedRange ? buildDateWhere("providerUpdatedAt", updatedRange) : {};
+  const dueDateWhere = effectiveDueDateRange ? buildDateWhere("dueDate", effectiveDueDateRange) : {};
+  const createdWhere = effectiveCreatedRange ? buildDateWhere("providerCreatedAt", effectiveCreatedRange) : {};
+  const updatedWhere = effectiveUpdatedRange ? buildDateWhere("providerUpdatedAt", effectiveUpdatedRange) : {};
 
   // Build provider+project nested filter
   const providerProjectWhere: Record<string, unknown> = {};
-  if (provider || project) {
+  if (effectiveProvider || effectiveProject) {
     const issueProviderWhere: Record<string, unknown> = { userId: session.user.id };
-    if (provider) issueProviderWhere.type = provider;
+    if (effectiveProvider) issueProviderWhere.type = effectiveProvider;
 
-    if (provider && project) {
+    if (effectiveProvider && effectiveProject) {
       providerProjectWhere.project = {
         issueProvider: issueProviderWhere,
-        displayName: { contains: project, mode: "insensitive" as const },
+        displayName: { contains: effectiveProject, mode: "insensitive" as const },
       };
-    } else if (provider) {
+    } else if (effectiveProvider) {
       providerProjectWhere.project = { issueProvider: issueProviderWhere };
-    } else if (project) {
+    } else if (effectiveProject) {
       providerProjectWhere.project = {
         issueProvider: { userId: session.user.id },
-        displayName: { contains: project, mode: "insensitive" as const },
+        displayName: { contains: effectiveProject, mode: "insensitive" as const },
       };
     }
   }
 
   // Assignee filter
   const assigneeWhere: Record<string, unknown> =
-    assignee === "unassigned"
+    effectiveAssignee === "unassigned"
       ? { isUnassigned: true }
-      : assignee === "assigned"
+      : effectiveAssignee === "assigned"
         ? { isUnassigned: false }
         : {};
 

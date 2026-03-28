@@ -77,7 +77,12 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
     const credentialsWithoutUrl = Object.fromEntries(
       Object.entries(credentials).filter(([key]) => key !== "baseUrl")
     );
-    encryptedToStore = encrypt(JSON.stringify(credentialsWithoutUrl));
+    try {
+      encryptedToStore = encrypt(JSON.stringify(credentialsWithoutUrl));
+    } catch (error) {
+      console.error("[provider] Failed to encrypt credentials:", error instanceof Error ? error.message : String(error));
+      return fail("INTERNAL_ERROR", 500);
+    }
   } else {
     let existingCreds: Record<string, string>;
     try {

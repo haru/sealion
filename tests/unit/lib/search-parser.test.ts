@@ -4,7 +4,7 @@
  * double-quoted phrase, unclosed quote, prefix tokens, and combinations.
  */
 
-import { parseSearchQuery } from "@/lib/search-parser";
+import { parseSearchQuery, serializeKeywords } from "@/lib/search-parser";
 
 describe("parseSearchQuery", () => {
   describe("empty / whitespace input", () => {
@@ -150,6 +150,78 @@ describe("parseSearchQuery", () => {
     });
   });
 
+  describe("prefix token: createdDate", () => {
+    it("extracts createdDate:today filter", () => {
+      expect(parseSearchQuery("createdDate:today")).toEqual({
+        keywords: [],
+        createdFilter: { preset: "today" },
+      });
+    });
+
+    it("extracts createdDate:past7days filter", () => {
+      expect(parseSearchQuery("createdDate:past7days")).toEqual({
+        keywords: [],
+        createdFilter: { preset: "past7days" },
+      });
+    });
+
+    it("extracts createdDate:past30days filter", () => {
+      expect(parseSearchQuery("createdDate:past30days")).toEqual({
+        keywords: [],
+        createdFilter: { preset: "past30days" },
+      });
+    });
+
+    it("extracts createdDate:pastYear filter", () => {
+      expect(parseSearchQuery("createdDate:pastYear")).toEqual({
+        keywords: [],
+        createdFilter: { preset: "pastYear" },
+      });
+    });
+
+    it("ignores unknown createdDate preset values (treats as keyword)", () => {
+      const result = parseSearchQuery("createdDate:invalid");
+      expect(result.keywords).toContain("createdDate:invalid");
+      expect(result.createdFilter).toBeUndefined();
+    });
+  });
+
+  describe("prefix token: updatedDate", () => {
+    it("extracts updatedDate:today filter", () => {
+      expect(parseSearchQuery("updatedDate:today")).toEqual({
+        keywords: [],
+        updatedFilter: { preset: "today" },
+      });
+    });
+
+    it("extracts updatedDate:past7days filter", () => {
+      expect(parseSearchQuery("updatedDate:past7days")).toEqual({
+        keywords: [],
+        updatedFilter: { preset: "past7days" },
+      });
+    });
+
+    it("extracts updatedDate:past30days filter", () => {
+      expect(parseSearchQuery("updatedDate:past30days")).toEqual({
+        keywords: [],
+        updatedFilter: { preset: "past30days" },
+      });
+    });
+
+    it("extracts updatedDate:pastYear filter", () => {
+      expect(parseSearchQuery("updatedDate:pastYear")).toEqual({
+        keywords: [],
+        updatedFilter: { preset: "pastYear" },
+      });
+    });
+
+    it("ignores unknown updatedDate preset values (treats as keyword)", () => {
+      const result = parseSearchQuery("updatedDate:invalid");
+      expect(result.keywords).toContain("updatedDate:invalid");
+      expect(result.updatedFilter).toBeUndefined();
+    });
+  });
+
   describe("combined tokens", () => {
     it("combines keywords and multiple prefix filters", () => {
       const result = parseSearchQuery('bug "login issue" provider:GITHUB assignee:unassigned');
@@ -157,5 +229,37 @@ describe("parseSearchQuery", () => {
       expect(result.provider).toBe("GITHUB");
       expect(result.assignee).toBe("unassigned");
     });
+
+    it("combines created/updated date filters with keywords", () => {
+      const result = parseSearchQuery("bug createdDate:past7days updatedDate:past30days");
+      expect(result.keywords).toEqual(["bug"]);
+      expect(result.createdFilter).toEqual({ preset: "past7days" });
+      expect(result.updatedFilter).toEqual({ preset: "past30days" });
+    });
+  });
+});
+
+describe("serializeKeywords", () => {
+  it("returns empty string for empty array", () => {
+    expect(serializeKeywords([])).toBe("");
+  });
+
+  it("joins single words with spaces", () => {
+    expect(serializeKeywords(["bug", "fix"])).toBe("bug fix");
+  });
+
+  it("wraps multi-word keywords in double quotes", () => {
+    expect(serializeKeywords(["login issue"])).toBe('"login issue"');
+  });
+
+  it("handles mix of single-word and multi-word keywords", () => {
+    expect(serializeKeywords(["bug", "login issue", "crash"])).toBe('bug "login issue" crash');
+  });
+
+  it("round-trips correctly through parseSearchQuery", () => {
+    const original = ["bug", "login issue"];
+    const serialized = serializeKeywords(original);
+    const parsed = parseSearchQuery(serialized);
+    expect(parsed.keywords).toEqual(original);
   });
 });
