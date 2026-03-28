@@ -253,6 +253,16 @@ export default function DashboardPage() {
     const original = issues.find((i) => i.id === id);
     if (!original) return;
 
+    const rollback = () => {
+      setIssues((prev) =>
+        sortIssues(
+          prev.map((i) => (i.id === id ? { ...i, pinned: original.pinned } : i)),
+          boardSettingsSortOrderRef.current,
+        ),
+      );
+      addMessage("error", t("pinToggleError"));
+    };
+
     // Optimistic update
     setIssues((prev) =>
       sortIssues(
@@ -269,22 +279,10 @@ export default function DashboardPage() {
       });
 
       if (!res.ok) {
-        setIssues((prev) =>
-          sortIssues(
-            prev.map((i) => (i.id === id ? { ...i, pinned: original.pinned } : i)),
-            boardSettingsSortOrderRef.current,
-          ),
-        );
-        addMessage("error", t("pinToggleError"));
+        rollback();
       }
     } catch {
-      setIssues((prev) =>
-        sortIssues(
-          prev.map((i) => (i.id === id ? { ...i, pinned: original.pinned } : i)),
-          boardSettingsSortOrderRef.current,
-        ),
-      );
-      addMessage("error", t("pinToggleError"));
+      rollback();
     }
   }
 
