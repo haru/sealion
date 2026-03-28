@@ -53,6 +53,8 @@ const CREATED_UPDATED_PRESETS: ReadonlySet<string> = new Set<CreatedUpdatedPrese
 
 /**
  * Tokenises a raw query string, respecting double-quoted phrases.
+ * Also handles the `key:"value with spaces"` pattern used when appending filter
+ * tokens that contain spaces (e.g. project names).
  * Unclosed quotes cause the content to be split as plain tokens.
  * @param raw - The raw input string.
  * @returns An array of token strings.
@@ -67,7 +69,7 @@ function tokenise(raw: string): string[] {
     if (i >= raw.length) break;
 
     if (raw[i] === '"') {
-      // Look for closing quote
+      // Standalone quoted phrase
       const closeIdx = raw.indexOf('"', i + 1);
       if (closeIdx !== -1) {
         // Properly closed quoted phrase
@@ -83,9 +85,24 @@ function tokenise(raw: string): string[] {
         break;
       }
     } else {
-      // Plain token: read until next whitespace
+      // Plain token or key:"value with spaces" pattern.
+      // Read character by character until whitespace, but if we encounter
+      // the pattern `:"` (quote immediately after colon), extend the token
+      // to include the entire quoted value.
       let end = i;
-      while (end < raw.length && raw[end] !== " ") end++;
+      while (end < raw.length && raw[end] !== " ") {
+        if (raw[end] === '"' && end > i && raw[end - 1] === ":") {
+          // key:"value" pattern: extend token to closing quote
+          const closeQuote = raw.indexOf('"', end + 1);
+          if (closeQuote !== -1) {
+            end = closeQuote + 1;
+          } else {
+            end = raw.length; // unclosed quote — include remainder
+          }
+          break;
+        }
+        end++;
+      }
       tokens.push(raw.slice(i, end));
       i = end;
     }
@@ -112,7 +129,12 @@ export function parseSearchQuery(raw: string): ParsedQuery {
     const colonIdx = token.indexOf(":");
     if (colonIdx > 0) {
       const key = token.slice(0, colonIdx);
-      const value = token.slice(colonIdx + 1);
+      // Strip surrounding quotes added by the key:"value with spaces" pattern
+      const rawValue = token.slice(colonIdx + 1);
+      const value =
+        rawValue.startsWith('"') && rawValue.endsWith('"') && rawValue.length > 2
+          ? rawValue.slice(1, -1)
+          : rawValue;
 
       if (key === "provider" && value.length > 0) {
         result.provider = value;

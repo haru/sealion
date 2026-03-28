@@ -236,6 +236,8 @@
     "thisMonth": "This month",
     "pastYear": "Past year",
     "noDeadline": "No due date",
+    "past7days": "Past 7 days",
+    "past30days": "Past 30 days",
     "noResults": "No issues match your search.",
     "clearSearch": "Clear search",
     "clearFilter": "Clear filter"

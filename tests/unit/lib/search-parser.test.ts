@@ -68,6 +68,20 @@ describe("parseSearchQuery", () => {
         project: "sealion",
       });
     });
+
+    it('extracts project filter from project:"My Project" quoted token', () => {
+      expect(parseSearchQuery('project:"My Project"')).toEqual({
+        keywords: [],
+        project: "My Project",
+      });
+    });
+
+    it("handles project quoted token alongside other keywords", () => {
+      const result = parseSearchQuery('bug project:"My Project" provider:GITHUB');
+      expect(result.keywords).toEqual(["bug"]);
+      expect(result.project).toBe("My Project");
+      expect(result.provider).toBe("GITHUB");
+    });
   });
 
   describe("prefix token: assignee", () => {

@@ -83,44 +83,71 @@ test.describe("US1 — Keyword search", () => {
 // ─── User Story 2: Filter Dropdown ─────────────────────────────────────────
 
 test.describe("US2 — Filter dropdown", () => {
-  test("filter dropdown appears on input focus", async ({ page }) => {
+  test("filter dropdown appears on input focus showing filter key options", async ({ page }) => {
     await login(page);
     const searchBar = page.getByPlaceholder(/search issues/i);
     await searchBar.click();
-    // Filter dropdown/popover should appear
+    // Dropdown with "Filter by" heading must appear
     const filterDropdown = page.getByText(/filter by/i);
     await expect(filterDropdown).toBeVisible({ timeout: 2000 });
   });
 
-  test("provider filter selection updates the list", async ({ page }) => {
+  test("typing in the search box filters key option names", async ({ page }) => {
+    await login(page);
+    const searchBar = page.getByPlaceholder(/search issues/i);
+    await searchBar.click();
+    // Type "A" — only "Assignee" should remain (starts with A)
+    await searchBar.type("A");
+    await page.waitForTimeout(200);
+    // Provider and Project should no longer be visible as menu items
+    const providerOption = page.getByRole("menuitem", { name: /^provider$/i });
+    const assigneeOption = page.getByRole("menuitem", { name: /^assignee$/i });
+    // Assignee must be visible; Provider must not be
+    if (await assigneeOption.count() > 0) {
+      await expect(assigneeOption.first()).toBeVisible();
+    }
+    const providerVisible = await providerOption.isVisible().catch(() => false);
+    expect(providerVisible).toBe(false);
+  });
+
+  test("provider filter selection updates the list (2-step flow)", async ({ page }) => {
     await login(page);
     const searchBar = page.getByPlaceholder(/search issues/i);
     await searchBar.click();
 
-    // Find provider section and click GITHUB option if available
-    const githubOption = page.getByRole("menuitem", { name: /github/i }).or(
-      page.getByRole("option", { name: /github/i })
-    );
-    if (await githubOption.count() > 0) {
-      await githubOption.first().click();
-      await page.waitForTimeout(600);
-      // After selecting, verify the list updated (no assertion on specific count — depends on data)
-      await expect(page.locator("body")).toBeVisible();
-    } else {
-      // Skip if no GITHUB option found (no providers registered in test env)
+    // Step 1: select the Provider key option
+    const providerKey = page
+      .getByRole("menuitem", { name: /^provider$/i })
+      .or(page.getByRole("option", { name: /^provider$/i }));
+    if (await providerKey.count() === 0) {
       test.skip();
+      return;
     }
+    await providerKey.first().click();
+    await page.waitForTimeout(300);
+
+    // Step 2: select GITHUB value if available
+    const githubOption = page
+      .getByRole("menuitem", { name: /github/i })
+      .or(page.getByRole("option", { name: /github/i }));
+    if (await githubOption.count() === 0) {
+      test.skip();
+      return;
+    }
+    await githubOption.first().click();
+    await page.waitForTimeout(600);
+    // After selecting, verify the list updated (no assertion on specific count — depends on data)
+    await expect(page.locator("body")).toBeVisible();
   });
 
   test("clear-all button removes all filters and restores full list", async ({ page }) => {
     await login(page);
     // Find a clear-all or clear filter button
-    const clearAllBtn = page.getByLabel(/clear filter/i).or(
-      page.getByText(/clear filter/i)
-    );
-    // Button may not be visible until filters are active — just verify it exists in DOM or skip
+    const clearAllBtn = page
+      .getByLabel(/clear filter/i)
+      .or(page.getByText(/clear filter/i));
+    // Button may not be visible until filters are active — just verify dashboard loaded
     const isPresent = await clearAllBtn.count();
-    // Just verify the dashboard loaded correctly
     await expect(page.getByPlaceholder(/search issues/i)).toBeVisible();
     void isPresent; // used to avoid unused var lint
   });
@@ -129,49 +156,71 @@ test.describe("US2 — Filter dropdown", () => {
 // ─── User Story 3: Filter Tokens ───────────────────────────────────────────
 
 test.describe("US3 — Filter tokens", () => {
-  test("chip token is visible after filter selection", async ({ page }) => {
-    await login(page);
+  /**
+   * Helper: selects the Assignee → Unassigned filter via the 2-step dropdown flow.
+   * Returns false if either step's options are not found (caller should skip).
+   */
+  async function selectAssigneeUnassigned(page: Page): Promise<boolean> {
     const searchBar = page.getByPlaceholder(/search issues/i);
     await searchBar.click();
 
-    // Try to select a filter option from the dropdown
-    const filterOption = page.getByRole("menuitem").or(page.getByRole("option")).first();
-    if (await filterOption.count() > 0) {
-      await filterOption.click();
-      await page.waitForTimeout(300);
-      // A chip/token should now be visible
-      const chip = page.locator('[data-testid="search-filter-token"]').or(
-        page.locator('.MuiChip-root')
-      );
-      await expect(chip.first()).toBeVisible({ timeout: 2000 });
-    } else {
+    // Step 1: click "Assignee" key option
+    const assigneeKey = page
+      .getByRole("menuitem", { name: /^assignee$/i })
+      .or(page.getByRole("option", { name: /^assignee$/i }));
+    if (await assigneeKey.count() === 0) return false;
+    await assigneeKey.first().click();
+    await page.waitForTimeout(300);
+
+    // Step 2: click "Unassigned" value option
+    const unassignedOpt = page
+      .getByRole("menuitem", { name: /unassigned/i })
+      .or(page.getByRole("option", { name: /unassigned/i }));
+    if (await unassignedOpt.count() === 0) return false;
+    await unassignedOpt.first().click();
+    await page.waitForTimeout(300);
+
+    return true;
+  }
+
+  test("chip token is visible after 2-step filter selection", async ({ page }) => {
+    await login(page);
+
+    const selected = await selectAssigneeUnassigned(page);
+    if (!selected) {
       test.skip();
+      return;
     }
+
+    // A chip/token should now be visible
+    const chip = page
+      .locator('[data-testid="search-filter-token"]')
+      .or(page.locator(".MuiChip-root"));
+    await expect(chip.first()).toBeVisible({ timeout: 2000 });
   });
 
   test("individual chip × deletion removes only that filter", async ({ page }) => {
     await login(page);
-    const searchBar = page.getByPlaceholder(/search issues/i);
-    await searchBar.click();
 
-    const filterOption = page.getByRole("menuitem").or(page.getByRole("option")).first();
-    if (await filterOption.count() > 0) {
-      await filterOption.click();
+    const selected = await selectAssigneeUnassigned(page);
+    if (!selected) {
+      test.skip();
+      return;
+    }
+
+    // Click the delete icon on the chip
+    const chipDeleteBtn = page
+      .locator('[data-testid="CancelIcon"]')
+      .or(page.locator(".MuiChip-deleteIcon"))
+      .first();
+    if (await chipDeleteBtn.isVisible().catch(() => false)) {
+      await chipDeleteBtn.click();
       await page.waitForTimeout(300);
-
-      // Click the delete icon on the chip
-      const chipDeleteBtn = page.locator('[data-testid="CancelIcon"]').or(
-        page.locator('.MuiChip-deleteIcon')
-      ).first();
-      if (await chipDeleteBtn.isVisible().catch(() => false)) {
-        await chipDeleteBtn.click();
-        await page.waitForTimeout(300);
-        // Token should be gone
-        const remainingTokens = await page.locator('[data-testid="search-filter-token"]').count();
-        expect(remainingTokens).toBe(0);
-      } else {
-        test.skip();
-      }
+      // Token should be gone
+      const remainingTokens = await page
+        .locator('[data-testid="search-filter-token"]')
+        .count();
+      expect(remainingTokens).toBe(0);
     } else {
       test.skip();
     }

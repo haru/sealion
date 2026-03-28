@@ -236,6 +236,8 @@
     "thisMonth": "今月",
     "pastYear": "過去1年",
     "noDeadline": "期限なし",
+    "past7days": "過去7日間",
+    "past30days": "過去30日間",
     "noResults": "条件に一致するIssueがありません。",
     "clearSearch": "検索をクリア",
     "clearFilter": "フィルターをクリア"

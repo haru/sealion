@@ -83,12 +83,9 @@ export default function DashboardPage() {
 
   const {
     rawQuery,
-    filters,
     debouncedQuery,
     setRawQuery,
-    setFilter,
     clearSearch,
-    clearAllFilters,
   } = useTaskSearch();
 
   const sensors = useSensors(useSensor(PointerSensor));
@@ -619,14 +616,11 @@ export default function DashboardPage() {
           <Box sx={{ mt: 2, mb: 1 }}>
             <TaskSearchBar
               value={rawQuery}
-              filters={filters}
               onSearch={setRawQuery}
-              onFilterSelect={setFilter}
               onClear={clearSearch}
-              onClearAllFilters={clearAllFilters}
               availableProviders={availableProviderTypes}
               availableProjects={availableProjectNames}
-              hasNoResults={!loading && total === 0 && (rawQuery.trim().length > 0 || Object.keys(filters).some((k) => filters[k as keyof typeof filters] !== undefined))}
+              hasNoResults={!loading && total === 0 && rawQuery.trim().length > 0}
             />
           </Box>
           <TodoList
