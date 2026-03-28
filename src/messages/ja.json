@@ -219,5 +219,25 @@
   "a11y": {
     "openMenu": "メニューを開く",
     "settings": "設定"
+  },
+  "search": {
+    "placeholder": "Issueを検索...",
+    "filterBy": "絞り込み",
+    "provider": "プロバイダー",
+    "project": "プロジェクト",
+    "dueDate": "期限",
+    "createdDate": "作成日",
+    "updatedDate": "更新日",
+    "assignee": "担当者",
+    "unassigned": "未割り当て",
+    "assigned": "割り当て済み",
+    "today": "今日",
+    "thisWeek": "今週",
+    "thisMonth": "今月",
+    "pastYear": "過去1年",
+    "noDeadline": "期限なし",
+    "noResults": "条件に一致するIssueがありません。",
+    "clearSearch": "検索をクリア",
+    "clearFilter": "フィルターをクリア"
   }
 }

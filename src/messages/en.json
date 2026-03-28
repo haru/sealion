@@ -219,5 +219,25 @@
   "a11y": {
     "openMenu": "Open menu",
     "settings": "Settings"
+  },
+  "search": {
+    "placeholder": "Search issues...",
+    "filterBy": "Filter by",
+    "provider": "Provider",
+    "project": "Project",
+    "dueDate": "Due date",
+    "createdDate": "Created date",
+    "updatedDate": "Updated date",
+    "assignee": "Assignee",
+    "unassigned": "Unassigned",
+    "assigned": "Assigned",
+    "today": "Today",
+    "thisWeek": "This week",
+    "thisMonth": "This month",
+    "pastYear": "Past year",
+    "noDeadline": "No due date",
+    "noResults": "No issues match your search.",
+    "clearSearch": "Clear search",
+    "clearFilter": "Clear filter"
   }
 }

@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { ok, fail } from "@/lib/api-response";
 import { getProviderIconUrl } from "@/services/issue-provider/factory";
 import { VALID_SORT_CRITERIA, MAX_SORT_CRITERIA, SortCriterion } from "@/lib/types";
+import { parseSearchQuery } from "@/lib/search-parser";
 
 type PrismaOrderBy = Record<string, { sort: string; nulls?: string } | string>;
 
@@ -59,9 +60,83 @@ function parseSortOrder(raw: string | null): PrismaOrderBy[] {
 }
 
 /**
+ * Converts a date range preset string to a Prisma date filter for the given field.
+ * @param field - The Prisma Issue field name to filter on.
+ * @param preset - The date range preset string.
+ * @returns A partial Prisma where object, or an empty object if the preset is unrecognised.
+ */
+function buildDateWhere(
+  field: "dueDate" | "providerCreatedAt" | "providerUpdatedAt",
+  preset: string
+): Record<string, unknown> {
+  const now = new Date();
+
+  if (preset === "none") {
+    // Only meaningful for dueDate
+    return { [field]: null };
+  }
+
+  const start = new Date(now);
+  const end = new Date(now);
+
+  if (preset === "today") {
+    start.setHours(0, 0, 0, 0);
+    end.setHours(23, 59, 59, 999);
+    return { [field]: { gte: start, lte: end } };
+  }
+
+  if (preset === "thisWeek") {
+    // Monday of current week to end of Sunday
+    const dayOfWeek = now.getDay(); // 0 = Sunday
+    const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+    start.setDate(now.getDate() - daysToMonday);
+    start.setHours(0, 0, 0, 0);
+    end.setDate(start.getDate() + 6);
+    end.setHours(23, 59, 59, 999);
+    return { [field]: { gte: start, lte: end } };
+  }
+
+  if (preset === "thisMonth") {
+    start.setDate(1);
+    start.setHours(0, 0, 0, 0);
+    end.setMonth(end.getMonth() + 1, 0);
+    end.setHours(23, 59, 59, 999);
+    return { [field]: { gte: start, lte: end } };
+  }
+
+  if (preset === "past7days") {
+    start.setDate(now.getDate() - 7);
+    start.setHours(0, 0, 0, 0);
+    return { [field]: { gte: start } };
+  }
+
+  if (preset === "past30days") {
+    start.setDate(now.getDate() - 30);
+    start.setHours(0, 0, 0, 0);
+    return { [field]: { gte: start } };
+  }
+
+  if (preset === "pastYear") {
+    start.setFullYear(now.getFullYear() - 1);
+    start.setHours(0, 0, 0, 0);
+    return { [field]: { gte: start } };
+  }
+
+  return {};
+}
+
+/**
  * GET /api/issues — Returns a paginated list of issues for the authenticated user.
  * Issues in the today list (todayFlag=true) are excluded — those are shown in the Today widget.
- * @param req - Supports query params: `page`, `limit`.
+ * Supports optional search and filter parameters:
+ *   - `q`: keyword search on issue title (space-separated OR, double-quote phrase)
+ *   - `provider`: filter by provider type (GITHUB / JIRA / REDMINE)
+ *   - `project`: filter by project display name (partial match)
+ *   - `dueDateRange`: filter by due date preset (today / thisWeek / thisMonth / pastYear / none)
+ *   - `createdRange`: filter by created date preset (today / past7days / past30days / pastYear)
+ *   - `updatedRange`: filter by updated date preset (today / past7days / past30days / pastYear)
+ *   - `assignee`: filter by assignee status (unassigned / assigned)
+ * @param req - Supports query params: `page`, `limit`, `sortOrder`, and the search/filter params above.
  * @returns JSON response in the standard `{ data, error }` envelope where `data` is `{ items, total, totalToday, page, limit }` on success.
  */
 export async function GET(req: NextRequest) {
@@ -73,16 +148,80 @@ export async function GET(req: NextRequest) {
   const limit = Math.min(100, Math.max(1, Number(searchParams.get("limit") ?? "20")));
   const orderBy = parseSortOrder(searchParams.get("sortOrder"));
 
+  // Search and filter params
+  const rawQ = searchParams.get("q") ?? "";
+  const provider = searchParams.get("provider") ?? undefined;
+  const project = searchParams.get("project") ?? undefined;
+  const dueDateRange = searchParams.get("dueDateRange") ?? undefined;
+  const createdRange = searchParams.get("createdRange") ?? undefined;
+  const updatedRange = searchParams.get("updatedRange") ?? undefined;
+  const assignee = searchParams.get("assignee") ?? undefined;
+
+  const parsed = parseSearchQuery(rawQ);
+
+  // Build keyword conditions (OR per keyword, ANDed with filters)
+  const keywordWhere =
+    parsed.keywords.length > 0
+      ? {
+          OR: parsed.keywords.map((kw) => ({
+            title: { contains: kw, mode: "insensitive" as const },
+          })),
+        }
+      : {};
+
+  // Build date filter conditions
+  const dueDateWhere = dueDateRange ? buildDateWhere("dueDate", dueDateRange) : {};
+  const createdWhere = createdRange ? buildDateWhere("providerCreatedAt", createdRange) : {};
+  const updatedWhere = updatedRange ? buildDateWhere("providerUpdatedAt", updatedRange) : {};
+
+  // Build provider+project nested filter
+  const providerProjectWhere: Record<string, unknown> = {};
+  if (provider || project) {
+    const issueProviderWhere: Record<string, unknown> = {};
+    if (provider) issueProviderWhere.type = provider;
+
+    if (provider && project) {
+      providerProjectWhere.project = {
+        issueProvider: issueProviderWhere,
+        displayName: { contains: project, mode: "insensitive" as const },
+      };
+    } else if (provider) {
+      providerProjectWhere.project = { issueProvider: issueProviderWhere };
+    } else if (project) {
+      providerProjectWhere.project = {
+        displayName: { contains: project, mode: "insensitive" as const },
+      };
+    }
+  }
+
+  // Assignee filter
+  const assigneeWhere: Record<string, unknown> =
+    assignee === "unassigned"
+      ? { isUnassigned: true }
+      : assignee === "assigned"
+        ? { isUnassigned: false }
+        : {};
+
   const baseWhere = {
     project: {
       issueProvider: { userId: session.user.id },
     },
   };
 
+  const filterWhere = {
+    ...keywordWhere,
+    ...dueDateWhere,
+    ...createdWhere,
+    ...updatedWhere,
+    ...assigneeWhere,
+    ...providerProjectWhere,
+  };
+
   const regularWhere = {
     ...baseWhere,
     // Exclude issues in today's list — those are shown in the Today widget instead.
     todayFlag: { not: true },
+    ...filterWhere,
   };
 
   const todayWhere = {

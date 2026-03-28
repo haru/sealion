@@ -206,6 +206,8 @@ Use `http://app:3000` instead — `app` is the hostname of the Next.js dev conta
 - N/A — no database schema changes (016-proxy-support)
 - TypeScript 5 / Node.js 20 LTS + Next.js 16 (App Router), MUI v7, Prisma 7, next-intl 4, dnd-kit (既存) (018-task-pin)
 - PostgreSQL 16 via Prisma 7 — `Issue` テーブルに `pinned Boolean` カラム追加 (018-task-pin)
+- TypeScript 5 / Node.js 20 LTS + Next.js 16 (App Router), MUI v7, Prisma 7, next-intl 4, React (019-task-search)
+- PostgreSQL 16 via Prisma 7 — Issue.dueDate / isUnassigned / providerCreatedAt / providerUpdatedAt / project.issueProvider.type / project.displayName はすべて既存フィールド。スキーマ変更不要。 (019-task-search)
 
 ## Recent Changes
 - 009-task-display-cleanup: Removed `priority` field from Issue model; added `providerCreatedAt` / `providerUpdatedAt` fields; added Today tasks area with drag-and-drop reorder (dnd-kit)
