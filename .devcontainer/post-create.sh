@@ -3,7 +3,7 @@ set -e
 
 cd $(dirname "$0")/..
 
-npm install
+npm ci
 
 if [ ! -f .env.local ]; then
     auth_secret=$(openssl rand -base64 32)
