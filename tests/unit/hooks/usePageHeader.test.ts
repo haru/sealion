@@ -5,30 +5,12 @@
 import { renderHook, act } from "@testing-library/react";
 import React from "react";
 import { usePageHeader } from "@/hooks/usePageHeader";
-import { PageHeaderProvider } from "@/contexts/PageHeaderContext";
+import { PageHeaderContext, PageHeaderProvider } from "@/contexts/PageHeaderContext";
 
 const wrapper = ({ children }: { children: React.ReactNode }) =>
   React.createElement(PageHeaderProvider, null, children);
 
 describe("usePageHeader", () => {
-  it("calls setPageHeader with the given title on mount", () => {
-    const { result: ctxResult } = renderHook(
-      () => {
-        // Import context hook here to observe its state
-        const { usePageHeaderContext } = jest.requireActual(
-          "@/contexts/PageHeaderContext"
-        ) as typeof import("@/contexts/PageHeaderContext");
-        return usePageHeaderContext();
-      },
-      { wrapper }
-    );
-
-    // Render usePageHeader within the same provider
-    renderHook(() => usePageHeader("My Page"), { wrapper });
-
-    // After mount, the context title should be updated
-    // (We test this indirectly via a combined hook)
-  });
 
   it("sets title in the context when mounted", () => {
     const { result } = renderHook(
@@ -64,26 +46,33 @@ describe("usePageHeader", () => {
   });
 
   it("clears title on unmount", () => {
-    const { result, unmount } = renderHook(
-      () => {
-        const { usePageHeaderContext } = jest.requireActual(
-          "@/contexts/PageHeaderContext"
-        ) as typeof import("@/contexts/PageHeaderContext");
-        usePageHeader("Temp");
-        return usePageHeaderContext();
-      },
-      { wrapper }
-    );
+    const mockSetPageHeader = jest.fn();
+    const mockWrapper = ({ children }: { children: React.ReactNode }) =>
+      React.createElement(
+        PageHeaderContext.Provider,
+        {
+          value: {
+            title: "",
+            actions: null,
+            setPageHeader: mockSetPageHeader,
+          },
+        },
+        children
+      );
 
-    expect(result.current.title).toBe("Temp");
+    const { unmount } = renderHook(() => usePageHeader("Temp"), {
+      wrapper: mockWrapper,
+    });
+
+    // On mount, setPageHeader should have been called with the title
+    expect(mockSetPageHeader).toHaveBeenCalledWith("Temp", undefined);
 
     act(() => {
       unmount();
     });
 
-    // After unmount, the cleanup should have been called (setPageHeader("", null))
-    // We verify by checking the title is cleared
-    // Note: after unmount the result is stale, but the effect cleanup ran
+    // On unmount, the cleanup should call setPageHeader("", null)
+    expect(mockSetPageHeader).toHaveBeenLastCalledWith("", null);
   });
 
   it("updates title when the title argument changes", () => {

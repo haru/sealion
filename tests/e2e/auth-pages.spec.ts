@@ -17,7 +17,7 @@ test.describe("Auth Pages — Accessibility and UI", () => {
       await expect(logoImg).toHaveAttribute("aria-hidden", "true");
     });
 
-    test("sign-up link is keyboard-reachable and has focus-visible styling", async ({ page }) => {
+    test("sign-up link is keyboard-reachable and focusable", async ({ page }) => {
       const signupLink = page.locator("a[href='/signup']");
       await expect(signupLink).toBeVisible();
 
@@ -56,7 +56,7 @@ test.describe("Auth Pages — Accessibility and UI", () => {
       await expect(logoImg).toHaveAttribute("aria-hidden", "true");
     });
 
-    test("login link is keyboard-reachable and has focus-visible styling", async ({ page }) => {
+    test("login link is keyboard-reachable and focusable", async ({ page }) => {
       const loginLink = page.locator("a[href='/login']");
       await expect(loginLink).toBeVisible();
 

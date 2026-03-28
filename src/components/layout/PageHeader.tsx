@@ -36,7 +36,7 @@ export default function PageHeader({ title, actions }: PageHeaderProps) {
         flexShrink: 0,
       }}
     >
-      <Typography sx={{ fontWeight: 600, fontSize: "0.9rem", color: "text.primary" }}>
+      <Typography component="h1" sx={{ fontWeight: 600, fontSize: "0.9rem", color: "text.primary" }}>
         {title}
       </Typography>
       {actions != null && (
