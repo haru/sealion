@@ -77,9 +77,20 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
     const credentialsWithoutUrl = Object.fromEntries(
       Object.entries(credentials).filter(([key]) => key !== "baseUrl")
     );
-    encryptedToStore = encrypt(JSON.stringify(credentialsWithoutUrl));
+    try {
+      encryptedToStore = encrypt(JSON.stringify(credentialsWithoutUrl));
+    } catch (error) {
+      console.error("[provider] Failed to encrypt credentials:", error instanceof Error ? error.message : String(error));
+      return fail("INTERNAL_ERROR", 500);
+    }
   } else {
-    const existingCreds = JSON.parse(decrypt(provider.encryptedCredentials));
+    let existingCreds: Record<string, string>;
+    try {
+      existingCreds = JSON.parse(decrypt(provider.encryptedCredentials));
+    } catch {
+      console.error("[provider] Failed to decrypt existing credentials for provider", id);
+      return fail("CREDENTIALS_DECRYPT_FAILED", 500);
+    }
     effectiveCredentials = { ...existingCreds, ...(baseUrl ? { baseUrl } : provider.baseUrl ? { baseUrl: provider.baseUrl } : {}) };
   }
 
@@ -93,15 +104,21 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
     return failWithDetails("CONNECTION_TEST_FAILED", errorDetails, 422);
   }
 
-  const updated = await prisma.issueProvider.update({
-    where: { id },
-    data: {
-      displayName,
-      ...(baseUrl !== undefined ? { baseUrl } : {}),
-      ...(encryptedToStore ? { encryptedCredentials: encryptedToStore } : {}),
-    },
-    select: { id: true, type: true, displayName: true, baseUrl: true, createdAt: true },
-  });
+  let updated;
+  try {
+    updated = await prisma.issueProvider.update({
+      where: { id },
+      data: {
+        displayName,
+        ...(baseUrl !== undefined ? { baseUrl } : {}),
+        ...(encryptedToStore ? { encryptedCredentials: encryptedToStore } : {}),
+      },
+      select: { id: true, type: true, displayName: true, baseUrl: true, createdAt: true },
+    });
+  } catch (error) {
+    console.error("[provider] Failed to update provider:", error instanceof Error ? error.message : String(error));
+    return fail("INTERNAL_ERROR", 500);
+  }
 
   return ok({ ...updated, iconUrl: getProviderIconUrl(updated.type) });
 }

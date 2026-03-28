@@ -107,6 +107,16 @@ describe("buildAxiosProxyConfig — US1: proxy env var reading", () => {
     expect(config).toEqual({});
   });
 
+  it("logs a warning when baseUrl is malformed", () => {
+    process.env.https_proxy = "http://proxy.example.com:8080";
+    const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
+    const config = buildAxiosProxyConfig("not-a-url");
+    expect(config).toEqual({});
+    const warned = warnSpy.mock.calls.map((c: unknown[]) => c.join(" ")).join("\n");
+    expect(warned).toContain("not-a-url");
+    warnSpy.mockRestore();
+  });
+
   it("does not mask @ in proxy URL path when no credentials present", () => {
     // A URL like http://proxy.example.com/@foo has no credentials — maskCredentials
     // should leave the URL unmodified and not incorrectly replace the @foo path segment.

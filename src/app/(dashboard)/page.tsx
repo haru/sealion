@@ -20,9 +20,12 @@ import TodoList from "@/components/todo/TodoList";
 import SyncStatus from "@/components/todo/SyncStatus";
 import CompleteIssueModal from "@/components/todo/CompleteIssueModal";
 import TodayTasksArea, { TODAY_DROP_ZONE_ID } from "@/components/today-tasks/TodayTasksArea";
+import TaskSearchBar from "@/components/search/TaskSearchBar";
 import { allProjectsProcessed, shouldThrottleSync, SYNC_THROTTLE_MS } from "@/lib/sync-utils";
 import { sortIssues } from "@/lib/sort-utils";
 import { BoardSettings, DEFAULT_BOARD_SETTINGS, SortCriterion } from "@/lib/types";
+import { useTaskSearch } from "@/hooks/useTaskSearch";
+import { serializeKeywords } from "@/lib/search-parser";
 
 interface Issue {
   id: string;
@@ -79,7 +82,26 @@ export default function DashboardPage() {
   const boardSettingsSortOrderRef = useRef<SortCriterion[]>(DEFAULT_BOARD_SETTINGS.sortOrder);
   const syncStartedAtRef = useRef<Date | null>(null);
 
+  const {
+    rawQuery,
+    debouncedQuery,
+    setRawQuery,
+    clearSearch,
+  } = useTaskSearch();
+
   const sensors = useSensors(useSensor(PointerSensor));
+
+  /** Provider types available in the user's connected providers, for the filter dropdown. */
+  const availableProviderTypes = useMemo(
+    () => [...new Set(syncProviders.map((p) => p.type))],
+    [syncProviders]
+  );
+
+  /** Project display names for the filter dropdown. */
+  const availableProjectNames = useMemo(
+    () => [...new Set(syncProviders.flatMap((p) => p.projects.map((proj) => proj.displayName)))],
+    [syncProviders]
+  );
 
   const todayIssuesSorted = useMemo(
     () =>
@@ -94,20 +116,43 @@ export default function DashboardPage() {
     [activeDragId, issues, todayIssues]
   );
 
-  const fetchIssues = useCallback(async (p: number, sortOrder?: SortCriterion[]) => {
-    const order = sortOrder ?? boardSettingsSortOrderRef.current;
-    const sortParam = order.join(",");
-    try {
-      const res = await fetch(`/api/issues?page=${p}&limit=20&sortOrder=${encodeURIComponent(sortParam)}`);
-      if (res.ok) {
-        const json = await res.json();
-        setIssues(json.data.items);
-        setTotal(json.data.total);
+  const fetchIssues = useCallback(
+    async (
+      p: number,
+      sortOrder?: SortCriterion[],
+      searchQuery?: typeof debouncedQuery
+    ) => {
+      const order = sortOrder ?? boardSettingsSortOrderRef.current;
+      const sortParam = order.join(",");
+      const q = searchQuery ?? debouncedQuery;
+
+      const params = new URLSearchParams({
+        page: String(p),
+        limit: "20",
+        sortOrder: sortParam,
+      });
+
+      if (q.keywords.length > 0) params.set("q", serializeKeywords(q.keywords));
+      if (q.provider) params.set("provider", q.provider);
+      if (q.project) params.set("project", q.project);
+      if (q.dueDateFilter) params.set("dueDateRange", q.dueDateFilter.preset);
+      if (q.createdFilter) params.set("createdRange", q.createdFilter.preset);
+      if (q.updatedFilter) params.set("updatedRange", q.updatedFilter.preset);
+      if (q.assignee) params.set("assignee", q.assignee);
+
+      try {
+        const res = await fetch(`/api/issues?${params.toString()}`);
+        if (res.ok) {
+          const json = await res.json();
+          setIssues(json.data.items);
+          setTotal(json.data.total);
+        }
+      } catch {
+        // Silently skip — the polling loop or user will retry
       }
-    } catch {
-      // Silently skip — the polling loop or user will retry
-    }
-  }, []);
+    },
+    [debouncedQuery]
+  );
 
   const fetchTodayIssues = useCallback(async () => {
     try {
@@ -120,6 +165,18 @@ export default function DashboardPage() {
       // Silently skip — the polling loop or user will retry
     }
   }, []);
+
+  // Re-fetch issues whenever the debounced search/filter query changes.
+  // Skip on initial mount (loading === true) — the init() call handles the first fetch.
+  const isInitialMountRef = useRef(true);
+  useEffect(() => {
+    if (isInitialMountRef.current) {
+      isInitialMountRef.current = false;
+      return;
+    }
+    void fetchIssues(1);
+    setPage(1);
+  }, [debouncedQuery, fetchIssues]);
 
   const startSync = useCallback(async () => {
     syncStartedAtRef.current = new Date();
@@ -453,13 +510,13 @@ export default function DashboardPage() {
       })
     );
 
-    const res = await fetch("/api/issues/today/reorder", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ orderedIds }),
-    });
-
     try {
+      const res = await fetch("/api/issues/today/reorder", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderedIds }),
+      });
+
       if (!res.ok) {
         setTodayIssues(prevTodayIssues);
         addMessage("error", tToday("reorderError"));
@@ -557,6 +614,16 @@ export default function DashboardPage() {
 
         <Box sx={{ mt: 2 }}>
           <TodayTasksArea items={todayIssuesSorted} onRemove={handleRemoveFromToday} onComplete={handleComplete} />
+          <Box sx={{ mt: 2, mb: 1 }}>
+            <TaskSearchBar
+              value={rawQuery}
+              onSearch={setRawQuery}
+              onClear={clearSearch}
+              availableProviders={availableProviderTypes}
+              availableProjects={availableProjectNames}
+              hasNoResults={!loading && total === 0 && rawQuery.trim().length > 0}
+            />
+          </Box>
           <TodoList
             items={issues}
             total={total}

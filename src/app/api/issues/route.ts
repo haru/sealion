@@ -4,6 +4,8 @@ import { prisma } from "@/lib/db";
 import { ok, fail } from "@/lib/api-response";
 import { getProviderIconUrl } from "@/services/issue-provider/factory";
 import { VALID_SORT_CRITERIA, MAX_SORT_CRITERIA, SortCriterion } from "@/lib/types";
+import { parseSearchQuery } from "@/lib/search-parser";
+import { buildDateWhere } from "@/lib/date-where";
 
 type PrismaOrderBy = Record<string, { sort: string; nulls?: string } | string>;
 
@@ -61,7 +63,19 @@ function parseSortOrder(raw: string | null): PrismaOrderBy[] {
 /**
  * GET /api/issues — Returns a paginated list of issues for the authenticated user.
  * Issues in the today list (todayFlag=true) are excluded — those are shown in the Today widget.
- * @param req - Supports query params: `page`, `limit`.
+ * Supports optional search and filter parameters:
+ *   - `q`: keyword search on issue title (space-separated OR, double-quote phrase).
+ *     Also supports embedded filter tokens (`provider:GITHUB`, `assignee:unassigned`,
+ *     `dueDate:today`, `createdDate:past7days`, `updatedDate:past30days`, `project:name`)
+ *     which are applied as fallbacks when the corresponding explicit query params are absent.
+ *     Explicit query params always take precedence over embedded tokens in `q`.
+ *   - `provider`: filter by provider type (GITHUB / JIRA / REDMINE)
+ *   - `project`: filter by project display name (partial match)
+ *   - `dueDateRange`: filter by due date preset (today / thisWeek / thisMonth / pastYear / none)
+ *   - `createdRange`: filter by created date preset (today / past7days / past30days / pastYear)
+ *   - `updatedRange`: filter by updated date preset (today / past7days / past30days / pastYear)
+ *   - `assignee`: filter by assignee status (unassigned / assigned)
+ * @param req - Supports query params: `page`, `limit`, `sortOrder`, and the search/filter params above.
  * @returns JSON response in the standard `{ data, error }` envelope where `data` is `{ items, total, totalToday, page, limit }` on success.
  */
 export async function GET(req: NextRequest) {
@@ -73,16 +87,89 @@ export async function GET(req: NextRequest) {
   const limit = Math.min(100, Math.max(1, Number(searchParams.get("limit") ?? "20")));
   const orderBy = parseSortOrder(searchParams.get("sortOrder"));
 
+  // Search and filter params
+  const rawQ = searchParams.get("q") ?? "";
+  const provider = searchParams.get("provider") ?? undefined;
+  const project = searchParams.get("project") ?? undefined;
+  const dueDateRange = searchParams.get("dueDateRange") ?? undefined;
+  const createdRange = searchParams.get("createdRange") ?? undefined;
+  const updatedRange = searchParams.get("updatedRange") ?? undefined;
+  const assignee = searchParams.get("assignee") ?? undefined;
+
+  const parsed = parseSearchQuery(rawQ);
+
+  // Explicit query params take precedence over filters parsed from q
+  const effectiveProvider = provider ?? parsed.provider;
+  const effectiveProject = project ?? parsed.project;
+  const effectiveDueDateRange = dueDateRange ?? parsed.dueDateFilter?.preset;
+  const effectiveCreatedRange = createdRange ?? parsed.createdFilter?.preset;
+  const effectiveUpdatedRange = updatedRange ?? parsed.updatedFilter?.preset;
+  const effectiveAssignee = assignee ?? parsed.assignee;
+
+  // Build keyword conditions (OR per keyword, ANDed with filters)
+  const keywordWhere =
+    parsed.keywords.length > 0
+      ? {
+          OR: parsed.keywords.map((kw) => ({
+            title: { contains: kw, mode: "insensitive" as const },
+          })),
+        }
+      : {};
+
+  // Build date filter conditions
+  const dueDateWhere = effectiveDueDateRange ? buildDateWhere("dueDate", effectiveDueDateRange) : {};
+  const createdWhere = effectiveCreatedRange ? buildDateWhere("providerCreatedAt", effectiveCreatedRange) : {};
+  const updatedWhere = effectiveUpdatedRange ? buildDateWhere("providerUpdatedAt", effectiveUpdatedRange) : {};
+
+  // Build provider+project nested filter
+  const providerProjectWhere: Record<string, unknown> = {};
+  if (effectiveProvider || effectiveProject) {
+    const issueProviderWhere: Record<string, unknown> = { userId: session.user.id };
+    if (effectiveProvider) issueProviderWhere.type = effectiveProvider;
+
+    if (effectiveProvider && effectiveProject) {
+      providerProjectWhere.project = {
+        issueProvider: issueProviderWhere,
+        displayName: { contains: effectiveProject, mode: "insensitive" as const },
+      };
+    } else if (effectiveProvider) {
+      providerProjectWhere.project = { issueProvider: issueProviderWhere };
+    } else if (effectiveProject) {
+      providerProjectWhere.project = {
+        issueProvider: { userId: session.user.id },
+        displayName: { contains: effectiveProject, mode: "insensitive" as const },
+      };
+    }
+  }
+
+  // Assignee filter
+  const assigneeWhere: Record<string, unknown> =
+    effectiveAssignee === "unassigned"
+      ? { isUnassigned: true }
+      : effectiveAssignee === "assigned"
+        ? { isUnassigned: false }
+        : {};
+
   const baseWhere = {
     project: {
       issueProvider: { userId: session.user.id },
     },
   };
 
+  const filterWhere = {
+    ...keywordWhere,
+    ...dueDateWhere,
+    ...createdWhere,
+    ...updatedWhere,
+    ...assigneeWhere,
+    ...providerProjectWhere,
+  };
+
   const regularWhere = {
     ...baseWhere,
     // Exclude issues in today's list — those are shown in the Today widget instead.
     todayFlag: { not: true },
+    ...filterWhere,
   };
 
   const todayWhere = {
@@ -90,7 +177,7 @@ export async function GET(req: NextRequest) {
     todayFlag: true,
   };
 
-  const [total, totalToday, items] = await Promise.all([
+  const fetchResult = await Promise.all([
     prisma.issue.count({ where: regularWhere }),
     prisma.issue.count({ where: todayWhere }),
     prisma.issue.findMany({
@@ -121,7 +208,14 @@ export async function GET(req: NextRequest) {
         },
       },
     }),
-  ]);
+  ]).catch((error: unknown) => {
+    console.error("[issues] Failed to fetch issues:", error instanceof Error ? error.message : String(error));
+    return null;
+  });
+
+  if (!fetchResult) return fail("INTERNAL_ERROR", 500);
+
+  const [total, totalToday, items] = fetchResult;
 
   const itemsWithIconUrl = items.map((issue) => ({
     ...issue,

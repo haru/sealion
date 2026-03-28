@@ -37,13 +37,21 @@ Coverage threshold is **95% lines** (enforced by Jest). Pages, layouts, React co
 ### Domain Model (Prisma schema)
 
 ```
-User
-└── IssueProvider  (type: GITHUB | JIRA | REDMINE)
-    └── Project    (externalId maps to repo/project in the provider)
-        └── Issue  (normalized TODO unit; status: OPEN | CLOSED; priority: LOW | MEDIUM | HIGH | CRITICAL)
+User  (role: USER | ADMIN; isActive)
+├── BoardSettings   (showCreatedAt, showUpdatedAt, sortOrder)
+└── IssueProvider   (type: GITHUB | JIRA | REDMINE; encryptedCredentials)
+    └── Project     (externalId maps to repo/project in the provider; includeUnassigned, syncError)
+        └── Issue   (title, dueDate?, externalUrl; todayFlag, todayOrder?, todayAddedAt?,
+                     providerCreatedAt?, providerUpdatedAt?, pinned)
 ```
 
 `IssueProvider.encryptedCredentials` stores provider API tokens/keys encrypted with AES-256-GCM (`src/lib/encryption.ts`). The key is read from `CREDENTIALS_ENCRYPTION_KEY` (64-char hex = 32 bytes).
+
+**Key notes:**
+- Issue has no `status` or `priority` columns — closing an issue deletes it from the local DB.
+- `BoardSettings` controls per-user board display preferences (one-to-one with User).
+- `Issue.todayFlag` / `todayOrder` / `todayAddedAt` power the "Today Tasks" feature with drag-and-drop reorder (dnd-kit).
+- `Issue.pinned` marks tasks as pinned for quick access.
 
 ### App Router layout
 
@@ -198,6 +206,8 @@ Use `http://app:3000` instead — `app` is the hostname of the Next.js dev conta
 - N/A — no database schema changes (016-proxy-support)
 - TypeScript 5 / Node.js 20 LTS + Next.js 16 (App Router), MUI v7, Prisma 7, next-intl 4, dnd-kit (既存) (018-task-pin)
 - PostgreSQL 16 via Prisma 7 — `Issue` テーブルに `pinned Boolean` カラム追加 (018-task-pin)
+- TypeScript 5 / Node.js 20 LTS + Next.js 16 (App Router), MUI v7, Prisma 7, next-intl 4, React (019-task-search)
+- PostgreSQL 16 via Prisma 7 — Issue.dueDate / isUnassigned / providerCreatedAt / providerUpdatedAt / project.issueProvider.type / project.displayName はすべて既存フィールド。スキーマ変更不要。 (019-task-search)
 
 ## Recent Changes
 - 009-task-display-cleanup: Removed `priority` field from Issue model; added `providerCreatedAt` / `providerUpdatedAt` fields; added Today tasks area with drag-and-drop reorder (dnd-kit)

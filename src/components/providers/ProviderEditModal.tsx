@@ -16,7 +16,7 @@ import {
   CircularProgress,
 } from "@mui/material";
 import { useTranslations } from "next-intl";
-import { formatProviderApiError } from "@/lib/error-utils";
+import { formatProviderApiError, type ProviderApiErrorResponse } from "@/lib/error-utils";
 
 type ProviderType = "GITHUB" | "JIRA" | "REDMINE";
 
@@ -78,13 +78,19 @@ export default function ProviderEditModal({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-      const json = await res.json();
 
-      if (!res.ok) {
-        throw new Error(formatProviderApiError(json, tSync, tCommon("error")));
+      let json: unknown;
+      try {
+        json = await res.json();
+      } catch {
+        throw new Error(tCommon("error"));
       }
 
-      onUpdated(json.data);
+      if (!res.ok) {
+        throw new Error(formatProviderApiError(json as ProviderApiErrorResponse, tSync, tCommon("error")));
+      }
+
+      onUpdated((json as { data: Provider }).data);
       onClose();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
