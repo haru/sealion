@@ -46,19 +46,27 @@ export default function SignupPage() {
   }
 
   return (
-    <Card sx={{ minWidth: 360, maxWidth: 400, width: "100%", mx: 2 }}>
-      <CardContent sx={{ p: 4 }}>
-        <Typography variant="h5" component="h1" gutterBottom>
+    <Card 
+      elevation={0}
+      sx={{ 
+        width: "100%", 
+        borderRadius: 4,
+        boxShadow: "0 12px 40px rgba(0,0,0,0.08)",
+        overflow: "hidden"
+      }}
+    >
+      <CardContent sx={{ p: { xs: 4, sm: 5 } }}>
+        <Typography variant="h5" component="h2" fontWeight="700" textAlign="center" gutterBottom sx={{ mb: 3 }}>
           {t("signupTitle")}
         </Typography>
 
         {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
+          <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>
             {tErrors(error as Parameters<typeof tErrors>[0])}
           </Alert>
         )}
 
-        <Box component="form" onSubmit={handleSubmit} sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+        <Box component="form" onSubmit={handleSubmit} sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
           <TextField
             label={t("email")}
             type="email"
@@ -67,6 +75,7 @@ export default function SignupPage() {
             required
             fullWidth
             autoComplete="email"
+            variant="outlined"
           />
           <TextField
             label={t("password")}
@@ -77,15 +86,34 @@ export default function SignupPage() {
             fullWidth
             inputProps={{ minLength: 8 }}
             autoComplete="new-password"
+            variant="outlined"
           />
-          <Button type="submit" variant="contained" fullWidth disabled={loading}>
+          <Button 
+            type="submit" 
+            variant="contained" 
+            size="large"
+            fullWidth 
+            disabled={loading}
+            sx={{
+              mt: 1,
+              py: 1.5,
+              borderRadius: 2,
+              fontWeight: "bold",
+              textTransform: "none",
+              fontSize: "1rem",
+            }}
+          >
             {t("signup")}
           </Button>
         </Box>
 
-        <Typography variant="body2" sx={{ mt: 2, textAlign: "center" }}>
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 4, mb: 1, textAlign: "center" }}>
           {t("hasAccount")}{" "}
-          <Link href="/login">{t("login")}</Link>
+          <Link href="/login" style={{ fontWeight: 600, textDecoration: "none", color: "inherit" }}>
+            <Box component="span" sx={{ color: "primary.main", "&:hover": { textDecoration: "underline" } }}>
+              {t("login")}
+            </Box>
+          </Link>
         </Typography>
       </CardContent>
     </Card>
