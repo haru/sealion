@@ -16,6 +16,7 @@ import FormatListBulletedIcon from "@mui/icons-material/FormatListBulleted";
 import TuneIcon from "@mui/icons-material/Tune";
 import SettingsIcon from "@mui/icons-material/Settings";
 import LogoutIcon from "@mui/icons-material/Logout";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -69,23 +70,7 @@ export default function Sidebar({ open, onClose, variant, email }: SidebarProps)
           flexShrink: 0,
         }}
       >
-        <Box
-          sx={{
-            width: 28,
-            height: 28,
-            bgcolor: "primary.main",
-            borderRadius: "6px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            color: "white",
-            fontWeight: 700,
-            fontSize: "1rem",
-            flexShrink: 0,
-          }}
-        >
-          S
-        </Box>
+        <Image src="/sealion.svg" alt="Sealion" width={28} height={28} />
         <Typography
           sx={{
             fontWeight: 700,
