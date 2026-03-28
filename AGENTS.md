@@ -72,7 +72,7 @@ src/app/
 | `db.ts` | Singleton Prisma client |
 | `encryption.ts` | AES-256-GCM encrypt/decrypt for credentials |
 | `api-response.ts` | `ok(data)` / `fail(msg, status)` helpers for consistent API envelope `{ data, error }` |
-| `sync-utils.ts` | Pure utility: `allProjectsSynced()` |
+| `sync-utils.ts` | Pure utility: `allProjectsProcessed()` |
 | `types.ts` | Shared TypeScript types including `IssueProviderAdapter` interface |
 
 ### Middleware (`middleware.ts`)

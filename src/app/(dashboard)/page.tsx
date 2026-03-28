@@ -20,7 +20,7 @@ import TodoList from "@/components/todo/TodoList";
 import SyncStatus from "@/components/todo/SyncStatus";
 import CompleteIssueModal from "@/components/todo/CompleteIssueModal";
 import TodayTasksArea, { TODAY_DROP_ZONE_ID } from "@/components/today-tasks/TodayTasksArea";
-import { allProjectsSynced, shouldThrottleSync, SYNC_THROTTLE_MS } from "@/lib/sync-utils";
+import { allProjectsProcessed, shouldThrottleSync, SYNC_THROTTLE_MS } from "@/lib/sync-utils";
 import { sortIssues } from "@/lib/sort-utils";
 import { BoardSettings, DEFAULT_BOARD_SETTINGS, SortCriterion } from "@/lib/types";
 
@@ -149,7 +149,7 @@ export default function DashboardPage() {
         setSyncProviders(providers);
 
         const since = syncStartedAtRef.current;
-        if (since && allProjectsSynced(providers, since)) {
+        if (since && allProjectsProcessed(providers, since)) {
           if (!cancelled) await Promise.all([fetchIssues(page), fetchTodayIssues()]);
           setIsSyncing(false);
           return;
