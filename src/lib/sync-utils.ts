@@ -48,9 +48,16 @@ export function shouldThrottleSync(providers: SyncProvider[], throttleMs: number
 }
 
 /**
- * Returns true when every project has been successfully synced at or after `since`
- * (i.e. `lastSyncedAt >= since` AND syncError is null).
+ * Returns true when every project has been synced at or after `since`
+ * (i.e. `lastSyncedAt >= since`), regardless of whether the sync succeeded or
+ * produced an error. Once the server has processed a project its `lastSyncedAt`
+ * is updated, so this is the reliable signal that syncing is done.
  * Also returns true when there are no projects (nothing to sync).
+ *
+ * @param providers - List of sync providers returned by GET /api/sync.
+ * @param since - Timestamp returned by POST /api/sync; only projects whose
+ *   `lastSyncedAt` is at or after this moment are considered synced.
+ * @returns True if every project has been processed (synced) at or after `since`.
  */
 export function allProjectsSynced(providers: SyncProvider[], since: Date): boolean {
   const projects = providers.flatMap((p) => p.projects);
@@ -58,7 +65,6 @@ export function allProjectsSynced(providers: SyncProvider[], since: Date): boole
   return projects.every(
     (proj) =>
       proj.lastSyncedAt !== null &&
-      new Date(proj.lastSyncedAt) >= since &&
-      proj.syncError === null
+      new Date(proj.lastSyncedAt) >= since
   );
 }

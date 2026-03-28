@@ -73,7 +73,7 @@ describe("allProjectsSynced", () => {
     expect(allProjectsSynced(providers, SYNC_START)).toBe(false);
   });
 
-  it("returns false when a project has a syncError even if lastSyncedAt is after since", () => {
+  it("returns true when a project has a syncError but lastSyncedAt is after since", () => {
     const providers = [
       {
         projects: [
@@ -81,10 +81,10 @@ describe("allProjectsSynced", () => {
         ],
       },
     ];
-    expect(allProjectsSynced(providers, SYNC_START)).toBe(false);
+    expect(allProjectsSynced(providers, SYNC_START)).toBe(true);
   });
 
-  it("returns false when a project has RATE_LIMITED error", () => {
+  it("returns true when a project has RATE_LIMITED error but lastSyncedAt is after since", () => {
     const providers = [
       {
         projects: [
@@ -92,7 +92,7 @@ describe("allProjectsSynced", () => {
         ],
       },
     ];
-    expect(allProjectsSynced(providers, SYNC_START)).toBe(false);
+    expect(allProjectsSynced(providers, SYNC_START)).toBe(true);
   });
 });
 
