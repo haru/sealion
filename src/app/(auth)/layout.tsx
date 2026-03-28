@@ -30,7 +30,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
             mb: 2,
           }}
         >
-          <Image src="/sealion.svg" alt="Sealion Logo" width={56} height={56} priority />
+          <Image src="/sealion.svg" alt="" aria-hidden={true} width={56} height={56} priority />
         </Box>
         <Typography
           variant="h3"
