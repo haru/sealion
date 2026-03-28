@@ -197,6 +197,34 @@ describe("POST /api/providers", () => {
     expect(res.status).toBe(422);
   });
 
+  it("returns 500 when encrypt fails", async () => {
+    mockEncrypt.mockImplementationOnce(() => {
+      throw new Error("Encryption key not configured");
+    });
+
+    const req = makeRequest("POST", {
+      type: "GITHUB",
+      displayName: "My GitHub",
+      credentials: { token: "ghp_test" },
+    });
+    const res = await POST(req);
+
+    expect(res.status).toBe(500);
+  });
+
+  it("returns 500 when Prisma create fails", async () => {
+    mockCreate.mockRejectedValueOnce(new Error("Unique constraint violation"));
+
+    const req = makeRequest("POST", {
+      type: "GITHUB",
+      displayName: "My GitHub",
+      credentials: { token: "ghp_test" },
+    });
+    const res = await POST(req);
+
+    expect(res.status).toBe(500);
+  });
+
   it("returns errorDetails in 422 response when connection test fails with axios error", async () => {
     const { GitHubAdapter } = jest.requireMock("@/services/issue-provider/github");
     const axiosError = Object.assign(new Error("Unauthorized"), {
@@ -559,7 +587,7 @@ describe("PATCH /api/providers/[id]", () => {
   });
 
   it("returns 500 when decrypt fails on PATCH without changeCredentials", async () => {
-    mockDecrypt.mockImplementation(() => {
+    mockDecrypt.mockImplementationOnce(() => {
       throw new Error("Decryption failed: invalid key");
     });
     mockFindFirst.mockResolvedValue({ id: "p1", userId: "user-1", type: "GITHUB", encryptedCredentials: "enc", baseUrl: null });
@@ -570,5 +598,21 @@ describe("PATCH /api/providers/[id]", () => {
     expect(res.status).toBe(500);
     const json = await res.json();
     expect(json.error).toBe("CREDENTIALS_DECRYPT_FAILED");
+  });
+
+  it("returns 500 when Prisma update fails on PATCH", async () => {
+    const { GitHubAdapter } = jest.requireMock("@/services/issue-provider/github");
+    GitHubAdapter.mockImplementationOnce(() => ({
+      testConnection: jest.fn().mockResolvedValue(undefined),
+    }));
+
+    mockFindFirst.mockResolvedValue({ id: "p1", userId: "user-1", type: "GITHUB", encryptedCredentials: "enc", baseUrl: null });
+    mockDecrypt.mockReturnValue(JSON.stringify({ token: "existing-token" }));
+    mockUpdate.mockRejectedValueOnce(new Error("Database connection lost"));
+
+    const req = makeRequest("PATCH", { displayName: "Updated", changeCredentials: false }, "http://localhost/api/providers/p1");
+    const res = await PATCH(req, { params: Promise.resolve({ id: "p1" }) });
+
+    expect(res.status).toBe(500);
   });
 });
