@@ -4,248 +4,197 @@
 
 # Sealion
 
-An integrated personal TODO management app that aggregates issues from multiple issue trackers (GitHub, Jira, Redmine) into a unified list. Future versions will use LLM (via LangChain) to summarize issues and auto-assign priorities.
+**A self-hosted app that brings GitHub, Jira, and Redmine issues into a single TODO list.**
 
-## Features
+Stop switching between issue trackers. Sealion aggregates all your assigned issues into one unified view so you can focus on getting things done. Deploy with Docker Compose in minutes.
 
-- **Unified TODO list** — aggregates issues from GitHub, Jira, and Redmine into one view
-- **Multi-provider support** — connect multiple instances of each provider (e.g., multiple Redmine servers)
-- **Status sync** — closing/reopening a TODO updates the issue in the source system
-- **Priority & due date sorting** — issues sorted by priority with overdue items surfaced first
-- **Multi-user** — each user manages their own providers, projects, and TODO list
-- **Admin panel** — administrators can manage users and their roles
-- **i18n** — UI supports English (default) and Japanese
-
-## Tech Stack
-
-- **Framework**: Next.js 16 + TypeScript (App Router)
-- **UI**: MUI (Material UI) v7 + Material Icons
-- **Auth**: Auth.js v5 (NextAuth)
-- **Database**: PostgreSQL 16 via Prisma 7
-- **Encryption**: AES-256-GCM for stored credentials
-- **i18n**: next-intl v4
-- **Testing**: Jest + Playwright
+<!-- TODO: Add screenshot
+![Dashboard screenshot](docs/images/screenshot.png)
+-->
 
 ---
 
-## Quick Start — Docker Compose
+## Features
 
-The fastest way to run the app with no local setup required.
+| Feature | Description |
+|---------|-------------|
+| **Unified TODO list** | Automatically fetches and displays issues from GitHub, Jira, and Redmine in one place |
+| **Today's Tasks** | Drag and drop issues into your daily plan |
+| **Pin important tasks** | Pin tasks to the top of your list |
+| **Complete tasks** | Mark an issue as done and it closes in the source tracker too (with optional comment) |
+| **Multiple connections** | Connect multiple instances of the same service (e.g. work Redmine + client Redmine) |
+| **Project selection** | Choose which projects/repos to sync per connection |
+| **Board customization** | Configure which fields to show and how to sort your list |
+| **Multi-user** | Each user manages their own connections, projects, and TODO list |
+| **Admin panel** | Create users, enable/disable accounts, assign roles |
+| **Internationalization** | English and Japanese UI |
+| **Encrypted credentials** | API tokens are stored encrypted with AES-256-GCM |
+| **Proxy support** | Access external APIs through HTTP/HTTPS proxies |
 
-### Prerequisites
+---
 
-- Docker Desktop (or Docker Engine + Docker Compose plugin)
+## Requirements
 
-### 1. Clone and configure
+- **Docker Desktop** (or Docker Engine + Docker Compose plugin)
+
+> You do not need Node.js or PostgreSQL installed — everything runs inside Docker containers.
+
+---
+
+## Installation
+
+### 1. Clone the repository
 
 ```bash
-git clone https://github.com/your-org/sealion.git
+git clone https://github.com/haru/sealion.git
 cd sealion
+```
 
+### 2. Configure environment variables
+
+```bash
 cp docker/.env.example docker/.env
 ```
 
-Generate the required secrets in your shell:
+Open `docker/.env` and generate the two required secrets:
 
 ```bash
+# Generate AUTH_SECRET
 openssl rand -base64 32
-# → paste this output as AUTH_SECRET
 
-node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
-# → paste this output as CREDENTIALS_ENCRYPTION_KEY
+# Generate CREDENTIALS_ENCRYPTION_KEY (64 hex characters)
+openssl rand -hex 32
 ```
 
-Then edit `docker/.env` with the generated values:
+Paste the generated values into `docker/.env`:
 
 ```dotenv
-DATABASE_URL="postgresql://postgres:password@db:5432/sealion_dev"
-AUTH_SECRET="<paste openssl output here>"
-CREDENTIALS_ENCRYPTION_KEY="<paste node output here>"
-NEXTAUTH_URL="http://localhost:3000"
+AUTH_SECRET="<paste value here>"
+CREDENTIALS_ENCRYPTION_KEY="<paste value here>"
 ```
 
-### 2. Build and start
+> The other settings (`POSTGRES_USER`, etc.) work fine with their defaults.
+
+### 3. Start the app
 
 ```bash
-docker compose -f docker/docker-compose.yml up --build
+docker compose -f docker/docker-compose.yml up --build -d
 ```
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-### 3. Stop
+> To use a different port, set `HOST_PORT=8080` in `docker/.env`.
+
+### 4. Create your first user
+
+Go to the signup page (`/signup`) and create an account.
+
+To seed an admin user from the command line instead:
+
+```bash
+docker compose -f docker/docker-compose.yml exec app npx prisma db seed
+```
+
+### 5. Stop the app
 
 ```bash
 docker compose -f docker/docker-compose.yml down
 ```
 
-> **Note**: `docker/.env` is for Docker only. The workspace root `.env` is used for local development without Docker — the two files are independent.
+Data is persisted in a Docker volume (`postgres_data`). To remove everything including data:
+
+```bash
+docker compose -f docker/docker-compose.yml down -v
+```
 
 ---
 
-## Local Development
+## Usage
 
-### Prerequisites
+### Connect an issue tracker
 
-- Node.js 20+
-- PostgreSQL 16
-- (Recommended) VSCode with Dev Containers extension
+1. After logging in, open **Settings** → **Issue Tracker Settings** from the sidebar
+2. Click **Add Issue Tracker** and choose GitHub, Jira, or Redmine
+3. Enter the server URL and API token (or email + API key for Jira)
+4. Click **Test Connection** to verify, then save
 
-### 1. Clone and install
+### Select projects to sync
+
+1. Open **Project Management** from the sidebar
+2. Pick a connection and check the projects/repos you want to sync
+3. Click **Sync Now** to fetch issues
+
+### Work with your TODO list
+
+- **Pin**: Keep important tasks at the top
+- **Today's Tasks**: Drag and drop tasks into your daily list and reorder them
+- **Complete**: Mark a task as done — the source issue is closed too (you can add a comment)
+- **External link**: Jump to the original issue page with one click
+
+### Customize board settings
+
+1. Open **Board Settings** from the sidebar
+2. Toggle display fields (created date, updated date, etc.)
+3. Drag and drop to change the sort order
+
+---
+
+## Updating
 
 ```bash
-git clone https://github.com/your-org/sealion.git
 cd sealion
-npm install
+git pull
+docker compose -f docker/docker-compose.yml up --build -d
 ```
 
-### 2. Configure environment
-
-```bash
-cp .env.example .env
-```
-
-Generate the required secrets in your shell:
-
-```bash
-openssl rand -base64 32
-# → paste this output as AUTH_SECRET
-
-node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
-# → paste this output as CREDENTIALS_ENCRYPTION_KEY
-```
-
-Then edit `.env` with the generated values:
-
-```dotenv
-DATABASE_URL="postgresql://postgres:password@localhost:5432/sealion_dev"
-AUTH_SECRET="<paste openssl output here>"
-CREDENTIALS_ENCRYPTION_KEY="<paste node output here>"
-NEXTAUTH_URL="http://localhost:3000"
-```
-
-### 3. Run database migrations
-
-```bash
-npx prisma migrate deploy
-```
-
-### 4. (Optional) Seed an admin user
-
-```bash
-npx prisma db seed
-```
-
-### 5. Start the development server
-
-```bash
-npm run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Database migrations run automatically on container startup.
 
 ---
 
-## Development Commands
+## Environment Variables
 
-```bash
-npm run dev      # Start development server (Turbopack)
-npm run build    # Production build
-npm run start    # Start production server
-npm run lint     # Run ESLint
-npm test         # Run unit & integration tests
-npm test -- --coverage          # With coverage report (target: 95% line)
-npm test -- --testPathPattern=<path>  # Single test file
-npx playwright test             # Run E2E tests (requires dev server running)
-```
-
----
-
-## Project Structure
-
-```
-docker/
-├── Dockerfile          # Production image
-├── docker-compose.yml  # Local full-stack orchestration
-├── entrypoint.sh       # DB wait + migrate + app start
-└── .env.example        # Docker env template
-
-src/
-├── app/                # Next.js App Router pages & API routes
-│   ├── (auth)/         # Login/signup pages
-│   ├── (dashboard)/    # Main app pages (TODO list, settings)
-│   ├── admin/          # Admin-only pages
-│   └── api/            # REST API route handlers
-├── components/         # Reusable React components
-├── lib/                # Shared utilities (auth, db, encryption)
-├── messages/           # i18n strings (en.json, ja.json)
-└── services/           # Business logic
-    ├── issue-provider/ # GitHub, Jira, Redmine adapters
-    └── sync.ts         # Issue sync service
-```
-
-### Domain Model
-
-```
-User
-└── IssueProvider (GitHub | Jira | Redmine)
-    └── Project
-        └── Issue (normalized TODO unit)
-```
-
----
-
-## Testing
-
-### Unit & Integration Tests
-
-```bash
-npm test                              # Run all tests
-npm test -- --coverage                # With coverage report
-npm test -- --testPathPattern=unit    # Unit tests only
-npm test -- --testPathPattern=integration  # Integration tests (requires DATABASE_URL)
-```
-
-### E2E Tests
-
-```bash
-npx playwright install      # Install browsers (first time)
-npx playwright test         # Run all E2E tests
-npx playwright test --ui    # Interactive UI mode
-```
-
----
-
-## CI/CD
-
-Pushing a Git tag triggers GitHub Actions to build and publish multi-architecture images (amd64 + arm64) to DockerHub:
-
-```bash
-git tag v1.0.0
-git push origin v1.0.0
-```
-
-Required repository secrets: `DOCKER_USERNAME`, `DOCKER_PASSWORD` (DockerHub access token).
-
-See [`docker/docker-compose.yml`](docker/docker-compose.yml) and [`.github/workflows/container.yml`](.github/workflows/container.yml) for details.
+| Variable | Required | Description | Default |
+|----------|----------|-------------|---------|
+| `POSTGRES_USER` | | PostgreSQL username | `postgres` |
+| `POSTGRES_PASSWORD` | | PostgreSQL password | `password` |
+| `POSTGRES_DB` | | Database name | `sealion_dev` |
+| `AUTH_SECRET` | ✅ | Session encryption key | — |
+| `CREDENTIALS_ENCRYPTION_KEY` | ✅ | Credential encryption key (64 hex chars) | — |
+| `HOST_PORT` | | Host-side port mapping | `3000` |
 
 ---
 
 ## Security
 
-- Credentials for external services are stored encrypted (AES-256-GCM) in the database
-- API routes enforce session-based authorization — users can only access their own data
-- Admin routes require `ADMIN` role, enforced in middleware and route handlers
-- Passwords hashed with bcrypt
+- External service credentials are encrypted at rest with **AES-256-GCM**
+- Passwords are hashed with **bcrypt**
+- API-level authorization ensures users can only access their own data
+- Admin routes are protected by both middleware and route handler checks
+
+---
+
+## Tech Stack
+
+| Category | Technology |
+|----------|-----------|
+| Framework | Next.js 16 (App Router) + TypeScript |
+| UI | MUI (Material UI) v7 |
+| Auth | Auth.js v5 |
+| Database | PostgreSQL 16 + Prisma 7 |
+| i18n | next-intl v4 |
+| Testing | Jest + Playwright |
 
 ---
 
 ## Contributing
 
 1. Fork the repository and create a feature branch
-2. Follow TDD: write tests before implementation (RED → GREEN → REFACTOR)
-3. Run `npm run lint` and `npm test` before submitting
-4. Open a pull request with a clear description of changes
+2. Follow TDD: write tests first (RED → GREEN → REFACTOR)
+3. Make sure `npm run lint` and `npm test` pass
+4. Open a pull request with a clear description of your changes
+
+---
 
 ## License
 
-MIT
+[MIT](LICENSE)
