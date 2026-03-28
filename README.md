@@ -11,6 +11,8 @@
 
 # Sealion
 
+**All Your TODOs, One Place.**
+
 **A self-hosted app that brings GitHub, Jira, and Redmine issues into a single TODO list.**
 
 Stop switching between issue trackers. Sealion aggregates all your assigned issues into one unified view so you can focus on getting things done. Deploy with Docker Compose in minutes.

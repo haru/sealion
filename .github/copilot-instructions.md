@@ -7,10 +7,11 @@
 ## Tech Stack
 
 - **Framework:** Next.js 16 + TypeScript (App Router)
-- **UI:** MUI (Material UI) + Material Icons
+- **UI:** MUI (Material UI) v7 + Material Icons + dnd-kit (drag-and-drop)
 - **Auth:** Auth.js (next-auth v5) with Prisma adapter — credentials-based (email/password)
-- **Database:** PostgreSQL 16 via Prisma ORM
-- **i18n:** next-intl — locales: `en` (default), `ja`; locale prefix: never (no `/en/` in URLs)
+- **Database:** PostgreSQL 16 via Prisma 7 ORM
+- **i18n:** next-intl 4 — locales: `en` (default), `ja`; locale prefix: never (no `/en/` in URLs)
+- **HTTP:** axios + hpagent (proxy support)
 - **LLM (future):** LangChain
 - **Dev environment:** VSCode Dev Containers
 
@@ -28,6 +29,8 @@ npx playwright test             # Run E2E tests (requires dev server running)
 npx prisma migrate dev          # Apply schema migrations
 npx prisma db seed              # Seed the database
 ```
+
+Coverage threshold is **95% lines** (enforced by Jest). Pages, layouts, React components, and i18n files are excluded from coverage — they are covered by E2E tests instead.
 
 ## Project Structure
 
@@ -58,20 +61,27 @@ Path alias: `@/*` maps to `./src/*` (configured in tsconfig.json).
 ## Domain Architecture (Prisma)
 
 ```
-User (email, passwordHash, role: ADMIN | USER)
-└── IssueProvider (type: GITHUB | JIRA | REDMINE, encryptedCredentials)
-    └── Project (externalId, displayName, lastSyncedAt, syncError)
-        └── Issue (externalId, title, status: OPEN | CLOSED,
-                   priority: LOW | MEDIUM | HIGH | CRITICAL, dueDate, externalUrl)
+User  (role: USER | ADMIN; isActive)
+├── BoardSettings   (showCreatedAt, showUpdatedAt, sortOrder)
+└── IssueProvider   (type: GITHUB | JIRA | REDMINE; encryptedCredentials)
+    └── Project     (externalId maps to repo/project in the provider; includeUnassigned, syncError)
+        └── Issue   (title, dueDate?, externalUrl; todayFlag, todayOrder?, todayAddedAt?,
+                     providerCreatedAt?, providerUpdatedAt?, pinned)
 ```
 
-Each `IssueProvider` holds connection settings (URL, encrypted credentials). Each `Project` maps to a repo/project within that provider. `Issue` is the normalized TODO unit displayed to the user.
+`IssueProvider.encryptedCredentials` stores provider API tokens/keys encrypted with AES-256-GCM (`src/lib/encryption.ts`). The key is read from `CREDENTIALS_ENCRYPTION_KEY` (64-char hex = 32 bytes).
+
+**Key notes:**
+- Issue has no `status` or `priority` columns — closing an issue deletes it from the local DB.
+- `BoardSettings` controls per-user board display preferences (one-to-one with User).
+- `Issue.todayFlag` / `todayOrder` / `todayAddedAt` power the "Today Tasks" feature with drag-and-drop reorder (dnd-kit).
+- `Issue.pinned` marks tasks as pinned for quick access.
 
 ## Key Architecture
 
 ### Issue Provider Adapter Pattern (`src/services/issue-provider/`)
 
-Interface `IssueProviderAdapter` (defined in `src/lib/types.ts`) is implemented by `GitHubAdapter`, `JiraAdapter`, `RedmineAdapter`. `factory.ts` creates the right adapter from `ProviderType` + decrypted credentials. Methods: `testConnection()`, `listProjects()`, `fetchAssignedIssues()`, `closeIssue()`, `reopenIssue()`.
+Interface `IssueProviderAdapter` (defined in `src/lib/types.ts`) is implemented by `GitHubAdapter`, `JiraAdapter`, `RedmineAdapter`. `factory.ts` creates the right adapter from `ProviderType` + decrypted credentials. Methods: `testConnection()`, `listProjects()`, `fetchAssignedIssues()`, `closeIssue()`, `addComment()`.
 
 ### Sync Service (`src/services/sync.ts`)
 
@@ -92,6 +102,16 @@ Enforces admin-only access to `/api/admin/**` (checks `role === "ADMIN"`), i18n 
 ### Auth (`src/lib/auth.ts` + `src/lib/auth.config.ts`)
 
 Credentials-based with bcryptjs password hashing, JWT sessions (30-day max age), session callbacks attach `user.id` and `user.role`.
+
+### User-facing messages (notifications)
+
+Use the shared `MessageQueueProvider` / `useMessageQueue` hook for all transient notifications. **Never add standalone `Snackbar` or floating `Alert` components.**
+
+| Situation | Pattern |
+|-----------|---------|
+| Transient result of a user action (save, delete, sync, …) | `useMessageQueue` |
+| Form validation / submission error (shown inside the form) | Inline `<Alert>` within the form |
+| Auth page errors (login, signup — no Provider available) | Inline `<Alert>` within the page |
 
 ## Coding Conventions
 
@@ -168,18 +188,34 @@ All UI strings live in `src/messages/en.json` and `src/messages/ja.json`. Use `u
 - Parameterized queries only (Prisma handles this)
 - Sanitize all user-facing output (XSS prevention)
 
+## Development Rules
+
+### Git — NEVER commit, push, or create PRs without explicit instruction
+
+**Never run `git commit`, `git push`, or `gh pr create` (or any variant) unless the user explicitly asks.**
+This rule has no exceptions — do not commit "just to save progress" or as part of a workflow.
+
+### ESLint
+Run `npm run lint` after every code change. Config extends `eslint-config-next/core-web-vitals` and `eslint-config-next/typescript`.
+
+### Build
+Run `npm run build` after implementation is complete to verify TypeScript compilation passes.
+When the Prisma schema has changed, run `npx prisma generate` before `npm run build`.
+
+### Database Migration — NEVER run `prisma migrate dev` without checking for drift first
+
+**`prisma migrate dev` will reset (wipe) the database if it detects schema drift.** Before running:
+1. Run `npx prisma migrate status` to check for drift or unapplied migrations.
+2. If drift is detected, **stop and inform the user** — do not proceed without explicit confirmation.
+
 ## Environment Variables
 
 Required at runtime:
 ```
 DATABASE_URL                  # PostgreSQL connection string
-NEXTAUTH_SECRET               # Auth.js secret
+AUTH_SECRET                   # Auth.js v5 secret
 CREDENTIALS_ENCRYPTION_KEY    # 64-char hex string (32 bytes) for AES-256-GCM
 ```
-
-## ESLint
-
-Run `npm run lint` after every code change. Config extends `eslint-config-next/core-web-vitals` and `eslint-config-next/typescript`.
 
 ## Git Workflow
 
@@ -194,8 +230,16 @@ Run `npm run lint` after every code change. Config extends `eslint-config-next/c
 | `db` | PostgreSQL (user: `postgres`, password: `postgres`, db: `postgres`) |
 | `browserless` | Headless Chrome for E2E testing (Playwright) |
 
+When using Playwright MCP tools to test the local dev server, use `http://app:3000` — not `http://localhost:3000`. The `browserless` container cannot resolve `localhost` as the app container.
+
 ## Design Patterns
 
 - **Adapter / Factory Pattern** for issue providers — add new providers by implementing `IssueProviderAdapter` and registering in `factory.ts`
 - **Consistent API response envelope** — all routes use `ok(data)` / `fail(error, status)` from `src/lib/api-response.ts`
 - **Singleton Prisma client** — `src/lib/db.ts` with dev-mode query logging
+
+## Further Documentation
+
+- [docs/requirement.md](../docs/requirement.md) — Detailed requirements (Japanese)
+- [docs/rules.md](../docs/rules.md) — Development rules (Japanese)
+- `specs/` — Feature specs with implementation plans, data models, and contracts

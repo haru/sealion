@@ -70,17 +70,33 @@ export default function Sidebar({ open, onClose, variant, email }: SidebarProps)
           flexShrink: 0,
         }}
       >
-        <Image src="/sealion.svg" alt="Sealion" width={28} height={28} />
-        <Typography
-          sx={{
-            fontWeight: 700,
-            fontSize: "1.1rem",
-            letterSpacing: "-0.02em",
-            color: "text.primary",
-          }}
-        >
-          Sealion
-        </Typography>
+        <Image src="/sealion.svg" alt="Sealion" width={32} height={32} />
+        <Box sx={{ minWidth: 0 }}>
+          <Typography
+            sx={{
+              fontWeight: 700,
+              fontSize: "1.1rem",
+              letterSpacing: "-0.02em",
+              color: "text.primary",
+              lineHeight: 1.2,
+            }}
+          >
+            Sealion
+          </Typography>
+          <Typography
+            variant="caption"
+            sx={{
+              display: "block",
+              mt: 0.25,
+              fontSize: "0.65rem",
+              color: "text.secondary",
+              lineHeight: 1.3,
+              whiteSpace: "normal",
+            }}
+          >
+            {t("tagline")}
+          </Typography>
+        </Box>
       </Box>
 
       {/* Nav items — plain list, no flex layout on the List itself */}
