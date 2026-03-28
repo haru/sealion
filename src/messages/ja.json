@@ -54,6 +54,7 @@
     "unassignedChipTooltip": "担当者が設定されていません",
     "statusChangeError": "ステータスの更新に失敗しました。再試行してください。",
     "syncNow": "今すぐ同期",
+    "syncError": "同期の開始に失敗しました。再試行してください。",
     "pin": "上部に固定",
     "unpin": "固定を解除",
     "pinToggleError": "ピン留めの更新に失敗しました。再試行してください。"
@@ -169,6 +170,7 @@
   "todayTasks": {
     "title": "今日やるタスク",
     "subtitle": "今日完了させるべき最優先事項",
+    "focusBadge": "今日のフォーカス",
     "empty": "タスクをドラッグするか「今日やる」をクリックして追加してください",
     "addToToday": "今日やる",
     "remove": "除外",

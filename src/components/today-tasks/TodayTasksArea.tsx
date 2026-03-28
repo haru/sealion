@@ -8,21 +8,35 @@ import { useDroppable } from "@dnd-kit/core";
 import { useTranslations } from "next-intl";
 import TodayTaskItem from "./TodayTaskItem";
 
+/**
+ * Shape of an issue displayed in the today tasks area.
+ * Mirrors the relevant fields from the main issue list with today-specific ordering.
+ */
 interface TodayIssue {
+  /** Internal issue ID. */
   id: string;
+  /** External ID from the provider. */
   externalId: string;
+  /** Issue title. */
   title: string;
+  /** ISO 8601 due date string, or `null`. */
   dueDate: string | null;
+  /** URL to the issue on the external provider. */
   externalUrl: string;
+  /** Whether the issue has no assignee. */
   isUnassigned: boolean;
+  /** Display order within today's list. */
   todayOrder: number;
+  /** ISO 8601 datetime string from the issue provider, or `null` if unavailable. */
   providerCreatedAt: string | null;
+  /** ISO 8601 datetime string from the issue provider, or `null` if unavailable. */
   providerUpdatedAt: string | null;
   /**
    * Pin state carried through from the main issue list for type correctness.
    * The today area does not render a pin button — pin actions are only in the main task list.
    */
   pinned: boolean;
+  /** Project metadata including provider information. */
   project: {
     displayName: string;
     issueProvider: { iconUrl: string | null; displayName: string };
@@ -65,8 +79,9 @@ export default function TodayTasksArea({ items, onRemove, onComplete }: TodayTas
         mb: 5,
         p: 3,
         borderRadius: "20px",
-        bgcolor: isOver ? "rgba(79, 70, 229, 0.04)" : "#f8fafc",
-        border: "1px solid #cbd5e1",
+        bgcolor: isOver ? "rgba(79, 70, 229, 0.04)" : "background.default",
+        border: "1px solid",
+        borderColor: "divider",
         transition: "background-color 0.2s",
       }}
     >
@@ -123,12 +138,12 @@ export default function TodayTasksArea({ items, onRemove, onComplete }: TodayTas
             letterSpacing: "0.05em",
           }}
         >
-          TODAY&apos;S FOCUS
+          {t("focusBadge")}
         </Box>
       </Box>
 
       {/* Task list */}
-      <Box ref={setNodeRef}>
+      <Box ref={setNodeRef} role="region" aria-label={t("title")}>
         {items.length === 0 ? (
           <Box
             sx={{
@@ -136,7 +151,8 @@ export default function TodayTasksArea({ items, onRemove, onComplete }: TodayTas
               alignItems: "center",
               justifyContent: "center",
               py: 3,
-              border: "2px dashed #cbd5e1",
+              border: "2px dashed",
+              borderColor: "divider",
               borderRadius: "12px",
               bgcolor: "rgba(255,255,255,0.4)",
               transition: "background-color 0.2s, border-color 0.2s",

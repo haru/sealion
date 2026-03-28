@@ -54,6 +54,7 @@
     "unassignedChipTooltip": "No assignee",
     "statusChangeError": "Failed to update status. Please try again.",
     "syncNow": "Sync Now",
+    "syncError": "Failed to start sync. Please try again.",
     "pin": "Pin to top",
     "unpin": "Unpin",
     "pinToggleError": "Failed to update pin. Please try again."
@@ -169,6 +170,7 @@
   "todayTasks": {
     "title": "Today's Tasks",
     "subtitle": "Top priority items to complete today",
+    "focusBadge": "TODAY'S FOCUS",
     "empty": "Drag tasks here or click \"Add to Today\" to get started",
     "addToToday": "Add to Today",
     "remove": "Remove",

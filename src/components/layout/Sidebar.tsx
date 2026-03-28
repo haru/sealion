@@ -23,9 +23,13 @@ import { signOut } from "next-auth/react";
 
 const DRAWER_WIDTH = 240;
 
+/** Props for {@link Sidebar}. */
 interface SidebarProps {
+  /** Whether the drawer is open (used when `variant` is `"temporary"`). */
   open: boolean;
+  /** Callback invoked when the drawer requests to be closed. */
   onClose: () => void;
+  /** Drawer variant — `"permanent"` on desktop, `"temporary"` on mobile. */
   variant: "permanent" | "temporary";
   /** Authenticated user's email address, displayed in the profile footer. */
   email: string;
@@ -108,8 +112,8 @@ export default function Sidebar({ open, onClose, variant, email }: SidebarProps)
             py: 0.875,
             "&.Mui-selected": {
               bgcolor: "#eef2ff",
-              color: "#4f46e5",
-              "& .MuiListItemIcon-root": { color: "#4f46e5" },
+              color: "primary.main",
+              "& .MuiListItemIcon-root": { color: "primary.main" },
               "&:hover": { bgcolor: "#e0e7ff" },
             },
             "&:hover": { bgcolor: "#f1f5f9" },
@@ -137,8 +141,8 @@ export default function Sidebar({ open, onClose, variant, email }: SidebarProps)
             color: "text.secondary",
             "&.Mui-selected": {
               bgcolor: "#eef2ff",
-              color: "#4f46e5",
-              "& .MuiListItemIcon-root": { color: "#4f46e5" },
+              color: "primary.main",
+              "& .MuiListItemIcon-root": { color: "primary.main" },
               "&:hover": { bgcolor: "#e0e7ff" },
             },
             "&:hover": { bgcolor: "#f1f5f9" },
@@ -166,8 +170,8 @@ export default function Sidebar({ open, onClose, variant, email }: SidebarProps)
             color: "text.secondary",
             "&.Mui-selected": {
               bgcolor: "#eef2ff",
-              color: "#4f46e5",
-              "& .MuiListItemIcon-root": { color: "#4f46e5" },
+              color: "primary.main",
+              "& .MuiListItemIcon-root": { color: "primary.main" },
               "&:hover": { bgcolor: "#e0e7ff" },
             },
             "&:hover": { bgcolor: "#f1f5f9" },
@@ -188,9 +192,10 @@ export default function Sidebar({ open, onClose, variant, email }: SidebarProps)
         sx={{
           flexShrink: 0,
           p: 1.5,
-          bgcolor: "white",
+          bgcolor: "background.paper",
           borderRadius: 2,
-          border: "1px solid #e2e8f0",
+          border: "1px solid",
+          borderColor: "divider",
           display: "flex",
           alignItems: "center",
           gap: 1,

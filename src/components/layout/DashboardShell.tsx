@@ -13,8 +13,14 @@ import { useMediaQuery, useTheme } from "@mui/material";
 import { useTranslations } from "next-intl";
 import { MessageQueueProvider } from "@/components/MessageQueue";
 
+/** Height of the mobile AppBar in pixels, shared between the AppBar and the main content top offset. */
+const APP_BAR_HEIGHT = 56;
+
+/** Props for {@link DashboardShell}. */
 interface DashboardShellProps {
+  /** Authenticated user's email address, forwarded to the {@link Sidebar} profile footer. */
   email: string;
+  /** Page content rendered inside the main scrollable area. */
   children: React.ReactNode;
 }
 
@@ -80,8 +86,8 @@ export default function DashboardShell({ email, children }: DashboardShellProps)
           sx={{
             flex: 1,
             overflow: "auto",
-            bgcolor: "white",
-            ...(isMobile && { mt: "56px" }),
+            bgcolor: "background.paper",
+            ...(isMobile && { mt: `${APP_BAR_HEIGHT}px` }),
           }}
         >
           {children}

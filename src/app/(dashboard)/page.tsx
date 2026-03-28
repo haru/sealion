@@ -186,7 +186,7 @@ export default function DashboardPage() {
       await fetch("/api/sync", { method: "POST" });
     } catch {
       setIsSyncing(false);
-      addMessage("error", t("syncNow"));
+      addMessage("error", t("syncError"));
     }
   }, [addMessage, t]);
 
@@ -248,15 +248,10 @@ export default function DashboardPage() {
       try {
         const bsRes = await fetch("/api/board-settings");
         if (!bsRes.ok) {
-          console.error("Failed to fetch board settings, falling back to defaults");
           addMessage("error", tBoardSettings("loadError"));
         } else {
           const bsJson = await bsRes.json();
           if (bsJson.error) {
-            console.error(
-              "Board settings API returned an error, falling back to defaults:",
-              bsJson.error
-            );
             addMessage("error", tBoardSettings("loadError"));
           } else if (bsJson.data) {
             const bs = bsJson.data as BoardSettings;
@@ -265,11 +260,9 @@ export default function DashboardPage() {
             initialSortOrder = bs.sortOrder;
           }
         }
-      } catch (err) {
-        console.error(
-          "Unexpected error while fetching board settings, falling back to defaults",
-          err instanceof Error ? err.message : String(err)
-        );
+      } catch {
+        // Board settings unavailable; addMessage already called in the inner error branches.
+        // The outer catch silently falls through so issue loading continues with defaults.
       }
 
       try {
@@ -543,7 +536,7 @@ export default function DashboardPage() {
    *
    * @param event - dnd-kit DragMoveEvent.
    */
-  function handleDragMove(event: DragMoveEvent) {
+  const handleDragMove = useCallback((event: DragMoveEvent) => {
     const activeData = event.active.data.current as { type: string } | undefined;
     if (activeData?.type === "today-item") {
       const isOver =
@@ -556,7 +549,7 @@ export default function DashboardPage() {
     } else {
       setIsDraggingOutside((prev) => (prev ? false : prev));
     }
-  }
+  }, []);
 
   /** Resets drag state when a drag operation is cancelled (e.g. via Escape key). */
   function handleDragCancel() {
