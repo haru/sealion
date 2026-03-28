@@ -24,6 +24,7 @@
   },
   "todo": {
     "title": "マイTODOリスト",
+    "backlog": "バックログ",
     "noIssues": "担当issueはありません。",
     "goToSettings": "設定画面でissue管理システムを接続してください。",
     "syncInProgress": "同期中...",
@@ -44,11 +45,16 @@
       "REDMINE": "Redmine"
     },
     "dueDate": "期限: {date}",
+    "dueDateLabel": "期限",
+    "createdAtLabel": "作成日",
+    "updatedAtLabel": "更新",
+    "notSet": "未設定",
     "noDueDate": "期限なし",
     "unassignedChipLabel": "担当者未設定",
     "unassignedChipTooltip": "担当者が設定されていません",
     "statusChangeError": "ステータスの更新に失敗しました。再試行してください。",
     "syncNow": "今すぐ同期",
+    "syncError": "同期の開始に失敗しました。再試行してください。",
     "pin": "上部に固定",
     "unpin": "固定を解除",
     "pinToggleError": "ピン留めの更新に失敗しました。再試行してください。"
@@ -92,7 +98,8 @@
   "sidebar": {
     "todo": "TODO",
     "projectManagement": "プロジェクト管理",
-    "boardSettings": "ボード設定"
+    "boardSettings": "ボード設定",
+    "settings": "設定"
   },
   "boardSettings": {
     "title": "ボード設定",
@@ -162,6 +169,8 @@
   },
   "todayTasks": {
     "title": "今日やるタスク",
+    "subtitle": "今日完了させるべき最優先事項",
+    "focusBadge": "今日のフォーカス",
     "empty": "タスクをドラッグするか「今日やる」をクリックして追加してください",
     "addToToday": "今日やる",
     "remove": "除外",

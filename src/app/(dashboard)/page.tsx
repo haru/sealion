@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import { Box, Container, Typography } from "@mui/material";
+import { Box, Typography } from "@mui/material";
+import InboxIcon from "@mui/icons-material/Inbox";
 import { useMessageQueue } from "@/hooks/useMessageQueue";
 import { useTranslations } from "next-intl";
 import {
@@ -185,7 +186,7 @@ export default function DashboardPage() {
       await fetch("/api/sync", { method: "POST" });
     } catch {
       setIsSyncing(false);
-      addMessage("error", t("syncNow"));
+      addMessage("error", t("syncError"));
     }
   }, [addMessage, t]);
 
@@ -247,15 +248,10 @@ export default function DashboardPage() {
       try {
         const bsRes = await fetch("/api/board-settings");
         if (!bsRes.ok) {
-          console.error("Failed to fetch board settings, falling back to defaults");
           addMessage("error", tBoardSettings("loadError"));
         } else {
           const bsJson = await bsRes.json();
           if (bsJson.error) {
-            console.error(
-              "Board settings API returned an error, falling back to defaults:",
-              bsJson.error
-            );
             addMessage("error", tBoardSettings("loadError"));
           } else if (bsJson.data) {
             const bs = bsJson.data as BoardSettings;
@@ -264,11 +260,9 @@ export default function DashboardPage() {
             initialSortOrder = bs.sortOrder;
           }
         }
-      } catch (err) {
-        console.error(
-          "Unexpected error while fetching board settings, falling back to defaults",
-          err instanceof Error ? err.message : String(err)
-        );
+      } catch {
+        // Board settings unavailable (e.g. network error before response received).
+        addMessage("error", tBoardSettings("loadError"));
       }
 
       try {
@@ -542,7 +536,7 @@ export default function DashboardPage() {
    *
    * @param event - dnd-kit DragMoveEvent.
    */
-  function handleDragMove(event: DragMoveEvent) {
+  const handleDragMove = useCallback((event: DragMoveEvent) => {
     const activeData = event.active.data.current as { type: string } | undefined;
     if (activeData?.type === "today-item") {
       const isOver =
@@ -555,7 +549,7 @@ export default function DashboardPage() {
     } else {
       setIsDraggingOutside((prev) => (prev ? false : prev));
     }
-  }
+  }, []);
 
   /** Resets drag state when a drag operation is cancelled (e.g. via Escape key). */
   function handleDragCancel() {
@@ -605,40 +599,76 @@ export default function DashboardPage() {
 
   return (
     <DndContext sensors={sensors} onDragStart={handleDragStart} onDragMove={handleDragMove} onDragEnd={handleDragEnd} onDragCancel={handleDragCancel}>
-      <Container maxWidth="md" sx={{ py: 3 }}>
-        <Typography variant="h4" component="h1" gutterBottom>
-          {t("title")}
-        </Typography>
-
+      {/* Top nav bar — full width, matches mock's h-14 header */}
+      <Box
+        sx={{
+          height: 56,
+          borderBottom: "1px solid #e2e8f0",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          px: 3,
+          flexShrink: 0,
+        }}
+      >
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          <Typography sx={{ fontWeight: 600, fontSize: "0.9rem", color: "text.primary" }}>
+            {t("title")}
+          </Typography>
+        </Box>
         <SyncStatus providers={syncProviders} isSyncing={isSyncing} onSyncNow={handleSyncNow} />
+      </Box>
 
-        <Box sx={{ mt: 2 }}>
-          <TodayTasksArea items={todayIssuesSorted} onRemove={handleRemoveFromToday} onComplete={handleComplete} />
-          <Box sx={{ mt: 2, mb: 1 }}>
-            <TaskSearchBar
-              value={rawQuery}
-              onSearch={setRawQuery}
-              onClear={clearSearch}
-              availableProviders={availableProviderTypes}
-              availableProjects={availableProjectNames}
-              hasNoResults={!loading && total === 0 && rawQuery.trim().length > 0}
-            />
+      {/* Content area — max-width centered, generous vertical padding */}
+      <Box sx={{ maxWidth: 896, mx: "auto", py: 5, px: 3 }}>
+        <TodayTasksArea items={todayIssuesSorted} onRemove={handleRemoveFromToday} onComplete={handleComplete} />
+
+        {/* Backlog section header */}
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3, px: 0.5 }}>
+          <Box
+            sx={{
+              p: 1,
+              bgcolor: "#f1f5f9",
+              borderRadius: "8px",
+              color: "text.secondary",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <InboxIcon sx={{ fontSize: 20 }} />
           </Box>
-          <TodoList
-            items={issues}
-            total={total}
-            page={page}
-            limit={20}
-            loading={loading}
-            showCreatedAt={boardSettings.showCreatedAt}
-            showUpdatedAt={boardSettings.showUpdatedAt}
-            onPageChange={handlePageChange}
-            onComplete={handleComplete}
-            onAddToToday={handleAddToToday}
-            onTogglePin={handleTogglePin}
+          <Box>
+            <Typography sx={{ fontSize: "1.1rem", fontWeight: 700, color: "text.primary", letterSpacing: "-0.01em" }}>
+              {t("backlog")}
+            </Typography>
+          </Box>
+        </Box>
+
+        <Box sx={{ mb: 3 }}>
+          <TaskSearchBar
+            value={rawQuery}
+            onSearch={setRawQuery}
+            onClear={clearSearch}
+            availableProviders={availableProviderTypes}
+            availableProjects={availableProjectNames}
+            hasNoResults={!loading && total === 0 && rawQuery.trim().length > 0}
           />
         </Box>
-      </Container>
+        <TodoList
+          items={issues}
+          total={total}
+          page={page}
+          limit={20}
+          loading={loading}
+          showCreatedAt={boardSettings.showCreatedAt}
+          showUpdatedAt={boardSettings.showUpdatedAt}
+          onPageChange={handlePageChange}
+          onComplete={handleComplete}
+          onAddToToday={handleAddToToday}
+          onTogglePin={handleTogglePin}
+        />
+      </Box>
 
       <DragOverlay>
         {activeIssue ? (

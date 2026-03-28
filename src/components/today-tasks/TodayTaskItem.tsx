@@ -105,6 +105,7 @@ export default function TodayTaskItem({
       dragHandleListeners={listeners}
       dragStyle={dragStyle}
       isGhost={isDragging}
+      isToday
       onComplete={onComplete}
     />
   );

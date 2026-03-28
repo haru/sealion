@@ -24,6 +24,7 @@
   },
   "todo": {
     "title": "My TODO List",
+    "backlog": "Backlog",
     "noIssues": "No issues assigned to you yet.",
     "goToSettings": "Go to Settings to connect your issue trackers.",
     "syncInProgress": "Syncing...",
@@ -44,11 +45,16 @@
       "REDMINE": "Redmine"
     },
     "dueDate": "Due: {date}",
+    "dueDateLabel": "Due",
+    "createdAtLabel": "Created",
+    "updatedAtLabel": "Updated",
+    "notSet": "Not set",
     "noDueDate": "No due date",
     "unassignedChipLabel": "Unassigned",
     "unassignedChipTooltip": "No assignee",
     "statusChangeError": "Failed to update status. Please try again.",
     "syncNow": "Sync Now",
+    "syncError": "Failed to start sync. Please try again.",
     "pin": "Pin to top",
     "unpin": "Unpin",
     "pinToggleError": "Failed to update pin. Please try again."
@@ -92,7 +98,8 @@
   "sidebar": {
     "todo": "TODO",
     "projectManagement": "Project Management",
-    "boardSettings": "Board Settings"
+    "boardSettings": "Board Settings",
+    "settings": "Settings"
   },
   "boardSettings": {
     "title": "Board Settings",
@@ -162,6 +169,8 @@
   },
   "todayTasks": {
     "title": "Today's Tasks",
+    "subtitle": "Top priority items to complete today",
+    "focusBadge": "TODAY'S FOCUS",
     "empty": "Drag tasks here or click \"Add to Today\" to get started",
     "addToToday": "Add to Today",
     "remove": "Remove",
