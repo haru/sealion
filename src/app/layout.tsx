@@ -10,6 +10,9 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Sealion — Unified TODO",
   description: "Aggregate your GitHub, Jira, and Redmine issues in one place",
+  icons: {
+    icon: "/sealion.svg",
+  },
 };
 
 /** Root layout providing i18n, MUI theme, and global CSS. */
