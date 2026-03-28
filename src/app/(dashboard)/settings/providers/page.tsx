@@ -19,7 +19,7 @@ import ProviderList from "@/components/providers/ProviderList";
 import AddProviderDialog from "@/components/providers/AddProviderDialog";
 import type { ProviderFormData } from "@/components/providers/ProviderForm";
 import { useMessageQueue } from "@/hooks/useMessageQueue";
-import { formatProviderApiError } from "@/lib/error-utils";
+import { formatProviderApiError, type ProviderApiErrorResponse } from "@/lib/error-utils";
 
 interface Provider {
   id: string;
@@ -43,9 +43,15 @@ export default function ProvidersPage() {
   const fetchProviders = useCallback(async () => {
     try {
       const res = await fetch("/api/providers");
-      const json = await res.json();
+      let json: unknown;
+      try {
+        json = await res.json();
+      } catch {
+        addMessage("error", tCommon("error"));
+        return;
+      }
       if (res.ok) {
-        setProviders(json.data);
+        setProviders((json as { data: Provider[] }).data);
       } else {
         addMessage("error", tCommon("error"));
       }
@@ -66,10 +72,16 @@ export default function ProvidersPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
-    const json = await res.json();
+
+    let json: unknown;
+    try {
+      json = await res.json();
+    } catch {
+      throw new Error(tCommon("error"));
+    }
 
     if (!res.ok) {
-      throw new Error(formatProviderApiError(json, tSync, tCommon("error")));
+      throw new Error(formatProviderApiError(json as ProviderApiErrorResponse, tSync, tCommon("error")));
     }
 
     await fetchProviders();

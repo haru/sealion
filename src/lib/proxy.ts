@@ -132,6 +132,7 @@ export function buildAxiosProxyConfig(baseUrl: string): ProxyAgentConfig {
   try {
     parsed = new URL(baseUrl);
   } catch {
+    console.warn("[proxy] Malformed baseUrl — proxy disabled:", baseUrl);
     return {};
   }
 

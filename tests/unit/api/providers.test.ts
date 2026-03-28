@@ -557,4 +557,18 @@ describe("PATCH /api/providers/[id]", () => {
     expect(parsed).not.toHaveProperty("baseUrl");
     expect(parsed).toEqual({ apiKey: "key123" });
   });
+
+  it("returns 500 when decrypt fails on PATCH without changeCredentials", async () => {
+    mockDecrypt.mockImplementation(() => {
+      throw new Error("Decryption failed: invalid key");
+    });
+    mockFindFirst.mockResolvedValue({ id: "p1", userId: "user-1", type: "GITHUB", encryptedCredentials: "enc", baseUrl: null });
+
+    const req = makeRequest("PATCH", { displayName: "X", changeCredentials: false }, "http://localhost/api/providers/p1");
+    const res = await PATCH(req, { params: Promise.resolve({ id: "p1" }) });
+
+    expect(res.status).toBe(500);
+    const json = await res.json();
+    expect(json.error).toBe("CREDENTIALS_DECRYPT_FAILED");
+  });
 });

@@ -295,7 +295,7 @@ export function formatConnectionTestError(
 /**
  * Shape of a JSON response body returned by provider API routes on error.
  */
-interface ProviderApiErrorResponse {
+export interface ProviderApiErrorResponse {
   error?: string | null;
   errorDetails?: ConnectionTestErrorDetails | unknown;
 }

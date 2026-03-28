@@ -177,7 +177,7 @@ export async function GET(req: NextRequest) {
   // Build provider+project nested filter
   const providerProjectWhere: Record<string, unknown> = {};
   if (provider || project) {
-    const issueProviderWhere: Record<string, unknown> = {};
+    const issueProviderWhere: Record<string, unknown> = { userId: session.user.id };
     if (provider) issueProviderWhere.type = provider;
 
     if (provider && project) {
@@ -189,6 +189,7 @@ export async function GET(req: NextRequest) {
       providerProjectWhere.project = { issueProvider: issueProviderWhere };
     } else if (project) {
       providerProjectWhere.project = {
+        issueProvider: { userId: session.user.id },
         displayName: { contains: project, mode: "insensitive" as const },
       };
     }
@@ -229,7 +230,7 @@ export async function GET(req: NextRequest) {
     todayFlag: true,
   };
 
-  const [total, totalToday, items] = await Promise.all([
+  const fetchResult = await Promise.all([
     prisma.issue.count({ where: regularWhere }),
     prisma.issue.count({ where: todayWhere }),
     prisma.issue.findMany({
@@ -260,7 +261,14 @@ export async function GET(req: NextRequest) {
         },
       },
     }),
-  ]);
+  ]).catch((error: unknown) => {
+    console.error("[issues] Failed to fetch issues:", error instanceof Error ? error.message : String(error));
+    return null;
+  });
+
+  if (!fetchResult) return fail("INTERNAL_ERROR", 500);
+
+  const [total, totalToday, items] = fetchResult;
 
   const itemsWithIconUrl = items.map((issue) => ({
     ...issue,

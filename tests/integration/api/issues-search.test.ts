@@ -34,6 +34,9 @@ let seededProviderJiraId: string;
 let seededProjectAlphaId: string;
 let seededProjectBetaId: string;
 
+const OTHER_USER_ID = "issues-search-other-user";
+let otherUserProjectId: string;
+
 /**
  * Creates a minimal provider + project + issues fixture.
  * Two providers (GITHUB, JIRA), two projects, several issues with varied attributes.
@@ -147,6 +150,53 @@ async function seedSearchFixtures() {
   });
 }
 
+/**
+ * Seeds a second user with a GITHUB provider, project, and issue.
+ * Used to verify that provider/project filters still enforce user isolation.
+ */
+async function seedOtherUserFixtures() {
+  await prisma.user.upsert({
+    where: { id: OTHER_USER_ID },
+    update: {},
+    create: {
+      id: OTHER_USER_ID,
+      email: "other-search@integration.com",
+      passwordHash: "hashed",
+      role: "USER",
+    },
+  });
+
+  const creds = encrypt(JSON.stringify({ token: "other-token" }));
+
+  const otherProvider = await prisma.issueProvider.create({
+    data: {
+      userId: OTHER_USER_ID,
+      type: "GITHUB",
+      displayName: "Other GitHub",
+      encryptedCredentials: creds,
+    },
+  });
+
+  const otherProject = await prisma.project.create({
+    data: {
+      issueProviderId: otherProvider.id,
+      externalId: "other/repo",
+      displayName: "other-repo",
+    },
+  });
+  otherUserProjectId = otherProject.id;
+
+  await prisma.issue.create({
+    data: {
+      projectId: otherProject.id,
+      externalId: "99",
+      title: "Other user login issue",
+      externalUrl: "https://github.com/other/repo/issues/99",
+      isUnassigned: true,
+    },
+  });
+}
+
 async function importIssuesRoute(p: unknown) {
   jest.resetModules();
   jest.doMock("@/lib/db", () => ({ prisma: p }));
@@ -184,6 +234,7 @@ beforeAll(async () => {
     await prisma.$connect();
     dbAvailable = true;
     await seedSearchFixtures();
+    await seedOtherUserFixtures();
   } catch (err) {
     console.warn("DB unavailable — skipping issues-search integration tests", err);
   }
@@ -201,6 +252,14 @@ afterAll(async () => {
       where: { id: { in: [seededProviderGithubId, seededProviderJiraId].filter(Boolean) } },
     });
     await prisma.user.deleteMany({ where: { id: TEST_USER_ID } });
+    await prisma.issue.deleteMany({ where: { project: { issueProvider: { userId: OTHER_USER_ID } } } });
+    await prisma.project.deleteMany({
+      where: { id: { in: [otherUserProjectId].filter(Boolean) } },
+    });
+    await prisma.issueProvider.deleteMany({
+      where: { userId: OTHER_USER_ID },
+    });
+    await prisma.user.deleteMany({ where: { id: OTHER_USER_ID } });
     await prisma.$disconnect();
   }
 });
@@ -409,5 +468,39 @@ describe("GET /api/issues — filter params", () => {
         expect(d.toDateString()).toBe(today.toDateString());
       }
     });
+  });
+
+  it("does not leak other users' issues when provider filter is active", async () => {
+    if (!dbAvailable) return;
+
+    const { GET } = await importIssuesRoute(prisma);
+    const req = new NextRequest("http://localhost/api/issues?provider=GITHUB");
+    const res = await GET(req);
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    const items = json.data.items as Array<{
+      title: string;
+      project: { displayName: string };
+    }>;
+    expect(items.length).toBeGreaterThan(0);
+    expect(items.every((i) => i.project.displayName !== "other-repo")).toBe(true);
+    expect(items.every((i) => i.title !== "Other user login issue")).toBe(true);
+  });
+
+  it("does not leak other users' issues when project filter is active", async () => {
+    if (!dbAvailable) return;
+
+    const { GET } = await importIssuesRoute(prisma);
+    const req = new NextRequest("http://localhost/api/issues?project=repo");
+    const res = await GET(req);
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    const items = json.data.items as Array<{
+      title: string;
+      project: { displayName: string };
+    }>;
+    expect(items.every((i) => i.project.displayName !== "other-repo")).toBe(true);
   });
 });

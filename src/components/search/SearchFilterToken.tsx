@@ -62,8 +62,8 @@ function presetLabel(preset: string, t: ReturnType<typeof useTranslations<"searc
     case "thisMonth": return t("thisMonth");
     case "pastYear": return t("pastYear");
     case "none": return t("noDeadline");
-    case "past7days": return "Past 7 days";
-    case "past30days": return "Past 30 days";
+    case "past7days": return t("past7days");
+    case "past30days": return t("past30days");
     default: return preset;
   }
 }

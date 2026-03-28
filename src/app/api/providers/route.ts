@@ -60,18 +60,30 @@ export async function POST(req: NextRequest) {
     return failWithDetails("CONNECTION_TEST_FAILED", errorDetails, 422);
   }
 
-  const encryptedCredentials = encrypt(JSON.stringify(credentialsWithoutUrl));
+  let encryptedCredentials: string;
+  try {
+    encryptedCredentials = encrypt(JSON.stringify(credentialsWithoutUrl));
+  } catch (error) {
+    console.error("[provider] Failed to encrypt credentials:", error instanceof Error ? error.message : String(error));
+    return fail("INTERNAL_ERROR", 500);
+  }
 
-  const provider = await prisma.issueProvider.create({
-    data: {
-      type: type as ProviderType,
-      displayName,
-      encryptedCredentials,
-      ...(baseUrl ? { baseUrl } : {}),
-      userId: session.user.id,
-    },
-    select: { id: true, type: true, displayName: true, baseUrl: true, createdAt: true },
-  });
+  let provider;
+  try {
+    provider = await prisma.issueProvider.create({
+      data: {
+        type: type as ProviderType,
+        displayName,
+        encryptedCredentials,
+        ...(baseUrl ? { baseUrl } : {}),
+        userId: session.user.id,
+      },
+      select: { id: true, type: true, displayName: true, baseUrl: true, createdAt: true },
+    });
+  } catch (error) {
+    console.error("[provider] Failed to create provider:", error instanceof Error ? error.message : String(error));
+    return fail("INTERNAL_ERROR", 500);
+  }
 
   return ok({ ...provider, iconUrl: getProviderIconUrl(provider.type) }, 201);
 }
