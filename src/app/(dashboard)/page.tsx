@@ -21,6 +21,7 @@ import SyncStatus from "@/components/todo/SyncStatus";
 import CompleteIssueModal from "@/components/todo/CompleteIssueModal";
 import TodayTasksArea, { TODAY_DROP_ZONE_ID } from "@/components/today-tasks/TodayTasksArea";
 import { allProjectsSynced, shouldThrottleSync, SYNC_THROTTLE_MS } from "@/lib/sync-utils";
+import { sortIssues } from "@/lib/sort-utils";
 import { BoardSettings, DEFAULT_BOARD_SETTINGS, SortCriterion } from "@/lib/types";
 
 interface Issue {
@@ -253,7 +254,12 @@ export default function DashboardPage() {
     if (!original) return;
 
     // Optimistic update
-    setIssues((prev) => prev.map((i) => (i.id === id ? { ...i, pinned } : i)));
+    setIssues((prev) =>
+      sortIssues(
+        prev.map((i) => (i.id === id ? { ...i, pinned } : i)),
+        boardSettingsSortOrderRef.current,
+      ),
+    );
 
     try {
       const res = await fetch(`/api/issues/${id}`, {
@@ -263,12 +269,21 @@ export default function DashboardPage() {
       });
 
       if (!res.ok) {
-        // Rollback
-        setIssues((prev) => prev.map((i) => (i.id === id ? { ...i, pinned: original.pinned } : i)));
+        setIssues((prev) =>
+          sortIssues(
+            prev.map((i) => (i.id === id ? { ...i, pinned: original.pinned } : i)),
+            boardSettingsSortOrderRef.current,
+          ),
+        );
         addMessage("error", t("pinToggleError"));
       }
     } catch {
-      setIssues((prev) => prev.map((i) => (i.id === id ? { ...i, pinned: original.pinned } : i)));
+      setIssues((prev) =>
+        sortIssues(
+          prev.map((i) => (i.id === id ? { ...i, pinned: original.pinned } : i)),
+          boardSettingsSortOrderRef.current,
+        ),
+      );
       addMessage("error", t("pinToggleError"));
     }
   }
