@@ -1,5 +1,5 @@
 /** @jest-environment node */
-import { GET } from "@/app/api/admin/users/route";
+import { GET, POST } from "@/app/api/admin/users/route";
 import { PATCH } from "@/app/api/admin/users/[id]/route";
 import { NextRequest } from "next/server";
 
@@ -23,6 +23,7 @@ const mockAuth = auth as jest.Mock;
 const mockFindMany = prisma.user.findMany as jest.Mock;
 const mockFindUnique = prisma.user.findUnique as jest.Mock;
 const mockUpdate = prisma.user.update as jest.Mock;
+const mockCreate = prisma.user.create as jest.Mock;
 
 const ADMIN_SESSION = { user: { id: "admin-1", email: "admin@ex.com", role: "ADMIN" } };
 const USER_SESSION = { user: { id: "user-1", email: "user@ex.com", role: "USER" } };
@@ -61,6 +62,99 @@ describe("GET /api/admin/users", () => {
     mockAuth.mockResolvedValue(null);
     const res = await GET(makeRequest("GET"));
     expect(res.status).toBe(401);
+  });
+});
+
+describe("POST /api/admin/users", () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it("returns 401 when not authenticated", async () => {
+    mockAuth.mockResolvedValue(null);
+    const res = await POST(makeRequest("POST", { email: "new@ex.com", password: "password123" }));
+    expect(res.status).toBe(401);
+  });
+
+  it("returns 403 when not admin", async () => {
+    mockAuth.mockResolvedValue(USER_SESSION);
+    const res = await POST(makeRequest("POST", { email: "new@ex.com", password: "password123" }));
+    expect(res.status).toBe(403);
+  });
+
+  it("returns 400 when body is invalid JSON", async () => {
+    mockAuth.mockResolvedValue(ADMIN_SESSION);
+    const req = new NextRequest("http://localhost/api/admin/users", {
+      method: "POST",
+      body: "not-json",
+    });
+    const res = await POST(req);
+    expect(res.status).toBe(400);
+  });
+
+  it("returns 400 when email is missing", async () => {
+    mockAuth.mockResolvedValue(ADMIN_SESSION);
+    const res = await POST(makeRequest("POST", { password: "password123" }));
+    expect(res.status).toBe(400);
+  });
+
+  it("returns 400 when password is missing", async () => {
+    mockAuth.mockResolvedValue(ADMIN_SESSION);
+    const res = await POST(makeRequest("POST", { email: "new@ex.com" }));
+    expect(res.status).toBe(400);
+  });
+
+  it("returns 400 when password is too short", async () => {
+    mockAuth.mockResolvedValue(ADMIN_SESSION);
+    const res = await POST(makeRequest("POST", { email: "new@ex.com", password: "short" }));
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.error).toBe("PASSWORD_TOO_SHORT");
+  });
+
+  it("returns 409 when email already exists", async () => {
+    mockAuth.mockResolvedValue(ADMIN_SESSION);
+    mockFindUnique.mockResolvedValue({ id: "existing", email: "new@ex.com" });
+    const res = await POST(makeRequest("POST", { email: "new@ex.com", password: "password123" }));
+    expect(res.status).toBe(409);
+    const json = await res.json();
+    expect(json.error).toBe("EMAIL_ALREADY_EXISTS");
+  });
+
+  it("creates user with USER role by default", async () => {
+    mockAuth.mockResolvedValue(ADMIN_SESSION);
+    mockFindUnique.mockResolvedValue(null);
+    mockCreate.mockResolvedValue({ id: "new-1", email: "new@ex.com", role: "USER", createdAt: new Date() });
+
+    const res = await POST(makeRequest("POST", { email: "new@ex.com", password: "password123" }));
+    expect(res.status).toBe(201);
+    const json = await res.json();
+    expect(json.data.email).toBe("new@ex.com");
+    expect(mockCreate).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ role: "USER" }) })
+    );
+  });
+
+  it("creates user with ADMIN role when specified", async () => {
+    mockAuth.mockResolvedValue(ADMIN_SESSION);
+    mockFindUnique.mockResolvedValue(null);
+    mockCreate.mockResolvedValue({ id: "new-2", email: "admin2@ex.com", role: "ADMIN", createdAt: new Date() });
+
+    const res = await POST(makeRequest("POST", { email: "admin2@ex.com", password: "password123", role: "ADMIN" }));
+    expect(res.status).toBe(201);
+    expect(mockCreate).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ role: "ADMIN" }) })
+    );
+  });
+
+  it("ignores invalid role and defaults to USER", async () => {
+    mockAuth.mockResolvedValue(ADMIN_SESSION);
+    mockFindUnique.mockResolvedValue(null);
+    mockCreate.mockResolvedValue({ id: "new-3", email: "new@ex.com", role: "USER", createdAt: new Date() });
+
+    const res = await POST(makeRequest("POST", { email: "new@ex.com", password: "password123", role: "SUPERADMIN" }));
+    expect(res.status).toBe(201);
+    expect(mockCreate).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ role: "USER" }) })
+    );
   });
 });
 

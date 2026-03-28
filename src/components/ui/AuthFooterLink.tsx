@@ -32,18 +32,19 @@ export function AuthFooterLink({ prompt, href, label }: AuthFooterLinkProps) {
       sx={{ mt: 4, mb: 1, textAlign: "center" }}
     >
       {prompt}{" "}
-      <Link href={href} style={{ fontWeight: 600, textDecoration: "none", color: "inherit" }}>
-        <Box
-          component="span"
-          sx={{
-            color: "primary.main",
-            "&:hover": { textDecoration: "underline" },
-            "&:focus-visible": { textDecoration: "underline" },
-          }}
-        >
-          {label}
-        </Box>
-      </Link>
+      <Box
+        component={Link}
+        href={href}
+        sx={{
+          color: "primary.main",
+          fontWeight: 600,
+          textDecoration: "none",
+          "&:hover": { textDecoration: "underline" },
+          "&:focus-visible": { textDecoration: "underline" },
+        }}
+      >
+        {label}
+      </Box>
     </Typography>
   );
 }

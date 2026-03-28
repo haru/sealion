@@ -9,9 +9,11 @@ import IconButton from "@mui/material/IconButton";
 import MenuIcon from "@mui/icons-material/Menu";
 import Link from "next/link";
 import Sidebar from "@/components/layout/Sidebar";
+import PageHeader from "@/components/layout/PageHeader";
 import { useMediaQuery, useTheme } from "@mui/material";
 import { useTranslations } from "next-intl";
 import { MessageQueueProvider } from "@/components/MessageQueue";
+import { PageHeaderProvider, usePageHeaderContext } from "@/contexts/PageHeaderContext";
 
 /** Height of the mobile AppBar in pixels, shared between the AppBar and the main content top offset. */
 const APP_BAR_HEIGHT = 56;
@@ -24,19 +26,22 @@ interface DashboardShellProps {
   children: React.ReactNode;
 }
 
-/** Top-level authenticated shell with sidebar and main content area. */
-export default function DashboardShell({ email, children }: DashboardShellProps) {
+/**
+ * Inner shell that reads the current page header from context and renders layout.
+ * Kept separate so it can consume `PageHeaderContext` provided by the outer wrapper.
+ */
+function DashboardShellInner({ email, children }: DashboardShellProps) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [drawerOpen, setDrawerOpen] = useState(false);
   const tA11y = useTranslations("a11y");
+  const { title, actions } = usePageHeaderContext();
 
   return (
-    <MessageQueueProvider>
-      <Box sx={{ display: "flex", height: "100vh", overflow: "hidden" }}>
+    <Box sx={{ display: "flex", height: "100vh", overflow: "hidden" }}>
         {/* Mobile-only AppBar for hamburger menu */}
         {isMobile && (
-          <AppBar position="fixed" sx={{ display: { md: "none" } }}>
+          <AppBar position="fixed">
             <Toolbar>
               <IconButton
                 aria-label={tA11y("openMenu")}
@@ -46,7 +51,7 @@ export default function DashboardShell({ email, children }: DashboardShellProps)
               >
                 <MenuIcon fontSize="small" />
               </IconButton>
-              <Link href="/" style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none" }}>
+                <Link href="/" style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none" }}>
                 <Box
                   sx={{
                     width: 24,
@@ -87,12 +92,25 @@ export default function DashboardShell({ email, children }: DashboardShellProps)
             flex: 1,
             overflow: "auto",
             bgcolor: "background.paper",
+            display: "flex",
+            flexDirection: "column",
             ...(isMobile && { mt: `${APP_BAR_HEIGHT}px` }),
           }}
         >
+          <PageHeader title={title} actions={actions} />
           {children}
         </Box>
       </Box>
+  );
+}
+
+/** Top-level authenticated shell with sidebar, global titlebar, and main content area. */
+export default function DashboardShell({ email, children }: DashboardShellProps) {
+  return (
+    <MessageQueueProvider>
+      <PageHeaderProvider>
+        <DashboardShellInner email={email}>{children}</DashboardShellInner>
+      </PageHeaderProvider>
     </MessageQueueProvider>
   );
 }

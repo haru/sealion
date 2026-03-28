@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from "react";
 import {
   Container,
-  Typography,
   Paper,
   Dialog,
   DialogTitle,
@@ -15,6 +14,7 @@ import {
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import { useTranslations } from "next-intl";
+import { usePageHeader } from "@/hooks/usePageHeader";
 import ProviderList from "@/components/providers/ProviderList";
 import AddProviderDialog from "@/components/providers/AddProviderDialog";
 import type { ProviderFormData } from "@/components/providers/ProviderForm";
@@ -36,6 +36,7 @@ export default function ProvidersPage() {
   const tSync = useTranslations("sync");
 
   const { addMessage } = useMessageQueue();
+  usePageHeader(t("title"));
   const [providers, setProviders] = useState<Provider[]>([]);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -102,10 +103,6 @@ export default function ProvidersPage() {
 
   return (
     <Container maxWidth="md" sx={{ py: 4 }}>
-      <Typography variant="h4" component="h1" gutterBottom>
-        {t("title")}
-      </Typography>
-
       <Paper sx={{ p: 3, mb: 3 }}>
         <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 2 }}>
           <Button

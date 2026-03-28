@@ -25,6 +25,7 @@ import TaskSearchBar from "@/components/search/TaskSearchBar";
 import { allProjectsProcessed, shouldThrottleSync, SYNC_THROTTLE_MS } from "@/lib/sync-utils";
 import { sortIssues } from "@/lib/sort-utils";
 import { BoardSettings, DEFAULT_BOARD_SETTINGS, SortCriterion } from "@/lib/types";
+import { usePageHeader } from "@/hooks/usePageHeader";
 import { useTaskSearch } from "@/hooks/useTaskSearch";
 import { serializeKeywords } from "@/lib/search-parser";
 
@@ -236,6 +237,15 @@ export default function DashboardPage() {
   const handleSyncNow = useCallback(() => {
     void startSync();
   }, [startSync]);
+
+  const syncStatusActions = useMemo(
+    () => (
+      <SyncStatus providers={syncProviders} isSyncing={isSyncing} onSyncNow={handleSyncNow} />
+    ),
+    [syncProviders, isSyncing, handleSyncNow]
+  );
+
+  usePageHeader(t("title"), syncStatusActions);
 
   useEffect(() => {
     /** Loads initial issue data and triggers a background sync unless throttled. */
@@ -599,26 +609,6 @@ export default function DashboardPage() {
 
   return (
     <DndContext sensors={sensors} onDragStart={handleDragStart} onDragMove={handleDragMove} onDragEnd={handleDragEnd} onDragCancel={handleDragCancel}>
-      {/* Top nav bar — full width, matches mock's h-14 header */}
-      <Box
-        sx={{
-          height: 56,
-          borderBottom: "1px solid #e2e8f0",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          px: 3,
-          flexShrink: 0,
-        }}
-      >
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-          <Typography sx={{ fontWeight: 600, fontSize: "0.9rem", color: "text.primary" }}>
-            {t("title")}
-          </Typography>
-        </Box>
-        <SyncStatus providers={syncProviders} isSyncing={isSyncing} onSyncNow={handleSyncNow} />
-      </Box>
-
       {/* Content area — max-width centered, generous vertical padding */}
       <Box sx={{ maxWidth: 896, mx: "auto", py: 5, px: 3 }}>
         <TodayTasksArea items={todayIssuesSorted} onRemove={handleRemoveFromToday} onComplete={handleComplete} />
