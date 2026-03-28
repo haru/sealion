@@ -510,13 +510,13 @@ export default function DashboardPage() {
       })
     );
 
-    const res = await fetch("/api/issues/today/reorder", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ orderedIds }),
-    });
-
     try {
+      const res = await fetch("/api/issues/today/reorder", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderedIds }),
+      });
+
       if (!res.ok) {
         setTodayIssues(prevTodayIssues);
         addMessage("error", tToday("reorderError"));
