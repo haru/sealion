@@ -1,16 +1,16 @@
-import { allProjectsSynced, shouldThrottleSync } from "@/lib/sync-utils";
+import { allProjectsProcessed, shouldThrottleSync } from "@/lib/sync-utils";
 
 const PAST = new Date("2026-01-01T00:00:00Z");
 const SYNC_START = new Date("2026-03-15T10:00:00Z");
 const AFTER = new Date("2026-03-15T10:01:00Z");
 
-describe("allProjectsSynced", () => {
+describe("allProjectsProcessed", () => {
   it("returns true when there are no providers", () => {
-    expect(allProjectsSynced([], SYNC_START)).toBe(true);
+    expect(allProjectsProcessed([], SYNC_START)).toBe(true);
   });
 
   it("returns true when all providers have no projects", () => {
-    expect(allProjectsSynced([{ projects: [] }], SYNC_START)).toBe(true);
+    expect(allProjectsProcessed([{ projects: [] }], SYNC_START)).toBe(true);
   });
 
   it("returns true when all projects were synced after since", () => {
@@ -21,39 +21,39 @@ describe("allProjectsSynced", () => {
         ],
       },
     ];
-    expect(allProjectsSynced(providers, SYNC_START)).toBe(true);
+    expect(allProjectsProcessed(providers, SYNC_START)).toBe(true);
   });
 
   it("returns true when lastSyncedAt equals since exactly", () => {
     const providers = [
       { projects: [{ lastSyncedAt: SYNC_START.toISOString(), syncError: null }] },
     ];
-    expect(allProjectsSynced(providers, SYNC_START)).toBe(true);
+    expect(allProjectsProcessed(providers, SYNC_START)).toBe(true);
   });
 
-  it("returns true when multiple projects across providers are all synced", () => {
+  it("returns true when multiple projects across providers are all processed", () => {
     const providers = [
       { projects: [{ lastSyncedAt: AFTER.toISOString(), syncError: null }] },
       { projects: [{ lastSyncedAt: AFTER.toISOString(), syncError: null }] },
     ];
-    expect(allProjectsSynced(providers, SYNC_START)).toBe(true);
+    expect(allProjectsProcessed(providers, SYNC_START)).toBe(true);
   });
 
   it("returns false when a project has never been synced", () => {
     const providers = [
       { projects: [{ lastSyncedAt: null, syncError: null }] },
     ];
-    expect(allProjectsSynced(providers, SYNC_START)).toBe(false);
+    expect(allProjectsProcessed(providers, SYNC_START)).toBe(false);
   });
 
   it("returns false when a project was synced before since", () => {
     const providers = [
       { projects: [{ lastSyncedAt: PAST.toISOString(), syncError: null }] },
     ];
-    expect(allProjectsSynced(providers, SYNC_START)).toBe(false);
+    expect(allProjectsProcessed(providers, SYNC_START)).toBe(false);
   });
 
-  it("returns false when only some projects are synced", () => {
+  it("returns false when only some projects are processed", () => {
     const providers = [
       {
         projects: [
@@ -62,7 +62,7 @@ describe("allProjectsSynced", () => {
         ],
       },
     ];
-    expect(allProjectsSynced(providers, SYNC_START)).toBe(false);
+    expect(allProjectsProcessed(providers, SYNC_START)).toBe(false);
   });
 
   it("checks across multiple providers", () => {
@@ -70,7 +70,7 @@ describe("allProjectsSynced", () => {
       { projects: [{ lastSyncedAt: AFTER.toISOString(), syncError: null }] },
       { projects: [{ lastSyncedAt: PAST.toISOString(), syncError: null }] },
     ];
-    expect(allProjectsSynced(providers, SYNC_START)).toBe(false);
+    expect(allProjectsProcessed(providers, SYNC_START)).toBe(false);
   });
 
   it("returns true when a project has a syncError but lastSyncedAt is after since", () => {
@@ -81,7 +81,7 @@ describe("allProjectsSynced", () => {
         ],
       },
     ];
-    expect(allProjectsSynced(providers, SYNC_START)).toBe(true);
+    expect(allProjectsProcessed(providers, SYNC_START)).toBe(true);
   });
 
   it("returns true when a project has RATE_LIMITED error but lastSyncedAt is after since", () => {
@@ -92,7 +92,7 @@ describe("allProjectsSynced", () => {
         ],
       },
     ];
-    expect(allProjectsSynced(providers, SYNC_START)).toBe(true);
+    expect(allProjectsProcessed(providers, SYNC_START)).toBe(true);
   });
 });
 
