@@ -43,6 +43,7 @@ const eslintConfig = defineConfig([
     "tests/**",
     "prisma/**",
     "coverage/**",
+    "tmp/**",
   ]),
 ]);
 

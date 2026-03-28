@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import { Box, Container, Typography } from "@mui/material";
+import { Box, Typography } from "@mui/material";
 import InboxIcon from "@mui/icons-material/Inbox";
 import { useMessageQueue } from "@/hooks/useMessageQueue";
 import { useTranslations } from "next-intl";
@@ -606,50 +606,76 @@ export default function DashboardPage() {
 
   return (
     <DndContext sensors={sensors} onDragStart={handleDragStart} onDragMove={handleDragMove} onDragEnd={handleDragEnd} onDragCancel={handleDragCancel}>
-      <Container maxWidth="md" sx={{ py: 3 }}>
-        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2 }}>
-          <Typography variant="h4" component="h1">
+      {/* Top nav bar — full width, matches mock's h-14 header */}
+      <Box
+        sx={{
+          height: 56,
+          borderBottom: "1px solid #e2e8f0",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          px: 3,
+          flexShrink: 0,
+        }}
+      >
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          <Typography sx={{ fontWeight: 600, fontSize: "0.9rem", color: "text.primary" }}>
             {t("title")}
           </Typography>
-          <SyncStatus providers={syncProviders} isSyncing={isSyncing} onSyncNow={handleSyncNow} />
         </Box>
+        <SyncStatus providers={syncProviders} isSyncing={isSyncing} onSyncNow={handleSyncNow} />
+      </Box>
 
-        <Box sx={{ mt: 1 }}>
-          <TodayTasksArea items={todayIssuesSorted} onRemove={handleRemoveFromToday} onComplete={handleComplete} />
+      {/* Content area — max-width centered, generous vertical padding */}
+      <Box sx={{ maxWidth: 896, mx: "auto", py: 5, px: 3 }}>
+        <TodayTasksArea items={todayIssuesSorted} onRemove={handleRemoveFromToday} onComplete={handleComplete} />
 
-          {/* Backlog section header */}
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 3, mb: 1.5 }}>
-            <InboxIcon sx={{ fontSize: 18, color: "text.secondary" }} />
-            <Typography variant="h6" component="h2" sx={{ color: "text.primary" }}>
+        {/* Backlog section header */}
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3, px: 0.5 }}>
+          <Box
+            sx={{
+              p: 1,
+              bgcolor: "#f1f5f9",
+              borderRadius: "8px",
+              color: "text.secondary",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <InboxIcon sx={{ fontSize: 20 }} />
+          </Box>
+          <Box>
+            <Typography sx={{ fontSize: "1.1rem", fontWeight: 700, color: "text.primary", letterSpacing: "-0.01em" }}>
               {t("backlog")}
             </Typography>
           </Box>
+        </Box>
 
-          <Box sx={{ mb: 1 }}>
-            <TaskSearchBar
-              value={rawQuery}
-              onSearch={setRawQuery}
-              onClear={clearSearch}
-              availableProviders={availableProviderTypes}
-              availableProjects={availableProjectNames}
-              hasNoResults={!loading && total === 0 && rawQuery.trim().length > 0}
-            />
-          </Box>
-          <TodoList
-            items={issues}
-            total={total}
-            page={page}
-            limit={20}
-            loading={loading}
-            showCreatedAt={boardSettings.showCreatedAt}
-            showUpdatedAt={boardSettings.showUpdatedAt}
-            onPageChange={handlePageChange}
-            onComplete={handleComplete}
-            onAddToToday={handleAddToToday}
-            onTogglePin={handleTogglePin}
+        <Box sx={{ mb: 3 }}>
+          <TaskSearchBar
+            value={rawQuery}
+            onSearch={setRawQuery}
+            onClear={clearSearch}
+            availableProviders={availableProviderTypes}
+            availableProjects={availableProjectNames}
+            hasNoResults={!loading && total === 0 && rawQuery.trim().length > 0}
           />
         </Box>
-      </Container>
+        <TodoList
+          items={issues}
+          total={total}
+          page={page}
+          limit={20}
+          loading={loading}
+          showCreatedAt={boardSettings.showCreatedAt}
+          showUpdatedAt={boardSettings.showUpdatedAt}
+          onPageChange={handlePageChange}
+          onComplete={handleComplete}
+          onAddToToday={handleAddToToday}
+          onTogglePin={handleTogglePin}
+        />
+      </Box>
 
       <DragOverlay>
         {activeIssue ? (

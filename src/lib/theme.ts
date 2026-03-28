@@ -15,14 +15,15 @@ export const theme = createTheme({
       main: "#64748b",
     },
     background: {
-      default: "#f9fafb",
+      default: "#f8fafc",
       paper: "#ffffff",
     },
     text: {
-      primary: "#111827",
-      secondary: "#6b7280",
+      primary: "#0f172a",
+      secondary: "#64748b",
+      disabled: "#cbd5e1",
     },
-    divider: "#e5e7eb",
+    divider: "#e2e8f0",
     error: {
       main: "#ef4444",
     },
@@ -119,17 +120,17 @@ export const theme = createTheme({
       styleOverrides: {
         root: {
           backgroundColor: "#ffffff",
-          color: "#111827",
+          color: "#0f172a",
           boxShadow: "none",
-          borderBottom: "1px solid #e5e7eb",
+          borderBottom: "1px solid #e2e8f0",
         },
       },
     },
     MuiDrawer: {
       styleOverrides: {
         paper: {
-          backgroundColor: "#f9fafb",
-          borderRight: "1px solid #e5e7eb",
+          backgroundColor: "#f8fafc",
+          borderRight: "1px solid #e2e8f0",
           boxShadow: "none",
         },
       },
@@ -237,25 +238,8 @@ export const theme = createTheme({
     MuiListItemButton: {
       styleOverrides: {
         root: {
-          borderRadius: 6,
-          marginLeft: 8,
-          marginRight: 8,
-          marginBottom: 2,
-          width: "auto",
-          paddingLeft: 10,
-          paddingRight: 10,
           paddingTop: 7,
           paddingBottom: 7,
-          "&.Mui-selected": {
-            backgroundColor: "rgba(79, 70, 229, 0.08)",
-            color: "#4f46e5",
-            "& .MuiListItemIcon-root": {
-              color: "#4f46e5",
-            },
-            "&:hover": {
-              backgroundColor: "rgba(79, 70, 229, 0.12)",
-            },
-          },
           "&:hover": {
             backgroundColor: "rgba(0, 0, 0, 0.04)",
           },

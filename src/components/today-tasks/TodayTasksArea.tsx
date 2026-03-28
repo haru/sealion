@@ -1,7 +1,8 @@
 "use client";
 
-import { Box, Chip, Paper, Typography } from "@mui/material";
-import TodayIcon from "@mui/icons-material/Today";
+import { Box, Typography } from "@mui/material";
+import GpsFixedIcon from "@mui/icons-material/GpsFixed";
+import AddIcon from "@mui/icons-material/Add";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { useDroppable } from "@dnd-kit/core";
 import { useTranslations } from "next-intl";
@@ -59,122 +60,126 @@ export default function TodayTasksArea({ items, onRemove, onComplete }: TodayTas
   const { setNodeRef, isOver } = useDroppable({ id: TODAY_DROP_ZONE_ID });
 
   return (
-    <Box sx={{ mb: 3 }}>
-      <Paper
-        variant="outlined"
+    <Box
+      sx={{
+        mb: 5,
+        p: 3,
+        borderRadius: "20px",
+        bgcolor: isOver ? "rgba(79, 70, 229, 0.04)" : "#f8fafc",
+        border: "1px solid #cbd5e1",
+        transition: "background-color 0.2s",
+      }}
+    >
+      {/* Section header */}
+      <Box
         sx={{
-          borderRadius: 2,
-          overflow: "hidden",
-          borderColor: "#e5e7eb",
-          bgcolor: "background.paper",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          mb: 3,
         }}
       >
-        {/* Section header */}
-        <Box
-          sx={{
-            px: 2,
-            py: 1.5,
-            display: "flex",
-            alignItems: "center",
-            gap: 1.5,
-            borderBottom: "1px solid #e5e7eb",
-          }}
-        >
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
           <Box
             sx={{
-              width: 30,
-              height: 30,
+              p: 1,
+              bgcolor: "primary.main",
               borderRadius: "8px",
-              bgcolor: "rgba(79, 70, 229, 0.1)",
+              color: "white",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              flexShrink: 0,
             }}
           >
-            <TodayIcon sx={{ fontSize: 16, color: "primary.main" }} />
+            <GpsFixedIcon sx={{ fontSize: 20 }} />
           </Box>
-          <Box sx={{ flex: 1 }}>
+          <Box>
             <Typography
-              variant="h6"
+              variant="h5"
               component="h2"
-              sx={{ fontSize: "0.9375rem", fontWeight: 600, color: "text.primary" }}
+              sx={{
+                fontWeight: 800,
+                letterSpacing: "-0.02em",
+                fontSize: "1.25rem",
+                color: "text.primary",
+              }}
             >
               {t("title")}
             </Typography>
-            <Typography variant="caption" sx={{ color: "text.secondary" }}>
+            <Typography sx={{ fontSize: "0.75rem", color: "text.secondary", fontWeight: 500 }}>
               {t("subtitle")}
             </Typography>
           </Box>
-          <Chip
-            label="TODAY'S FOCUS"
-            size="small"
-            sx={{
-              bgcolor: "rgba(79, 70, 229, 0.08)",
-              color: "primary.main",
-              border: "none",
-              fontWeight: 600,
-              fontSize: "0.6875rem",
-              letterSpacing: "0.04em",
-              height: 22,
-            }}
-          />
         </Box>
-
-        {/* Drop zone */}
         <Box
-          ref={setNodeRef}
           sx={{
-            p: 1.5,
-            minHeight: 60,
-            transition: "background-color 0.2s",
-            bgcolor: isOver ? "rgba(79, 70, 229, 0.04)" : "transparent",
+            px: 1.5,
+            py: 0.5,
+            bgcolor: "#eef2ff",
+            color: "primary.main",
+            borderRadius: "100px",
+            fontSize: "0.7rem",
+            fontWeight: 700,
+            letterSpacing: "0.05em",
           }}
         >
-          {items.length === 0 ? (
-            <Box
+          TODAY&apos;S FOCUS
+        </Box>
+      </Box>
+
+      {/* Task list */}
+      <Box ref={setNodeRef}>
+        {items.length === 0 ? (
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              py: 3,
+              border: "2px dashed #cbd5e1",
+              borderRadius: "12px",
+              bgcolor: "rgba(255,255,255,0.4)",
+              transition: "background-color 0.2s, border-color 0.2s",
+              ...(isOver && { bgcolor: "rgba(255,255,255,0.6)", borderColor: "primary.main" }),
+            }}
+          >
+            <Typography
               sx={{
-                border: "1.5px dashed",
-                borderColor: isOver ? "primary.main" : "#d1d5db",
-                borderRadius: 1.5,
-                py: 2,
-                px: 2,
+                fontSize: "0.8rem",
+                color: "text.secondary",
                 display: "flex",
                 alignItems: "center",
-                justifyContent: "center",
-                transition: "border-color 0.2s, background-color 0.2s",
-                bgcolor: isOver ? "rgba(79, 70, 229, 0.04)" : "transparent",
+                gap: 0.75,
               }}
             >
-              <Typography variant="body2" color="text.secondary">
-                {t("empty")}
-              </Typography>
-            </Box>
-          ) : (
-            <SortableContext items={ids} strategy={verticalListSortingStrategy}>
-              {items.map((issue) => (
-                <TodayTaskItem
-                  key={issue.id}
-                  id={issue.id}
-                  externalId={issue.externalId}
-                  title={issue.title}
-                  dueDate={issue.dueDate}
-                  externalUrl={issue.externalUrl}
-                  isUnassigned={issue.isUnassigned}
-                  providerCreatedAt={issue.providerCreatedAt}
-                  providerUpdatedAt={issue.providerUpdatedAt}
-                  providerIconUrl={issue.project.issueProvider.iconUrl}
-                  providerName={issue.project.issueProvider.displayName}
-                  projectName={issue.project.displayName}
-                  pinned={issue.pinned}
-                  onRemove={onRemove}
-                  onComplete={onComplete}
-                />
-              ))}
-            </SortableContext>
-          )}
-        </Box>
-      </Paper>
+              <AddIcon sx={{ fontSize: 16 }} />
+              {t("empty")}
+            </Typography>
+          </Box>
+        ) : (
+          <SortableContext items={ids} strategy={verticalListSortingStrategy}>
+            {items.map((issue) => (
+              <TodayTaskItem
+                key={issue.id}
+                id={issue.id}
+                externalId={issue.externalId}
+                title={issue.title}
+                dueDate={issue.dueDate}
+                externalUrl={issue.externalUrl}
+                isUnassigned={issue.isUnassigned}
+                providerCreatedAt={issue.providerCreatedAt}
+                providerUpdatedAt={issue.providerUpdatedAt}
+                providerIconUrl={issue.project.issueProvider.iconUrl}
+                providerName={issue.project.issueProvider.displayName}
+                projectName={issue.project.displayName}
+                pinned={issue.pinned}
+                onRemove={onRemove}
+                onComplete={onComplete}
+              />
+            ))}
+          </SortableContext>
+        )}
+      </Box>
     </Box>
   );
 }

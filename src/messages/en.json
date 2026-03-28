@@ -45,6 +45,10 @@
       "REDMINE": "Redmine"
     },
     "dueDate": "Due: {date}",
+    "dueDateLabel": "Due",
+    "createdAtLabel": "Created",
+    "updatedAtLabel": "Updated",
+    "notSet": "Not set",
     "noDueDate": "No due date",
     "unassignedChipLabel": "Unassigned",
     "unassignedChipTooltip": "No assignee",
@@ -93,7 +97,8 @@
   "sidebar": {
     "todo": "TODO",
     "projectManagement": "Project Management",
-    "boardSettings": "Board Settings"
+    "boardSettings": "Board Settings",
+    "settings": "Settings"
   },
   "boardSettings": {
     "title": "Board Settings",

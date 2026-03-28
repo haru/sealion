@@ -45,6 +45,10 @@
       "REDMINE": "Redmine"
     },
     "dueDate": "期限: {date}",
+    "dueDateLabel": "期限",
+    "createdAtLabel": "作成日",
+    "updatedAtLabel": "更新",
+    "notSet": "未設定",
     "noDueDate": "期限なし",
     "unassignedChipLabel": "担当者未設定",
     "unassignedChipTooltip": "担当者が設定されていません",
@@ -93,7 +97,8 @@
   "sidebar": {
     "todo": "TODO",
     "projectManagement": "プロジェクト管理",
-    "boardSettings": "ボード設定"
+    "boardSettings": "ボード設定",
+    "settings": "設定"
   },
   "boardSettings": {
     "title": "ボード設定",
