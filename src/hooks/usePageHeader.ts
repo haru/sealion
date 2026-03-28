@@ -18,5 +18,6 @@ export function usePageHeader(title: string, actions?: React.ReactNode): void {
 
   useEffect(() => {
     setPageHeader(title, actions);
+    return () => setPageHeader("", null);
   }, [title, actions, setPageHeader]);
 }

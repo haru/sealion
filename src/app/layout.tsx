@@ -7,6 +7,7 @@ import CssBaseline from "@mui/material/CssBaseline";
 import { theme } from "@/lib/theme";
 import "./globals.css";
 
+/** Application metadata for SEO and browser tab display. */
 export const metadata: Metadata = {
   title: "Sealion — Unified TODO",
   description: "Aggregate your GitHub, Jira, and Redmine issues in one place",

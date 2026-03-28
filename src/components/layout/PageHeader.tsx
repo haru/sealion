@@ -27,7 +27,8 @@ export default function PageHeader({ title, actions }: PageHeaderProps) {
       data-testid="page-header"
       sx={{
         height: 56,
-        borderBottom: "1px solid #e2e8f0",
+        borderBottom: "1px solid",
+        borderColor: "divider",
         display: { xs: "none", md: "flex" },
         alignItems: "center",
         justifyContent: "space-between",

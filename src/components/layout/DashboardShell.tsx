@@ -41,7 +41,7 @@ function DashboardShellInner({ email, children }: DashboardShellProps) {
     <Box sx={{ display: "flex", height: "100vh", overflow: "hidden" }}>
         {/* Mobile-only AppBar for hamburger menu */}
         {isMobile && (
-          <AppBar position="fixed" sx={{ display: { md: "none" } }}>
+          <AppBar position="fixed">
             <Toolbar>
               <IconButton
                 aria-label={tA11y("openMenu")}
@@ -51,7 +51,7 @@ function DashboardShellInner({ email, children }: DashboardShellProps) {
               >
                 <MenuIcon fontSize="small" />
               </IconButton>
-              <Link href="/" style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none" }}>
+                <Link href="/" style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none" }}>
                 <Box
                   sx={{
                     width: 24,
