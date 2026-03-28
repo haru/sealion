@@ -37,13 +37,21 @@ Coverage threshold is **95% lines** (enforced by Jest). Pages, layouts, React co
 ### Domain Model (Prisma schema)
 
 ```
-User
-└── IssueProvider  (type: GITHUB | JIRA | REDMINE)
-    └── Project    (externalId maps to repo/project in the provider)
-        └── Issue  (normalized TODO unit; status: OPEN | CLOSED; priority: LOW | MEDIUM | HIGH | CRITICAL)
+User  (role: USER | ADMIN; isActive)
+├── BoardSettings   (showCreatedAt, showUpdatedAt, sortOrder)
+└── IssueProvider   (type: GITHUB | JIRA | REDMINE; encryptedCredentials)
+    └── Project     (externalId maps to repo/project in the provider; includeUnassigned, syncError)
+        └── Issue   (title, dueDate?, externalUrl; todayFlag, todayOrder?, todayAddedAt?,
+                     providerCreatedAt?, providerUpdatedAt?, pinned)
 ```
 
 `IssueProvider.encryptedCredentials` stores provider API tokens/keys encrypted with AES-256-GCM (`src/lib/encryption.ts`). The key is read from `CREDENTIALS_ENCRYPTION_KEY` (64-char hex = 32 bytes).
+
+**Key notes:**
+- Issue has no `status` or `priority` columns — closing an issue deletes it from the local DB.
+- `BoardSettings` controls per-user board display preferences (one-to-one with User).
+- `Issue.todayFlag` / `todayOrder` / `todayAddedAt` power the "Today Tasks" feature with drag-and-drop reorder (dnd-kit).
+- `Issue.pinned` marks tasks as pinned for quick access.
 
 ### App Router layout
 
