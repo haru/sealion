@@ -6,7 +6,7 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
-  Toolbar,
+  Box,
 } from "@mui/material";
 import FolderOpenIcon from "@mui/icons-material/FolderOpen";
 import FormatListBulletedIcon from "@mui/icons-material/FormatListBulleted";
@@ -30,8 +30,9 @@ export default function Sidebar({ open, onClose, variant }: SidebarProps) {
 
   const content = (
     <>
-      <Toolbar />
-      <List>
+      {/* Spacer to push nav below the AppBar */}
+      <Box sx={{ height: 56 }} />
+      <List sx={{ pt: 1, pb: 1 }}>
         <ListItemButton
           component={Link}
           href="/"
@@ -39,7 +40,7 @@ export default function Sidebar({ open, onClose, variant }: SidebarProps) {
           onClick={variant === "temporary" ? onClose : undefined}
         >
           <ListItemIcon>
-            <FormatListBulletedIcon />
+            <FormatListBulletedIcon fontSize="small" />
           </ListItemIcon>
           <ListItemText primary={t("todo")} />
         </ListItemButton>
@@ -50,7 +51,7 @@ export default function Sidebar({ open, onClose, variant }: SidebarProps) {
           onClick={variant === "temporary" ? onClose : undefined}
         >
           <ListItemIcon>
-            <FolderOpenIcon />
+            <FolderOpenIcon fontSize="small" />
           </ListItemIcon>
           <ListItemText primary={t("projectManagement")} />
         </ListItemButton>
@@ -61,7 +62,7 @@ export default function Sidebar({ open, onClose, variant }: SidebarProps) {
           onClick={variant === "temporary" ? onClose : undefined}
         >
           <ListItemIcon>
-            <TuneIcon />
+            <TuneIcon fontSize="small" />
           </ListItemIcon>
           <ListItemText primary={t("boardSettings")} />
         </ListItemButton>

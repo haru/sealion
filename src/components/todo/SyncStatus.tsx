@@ -111,7 +111,7 @@ export default function SyncStatus({ providers, isSyncing, onSyncNow }: SyncStat
       : t("notSyncedYet");
 
   return (
-    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
       <Chip icon={icon} label={label} size="small" variant="outlined" />
       <Button
         variant="outlined"

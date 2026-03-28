@@ -24,6 +24,7 @@
   },
   "todo": {
     "title": "マイTODOリスト",
+    "backlog": "バックログ",
     "noIssues": "担当issueはありません。",
     "goToSettings": "設定画面でissue管理システムを接続してください。",
     "syncInProgress": "同期中...",
@@ -162,6 +163,7 @@
   },
   "todayTasks": {
     "title": "今日やるタスク",
+    "subtitle": "今日完了させるべき最優先事項",
     "empty": "タスクをドラッグするか「今日やる」をクリックして追加してください",
     "addToToday": "今日やる",
     "remove": "除外",

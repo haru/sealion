@@ -24,6 +24,7 @@
   },
   "todo": {
     "title": "My TODO List",
+    "backlog": "Backlog",
     "noIssues": "No issues assigned to you yet.",
     "goToSettings": "Go to Settings to connect your issue trackers.",
     "syncInProgress": "Syncing...",
@@ -162,6 +163,7 @@
   },
   "todayTasks": {
     "title": "Today's Tasks",
+    "subtitle": "Top priority items to complete today",
     "empty": "Drag tasks here or click \"Add to Today\" to get started",
     "addToToday": "Add to Today",
     "remove": "Remove",

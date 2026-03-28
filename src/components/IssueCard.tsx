@@ -17,6 +17,7 @@ import { useTranslations } from "next-intl";
 import ProviderIcon from "@/components/ProviderIcon";
 import type { DraggableSyntheticListeners, DraggableAttributes } from "@dnd-kit/core";
 import type { CSSProperties, ReactNode, Ref } from "react";
+
 /** Props for {@link IssueCard}. */
 interface IssueCardProps {
   /** Internal issue ID. */
@@ -106,24 +107,53 @@ export default function IssueCard({
       variant="outlined"
       sx={{ opacity: isGhost ? 0.15 : isDragging ? 0.6 : 1, mb: 1 }}
     >
-      <CardContent sx={{ pb: "16px !important" }}>
+      <CardContent>
         <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1 }}>
           <Box
             {...dragHandleAttributes}
             {...dragHandleListeners}
-            sx={{ cursor: "grab", color: "text.secondary", display: "flex", alignItems: "center", mt: 0.5 }}
+            sx={{
+              cursor: "grab",
+              color: "text.disabled",
+              display: "flex",
+              alignItems: "center",
+              mt: 0.25,
+              flexShrink: 0,
+              "&:hover": { color: "text.secondary" },
+            }}
           >
-            <DragIndicatorIcon fontSize="small" />
+            <DragIndicatorIcon sx={{ fontSize: 16 }} />
           </Box>
 
           <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Typography
-              variant="body1"
-              sx={{ wordBreak: "break-word" }}
-            >
-              {`#${externalId} ${title}`}
-            </Typography>
-            <Stack direction="row" spacing={1} sx={{ mt: 1, flexWrap: "wrap", gap: 0.5 }}>
+            <Box sx={{ display: "flex", alignItems: "baseline", gap: 0.75, mb: 0.75 }}>
+              <Typography
+                variant="body2"
+                component="span"
+                sx={{
+                  color: "text.disabled",
+                  fontWeight: 500,
+                  fontSize: "0.75rem",
+                  flexShrink: 0,
+                  fontVariantNumeric: "tabular-nums",
+                }}
+              >
+                #{externalId}
+              </Typography>
+              <Typography
+                variant="body1"
+                sx={{
+                  wordBreak: "break-word",
+                  fontWeight: 500,
+                  fontSize: "0.875rem",
+                  color: "text.primary",
+                  lineHeight: 1.4,
+                }}
+              >
+                {title}
+              </Typography>
+            </Box>
+            <Stack direction="row" spacing={0.5} sx={{ flexWrap: "wrap", gap: 0.5 }}>
               <Chip
                 icon={<ProviderIcon iconUrl={providerIconUrl} label={providerName} fontSize="small" />}
                 label={`${providerName} / ${projectName}`}
@@ -172,8 +202,9 @@ export default function IssueCard({
               href={externalUrl}
               target="_blank"
               rel="noopener noreferrer"
+              sx={{ mt: 0.25, flexShrink: 0 }}
             >
-              <OpenInNewIcon fontSize="small" />
+              <OpenInNewIcon sx={{ fontSize: 15 }} />
             </IconButton>
           </Tooltip>
         </Box>

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { Box, Container, Typography } from "@mui/material";
+import InboxIcon from "@mui/icons-material/Inbox";
 import { useMessageQueue } from "@/hooks/useMessageQueue";
 import { useTranslations } from "next-intl";
 import {
@@ -606,15 +607,25 @@ export default function DashboardPage() {
   return (
     <DndContext sensors={sensors} onDragStart={handleDragStart} onDragMove={handleDragMove} onDragEnd={handleDragEnd} onDragCancel={handleDragCancel}>
       <Container maxWidth="md" sx={{ py: 3 }}>
-        <Typography variant="h4" component="h1" gutterBottom>
-          {t("title")}
-        </Typography>
+        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2 }}>
+          <Typography variant="h4" component="h1">
+            {t("title")}
+          </Typography>
+          <SyncStatus providers={syncProviders} isSyncing={isSyncing} onSyncNow={handleSyncNow} />
+        </Box>
 
-        <SyncStatus providers={syncProviders} isSyncing={isSyncing} onSyncNow={handleSyncNow} />
-
-        <Box sx={{ mt: 2 }}>
+        <Box sx={{ mt: 1 }}>
           <TodayTasksArea items={todayIssuesSorted} onRemove={handleRemoveFromToday} onComplete={handleComplete} />
-          <Box sx={{ mt: 2, mb: 1 }}>
+
+          {/* Backlog section header */}
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 3, mb: 1.5 }}>
+            <InboxIcon sx={{ fontSize: 18, color: "text.secondary" }} />
+            <Typography variant="h6" component="h2" sx={{ color: "text.primary" }}>
+              {t("backlog")}
+            </Typography>
+          </Box>
+
+          <Box sx={{ mb: 1 }}>
             <TaskSearchBar
               value={rawQuery}
               onSearch={setRawQuery}
