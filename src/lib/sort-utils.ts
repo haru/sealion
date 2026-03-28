@@ -9,6 +9,16 @@ interface SortableIssue {
 }
 
 /**
+ * Utility that asserts a value is `never` at compile time.
+ * Used as an exhaustiveness guard in switch statements so that
+ * TypeScript produces an error when a union member is not handled.
+ * @param _value - A value that should be `never` if all cases are covered.
+ */
+function assertNever(_value: never): never {
+  throw new Error(`Unhandled discriminated union member: ${String(_value)}`);
+}
+
+/**
  * Compares two nullable date strings in ascending order.
  * Null values are always sorted to the end (nulls last).
  * @param a - First date string or null.
@@ -62,6 +72,8 @@ export function sortIssues<T extends SortableIssue>(issues: T[], criteria: SortC
         case "providerCreatedAt_desc":
           cmp = compareDateDesc(a.providerCreatedAt, b.providerCreatedAt);
           break;
+        default:
+          return assertNever(criterion);
       }
       if (cmp !== 0) return cmp;
     }
