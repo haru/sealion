@@ -23,6 +23,16 @@ jest.mock("@/lib/auth", () => ({
   }),
 }));
 
+// Mock db at module level so the no-DB-required tests never touch DATABASE_URL.
+jest.mock("@/lib/db", () => ({
+  prisma: {
+    user: {
+      findUnique: jest.fn(),
+      update: jest.fn(),
+    },
+  },
+}));
+
 async function importRoute() {
   jest.resetModules();
   // Re-apply mocks after resetModules
@@ -92,6 +102,11 @@ describe("PATCH /api/account/password — unauthenticated (no DB required)", () 
     jest.doMock("@/lib/auth", () => ({
       auth: jest.fn().mockResolvedValue(null),
     }));
+    jest.doMock("@/lib/db", () => ({
+      prisma: {
+        user: { findUnique: jest.fn(), update: jest.fn() },
+      },
+    }));
     const { PATCH } = await import("@/app/api/account/password/route");
     const req = makePatchRequest({ currentPassword: "oldpass", newPassword: "newpass123" });
     const res = await PATCH(req);
@@ -102,15 +117,6 @@ describe("PATCH /api/account/password — unauthenticated (no DB required)", () 
 });
 
 describe("PATCH /api/account/password — input validation (no DB required)", () => {
-  beforeAll(() => {
-    jest.resetModules();
-    jest.doMock("@/lib/auth", () => ({
-      auth: jest.fn().mockResolvedValue({
-        user: { id: TEST_USER_ID, email: TEST_USER_EMAIL, role: "USER" },
-      }),
-    }));
-  });
-
   test("returns 400 when newPassword is shorter than 8 characters", async () => {
     jest.resetModules();
     jest.doMock("@/lib/auth", () => ({
@@ -118,15 +124,10 @@ describe("PATCH /api/account/password — input validation (no DB required)", ()
         user: { id: TEST_USER_ID, email: TEST_USER_EMAIL, role: "USER" },
       }),
     }));
-    // Use a mock prisma that returns a user so we reach the length check
-    const mockHash = bcrypt.hashSync("currentpass", 10);
     jest.doMock("@/lib/db", () => ({
       prisma: {
         user: {
-          findUnique: jest.fn().mockResolvedValue({
-            id: TEST_USER_ID,
-            passwordHash: mockHash,
-          }),
+          findUnique: jest.fn(),
           update: jest.fn(),
         },
       },
@@ -136,7 +137,7 @@ describe("PATCH /api/account/password — input validation (no DB required)", ()
     const res = await PATCH(req);
     expect(res.status).toBe(400);
     const json = await res.json();
-    expect(json.error).toMatch(/8/);
+    expect(json.error).toBeTruthy();
   });
 
   test("returns 400 when currentPassword is empty", async () => {
@@ -146,7 +147,93 @@ describe("PATCH /api/account/password — input validation (no DB required)", ()
         user: { id: TEST_USER_ID, email: TEST_USER_EMAIL, role: "USER" },
       }),
     }));
-    const mockHash = bcrypt.hashSync("currentpass", 10);
+    jest.doMock("@/lib/db", () => ({
+      prisma: {
+        user: {
+          findUnique: jest.fn(),
+          update: jest.fn(),
+        },
+      },
+    }));
+    const { PATCH } = await import("@/app/api/account/password/route");
+    const req = makePatchRequest({ currentPassword: "", newPassword: "newpassword123" });
+    const res = await PATCH(req);
+    expect(res.status).toBe(400);
+  });
+
+  test("returns 400 when request body is invalid JSON shape", async () => {
+    jest.resetModules();
+    jest.doMock("@/lib/auth", () => ({
+      auth: jest.fn().mockResolvedValue({
+        user: { id: TEST_USER_ID, email: TEST_USER_EMAIL, role: "USER" },
+      }),
+    }));
+    jest.doMock("@/lib/db", () => ({
+      prisma: {
+        user: {
+          findUnique: jest.fn(),
+          update: jest.fn(),
+        },
+      },
+    }));
+    const { PATCH } = await import("@/app/api/account/password/route");
+    const req = makePatchRequest({ onlyOneField: "value" });
+    const res = await PATCH(req);
+    expect(res.status).toBe(400);
+  });
+
+  test("returns error code PASSWORD_CURRENT_REQUIRED when currentPassword is empty", async () => {
+    jest.resetModules();
+    jest.doMock("@/lib/auth", () => ({
+      auth: jest.fn().mockResolvedValue({
+        user: { id: TEST_USER_ID, email: TEST_USER_EMAIL, role: "USER" },
+      }),
+    }));
+    jest.doMock("@/lib/db", () => ({
+      prisma: {
+        user: {
+          findUnique: jest.fn(),
+          update: jest.fn(),
+        },
+      },
+    }));
+    const { PATCH } = await import("@/app/api/account/password/route");
+    const req = makePatchRequest({ currentPassword: "", newPassword: "newpassword123" });
+    const res = await PATCH(req);
+    const json = await res.json();
+    expect(json.error).toBe("PASSWORD_CURRENT_REQUIRED");
+  });
+
+  test("returns error code PASSWORD_TOO_SHORT when newPassword is too short", async () => {
+    jest.resetModules();
+    jest.doMock("@/lib/auth", () => ({
+      auth: jest.fn().mockResolvedValue({
+        user: { id: TEST_USER_ID, email: TEST_USER_EMAIL, role: "USER" },
+      }),
+    }));
+    jest.doMock("@/lib/db", () => ({
+      prisma: {
+        user: {
+          findUnique: jest.fn(),
+          update: jest.fn(),
+        },
+      },
+    }));
+    const { PATCH } = await import("@/app/api/account/password/route");
+    const req = makePatchRequest({ currentPassword: "currentpass", newPassword: "short" });
+    const res = await PATCH(req);
+    const json = await res.json();
+    expect(json.error).toBe("PASSWORD_TOO_SHORT");
+  });
+
+  test("returns error code PASSWORD_INCORRECT when current password does not match hash", async () => {
+    jest.resetModules();
+    jest.doMock("@/lib/auth", () => ({
+      auth: jest.fn().mockResolvedValue({
+        user: { id: TEST_USER_ID, email: TEST_USER_EMAIL, role: "USER" },
+      }),
+    }));
+    const mockHash = bcrypt.hashSync("correctpass", 10);
     jest.doMock("@/lib/db", () => ({
       prisma: {
         user: {
@@ -159,9 +246,11 @@ describe("PATCH /api/account/password — input validation (no DB required)", ()
       },
     }));
     const { PATCH } = await import("@/app/api/account/password/route");
-    const req = makePatchRequest({ currentPassword: "", newPassword: "newpassword123" });
+    const req = makePatchRequest({ currentPassword: "wrongpass", newPassword: "newpassword123" });
     const res = await PATCH(req);
     expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.error).toBe("PASSWORD_INCORRECT");
   });
 });
 
@@ -174,8 +263,12 @@ describe("PATCH /api/account/password — with real database", () => {
     await seedUser(CURRENT_PASSWORD);
   });
 
-  test("returns 200 on valid password change", async () => {
-    if (!dbAvailable) return;
+  // dbTest resolves to test when a real DB is available, test.skip otherwise.
+  // This ensures skipped tests appear as "skipped" in CI reports rather than
+  // silently passing via an early return, which would mask missing DB coverage.
+  const dbTest = dbAvailable ? test : test.skip;
+
+  dbTest("returns 200 on valid password change", async () => {
     const { PATCH } = await importRoute();
     const req = makePatchRequest({ currentPassword: CURRENT_PASSWORD, newPassword: NEW_PASSWORD });
     const res = await PATCH(req);
@@ -190,8 +283,7 @@ describe("PATCH /api/account/password — with real database", () => {
     expect(matches).toBe(true);
   });
 
-  test("returns 400 when currentPassword is wrong", async () => {
-    if (!dbAvailable) return;
+  dbTest("returns 400 when currentPassword is wrong", async () => {
     // At this point password is NEW_PASSWORD from the previous test
     const { PATCH } = await importRoute();
     const req = makePatchRequest({ currentPassword: "WrongPassword!", newPassword: "AnotherNew1!" });

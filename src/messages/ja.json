@@ -104,7 +104,8 @@
   },
   "accountMenu": {
     "profileSettings": "プロファイル設定",
-    "issueSettings": "Issue管理システム設定"
+    "issueSettings": "Issue管理システム設定",
+    "ariaLabel": "アカウントメニュー"
   },
   "profileSettings": {
     "title": "プロファイル設定",
@@ -116,7 +117,9 @@
     "successMessage": "パスワードを更新しました。",
     "errorMismatch": "パスワードが一致しません。",
     "errorTooShort": "パスワードは8文字以上で入力してください。",
-    "errorCurrent": "現在のパスワードが正しくありません。"
+    "errorCurrentRequired": "現在のパスワードを入力してください。",
+    "errorCurrentIncorrect": "現在のパスワードが正しくありません。",
+    "errorUnexpected": "予期しないエラーが発生しました。もう一度お試しください。"
   },
   "boardSettings": {
     "title": "ボード設定",

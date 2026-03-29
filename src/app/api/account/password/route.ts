@@ -10,6 +10,14 @@ import { ok, fail } from "@/lib/api-response";
  * Validates that `currentPassword` matches the stored bcrypt hash, then replaces
  * `passwordHash` with a fresh hash of `newPassword`.
  *
+ * Error codes returned in `{ error }`:
+ * - `UNAUTHORIZED` — no valid session
+ * - `INVALID_INPUT` — malformed request body
+ * - `PASSWORD_CURRENT_REQUIRED` — `currentPassword` field is empty
+ * - `PASSWORD_TOO_SHORT` — `newPassword` is fewer than 8 characters
+ * - `PASSWORD_INCORRECT` — `currentPassword` does not match the stored hash
+ * - `INTERNAL_ERROR` — unexpected server-side failure
+ *
  * @param request - The incoming PATCH request containing `currentPassword` and `newPassword`.
  * @returns `200 { data: null, error: null }` on success,
  *          `400` on validation failure or wrong current password,
@@ -19,7 +27,7 @@ import { ok, fail } from "@/lib/api-response";
 export async function PATCH(request: NextRequest) {
   const session = await auth();
   if (!session?.user?.id) {
-    return fail("Unauthorized", 401);
+    return fail("UNAUTHORIZED", 401);
   }
 
   const userId = session.user.id;
@@ -28,7 +36,7 @@ export async function PATCH(request: NextRequest) {
   try {
     body = await request.json();
   } catch {
-    return fail("Invalid request body", 400);
+    return fail("INVALID_INPUT", 400);
   }
 
   if (
@@ -37,28 +45,28 @@ export async function PATCH(request: NextRequest) {
     typeof (body as Record<string, unknown>).currentPassword !== "string" ||
     typeof (body as Record<string, unknown>).newPassword !== "string"
   ) {
-    return fail("Invalid request body", 400);
+    return fail("INVALID_INPUT", 400);
   }
 
   const { currentPassword, newPassword } = body as { currentPassword: string; newPassword: string };
 
   if (!currentPassword) {
-    return fail("Current password is required.", 400);
+    return fail("PASSWORD_CURRENT_REQUIRED", 400);
   }
 
   if (newPassword.length < 8) {
-    return fail("New password must be at least 8 characters.", 400);
+    return fail("PASSWORD_TOO_SHORT", 400);
   }
 
   try {
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) {
-      return fail("Unauthorized", 401);
+      return fail("UNAUTHORIZED", 401);
     }
 
     const isMatch = await bcrypt.compare(currentPassword, user.passwordHash);
     if (!isMatch) {
-      return fail("Current password is incorrect.", 400);
+      return fail("PASSWORD_INCORRECT", 400);
     }
 
     const newHash = await bcrypt.hash(newPassword, 10);
@@ -68,7 +76,11 @@ export async function PATCH(request: NextRequest) {
     });
 
     return ok(null);
-  } catch {
-    return fail("Internal server error", 500);
+  } catch (err: unknown) {
+    console.error("[account/password] PATCH failed", {
+      userId,
+      error: err instanceof Error ? err.message : String(err),
+    });
+    return fail("INTERNAL_ERROR", 500);
   }
 }

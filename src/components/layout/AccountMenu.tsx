@@ -41,7 +41,8 @@ export default function AccountMenu({ email }: AccountMenuProps) {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
 
-  const initial = email ? email.split("@")[0][0].toUpperCase() : "?";
+  const localPart = email ? email.split("@")[0] : "";
+  const initial = localPart.length > 0 ? localPart[0].toUpperCase() : "?";
 
   const handleOpen = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -60,7 +61,7 @@ export default function AccountMenu({ email }: AccountMenuProps) {
     <>
       <IconButton
         data-testid="account-menu-button"
-        aria-label={email}
+        aria-label={t("ariaLabel")}
         aria-controls={open ? "account-menu-dropdown" : undefined}
         aria-haspopup="true"
         aria-expanded={open ? "true" : undefined}

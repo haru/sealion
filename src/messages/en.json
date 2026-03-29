@@ -104,7 +104,8 @@
   },
   "accountMenu": {
     "profileSettings": "Profile Settings",
-    "issueSettings": "Issue Management Settings"
+    "issueSettings": "Issue Management Settings",
+    "ariaLabel": "Account menu"
   },
   "profileSettings": {
     "title": "Profile Settings",
@@ -116,7 +117,9 @@
     "successMessage": "Password updated successfully.",
     "errorMismatch": "Passwords do not match.",
     "errorTooShort": "Password must be at least 8 characters.",
-    "errorCurrent": "Current password is incorrect."
+    "errorCurrentRequired": "Please enter your current password.",
+    "errorCurrentIncorrect": "Current password is incorrect.",
+    "errorUnexpected": "An unexpected error occurred. Please try again."
   },
   "boardSettings": {
     "title": "Board Settings",

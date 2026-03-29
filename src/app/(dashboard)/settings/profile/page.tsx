@@ -35,7 +35,7 @@ export default function ProfileSettingsPage() {
 
     // Client-side validation
     if (!currentPassword) {
-      setErrorMessage(t("errorCurrent"));
+      setErrorMessage(t("errorCurrentRequired"));
       return;
     }
     if (newPassword.length < 8) {
@@ -58,7 +58,14 @@ export default function ProfileSettingsPage() {
       const json = (await response.json()) as { data: null; error: string | null };
 
       if (!response.ok || json.error) {
-        setErrorMessage(json.error ?? t("errorCurrent"));
+        // Map server-side error codes to localized messages.
+        // Falling back to errorUnexpected prevents raw English server strings
+        // from leaking into non-en locales.
+        if (json.error === "PASSWORD_INCORRECT") {
+          setErrorMessage(t("errorCurrentIncorrect"));
+        } else {
+          setErrorMessage(t("errorUnexpected"));
+        }
       } else {
         setSuccessMessage(t("successMessage"));
         setCurrentPassword("");
@@ -66,7 +73,7 @@ export default function ProfileSettingsPage() {
         setConfirmPassword("");
       }
     } catch {
-      setErrorMessage(t("errorCurrent"));
+      setErrorMessage(t("errorUnexpected"));
     } finally {
       setIsSubmitting(false);
     }
