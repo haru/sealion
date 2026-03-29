@@ -104,7 +104,11 @@ function DashboardShellInner({ email, children }: DashboardShellProps) {
   );
 }
 
-/** Top-level authenticated shell with sidebar, global titlebar, and main content area. */
+/**
+ * Top-level authenticated shell with sidebar, global titlebar, and main content area.
+ * @param props - Shell props containing the authenticated user's email and page children.
+ * @returns The full dashboard layout wrapped in context providers.
+ */
 export default function DashboardShell({ email, children }: DashboardShellProps) {
   return (
     <MessageQueueProvider>

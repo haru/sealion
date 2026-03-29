@@ -29,7 +29,11 @@ interface SidebarProps {
   variant: "permanent" | "temporary";
 }
 
-/** Navigation drawer with logo and links to main sections. */
+/**
+ * Navigation drawer with logo and links to main sections.
+ * @param props - Sidebar props controlling open state, close callback, and drawer variant.
+ * @returns A MUI Drawer rendered as permanent on desktop and temporary on mobile.
+ */
 export default function Sidebar({ open, onClose, variant }: SidebarProps) {
   const t = useTranslations("sidebar");
   const pathname = usePathname();
