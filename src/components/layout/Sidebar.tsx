@@ -182,6 +182,30 @@ export default function Sidebar({ open, onClose, variant }: SidebarProps) {
         </ListItemButton>
       </List>
 
+      <Box
+        component="a"
+        href="https://github.com/haru/sealion"
+        target="_blank"
+        rel="noopener noreferrer"
+        data-testid="sidebar-version-link"
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          py: 1.5,
+          mt: "auto",
+          borderTop: 1,
+          borderColor: "divider",
+          textDecoration: "none",
+          color: "text.secondary",
+          transition: "color 0.2s",
+          "&:hover": { color: "text.primary" },
+        }}
+      >
+        <Typography variant="caption" sx={{ fontSize: "0.75rem", fontWeight: 500 }}>
+          Sealion v0.1.0
+        </Typography>
+      </Box>
     </Box>
   );
 
