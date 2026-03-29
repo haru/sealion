@@ -1,16 +1,4 @@
 {
-  "permissions": {
-    "allow": [
-      "Bash(git checkout:*)",
-      "Bash(.specify/scripts/bash/check-prerequisites.sh --json)",
-      "Bash(.specify/scripts/bash/check-prerequisites.sh --json --require-tasks --include-tasks)",
-      "Bash(npx jest:*)",
-      "Bash(grep -E \"All files|^$\")",
-      "Bash(npm run:*)",
-      "Bash(npm audit:*)",
-      "Bash(npx tsc:*)"
-    ]
-  },
   "enabledPlugins": {
     "everything-claude-code@everything-claude-code": true,
     "frontend-design@claude-plugins-official": true,

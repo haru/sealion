@@ -93,6 +93,66 @@ describe("setupGuard", () => {
     expect(global.fetch).not.toHaveBeenCalled();
   });
 
+  // --- Skips irrelevant static/asset paths to avoid redundant DB calls ---
+
+  it("returns null for /_next/* paths without calling fetch", async () => {
+    global.fetch = jest.fn();
+
+    const req = makeRequest("/_next/static/chunk.js");
+    const result = await setupGuard(req);
+
+    expect(result).toBeNull();
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
+  it("returns null for /favicon.ico without calling fetch", async () => {
+    global.fetch = jest.fn();
+
+    const req = makeRequest("/favicon.ico");
+    const result = await setupGuard(req);
+
+    expect(result).toBeNull();
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
+  // --- Only calls fetch for paths that the guard actually needs to evaluate ---
+
+  it("calls fetch for / (protected route that needs guard evaluation)", async () => {
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ data: { needsSetup: false }, error: null }),
+    } as Response);
+
+    const req = makeRequest("/");
+    await setupGuard(req);
+
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("calls fetch for /login (auth page that needs guard evaluation)", async () => {
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ data: { needsSetup: false }, error: null }),
+    } as Response);
+
+    const req = makeRequest("/login");
+    await setupGuard(req);
+
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("calls fetch for /setup (always needs evaluation)", async () => {
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ data: { needsSetup: false }, error: null }),
+    } as Response);
+
+    const req = makeRequest("/setup");
+    await setupGuard(req);
+
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+  });
+
   // --- Error handling: fetch fails → no redirect ---
 
   it("returns null when fetch throws (fail-safe: no redirect on error)", async () => {
