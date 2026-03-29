@@ -19,7 +19,7 @@ import { useTranslations } from "next-intl";
 import { version } from "../../../package.json";
 
 const DRAWER_WIDTH = 240;
-const RELEASE_URL = `https://github.com/haru/sealion/releases/tag/v${version}`;
+const RELEASE_URL = `https://github.com/haru/sealion/`;
 
 /** Props for {@link Sidebar}. */
 interface SidebarProps {
