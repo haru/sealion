@@ -1,6 +1,6 @@
 /** @jest-environment node */
 import { GET, POST } from "@/app/api/admin/users/route";
-import { PATCH } from "@/app/api/admin/users/[id]/route";
+import { PATCH, DELETE } from "@/app/api/admin/users/[id]/route";
 import { NextRequest } from "next/server";
 
 jest.mock("@/lib/auth", () => ({ auth: jest.fn() }));
@@ -11,7 +11,13 @@ jest.mock("@/lib/db", () => ({
       create: jest.fn(),
       findUnique: jest.fn(),
       update: jest.fn(),
+      delete: jest.fn(),
     },
+    issue: { deleteMany: jest.fn() },
+    project: { deleteMany: jest.fn() },
+    issueProvider: { deleteMany: jest.fn() },
+    boardSettings: { deleteMany: jest.fn() },
+    $transaction: jest.fn(),
   },
 }));
 jest.mock("bcryptjs", () => ({ hash: jest.fn().mockResolvedValue("hashed") }));
@@ -210,5 +216,93 @@ describe("PATCH /api/admin/users/[id]", () => {
     const res = await PATCH(req, { params: Promise.resolve({ id: "user-2" }) });
 
     expect(res.status).toBe(403);
+  });
+
+  it("returns 403 CANNOT_CHANGE_OWN_ROLE when admin tries to change their own role", async () => {
+    mockAuth.mockResolvedValue(ADMIN_SESSION);
+
+    const req = makeRequest("PATCH", { role: "USER" }, "http://localhost/api/admin/users/admin-1");
+    const res = await PATCH(req, { params: Promise.resolve({ id: "admin-1" }) });
+    const json = await res.json();
+
+    expect(res.status).toBe(403);
+    expect(json.error).toBe("CANNOT_CHANGE_OWN_ROLE");
+    expect(mockUpdate).not.toHaveBeenCalled();
+  });
+
+  it("allows admin to update own non-role fields (email/username/password)", async () => {
+    mockAuth.mockResolvedValue(ADMIN_SESSION);
+    mockFindUnique.mockResolvedValue({ id: "admin-1", email: "admin@ex.com", role: "ADMIN" });
+    mockUpdate.mockResolvedValue({ id: "admin-1", email: "new@ex.com", role: "ADMIN", isActive: true });
+
+    const req = makeRequest("PATCH", { username: "New Name" }, "http://localhost/api/admin/users/admin-1");
+    const res = await PATCH(req, { params: Promise.resolve({ id: "admin-1" }) });
+
+    expect(res.status).toBe(200);
+  });
+
+  it("returns 404 when target user does not exist", async () => {
+    mockAuth.mockResolvedValue(ADMIN_SESSION);
+    mockFindUnique.mockResolvedValue(null);
+
+    const req = makeRequest("PATCH", { username: "X" }, "http://localhost/api/admin/users/no-such");
+    const res = await PATCH(req, { params: Promise.resolve({ id: "no-such" }) });
+
+    expect(res.status).toBe(404);
+  });
+});
+
+describe("DELETE /api/admin/users/[id]", () => {
+  const mockTransaction = prisma.$transaction as jest.Mock;
+
+  beforeEach(() => jest.clearAllMocks());
+
+  it("returns 401 when not authenticated", async () => {
+    mockAuth.mockResolvedValue(null);
+    const req = makeRequest("DELETE", undefined, "http://localhost/api/admin/users/user-1");
+    const res = await DELETE(req, { params: Promise.resolve({ id: "user-1" }) });
+    expect(res.status).toBe(401);
+  });
+
+  it("returns 403 when non-admin tries to delete", async () => {
+    mockAuth.mockResolvedValue(USER_SESSION);
+    const req = makeRequest("DELETE", undefined, "http://localhost/api/admin/users/user-1");
+    const res = await DELETE(req, { params: Promise.resolve({ id: "user-1" }) });
+    expect(res.status).toBe(403);
+  });
+
+  it("returns 403 CANNOT_DELETE_SELF when admin tries to delete own account", async () => {
+    mockAuth.mockResolvedValue(ADMIN_SESSION);
+
+    const req = makeRequest("DELETE", undefined, "http://localhost/api/admin/users/admin-1");
+    const res = await DELETE(req, { params: Promise.resolve({ id: "admin-1" }) });
+    const json = await res.json();
+
+    expect(res.status).toBe(403);
+    expect(json.error).toBe("CANNOT_DELETE_SELF");
+    expect(mockTransaction).not.toHaveBeenCalled();
+  });
+
+  it("returns 404 when target user does not exist", async () => {
+    mockAuth.mockResolvedValue(ADMIN_SESSION);
+    mockFindUnique.mockResolvedValue(null);
+
+    const req = makeRequest("DELETE", undefined, "http://localhost/api/admin/users/no-such");
+    const res = await DELETE(req, { params: Promise.resolve({ id: "no-such" }) });
+
+    expect(res.status).toBe(404);
+    expect(mockTransaction).not.toHaveBeenCalled();
+  });
+
+  it("returns 200 and calls transaction cascade delete for valid target", async () => {
+    mockAuth.mockResolvedValue(ADMIN_SESSION);
+    mockFindUnique.mockResolvedValue({ id: "user-2", email: "u@ex.com" });
+    mockTransaction.mockResolvedValue([]);
+
+    const req = makeRequest("DELETE", undefined, "http://localhost/api/admin/users/user-2");
+    const res = await DELETE(req, { params: Promise.resolve({ id: "user-2" }) });
+
+    expect(res.status).toBe(200);
+    expect(mockTransaction).toHaveBeenCalledTimes(1);
   });
 });

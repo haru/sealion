@@ -103,6 +103,8 @@
     "todo": "TODO",
     "projectManagement": "プロジェクト管理",
     "boardSettings": "ボード設定",
+    "systemAdmin": "システム管理",
+    "userManagement": "ユーザー管理",
     "tagline": "All Your TODOs, One Place.",
     "version": "Sealion v{version}",
     "settings": "設定"
@@ -173,23 +175,34 @@
   "admin": {
     "userManagement": "ユーザー管理",
     "createUser": "ユーザーを作成",
+    "editUser": "ユーザーを編集",
+    "deleteUser": "ユーザーを削除",
+    "updateUser": "変更を保存",
     "enableUser": "有効化",
     "disableUser": "無効化",
+    "confirmDelete": "このユーザーを削除しますか？関連するすべてのデータ（プロバイダー・プロジェクト・Issue等）も削除されます。",
+    "cannotDeactivateSelf": "自分のアカウントを無効化することはできません",
+    "cannotDeleteSelf": "自分のアカウントを削除することはできません",
+    "cannotChangeOwnRole": "自分のロールを変更することはできません",
+    "deleteSuccess": "ユーザーを削除しました",
+    "updateSuccess": "ユーザーを更新しました",
+    "createSuccess": "ユーザーを作成しました",
     "role": {
       "USER": "一般ユーザー",
       "ADMIN": "管理者"
     },
-    "cannotDeactivateSelf": "自分のアカウントを無効化することはできません",
     "columns": {
       "email": "メールアドレス",
       "username": "表示名",
       "role": "ロール",
       "status": "ステータス",
+      "createdAt": "登録日",
       "actions": "操作"
     },
     "fields": {
       "email": "メールアドレス",
       "password": "パスワード",
+      "passwordHint": "空欄のままにすると現在のパスワードが維持されます",
       "username": "表示名",
       "role": "ロール"
     }
@@ -232,7 +245,9 @@
     "INVALID_INPUT": "入力値が正しくありません",
     "PASSWORD_TOO_LONG": "パスワードは72文字以内で入力してください",
     "INTERNAL_ERROR": "予期しないエラーが発生しました。もう一度お試しください。",
-    "CONFLICT": "このプロジェクトはすでに登録されています"
+    "CONFLICT": "このプロジェクトはすでに登録されています",
+    "CANNOT_DELETE_SELF": "自分のアカウントを削除することはできません",
+    "CANNOT_CHANGE_OWN_ROLE": "自分のロールを変更することはできません"
   },
   "sync": {
     "error": {
