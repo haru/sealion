@@ -52,6 +52,39 @@ describe("POST /api/auth/signup", () => {
     expect(json.error).toBeNull();
   });
 
+  it("passes username to user create when provided", async () => {
+    mockFindUnique.mockResolvedValue(null);
+    mockCreate.mockResolvedValue({
+      id: "clxxx",
+      email: "user@example.com",
+      role: "USER",
+    });
+
+    const req = makeRequest({ email: "user@example.com", password: "password123", username: "Alice" });
+    const res = await POST(req);
+
+    expect(res.status).toBe(201);
+    expect(mockCreate).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ username: "Alice" }) })
+    );
+  });
+
+  it("creates user without username when not provided", async () => {
+    mockFindUnique.mockResolvedValue(null);
+    mockCreate.mockResolvedValue({
+      id: "clxxx",
+      email: "user@example.com",
+      role: "USER",
+    });
+
+    const req = makeRequest({ email: "user@example.com", password: "password123" });
+    await POST(req);
+
+    expect(mockCreate).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.not.objectContaining({ username: expect.anything() }) })
+    );
+  });
+
   it("returns 409 when email already exists", async () => {
     mockFindUnique.mockResolvedValue({ id: "existing", email: "user@example.com" });
 

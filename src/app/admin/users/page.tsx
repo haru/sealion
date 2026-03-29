@@ -32,6 +32,7 @@ import { useTranslations } from "next-intl";
 interface User {
   id: string;
   email: string;
+  username: string | null;
   role: "USER" | "ADMIN";
   isActive: boolean;
   createdAt: string;
@@ -47,6 +48,7 @@ export default function AdminUsersPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [newEmail, setNewEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [newUsername, setNewUsername] = useState("");
   const [newRole, setNewRole] = useState<"USER" | "ADMIN">("USER");
   const [creating, setCreating] = useState(false);
 
@@ -87,7 +89,7 @@ export default function AdminUsersPage() {
     const res = await fetch("/api/admin/users", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: newEmail, password: newPassword, role: newRole }),
+      body: JSON.stringify({ email: newEmail, password: newPassword, role: newRole, username: newUsername.trim() }),
     });
 
     const json = await res.json();
@@ -95,6 +97,7 @@ export default function AdminUsersPage() {
       setCreateOpen(false);
       setNewEmail("");
       setNewPassword("");
+      setNewUsername("");
       setNewRole("USER");
       await fetchUsers();
     } else {
@@ -129,6 +132,7 @@ export default function AdminUsersPage() {
           <TableHead>
             <TableRow>
               <TableCell>{t("columns.email")}</TableCell>
+              <TableCell>{t("columns.username")}</TableCell>
               <TableCell>{t("columns.role")}</TableCell>
               <TableCell>{t("columns.status")}</TableCell>
               <TableCell>{t("columns.actions")}</TableCell>
@@ -138,6 +142,7 @@ export default function AdminUsersPage() {
             {users.map((user) => (
               <TableRow key={user.id}>
                 <TableCell>{user.email}</TableCell>
+                <TableCell>{user.username ?? "—"}</TableCell>
                 <TableCell>
                   <Chip
                     label={t(`role.${user.role}`)}
@@ -175,6 +180,14 @@ export default function AdminUsersPage() {
               type="email"
               value={newEmail}
               onChange={(e) => setNewEmail(e.target.value)}
+              fullWidth
+              required
+            />
+            <TextField
+              label={t("fields.username")}
+              type="text"
+              value={newUsername}
+              onChange={(e) => setNewUsername(e.target.value)}
               fullWidth
               required
             />

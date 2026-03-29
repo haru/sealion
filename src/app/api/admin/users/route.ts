@@ -21,7 +21,7 @@ export async function GET() {
   if (error) return error;
 
   const users = await prisma.user.findMany({
-    select: { id: true, email: true, role: true, isActive: true, createdAt: true },
+    select: { id: true, email: true, username: true, role: true, isActive: true, createdAt: true },
     orderBy: { createdAt: "asc" },
   });
 
@@ -42,7 +42,9 @@ export async function POST(req: NextRequest) {
     email: string;
     password: string;
     role?: string;
+    username?: string;
   };
+  const username = typeof body.username === "string" && body.username.trim() ? body.username.trim() : undefined;
 
   if (!email || !password) return fail("MISSING_FIELDS", 400);
   if (password.length < 8) return fail("PASSWORD_TOO_SHORT", 400);
@@ -55,8 +57,8 @@ export async function POST(req: NextRequest) {
 
   const hashedPassword = await hash(password, 12);
   const user = await prisma.user.create({
-    data: { email, passwordHash: hashedPassword, role: userRole },
-    select: { id: true, email: true, role: true, createdAt: true },
+    data: { email, passwordHash: hashedPassword, role: userRole, ...(username !== undefined ? { username } : {}) },
+    select: { id: true, email: true, username: true, role: true, createdAt: true },
   });
 
   return ok(user, 201);

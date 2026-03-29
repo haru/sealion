@@ -127,6 +127,28 @@ describe("POST /api/auth/setup", () => {
     );
   });
 
+  it("passes username to user create inside the transaction when provided", async () => {
+    let capturedTx: TxClient | null = null;
+    mockTransaction.mockImplementation(async (fn: (tx: TxClient) => Promise<unknown>) => {
+      capturedTx = {
+        user: {
+          count: jest.fn().mockResolvedValue(0),
+          create: jest.fn().mockResolvedValue({ id: "cladmin123", email: "admin@example.com", role: "ADMIN" }),
+        },
+      };
+      return fn(capturedTx);
+    });
+
+    const req = makeRequest({ email: "admin@example.com", password: "password123", username: "Admin User" });
+    await POST(req);
+
+    expect(capturedTx!.user.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ username: "Admin User" }),
+      })
+    );
+  });
+
   // --- US2: Guard when users already exist (atomic check inside transaction) ---
 
   it("returns 403 SETUP_ALREADY_DONE when transactional count is >= 1", async () => {

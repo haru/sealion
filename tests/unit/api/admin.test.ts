@@ -133,6 +133,18 @@ describe("POST /api/admin/users", () => {
     );
   });
 
+  it("passes username to user create when provided", async () => {
+    mockAuth.mockResolvedValue(ADMIN_SESSION);
+    mockFindUnique.mockResolvedValue(null);
+    mockCreate.mockResolvedValue({ id: "new-4", email: "new@ex.com", role: "USER", createdAt: new Date() });
+
+    const res = await POST(makeRequest("POST", { email: "new@ex.com", password: "password123", username: "John Doe" }));
+    expect(res.status).toBe(201);
+    expect(mockCreate).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ username: "John Doe" }) })
+    );
+  });
+
   it("creates user with ADMIN role when specified", async () => {
     mockAuth.mockResolvedValue(ADMIN_SESSION);
     mockFindUnique.mockResolvedValue(null);
