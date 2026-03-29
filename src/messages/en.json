@@ -100,6 +100,7 @@
     "projectManagement": "Project Management",
     "boardSettings": "Board Settings",
     "tagline": "All Your TODOs, One Place.",
+    "version": "Sealion v{version}",
     "settings": "Settings"
   },
   "accountMenu": {

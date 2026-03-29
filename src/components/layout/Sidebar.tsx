@@ -16,8 +16,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { version } from "../../../package.json";
 
 const DRAWER_WIDTH = 240;
+const RELEASE_URL = `https://github.com/haru/sealion/releases/tag/v${version}`;
 
 /** Props for {@link Sidebar}. */
 interface SidebarProps {
@@ -182,6 +184,31 @@ export default function Sidebar({ open, onClose, variant }: SidebarProps) {
         </ListItemButton>
       </List>
 
+      <Box
+        component="a"
+        href={RELEASE_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        data-testid="sidebar-version-link"
+        onClick={variant === "temporary" ? onClose : undefined}
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          py: 1.5,
+          mt: "auto",
+          borderTop: 1,
+          borderColor: "divider",
+          textDecoration: "none",
+          color: "text.primary",
+          transition: "color 0.2s",
+          "&:hover": { color: "primary.main" },
+        }}
+      >
+        <Typography variant="caption" sx={{ fontSize: "0.75rem", fontWeight: 500 }}>
+          {t("version", { version })}
+        </Typography>
+      </Box>
     </Box>
   );
 
