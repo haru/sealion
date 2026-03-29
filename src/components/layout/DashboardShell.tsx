@@ -10,6 +10,7 @@ import MenuIcon from "@mui/icons-material/Menu";
 import Link from "next/link";
 import Sidebar from "@/components/layout/Sidebar";
 import PageHeader from "@/components/layout/PageHeader";
+import AccountMenu from "@/components/layout/AccountMenu";
 import { useMediaQuery, useTheme } from "@mui/material";
 import { useTranslations } from "next-intl";
 import { MessageQueueProvider } from "@/components/MessageQueue";
@@ -82,7 +83,6 @@ function DashboardShellInner({ email, children }: DashboardShellProps) {
           open={drawerOpen}
           onClose={() => setDrawerOpen(false)}
           variant={isMobile ? "temporary" : "permanent"}
-          email={email}
         />
 
         {/* Main content — fills remaining width */}
@@ -97,14 +97,18 @@ function DashboardShellInner({ email, children }: DashboardShellProps) {
             ...(isMobile && { mt: `${APP_BAR_HEIGHT}px` }),
           }}
         >
-          <PageHeader title={title} actions={actions} />
+          <PageHeader title={title} actions={actions} accountMenu={<AccountMenu email={email} />} />
           {children}
         </Box>
       </Box>
   );
 }
 
-/** Top-level authenticated shell with sidebar, global titlebar, and main content area. */
+/**
+ * Top-level authenticated shell with sidebar, global titlebar, and main content area.
+ * @param props - Shell props containing the authenticated user's email and page children.
+ * @returns The full dashboard layout wrapped in context providers.
+ */
 export default function DashboardShell({ email, children }: DashboardShellProps) {
   return (
     <MessageQueueProvider>

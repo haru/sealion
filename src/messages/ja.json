@@ -102,6 +102,25 @@
     "tagline": "All Your TODOs, One Place.",
     "settings": "設定"
   },
+  "accountMenu": {
+    "profileSettings": "プロファイル設定",
+    "issueSettings": "Issue管理システム設定",
+    "ariaLabel": "アカウントメニュー"
+  },
+  "profileSettings": {
+    "title": "プロファイル設定",
+    "changePassword": "パスワードを変更",
+    "currentPassword": "現在のパスワード",
+    "newPassword": "新しいパスワード",
+    "confirmPassword": "新しいパスワード（確認）",
+    "saveChanges": "保存する",
+    "successMessage": "パスワードを更新しました。",
+    "errorMismatch": "パスワードが一致しません。",
+    "errorTooShort": "パスワードは8文字以上で入力してください。",
+    "errorCurrentRequired": "現在のパスワードを入力してください。",
+    "errorCurrentIncorrect": "現在のパスワードが正しくありません。",
+    "errorUnexpected": "予期しないエラーが発生しました。もう一度お試しください。"
+  },
   "boardSettings": {
     "title": "ボード設定",
     "displayItems": {

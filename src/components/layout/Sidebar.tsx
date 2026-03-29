@@ -1,10 +1,8 @@
 "use client";
 
 import {
-  Avatar,
   Box,
   Drawer,
-  IconButton,
   List,
   ListItemButton,
   ListItemIcon,
@@ -14,13 +12,10 @@ import {
 import FolderOpenIcon from "@mui/icons-material/FolderOpen";
 import FormatListBulletedIcon from "@mui/icons-material/FormatListBulleted";
 import TuneIcon from "@mui/icons-material/Tune";
-import SettingsIcon from "@mui/icons-material/Settings";
-import LogoutIcon from "@mui/icons-material/Logout";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { signOut } from "next-auth/react";
 
 const DRAWER_WIDTH = 240;
 
@@ -32,17 +27,16 @@ interface SidebarProps {
   onClose: () => void;
   /** Drawer variant — `"permanent"` on desktop, `"temporary"` on mobile. */
   variant: "permanent" | "temporary";
-  /** Authenticated user's email address, displayed in the profile footer. */
-  email: string;
 }
 
-/** Navigation drawer with logo, links to main sections, and user profile footer. */
-export default function Sidebar({ open, onClose, variant, email }: SidebarProps) {
+/**
+ * Navigation drawer with logo and links to main sections.
+ * @param props - Sidebar props controlling open state, close callback, and drawer variant.
+ * @returns A MUI Drawer rendered as permanent on desktop and temporary on mobile.
+ */
+export default function Sidebar({ open, onClose, variant }: SidebarProps) {
   const t = useTranslations("sidebar");
-  const tAuth = useTranslations("auth");
   const pathname = usePathname();
-
-  const avatarLetter = email ? email[0].toUpperCase() : "?";
 
   const content = (
     <Box
@@ -188,61 +182,12 @@ export default function Sidebar({ open, onClose, variant, email }: SidebarProps)
         </ListItemButton>
       </List>
 
-      {/* User profile footer */}
-      <Box
-        sx={{
-          flexShrink: 0,
-          p: 1.5,
-          bgcolor: "background.paper",
-          borderRadius: 2,
-          border: "1px solid",
-          borderColor: "divider",
-          display: "flex",
-          alignItems: "center",
-          gap: 1,
-        }}
-      >
-        <Avatar
-          sx={{
-            width: 28,
-            height: 28,
-            bgcolor: "primary.main",
-            fontSize: "0.75rem",
-            fontWeight: 600,
-            flexShrink: 0,
-          }}
-        >
-          {avatarLetter}
-        </Avatar>
-        <Typography
-          noWrap
-          sx={{ flex: 1, fontSize: "0.8rem", fontWeight: 600, color: "text.primary", minWidth: 0 }}
-        >
-          {email}
-        </Typography>
-        <IconButton
-          component={Link}
-          href="/settings/providers"
-          size="small"
-          aria-label={t("settings")}
-          sx={{ color: "text.secondary", p: 0.5 }}
-        >
-          <SettingsIcon sx={{ fontSize: 15 }} />
-        </IconButton>
-        <IconButton
-          size="small"
-          aria-label={tAuth("logout")}
-          onClick={() => signOut({ callbackUrl: "/login" })}
-          sx={{ color: "text.secondary", p: 0.5 }}
-        >
-          <LogoutIcon sx={{ fontSize: 15 }} />
-        </IconButton>
-      </Box>
     </Box>
   );
 
   return (
     <Drawer
+      data-testid="sidebar"
       variant={variant}
       open={variant === "temporary" ? open : true}
       onClose={onClose}

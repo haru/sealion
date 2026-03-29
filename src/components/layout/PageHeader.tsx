@@ -8,20 +8,25 @@ export interface PageHeaderProps {
   /** Page title text displayed on the left side of the titlebar. */
   title: string;
   /**
-   * Optional custom content rendered in the right slot.
-   * Pass `null` or omit to leave the right side empty.
+   * Optional custom content rendered in the right slot alongside the account menu.
+   * Pass `null` or omit to leave the page-specific right slot empty.
    */
   actions?: React.ReactNode;
+  /**
+   * Account menu component rendered at the far-right edge of the titlebar.
+   * Always visible on every authenticated page.
+   */
+  accountMenu?: React.ReactNode;
 }
 
 /**
  * Shared titlebar rendered at the top of every dashboard page on desktop (md+).
  * Hidden on mobile (xs–sm) where the hamburger AppBar is shown instead.
  *
- * @param props - Title and optional right-slot actions.
+ * @param props - Title, optional right-slot actions, and optional account menu.
  * @returns A fixed-height header bar with a left title and optional right content.
  */
-export default function PageHeader({ title, actions }: PageHeaderProps) {
+export default function PageHeader({ title, actions, accountMenu }: PageHeaderProps) {
   return (
     <Box
       data-testid="page-header"
@@ -39,11 +44,14 @@ export default function PageHeader({ title, actions }: PageHeaderProps) {
       <Typography component="h1" sx={{ fontWeight: 600, fontSize: "0.9rem", color: "text.primary" }}>
         {title}
       </Typography>
-      {actions != null && (
-        <Box data-testid="page-header-actions" sx={{ display: "flex", alignItems: "center" }}>
-          {actions}
-        </Box>
-      )}
+      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+        {actions != null && (
+          <Box data-testid="page-header-actions" sx={{ display: "flex", alignItems: "center" }}>
+            {actions}
+          </Box>
+        )}
+        {accountMenu}
+      </Box>
     </Box>
   );
 }
