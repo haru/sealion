@@ -1,4 +1,13 @@
 {
+  "permissions": {
+    "allow": [
+      "Bash(ls -la /workspaces/sealion/src/app/\\\\\\(dashboard\\\\\\)/)",
+      "Bash(cat /workspaces/sealion/src/app/api/auth/[...nextauth]/route.ts)"
+    ],
+    "additionalDirectories": [
+      "/workspaces/sealion/specs/021-account-menu-titlebar"
+    ]
+  },
   "enabledPlugins": {
     "everything-claude-code@everything-claude-code": true,
     "frontend-design@claude-plugins-official": true,

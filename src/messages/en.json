@@ -102,6 +102,22 @@
     "tagline": "All Your TODOs, One Place.",
     "settings": "Settings"
   },
+  "accountMenu": {
+    "profileSettings": "Profile Settings",
+    "issueSettings": "Issue Management Settings"
+  },
+  "profileSettings": {
+    "title": "Profile Settings",
+    "changePassword": "Change Password",
+    "currentPassword": "Current Password",
+    "newPassword": "New Password",
+    "confirmPassword": "Confirm New Password",
+    "saveChanges": "Save Changes",
+    "successMessage": "Password updated successfully.",
+    "errorMismatch": "Passwords do not match.",
+    "errorTooShort": "Password must be at least 8 characters.",
+    "errorCurrent": "Current password is incorrect."
+  },
   "boardSettings": {
     "title": "Board Settings",
     "displayItems": {
