@@ -38,12 +38,13 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
   if (!body) return fail("INVALID_BODY", 400);
 
-  const { email, password, role } = body as {
-    email: string;
-    password: string;
-    role?: string;
-    username?: string;
-  };
+  if (typeof body.email !== "string" || typeof body.password !== "string") {
+    return fail("INVALID_INPUT", 400);
+  }
+
+  const email = (body.email as string).trim().toLowerCase();
+  const password = body.password as string;
+  const role = body.role as string | undefined;
   const username = typeof body.username === "string" ? body.username.trim() : "";
 
   if (!email || !password) return fail("MISSING_FIELDS", 400);

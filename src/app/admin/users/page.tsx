@@ -142,7 +142,7 @@ export default function AdminUsersPage() {
             {users.map((user) => (
               <TableRow key={user.id}>
                 <TableCell>{user.email}</TableCell>
-                <TableCell>{user.username ?? "—"}</TableCell>
+                <TableCell>{user.username ?? tCommon("notSet")}</TableCell>
                 <TableCell>
                   <Chip
                     label={t(`role.${user.role}`)}

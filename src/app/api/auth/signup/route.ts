@@ -21,7 +21,8 @@ export async function POST(request: NextRequest) {
     return fail("INVALID_INPUT", 400);
   }
 
-  const { email, password } = body;
+  const email = (body.email as string).trim().toLowerCase();
+  const password = body.password as string;
   const username = typeof body.username === "string" ? body.username.trim() : "";
 
   if (!username) {
