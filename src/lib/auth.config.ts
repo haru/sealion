@@ -1,7 +1,5 @@
 import type { NextAuthConfig } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
-import type { NextRequest } from "next/server";
-import { setupGuard } from "@/lib/setup-guard";
 
 // Lightweight config for Edge runtime (middleware) — no Prisma
 export const authConfig: NextAuthConfig = {
@@ -11,14 +9,9 @@ export const authConfig: NextAuthConfig = {
     Credentials({}),
   ],
   callbacks: {
-    async authorized({ auth, request }) {
+    authorized({ auth, request }) {
       const { nextUrl } = request;
       const isAuthenticated = !!auth?.user;
-
-      // Check first-time setup before any auth logic so unauthenticated users
-      // visiting protected routes are sent directly to /setup (not /login first).
-      const setupRedirect = await setupGuard(request as NextRequest);
-      if (setupRedirect) return setupRedirect;
 
       const isProtected =
         nextUrl.pathname.startsWith("/settings") ||
