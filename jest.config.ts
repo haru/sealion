@@ -20,6 +20,7 @@ const config: Config = {
     "!src/app/**/page.tsx",
     // React components (tested via E2E)
     "!src/components/**",
+    "!src/app/**/*.tsx",
     // i18n and message files
     "!src/messages/**",
     "!src/i18n/**",
