@@ -21,7 +21,13 @@ export async function POST(request: NextRequest) {
     return fail("INVALID_INPUT", 400);
   }
 
-  const { email, password } = body;
+  const email = (body.email as string).trim().toLowerCase();
+  const password = body.password as string;
+  const username = typeof body.username === "string" ? body.username.trim() : "";
+
+  if (!username) {
+    return fail("MISSING_USERNAME", 400);
+  }
 
   if (!isValidEmail(email)) {
     return fail("INVALID_EMAIL", 400);
@@ -38,7 +44,7 @@ export async function POST(request: NextRequest) {
 
   const passwordHash = await bcrypt.hash(password, 12);
   const user = await prisma.user.create({
-    data: { email, passwordHash },
+    data: { email, passwordHash, username },
     select: { id: true, email: true, role: true },
   });
 

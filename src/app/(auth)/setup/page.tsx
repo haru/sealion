@@ -18,6 +18,7 @@ export default function SetupPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [username, setUsername] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -31,7 +32,7 @@ export default function SetupPage() {
       const res = await fetch("/api/auth/setup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, username: username.trim() }),
       });
 
       const json = await res.json();
@@ -74,6 +75,16 @@ export default function SetupPage() {
           required
           fullWidth
           autoComplete="email"
+          variant="outlined"
+        />
+        <TextField
+          label={t("username")}
+          type="text"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+          required
+          fullWidth
+          autoComplete="username"
           variant="outlined"
         />
         <TextField

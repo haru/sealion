@@ -43,7 +43,7 @@ describe("POST /api/auth/signup", () => {
       role: "USER",
     });
 
-    const req = makeRequest({ email: "user@example.com", password: "password123" });
+    const req = makeRequest({ email: "user@example.com", password: "password123", username: "Alice" });
     const res = await POST(req);
     const json = await res.json();
 
@@ -52,10 +52,45 @@ describe("POST /api/auth/signup", () => {
     expect(json.error).toBeNull();
   });
 
+  it("returns 400 MISSING_USERNAME when username is not provided", async () => {
+    const req = makeRequest({ email: "user@example.com", password: "password123" });
+    const res = await POST(req);
+    const json = await res.json();
+
+    expect(res.status).toBe(400);
+    expect(json.error).toBe("MISSING_USERNAME");
+  });
+
+  it("returns 400 MISSING_USERNAME when username is whitespace only", async () => {
+    const req = makeRequest({ email: "user@example.com", password: "password123", username: "   " });
+    const res = await POST(req);
+    const json = await res.json();
+
+    expect(res.status).toBe(400);
+    expect(json.error).toBe("MISSING_USERNAME");
+  });
+
+  it("passes username to user create when provided", async () => {
+    mockFindUnique.mockResolvedValue(null);
+    mockCreate.mockResolvedValue({
+      id: "clxxx",
+      email: "user@example.com",
+      role: "USER",
+    });
+
+    const req = makeRequest({ email: "user@example.com", password: "password123", username: "Alice" });
+    const res = await POST(req);
+
+    expect(res.status).toBe(201);
+    expect(mockCreate).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ username: "Alice" }) })
+    );
+  });
+
   it("returns 409 when email already exists", async () => {
     mockFindUnique.mockResolvedValue({ id: "existing", email: "user@example.com" });
 
-    const req = makeRequest({ email: "user@example.com", password: "password123" });
+    const req = makeRequest({ email: "user@example.com", password: "password123", username: "Alice" });
     const res = await POST(req);
     const json = await res.json();
 
@@ -64,7 +99,7 @@ describe("POST /api/auth/signup", () => {
   });
 
   it("returns 400 when password is too short", async () => {
-    const req = makeRequest({ email: "user@example.com", password: "short" });
+    const req = makeRequest({ email: "user@example.com", password: "short", username: "Alice" });
     const res = await POST(req);
     const json = await res.json();
 
@@ -73,7 +108,7 @@ describe("POST /api/auth/signup", () => {
   });
 
   it("returns 400 when email is invalid", async () => {
-    const req = makeRequest({ email: "not-an-email", password: "password123" });
+    const req = makeRequest({ email: "not-an-email", password: "password123", username: "Alice" });
     const res = await POST(req);
 
     expect(res.status).toBe(400);
