@@ -228,6 +228,7 @@
     "EMAIL_ALREADY_EXISTS": "This email address is already registered",
     "INVALID_EMAIL": "Please enter a valid email address",
     "PASSWORD_TOO_SHORT": "Password must be at least 8 characters",
+    "MISSING_USERNAME": "Display name is required",
     "INVALID_INPUT": "Invalid input",
     "PASSWORD_TOO_LONG": "Password must be 72 characters or fewer",
     "INTERNAL_ERROR": "An unexpected error occurred. Please try again.",

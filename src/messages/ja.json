@@ -228,6 +228,7 @@
     "EMAIL_ALREADY_EXISTS": "このメールアドレスはすでに登録されています",
     "INVALID_EMAIL": "有効なメールアドレスを入力してください",
     "PASSWORD_TOO_SHORT": "パスワードは8文字以上で入力してください",
+    "MISSING_USERNAME": "表示名は必須です",
     "INVALID_INPUT": "入力値が正しくありません",
     "PASSWORD_TOO_LONG": "パスワードは72文字以内で入力してください",
     "INTERNAL_ERROR": "予期しないエラーが発生しました。もう一度お試しください。",

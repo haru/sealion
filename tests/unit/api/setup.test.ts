@@ -72,7 +72,7 @@ describe("POST /api/auth/setup", () => {
   it("returns 201 with ADMIN role on success when no users exist", async () => {
     simulateTransaction(0, { id: "cladmin123", email: "admin@example.com", role: "ADMIN" });
 
-    const req = makeRequest({ email: "admin@example.com", password: "password123" });
+    const req = makeRequest({ email: "admin@example.com", password: "password123", username: "Admin" });
     const res = await POST(req);
     const json = await res.json();
 
@@ -94,7 +94,7 @@ describe("POST /api/auth/setup", () => {
       return fn(capturedTx);
     });
 
-    const req = makeRequest({ email: "admin@example.com", password: "password123" });
+    const req = makeRequest({ email: "admin@example.com", password: "password123", username: "Admin" });
     await POST(req);
 
     expect(capturedTx).not.toBeNull();
@@ -117,7 +117,7 @@ describe("POST /api/auth/setup", () => {
       return fn(capturedTx);
     });
 
-    const req = makeRequest({ email: "  Admin@Example.COM  ", password: "password123" });
+    const req = makeRequest({ email: "  Admin@Example.COM  ", password: "password123", username: "Admin" });
     await POST(req);
 
     expect(capturedTx!.user.create).toHaveBeenCalledWith(
@@ -164,7 +164,7 @@ describe("POST /api/auth/setup", () => {
       return fn(capturedTx);
     });
 
-    const req = makeRequest({ email: "admin@example.com", password: "password123" });
+    const req = makeRequest({ email: "admin@example.com", password: "password123", username: "Admin" });
     const res = await POST(req);
     const json = await res.json();
 
@@ -176,7 +176,7 @@ describe("POST /api/auth/setup", () => {
   it("uses $transaction so count-and-create are atomic (concurrency guard)", async () => {
     simulateTransaction(0, { id: "cladmin123", email: "admin@example.com", role: "ADMIN" });
 
-    const req = makeRequest({ email: "admin@example.com", password: "password123" });
+    const req = makeRequest({ email: "admin@example.com", password: "password123", username: "Admin" });
     await POST(req);
 
     // The route must delegate to $transaction — not call prisma.user.count/create directly
@@ -190,7 +190,7 @@ describe("POST /api/auth/setup", () => {
     );
     simulateTransactionError(prismaError);
 
-    const req = makeRequest({ email: "admin@example.com", password: "password123" });
+    const req = makeRequest({ email: "admin@example.com", password: "password123", username: "Admin" });
     const res = await POST(req);
     const json = await res.json();
 
@@ -201,7 +201,7 @@ describe("POST /api/auth/setup", () => {
   it("returns 500 INTERNAL_ERROR on unknown transaction error", async () => {
     simulateTransactionError(new Error("DB connection lost"));
 
-    const req = makeRequest({ email: "admin@example.com", password: "password123" });
+    const req = makeRequest({ email: "admin@example.com", password: "password123", username: "Admin" });
     const res = await POST(req);
     const json = await res.json();
 
@@ -226,7 +226,7 @@ describe("POST /api/auth/setup", () => {
   });
 
   it("returns 400 INVALID_EMAIL when email format is invalid", async () => {
-    const req = makeRequest({ email: "not-an-email", password: "password123" });
+    const req = makeRequest({ email: "not-an-email", password: "password123", username: "Admin" });
     const res = await POST(req);
     const json = await res.json();
 
@@ -235,8 +235,28 @@ describe("POST /api/auth/setup", () => {
     expect(mockTransaction).not.toHaveBeenCalled();
   });
 
+  it("returns 400 MISSING_USERNAME when username is not provided", async () => {
+    const req = makeRequest({ email: "admin@example.com", password: "password123" });
+    const res = await POST(req);
+    const json = await res.json();
+
+    expect(res.status).toBe(400);
+    expect(json.error).toBe("MISSING_USERNAME");
+    expect(mockTransaction).not.toHaveBeenCalled();
+  });
+
+  it("returns 400 MISSING_USERNAME when username is whitespace only", async () => {
+    const req = makeRequest({ email: "admin@example.com", password: "password123", username: "   " });
+    const res = await POST(req);
+    const json = await res.json();
+
+    expect(res.status).toBe(400);
+    expect(json.error).toBe("MISSING_USERNAME");
+    expect(mockTransaction).not.toHaveBeenCalled();
+  });
+
   it("returns 400 PASSWORD_TOO_SHORT when password is shorter than 8 chars", async () => {
-    const req = makeRequest({ email: "admin@example.com", password: "short" });
+    const req = makeRequest({ email: "admin@example.com", password: "short", username: "Admin" });
     const res = await POST(req);
     const json = await res.json();
 
@@ -246,7 +266,7 @@ describe("POST /api/auth/setup", () => {
   });
 
   it("returns 400 PASSWORD_TOO_LONG when password exceeds 72 chars", async () => {
-    const req = makeRequest({ email: "admin@example.com", password: "a".repeat(73) });
+    const req = makeRequest({ email: "admin@example.com", password: "a".repeat(73), username: "Admin" });
     const res = await POST(req);
     const json = await res.json();
 

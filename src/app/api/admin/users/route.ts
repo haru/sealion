@@ -44,9 +44,10 @@ export async function POST(req: NextRequest) {
     role?: string;
     username?: string;
   };
-  const username = typeof body.username === "string" && body.username.trim() ? body.username.trim() : undefined;
+  const username = typeof body.username === "string" ? body.username.trim() : "";
 
   if (!email || !password) return fail("MISSING_FIELDS", 400);
+  if (!username) return fail("MISSING_USERNAME", 400);
   if (password.length < 8) return fail("PASSWORD_TOO_SHORT", 400);
 
   const existing = await prisma.user.findUnique({ where: { email } });
@@ -57,7 +58,7 @@ export async function POST(req: NextRequest) {
 
   const hashedPassword = await hash(password, 12);
   const user = await prisma.user.create({
-    data: { email, passwordHash: hashedPassword, role: userRole, ...(username !== undefined ? { username } : {}) },
+    data: { email, passwordHash: hashedPassword, role: userRole, username },
     select: { id: true, email: true, username: true, role: true, createdAt: true },
   });
 

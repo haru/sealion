@@ -37,7 +37,11 @@ export async function POST(request: NextRequest) {
 
   const email = (body.email as string).trim().toLowerCase();
   const password = body.password as string;
-  const username = typeof body.username === "string" && body.username.trim() ? body.username.trim() : undefined;
+  const username = typeof body.username === "string" ? body.username.trim() : "";
+
+  if (!username) {
+    return fail("MISSING_USERNAME", 400);
+  }
 
   if (!isValidEmail(email)) {
     return fail("INVALID_EMAIL", 400);
@@ -60,7 +64,7 @@ export async function POST(request: NextRequest) {
         throw Object.assign(new Error("SETUP_ALREADY_DONE"), { code: "SETUP_ALREADY_DONE" });
       }
       return tx.user.create({
-        data: { email, passwordHash, role: "ADMIN", ...(username !== undefined ? { username } : {}) },
+        data: { email, passwordHash, role: "ADMIN", username },
         select: { id: true, email: true, role: true },
       });
     });
