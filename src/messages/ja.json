@@ -20,7 +20,10 @@
     "noAccount": "アカウントをお持ちでない方は",
     "hasAccount": "すでにアカウントをお持ちの方は",
     "invalidCredentials": "メールアドレスまたはパスワードが正しくありません",
-    "emailAlreadyExists": "このメールアドレスはすでに登録されています"
+    "emailAlreadyExists": "このメールアドレスはすでに登録されています",
+    "setupTitle": "管理者アカウントを作成",
+    "setupInfo": "最初のユーザーは管理者として登録されます。",
+    "setupSubmit": "管理者として登録"
   },
   "todo": {
     "title": "マイTODOリスト",
@@ -218,10 +221,13 @@
     "SYNC_FAILED": "一部のプロジェクトの同期に失敗しました。認証情報とリポジトリへのアクセス権を確認してください。",
     "RATE_LIMITED": "APIのレート制限に達しました。しばらくしてから再試行してください。",
     "CONNECTION_TEST_FAILED": "issue管理システムに接続できませんでした。認証情報を確認してください。",
+    "SETUP_ALREADY_DONE": "セットアップはすでに完了しています。ログインしてください。",
     "EMAIL_ALREADY_EXISTS": "このメールアドレスはすでに登録されています",
     "INVALID_EMAIL": "有効なメールアドレスを入力してください",
     "PASSWORD_TOO_SHORT": "パスワードは8文字以上で入力してください",
     "INVALID_INPUT": "入力値が正しくありません",
+    "PASSWORD_TOO_LONG": "パスワードは72文字以内で入力してください",
+    "INTERNAL_ERROR": "予期しないエラーが発生しました。もう一度お試しください。",
     "CONFLICT": "このプロジェクトはすでに登録されています"
   },
   "sync": {

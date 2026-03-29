@@ -5,7 +5,7 @@ import type { NextRequest } from "next/server";
 
 const { auth } = NextAuth(authConfig);
 
-export default auth(function middleware(req: NextRequest & { auth: { user?: unknown } | null }) {
+export default auth(async function middleware(req: NextRequest & { auth: { user?: unknown } | null }) {
   const { pathname } = req.nextUrl;
 
   // Admin API routes: require ADMIN role
