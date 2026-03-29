@@ -22,26 +22,31 @@ export default function SetupPage() {
   const [loading, setLoading] = useState(false);
 
   /** Submits the setup form to create the first administrator account. */
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent): Promise<void> {
     e.preventDefault();
     setError(null);
     setLoading(true);
 
-    const res = await fetch("/api/auth/setup", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
+    try {
+      const res = await fetch("/api/auth/setup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
 
-    const json = await res.json();
-    setLoading(false);
+      const json = await res.json();
 
-    if (!res.ok) {
-      setError(json.error ?? "error");
-      return;
+      if (!res.ok) {
+        setError(json.error ?? "INTERNAL_ERROR");
+        return;
+      }
+
+      router.push("/login");
+    } catch {
+      setError("INTERNAL_ERROR");
+    } finally {
+      setLoading(false);
     }
-
-    router.push("/login");
   }
 
   return (

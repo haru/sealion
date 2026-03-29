@@ -1,6 +1,7 @@
 /** @jest-environment node */
 import { POST } from "@/app/api/auth/setup/route";
 import { NextRequest } from "next/server";
+import { Prisma } from "@prisma/client";
 
 // Mock Prisma
 jest.mock("@/lib/db", () => ({
@@ -69,6 +70,20 @@ describe("POST /api/auth/setup", () => {
     );
   });
 
+  it("normalises email to lowercase before storing", async () => {
+    mockCount.mockResolvedValue(0);
+    mockCreate.mockResolvedValue({ id: "cladmin123", email: "admin@example.com", role: "ADMIN" });
+
+    const req = makeRequest({ email: "  Admin@Example.COM  ", password: "password123" });
+    await POST(req);
+
+    expect(mockCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ email: "admin@example.com" }),
+      })
+    );
+  });
+
   // --- US2: Guard when users already exist ---
 
   it("returns 403 SETUP_ALREADY_DONE when user count is >= 1", async () => {
@@ -83,10 +98,11 @@ describe("POST /api/auth/setup", () => {
     expect(mockCreate).not.toHaveBeenCalled();
   });
 
-  it("returns 409 EMAIL_ALREADY_EXISTS on Prisma unique constraint violation", async () => {
+  it("returns 409 EMAIL_ALREADY_EXISTS on Prisma P2002 unique constraint violation", async () => {
     mockCount.mockResolvedValue(0);
-    const prismaError = new Error(
-      "Unique constraint failed on the fields: (`email`)"
+    const prismaError = new Prisma.PrismaClientKnownRequestError(
+      "Unique constraint failed on the fields: (`email`)",
+      { code: "P2002", clientVersion: "5.0.0", meta: {} }
     );
     mockCreate.mockRejectedValue(prismaError);
 
@@ -129,5 +145,14 @@ describe("POST /api/auth/setup", () => {
 
     expect(res.status).toBe(400);
     expect(json.error).toBe("PASSWORD_TOO_SHORT");
+  });
+
+  it("returns 400 PASSWORD_TOO_LONG when password exceeds 72 chars", async () => {
+    const req = makeRequest({ email: "admin@example.com", password: "a".repeat(73) });
+    const res = await POST(req);
+    const json = await res.json();
+
+    expect(res.status).toBe(400);
+    expect(json.error).toBe("PASSWORD_TOO_LONG");
   });
 });

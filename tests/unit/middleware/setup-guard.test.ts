@@ -1,13 +1,6 @@
 /** @jest-environment node */
 
-// Mock next-auth and auth.config before importing middleware to avoid ESM issues
-jest.mock("next-auth", () => ({
-  __esModule: true,
-  default: () => ({ auth: (fn: unknown) => fn }),
-}));
-jest.mock("../../../src/lib/auth.config", () => ({ authConfig: {} }));
-
-import { setupGuard } from "../../../middleware";
+import { setupGuard } from "../../../src/lib/setup-guard";
 import { NextRequest } from "next/server";
 
 function makeRequest(pathname: string): NextRequest {
