@@ -1,16 +1,17 @@
 import { auth } from "@/lib/auth";
-import { MessageQueueProvider } from "@/components/MessageQueue";
+import DashboardShell from "@/components/layout/DashboardShell";
+import { AdminSessionProvider } from "./AdminSessionProvider";
 
 /**
- * Admin section layout — server-side ADMIN role guard plus MessageQueue context.
+ * Admin section layout — server-side ADMIN role guard with full dashboard shell.
  *
  * Provides a defence-in-depth check on top of the middleware guard: if a non-admin
  * somehow reaches this layout, they receive a 403 page instead of the child content.
- * Wraps children in {@link MessageQueueProvider} so admin page components can use
- * `useMessageQueue` for transient success/error notifications.
+ * Wraps children in {@link DashboardShell} for sidebar / title bar and
+ * {@link AdminSessionProvider} for client-side session context.
  *
  * @param props - Layout props containing child page content.
- * @returns Children wrapped in MessageQueueProvider for ADMIN users; a 403 page otherwise.
+ * @returns Children wrapped in DashboardShell for ADMIN users; a 403 page otherwise.
  */
 export default async function AdminLayout({
   children,
@@ -28,5 +29,9 @@ export default async function AdminLayout({
     );
   }
 
-  return <MessageQueueProvider>{children}</MessageQueueProvider>;
+  return (
+    <DashboardShell email={session.user.email ?? ""} role={session.user.role ?? "USER"}>
+      <AdminSessionProvider userId={session.user.id}>{children}</AdminSessionProvider>
+    </DashboardShell>
+  );
 }

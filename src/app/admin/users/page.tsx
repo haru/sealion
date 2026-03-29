@@ -28,8 +28,8 @@ import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { useTranslations } from "next-intl";
-import { useSession } from "next-auth/react";
 import { useMessageQueue } from "@/components/MessageQueue";
+import { useAdminUserId } from "../AdminSessionProvider";
 import EditUserDialog from "./EditUserDialog";
 import TextField from "@mui/material/TextField";
 import FormControl from "@mui/material/FormControl";
@@ -51,7 +51,7 @@ interface User {
 export default function AdminUsersPage() {
   const t = useTranslations("admin");
   const tCommon = useTranslations("common");
-  const { data: session } = useSession();
+  const currentUserId = useAdminUserId();
   const { addMessage } = useMessageQueue();
 
   const [users, setUsers] = useState<User[]>([]);
@@ -145,8 +145,6 @@ export default function AdminUsersPage() {
     }
     setDeleting(false);
   }
-
-  const currentUserId = session?.user?.id;
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
