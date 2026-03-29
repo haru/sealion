@@ -20,7 +20,7 @@
     "@mui/material": "^7.3.9",
     "@mui/material-nextjs": "^7.3.9",
     "@prisma/adapter-pg": "^7.6.0",
-    "@prisma/client": "^7.5.0",
+    "@prisma/client": "^7.6.0",
     "@prisma/config": "^7.5.0",
     "@types/pg": "^8.20.0",
     "axios": "^1.14.0",
