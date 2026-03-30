@@ -21,6 +21,10 @@ const config: Config = {
     // React components (tested via E2E)
     "!src/components/**",
     "!src/app/**/*.tsx",
+    // Shared type definitions (no runtime code)
+    "!src/types/**",
+    // React hooks that are only testable via E2E (component lifecycle required)
+    "!src/hooks/useSyncPolling.ts",
     // i18n and message files
     "!src/messages/**",
     "!src/i18n/**",

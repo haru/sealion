@@ -1,7 +1,7 @@
 import pLimit from "p-limit";
 import { prisma } from "@/lib/db";
-import { decrypt } from "@/lib/encryption";
-import { createAdapter, ProviderCredentials } from "@/services/issue-provider/factory";
+import { createAdapter } from "@/services/issue-provider/factory";
+import { decryptProviderCredentials } from "@/lib/credentials";
 import { SyncErrorInfo } from "@/lib/types";
 import { createSyncErrorInfo } from "@/lib/error-utils";
 
@@ -34,9 +34,9 @@ export async function syncProviders(userId: string): Promise<SyncErrorInfo[]> {
       providerLimit(async (): Promise<SyncErrorInfo[]> => {
         const providerName = provider.displayName || provider.type;
 
-        let decryptedCredentials: Record<string, unknown>;
+        let credentials;
         try {
-          decryptedCredentials = JSON.parse(decrypt(provider.encryptedCredentials));
+          credentials = decryptProviderCredentials(provider.encryptedCredentials, provider.baseUrl);
         } catch (decryptErr) {
           const technicalMessage = decryptErr instanceof Error ? decryptErr.message : String(decryptErr);
           console.error(`[sync] ${providerName}: credential decryption failed — ${technicalMessage}`);
@@ -65,8 +65,7 @@ export async function syncProviders(userId: string): Promise<SyncErrorInfo[]> {
           return credentialErrors;
         }
 
-        const credentials = { ...decryptedCredentials, ...(provider.baseUrl ? { baseUrl: provider.baseUrl } : {}) };
-        const adapter = createAdapter(provider.type, credentials as ProviderCredentials);
+        const adapter = createAdapter(provider.type, credentials);
 
         const projectErrorLists = await Promise.all(
           provider.projects.map((project) =>

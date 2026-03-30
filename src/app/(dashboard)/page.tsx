@@ -23,45 +23,13 @@ import CompleteIssueModal from "@/components/todo/CompleteIssueModal";
 import TodayTasksArea, { TODAY_DROP_ZONE_ID } from "@/components/today-tasks/TodayTasksArea";
 import TaskSearchBar from "@/components/search/TaskSearchBar";
 import { allProjectsProcessed, shouldThrottleSync, SYNC_THROTTLE_MS } from "@/lib/sync-utils";
+import type { SyncProvider } from "@/hooks/useSyncPolling";
 import { sortIssues } from "@/lib/sort-utils";
 import { BoardSettings, DEFAULT_BOARD_SETTINGS, SortCriterion } from "@/lib/types";
 import { usePageHeader } from "@/hooks/usePageHeader";
 import { useTaskSearch } from "@/hooks/useTaskSearch";
 import { serializeKeywords } from "@/lib/search-parser";
-
-interface Issue {
-  id: string;
-  externalId: string;
-  title: string;
-  dueDate: string | null;
-  externalUrl: string;
-  isUnassigned: boolean;
-  todayFlag: boolean;
-  todayOrder: number | null;
-  todayAddedAt: string | null;
-  providerCreatedAt: string | null;
-  providerUpdatedAt: string | null;
-  /** Whether the user has pinned this issue to the top of the list. */
-  pinned: boolean;
-  project: {
-    displayName: string;
-    issueProvider: { iconUrl: string | null; displayName: string };
-  };
-}
-
-interface SyncProject {
-  id: string;
-  displayName: string;
-  lastSyncedAt: string | null;
-  syncError: string | null;
-}
-
-interface SyncProvider {
-  id: string;
-  displayName: string;
-  type: string;
-  projects: SyncProject[];
-}
+import type { ClientIssue } from "@/types/issue";
 
 /** Main dashboard page showing today's tasks and the full issue list with drag-and-drop support. */
 export default function DashboardPage() {
@@ -70,8 +38,8 @@ export default function DashboardPage() {
   const tBoardSettings = useTranslations("boardSettings");
   const { addMessage } = useMessageQueue();
 
-  const [issues, setIssues] = useState<Issue[]>([]);
-  const [todayIssues, setTodayIssues] = useState<Issue[]>([]);
+  const [issues, setIssues] = useState<ClientIssue[]>([]);
+  const [todayIssues, setTodayIssues] = useState<ClientIssue[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);

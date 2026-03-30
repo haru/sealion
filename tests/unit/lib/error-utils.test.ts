@@ -4,6 +4,7 @@ import { SyncErrorCause, SyncErrorInfo } from '@/lib/types';
 import {
   classifyAxiosError,
   createSyncErrorInfo,
+  extractAxiosStatus,
   extractProviderMessage,
   formatConnectionTestError,
   formatProviderApiError,
@@ -104,7 +105,7 @@ describe('classifyAxiosError', () => {
   });
 
   it('classifies network error (no response) as NETWORK_ERROR', () => {
-    const error = new Error('ECONNREFUSED') as any;
+    const error = new Error('ECONNREFUSED') as Record<string, unknown>;
     error.isAxiosError = true;
     error.response = undefined;
     expect(classifyAxiosError(error)).toBe(SyncErrorCause.NETWORK_ERROR);
@@ -152,7 +153,7 @@ describe('createSyncErrorInfo', () => {
   });
 
   it('handles network errors with no status code', () => {
-    const error = new Error('ECONNREFUSED') as any;
+    const error = new Error('ECONNREFUSED') as Record<string, unknown>;
     error.isAxiosError = true;
     error.response = undefined;
     const errorInfo = createSyncErrorInfo('GitHub', 'owner/repo', error);
@@ -338,14 +339,14 @@ describe('extractProviderMessage', () => {
   it('returns error message when axios error has no response (e.g. proxy CONNECT failure)', () => {
     // hpagent throws Error("Bad response: 403") when proxy rejects CONNECT;
     // there is no error.response, so we fall back to error.message.
-    const error = new Error('Bad response: 403') as any;
+    const error = new Error('Bad response: 403') as Record<string, unknown>;
     error.isAxiosError = true;
     error.response = undefined;
     expect(extractProviderMessage(error)).toBe('Bad response: 403');
   });
 
   it('returns undefined when axios error has no response and empty message', () => {
-    const error = new Error('') as any;
+    const error = new Error('') as Record<string, unknown>;
     error.isAxiosError = true;
     error.response = undefined;
     expect(extractProviderMessage(error)).toBeUndefined();
@@ -485,12 +486,39 @@ describe('formatProviderApiError', () => {
   });
 });
 
+describe('extractAxiosStatus', () => {
+  it('returns status code from an AxiosError with response', () => {
+    const error = createAxiosError({ status: 403 });
+    expect(extractAxiosStatus(error)).toBe(403);
+  });
+
+  it('returns undefined for an AxiosError without response (network error)', () => {
+    const error = new Error('ECONNREFUSED') as Record<string, unknown>;
+    error.isAxiosError = true;
+    error.response = undefined;
+    expect(extractAxiosStatus(error)).toBeUndefined();
+  });
+
+  it('returns undefined for a plain Error', () => {
+    const error = new Error('plain error');
+    expect(extractAxiosStatus(error)).toBeUndefined();
+  });
+
+  it('returns undefined for null', () => {
+    expect(extractAxiosStatus(null)).toBeUndefined();
+  });
+
+  it('returns undefined for a string', () => {
+    expect(extractAxiosStatus('some error string')).toBeUndefined();
+  });
+});
+
 function createAxiosError({
   status = 500,
   data = null,
   statusText = 'Internal Server Error',
 }: { status?: number; data?: unknown; statusText?: string }) {
-  const error = new Error('Axios error') as any;
+  const error = new Error('Axios error') as Record<string, unknown>;
   error.isAxiosError = true;
   error.response = { status, data, statusText };
   return error;
