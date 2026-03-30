@@ -68,7 +68,11 @@ export function useSyncPolling(
     syncStartedAtRef.current = new Date();
     setIsSyncing(true);
     try {
-      await fetch("/api/sync", { method: "POST" });
+      const res = await fetch("/api/sync", { method: "POST" });
+      if (!res.ok) {
+        setIsSyncing(false);
+        addErrorMessage("error", errorMessageText);
+      }
     } catch {
       setIsSyncing(false);
       addErrorMessage("error", errorMessageText);
@@ -86,16 +90,25 @@ export function useSyncPolling(
     async function poll() {
       if (cancelled) return;
 
-      const syncRes = await fetch("/api/sync");
-      if (!cancelled && syncRes.ok) {
-        const json = await syncRes.json();
-        const providers: SyncProvider[] = json.data;
-        setSyncProviders(providers);
+      try {
+        const syncRes = await fetch("/api/sync");
+        if (!cancelled && syncRes.ok) {
+          const json = await syncRes.json();
+          const providers: SyncProvider[] = json.data;
+          setSyncProviders(providers);
 
-        const since = syncStartedAtRef.current;
-        if (since && allProjectsProcessed(providers, since)) {
-          if (!cancelled) await onSyncComplete();
+          const since = syncStartedAtRef.current;
+          if (since && allProjectsProcessed(providers, since)) {
+            if (!cancelled) await onSyncComplete();
+            setIsSyncing(false);
+            return;
+          }
+        }
+      } catch {
+        // Network error during poll — stop syncing and notify user
+        if (!cancelled) {
           setIsSyncing(false);
+          addErrorMessage("error", errorMessageText);
           return;
         }
       }
@@ -117,7 +130,7 @@ export function useSyncPolling(
       clearTimeout(pollTimeout);
       clearTimeout(safetyTimeout);
     };
-  }, [isSyncing, onSyncComplete]);
+  }, [isSyncing, onSyncComplete, addErrorMessage, errorMessageText]);
 
   const handleSyncNow = useCallback(() => {
     void startSync();

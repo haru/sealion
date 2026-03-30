@@ -28,6 +28,10 @@ jest.mock("@/lib/encryption", () => ({
   decrypt: jest.fn().mockReturnValue(JSON.stringify({ token: "test-token" })),
 }));
 
+jest.mock("@/lib/credentials", () => ({
+  decryptProviderCredentials: jest.fn().mockReturnValue({ token: "test-token" }),
+}));
+
 jest.mock("@/services/issue-provider/factory", () => ({
   createAdapter: jest.fn().mockReturnValue({
     fetchAssignedIssues: jest.fn().mockResolvedValue([
@@ -571,12 +575,12 @@ describe("syncProviders", () => {
       },
     ]);
 
-    const { decrypt } = jest.requireMock("@/lib/encryption");
-    decrypt.mockImplementation((encrypted: string) => {
+    const { decryptProviderCredentials } = jest.requireMock("@/lib/credentials");
+    decryptProviderCredentials.mockImplementation((encrypted: string) => {
       if (encrypted === "corrupted") {
         throw new Error("Decryption failed");
       }
-      return JSON.stringify({ token: "test-token" });
+      return { token: "test-token" };
     });
 
     const mockUpsert = prisma.issue.upsert as jest.Mock;
@@ -607,12 +611,12 @@ describe("syncProviders", () => {
       },
     ]);
 
-    const { decrypt } = jest.requireMock("@/lib/encryption");
-    decrypt.mockImplementation((encrypted: string) => {
+    const { decryptProviderCredentials } = jest.requireMock("@/lib/credentials");
+    decryptProviderCredentials.mockImplementation((encrypted: string) => {
       if (encrypted === "corrupted") {
         throw new Error("Decryption failed");
       }
-      return JSON.stringify({ token: "test-token" });
+      return { token: "test-token" };
     });
 
     (prisma.project.update as jest.Mock).mockResolvedValue({});

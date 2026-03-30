@@ -42,6 +42,7 @@ async function handleCloseIssue(id: string, userId: string, comment?: string) {
     credentials = decryptProviderCredentials(
       issue.project.issueProvider.encryptedCredentials,
       issue.project.issueProvider.baseUrl,
+      issue.project.issueProvider.type,
     );
   } catch {
     return fail("INVALID_CREDENTIALS", 400);
