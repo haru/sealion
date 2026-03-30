@@ -168,7 +168,7 @@ describe("PATCH /api/issues/[id]", () => {
         ...MOCK_ISSUE.project,
         issueProvider: {
           type: "JIRA",
-          encryptedCredentials: "encrypted",
+          encryptedCredentials: "encrypted-jira",
           baseUrl: "https://example.atlassian.net",
           userId: "user-1",
         },
@@ -176,6 +176,10 @@ describe("PATCH /api/issues/[id]", () => {
     };
     mockFindFirst.mockResolvedValue(jiraIssue);
     mockDeleteMany.mockResolvedValue({ count: 1 });
+
+    // Override decrypt to return valid Jira credentials for this test
+    const { decrypt } = jest.requireMock("@/lib/encryption");
+    decrypt.mockReturnValueOnce(JSON.stringify({ email: "user@example.com", apiToken: "jira-token" }));
 
     const { createAdapter } = jest.requireMock("@/services/issue-provider/factory");
     const req = makeRequest("issue-1", { closed: true });

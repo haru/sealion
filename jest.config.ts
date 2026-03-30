@@ -21,6 +21,8 @@ const config: Config = {
     // React components (tested via E2E)
     "!src/components/**",
     "!src/app/**/*.tsx",
+    // Shared type definitions (no runtime code)
+    "!src/types/**",
     // i18n and message files
     "!src/messages/**",
     "!src/i18n/**",

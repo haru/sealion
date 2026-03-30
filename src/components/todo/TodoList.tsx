@@ -4,28 +4,12 @@ import { Box, Pagination, Typography } from "@mui/material";
 import { useTranslations } from "next-intl";
 import TodoItem from "./TodoItem";
 import TodoListSkeleton from "./TodoListSkeleton";
-
-interface Issue {
-  id: string;
-  externalId: string;
-  title: string;
-  dueDate: string | null;
-  externalUrl: string;
-  isUnassigned: boolean;
-  providerCreatedAt: string | null;
-  providerUpdatedAt: string | null;
-  /** Whether the issue is pinned to the top of the list. */
-  pinned: boolean;
-  project: {
-    displayName: string;
-    issueProvider: { iconUrl: string | null; displayName: string };
-  };
-}
+import type { ClientIssue } from "@/types/issue";
 
 /** Props for {@link TodoList}. */
 interface TodoListProps {
   /** Issues to display on the current page. */
-  items: Issue[];
+  items: ClientIssue[];
   /** Total number of issues (for pagination). */
   total: number;
   /** Current page (1-based). */

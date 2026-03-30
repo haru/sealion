@@ -1,9 +1,10 @@
 import { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { decrypt } from "@/lib/encryption";
 import { ok, fail } from "@/lib/api-response";
-import { createAdapter, ProviderCredentials } from "@/services/issue-provider/factory";
+import { createAdapter } from "@/services/issue-provider/factory";
+import { decryptProviderCredentials } from "@/lib/credentials";
+import { extractAxiosStatus } from "@/lib/error-utils";
 import { Prisma } from "@prisma/client";
 
 type Params = { params: Promise<{ id: string }> };
@@ -36,14 +37,13 @@ async function handleCloseIssue(id: string, userId: string, comment?: string) {
 
   if (!issue) return fail("FORBIDDEN", 403);
 
-  let credentials: ProviderCredentials;
+  let credentials;
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const decryptedCredentials: any = JSON.parse(decrypt(issue.project.issueProvider.encryptedCredentials));
-    credentials = {
-      ...decryptedCredentials,
-      ...(issue.project.issueProvider.baseUrl ? { baseUrl: issue.project.issueProvider.baseUrl } : {}),
-    } as ProviderCredentials;
+    credentials = decryptProviderCredentials(
+      issue.project.issueProvider.encryptedCredentials,
+      issue.project.issueProvider.baseUrl,
+      issue.project.issueProvider.type,
+    );
   } catch {
     return fail("INVALID_CREDENTIALS", 400);
   }
@@ -58,8 +58,7 @@ async function handleCloseIssue(id: string, userId: string, comment?: string) {
     const message =
       err instanceof Error ? err.message : typeof err === "string" ? err : "Unknown error";
     // Best-effort HTTP status extraction (e.g., from AxiosError) without logging headers or URLs.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const status: number | undefined = typeof err === "object" && err !== null && (err as any).response ? (err as any).response.status : undefined;
+    const status = extractAxiosStatus(err);
     // Avoid logging the raw error object to prevent leaking sensitive data (e.g., Authorization headers).
     // Log only sanitized, non-sensitive context for debugging.
     console.error("[closeIssue] External provider call failed", {

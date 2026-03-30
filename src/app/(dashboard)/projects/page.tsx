@@ -23,7 +23,7 @@ export default function ProjectsPage() {
 
   return (
     <Container maxWidth="md" sx={{ py: 4 }}>
-      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 3 }}>
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "flex-end", mb: 3 }}>
         <Button
           variant="contained"
           startIcon={<AddIcon />}

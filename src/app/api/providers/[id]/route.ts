@@ -6,6 +6,7 @@ import { ok, fail, failWithDetails } from "@/lib/api-response";
 import { createAdapter, getProviderIconUrl } from "@/services/issue-provider/factory";
 import { ProviderType } from "@prisma/client";
 import { createConnectionTestErrorDetails } from "@/lib/error-utils";
+import { buildTypedCredentials } from "@/lib/credentials";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -96,7 +97,8 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
 
   // Test connection
   try {
-    const adapter = createAdapter(provider.type, effectiveCredentials as never);
+    const typedCredentials = buildTypedCredentials(provider.type, effectiveCredentials);
+    const adapter = createAdapter(provider.type, typedCredentials);
     await adapter.testConnection();
   } catch (error) {
     console.error("[provider] Connection test failed:", error instanceof Error ? error.message : String(error));

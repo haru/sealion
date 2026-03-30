@@ -6,6 +6,7 @@ import { ok, fail, failWithDetails } from "@/lib/api-response";
 import { createAdapter, getProviderIconUrl } from "@/services/issue-provider/factory";
 import { ProviderType } from "@prisma/client";
 import { createConnectionTestErrorDetails } from "@/lib/error-utils";
+import { buildTypedCredentials } from "@/lib/credentials";
 
 /**
  * GET /api/providers — Returns all issue providers for the authenticated user.
@@ -52,7 +53,8 @@ export async function POST(req: NextRequest) {
 
   // Test connection before saving (pass full credentials including baseUrl to adapter)
   try {
-    const adapter = createAdapter(type as ProviderType, credentials as never);
+    const typedCredentials = buildTypedCredentials(type as ProviderType, credentials);
+    const adapter = createAdapter(type as ProviderType, typedCredentials);
     await adapter.testConnection();
   } catch (error) {
     console.error("[provider] Connection test failed:", error instanceof Error ? error.message : String(error));

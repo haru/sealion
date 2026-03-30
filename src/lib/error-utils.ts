@@ -62,6 +62,20 @@ export function classifyAxiosError(error: unknown): SyncErrorCause {
 }
 
 /**
+ * Extracts the HTTP status code from an AxiosError, if present.
+ *
+ * @param error - The error to inspect.
+ * @returns The HTTP status code, or `undefined` if the error is not an AxiosError
+ *          or has no response (e.g. network error).
+ */
+export function extractAxiosStatus(error: unknown): number | undefined {
+  if (!isAxiosError(error)) {
+    return undefined;
+  }
+  return error.response?.status;
+}
+
+/**
  * Extracts a user-friendly error message from an axios error response.
  *
  * @param error - The axios error to extract from.
