@@ -217,19 +217,20 @@ test.describe("Profile Settings — Username change", () => {
   });
 
   test("clears username when submitted with empty field", async ({ page }) => {
-    let capturedBody = "";
-    await page.route("**/api/account/profile**", (route) => {
-      capturedBody = route.request().postData() ?? "{}";
+    await page.route("**/api/account/profile**", (route) =>
       route.fulfill({
         contentType: "application/json",
         body: JSON.stringify({ data: null, error: null }),
-      });
-    });
+      })
+    );
+
+    const requestPromise = page.waitForRequest("**/api/account/profile**");
 
     await page.fill('[data-testid="profile-username"] input', "");
     await page.click('[data-testid="profile-username-save-button"]');
 
-    const parsed = JSON.parse(capturedBody);
+    const request = await requestPromise;
+    const parsed = JSON.parse(request.postData() ?? "{}");
     expect(parsed.username).toBeNull();
   });
 });

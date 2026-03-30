@@ -12,16 +12,15 @@ const MAX_USERNAME_LENGTH = 50;
  * result is empty the field is treated as `null` (cleared).
  *
  * Error codes returned in `{ error }`:
- * - `UNAUTHORIZED` — no valid session
+ * - `UNAUTHORIZED` — no valid session or user record not found
  * - `INVALID_INPUT` — malformed request body or missing `username` key
  * - `USERNAME_TOO_LONG` — trimmed username exceeds 50 characters
- * - `USERNAME_REQUIRED` — trimmed username is empty but not explicitly null
  * - `INTERNAL_ERROR` — unexpected server-side failure
  *
  * @param request - The incoming PATCH request containing `{ username }`.
  * @returns `200 { data: null, error: null }` on success,
  *          `400` on validation failure,
- *          `401` if unauthenticated,
+ *          `401` if unauthenticated or user not found,
  *          `500` on unexpected server error.
  */
 export async function PATCH(request: NextRequest) {
@@ -51,6 +50,11 @@ export async function PATCH(request: NextRequest) {
 
   if (rawUsername === null) {
     try {
+      const user = await prisma.user.findUnique({ where: { id: userId } });
+      if (!user) {
+        return fail("UNAUTHORIZED", 401);
+      }
+
       await prisma.user.update({
         where: { id: userId },
         data: { username: null },
@@ -71,18 +75,22 @@ export async function PATCH(request: NextRequest) {
 
   const trimmed = rawUsername.trim();
 
-  if (trimmed.length === 0) {
-    return fail("USERNAME_REQUIRED", 400);
-  }
+  // Normalize whitespace-only strings to null (clear the username)
+  const username = trimmed.length === 0 ? null : trimmed;
 
-  if (trimmed.length > MAX_USERNAME_LENGTH) {
+  if (username !== null && username.length > MAX_USERNAME_LENGTH) {
     return fail("USERNAME_TOO_LONG", 400);
   }
 
   try {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      return fail("UNAUTHORIZED", 401);
+    }
+
     await prisma.user.update({
       where: { id: userId },
-      data: { username: trimmed },
+      data: { username },
     });
     return ok(null);
   } catch (err: unknown) {

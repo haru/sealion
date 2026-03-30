@@ -59,6 +59,7 @@ export default function ProfileSettingsPage() {
         }
       } else {
         setUsernameSuccess(t("usernameSuccess"));
+        setUsername(body ?? "");
       }
     } catch {
       setUsernameError(t("usernameErrorUnexpected"));

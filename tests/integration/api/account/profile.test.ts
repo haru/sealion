@@ -122,7 +122,13 @@ describe("PATCH /api/account/profile — input validation (no DB required)", () 
     }));
     jest.doMock("@/lib/db", () => ({
       prisma: {
-        user: { findUnique: jest.fn(), update: jest.fn() },
+        user: {
+          findUnique: jest.fn().mockResolvedValue({
+            id: TEST_USER_ID,
+            email: TEST_USER_EMAIL,
+          }),
+          update: jest.fn(),
+        },
       },
     }));
     const { PATCH } = await import("@/app/api/account/profile/route");
@@ -133,7 +139,7 @@ describe("PATCH /api/account/profile — input validation (no DB required)", () 
     expect(json.error).toBe("USERNAME_TOO_LONG");
   });
 
-  test("returns 400 when username contains only whitespace", async () => {
+  test("normalizes whitespace-only username to null (clears username)", async () => {
     jest.resetModules();
     jest.doMock("@/lib/auth", () => ({
       auth: jest.fn().mockResolvedValue({
@@ -142,15 +148,25 @@ describe("PATCH /api/account/profile — input validation (no DB required)", () 
     }));
     jest.doMock("@/lib/db", () => ({
       prisma: {
-        user: { findUnique: jest.fn(), update: jest.fn() },
+        user: {
+          findUnique: jest.fn().mockResolvedValue({
+            id: TEST_USER_ID,
+            email: TEST_USER_EMAIL,
+          }),
+          update: jest.fn().mockResolvedValue({
+            id: TEST_USER_ID,
+            email: TEST_USER_EMAIL,
+            username: null,
+          }),
+        },
       },
     }));
     const { PATCH } = await import("@/app/api/account/profile/route");
     const req = makePatchRequest({ username: "   " });
     const res = await PATCH(req);
-    expect(res.status).toBe(400);
+    expect(res.status).toBe(200);
     const json = await res.json();
-    expect(json.error).toBe("USERNAME_REQUIRED");
+    expect(json.error).toBeNull();
   });
 
   test("returns 400 when request body is invalid JSON shape", async () => {
@@ -162,7 +178,13 @@ describe("PATCH /api/account/profile — input validation (no DB required)", () 
     }));
     jest.doMock("@/lib/db", () => ({
       prisma: {
-        user: { findUnique: jest.fn(), update: jest.fn() },
+        user: {
+          findUnique: jest.fn().mockResolvedValue({
+            id: TEST_USER_ID,
+            email: TEST_USER_EMAIL,
+          }),
+          update: jest.fn(),
+        },
       },
     }));
     const { PATCH } = await import("@/app/api/account/profile/route");
@@ -201,6 +223,52 @@ describe("PATCH /api/account/profile — input validation (no DB required)", () 
     expect(res.status).toBe(200);
     const json = await res.json();
     expect(json.error).toBeNull();
+  });
+});
+
+describe("PATCH /api/account/profile — user not found (no DB required)", () => {
+  test("returns 401 when authenticated but user record does not exist (null username)", async () => {
+    jest.resetModules();
+    jest.doMock("@/lib/auth", () => ({
+      auth: jest.fn().mockResolvedValue({
+        user: { id: TEST_USER_ID, email: TEST_USER_EMAIL, role: "USER" },
+      }),
+    }));
+    jest.doMock("@/lib/db", () => ({
+      prisma: {
+        user: {
+          findUnique: jest.fn().mockResolvedValue(null),
+        },
+      },
+    }));
+    const { PATCH } = await import("@/app/api/account/profile/route");
+    const req = makePatchRequest({ username: null });
+    const res = await PATCH(req);
+    expect(res.status).toBe(401);
+    const json = await res.json();
+    expect(json.error).toBeTruthy();
+  });
+
+  test("returns 401 when authenticated but user record does not exist (string username)", async () => {
+    jest.resetModules();
+    jest.doMock("@/lib/auth", () => ({
+      auth: jest.fn().mockResolvedValue({
+        user: { id: TEST_USER_ID, email: TEST_USER_EMAIL, role: "USER" },
+      }),
+    }));
+    jest.doMock("@/lib/db", () => ({
+      prisma: {
+        user: {
+          findUnique: jest.fn().mockResolvedValue(null),
+        },
+      },
+    }));
+    const { PATCH } = await import("@/app/api/account/profile/route");
+    const req = makePatchRequest({ username: "newname" });
+    const res = await PATCH(req);
+    expect(res.status).toBe(401);
+    const json = await res.json();
+    expect(json.error).toBeTruthy();
   });
 });
 
