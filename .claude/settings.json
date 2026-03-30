@@ -14,10 +14,5 @@
         "repo": "affaan-m/everything-claude-code"
       }
     }
-  },
-  "permissions": {
-    "allow": [
-      "Bash(grep -rn tsdoc-param-tag /workspaces/sealion/.eslintrc* /workspaces/sealion/eslint.config*)"
-    ]
   }
 }

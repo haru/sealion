@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Box, Button, Container } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
+import FolderOpenIcon from "@mui/icons-material/FolderOpen";
 import { useTranslations } from "next-intl";
 import { usePageHeader } from "@/hooks/usePageHeader";
 import ProjectList from "@/components/projects/ProjectList";
@@ -11,7 +12,7 @@ import AddProjectDialog from "@/components/projects/AddProjectDialog";
 /** Projects management page for registering and removing external projects. */
 export default function ProjectsPage() {
   const t = useTranslations("projects");
-  usePageHeader(t("title"));
+  usePageHeader(t("title"), undefined, FolderOpenIcon);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [refreshSignal, setRefreshSignal] = useState(0);
 

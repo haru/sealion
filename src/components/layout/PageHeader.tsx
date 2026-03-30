@@ -7,6 +7,8 @@ import Typography from "@mui/material/Typography";
 export interface PageHeaderProps {
   /** Page title text displayed on the left side of the titlebar. */
   title: string;
+  /** Optional icon component rendered to the left of the title. */
+  icon?: React.ElementType | null;
   /**
    * Optional custom content rendered in the right slot alongside the account menu.
    * Pass `null` or omit to leave the page-specific right slot empty.
@@ -23,10 +25,10 @@ export interface PageHeaderProps {
  * Shared titlebar rendered at the top of every dashboard page on desktop (md+).
  * Hidden on mobile (xs–sm) where the hamburger AppBar is shown instead.
  *
- * @param props - Title, optional right-slot actions, and optional account menu.
+ * @param props - Title, optional leading icon, optional right-slot actions, and optional account menu.
  * @returns A fixed-height header bar with a left title and optional right content.
  */
-export default function PageHeader({ title, actions, accountMenu }: PageHeaderProps) {
+export default function PageHeader({ title, icon, actions, accountMenu }: PageHeaderProps) {
   return (
     <Box
       data-testid="page-header"
@@ -41,9 +43,14 @@ export default function PageHeader({ title, actions, accountMenu }: PageHeaderPr
         flexShrink: 0,
       }}
     >
-      <Typography component="h1" sx={{ fontWeight: 600, fontSize: "0.9rem", color: "text.primary" }}>
-        {title}
-      </Typography>
+      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+        {icon != null && (
+          <Box component={icon} sx={{ fontSize: 18, color: "text.secondary", display: "flex" }} />
+        )}
+        <Typography component="h1" sx={{ fontWeight: 600, fontSize: "0.9rem", color: "text.primary" }}>
+          {title}
+        </Typography>
+      </Box>
       <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
         {actions != null && (
           <Box data-testid="page-header-actions" sx={{ display: "flex", alignItems: "center" }}>

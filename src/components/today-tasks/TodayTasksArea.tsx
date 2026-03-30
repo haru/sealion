@@ -47,6 +47,10 @@ interface TodayIssue {
 interface TodayTasksAreaProps {
   /** Today's issues sorted by {@link TodayIssue.todayOrder}. */
   items: TodayIssue[];
+  /** Whether to show the provider-created-at timestamp on each card. */
+  showCreatedAt?: boolean;
+  /** Whether to show the provider-updated-at timestamp on each card. */
+  showUpdatedAt?: boolean;
   /** Called when the user removes an issue from today's list. */
   onRemove: (id: string) => void;
   /**
@@ -62,11 +66,13 @@ export const TODAY_DROP_ZONE_ID = "today-drop-zone";
 /**
  * Drop zone and sortable list of today's flagged issues.
  * @param items - Issues to display, pre-sorted by `todayOrder`.
+ * @param showCreatedAt - When true, each task card shows the provider-created-at timestamp.
+ * @param showUpdatedAt - When true, each task card shows the provider-updated-at timestamp.
  * @param onRemove - Callback invoked when the user removes an issue from today's list.
  * @param onComplete - Callback invoked when the user clicks the "Complete" button.
  * @returns A droppable area containing a sorted list of today task items.
  */
-export default function TodayTasksArea({ items, onRemove, onComplete }: TodayTasksAreaProps) {
+export default function TodayTasksArea({ items, showCreatedAt, showUpdatedAt, onRemove, onComplete }: TodayTasksAreaProps) {
   const t = useTranslations("todayTasks");
 
   const ids = items.map((i) => i.id);
@@ -189,6 +195,8 @@ export default function TodayTasksArea({ items, onRemove, onComplete }: TodayTas
                 providerName={issue.project.issueProvider.displayName}
                 projectName={issue.project.displayName}
                 pinned={issue.pinned}
+                showCreatedAt={showCreatedAt}
+                showUpdatedAt={showUpdatedAt}
                 onRemove={onRemove}
                 onComplete={onComplete}
               />

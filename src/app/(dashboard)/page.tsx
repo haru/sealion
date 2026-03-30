@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { Box, Typography } from "@mui/material";
 import InboxIcon from "@mui/icons-material/Inbox";
+import FormatListBulletedIcon from "@mui/icons-material/FormatListBulleted";
 import { useMessageQueue } from "@/hooks/useMessageQueue";
 import { useTranslations } from "next-intl";
 import {
@@ -213,7 +214,7 @@ export default function DashboardPage() {
     [syncProviders, isSyncing, handleSyncNow]
   );
 
-  usePageHeader(t("title"), syncStatusActions);
+  usePageHeader(t("title"), syncStatusActions, FormatListBulletedIcon);
 
   useEffect(() => {
     /** Loads initial issue data and triggers a background sync unless throttled. */
@@ -579,7 +580,7 @@ export default function DashboardPage() {
     <DndContext sensors={sensors} onDragStart={handleDragStart} onDragMove={handleDragMove} onDragEnd={handleDragEnd} onDragCancel={handleDragCancel}>
       {/* Content area — max-width centered, generous vertical padding */}
       <Box sx={{ maxWidth: 896, mx: "auto", py: 5, px: 3 }}>
-        <TodayTasksArea items={todayIssuesSorted} onRemove={handleRemoveFromToday} onComplete={handleComplete} />
+        <TodayTasksArea items={todayIssuesSorted} showCreatedAt={boardSettings.showCreatedAt} showUpdatedAt={boardSettings.showUpdatedAt} onRemove={handleRemoveFromToday} onComplete={handleComplete} />
 
         {/* Backlog section header */}
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3, px: 0.5 }}>

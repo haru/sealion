@@ -8,6 +8,7 @@ import Container from "@mui/material/Container";
 import Divider from "@mui/material/Divider";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
+import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import { useTranslations } from "next-intl";
 import { usePageHeader } from "@/hooks/usePageHeader";
 
@@ -21,7 +22,7 @@ import { usePageHeader } from "@/hooks/usePageHeader";
  */
 export default function ProfileSettingsPage() {
   const t = useTranslations("profileSettings");
-  usePageHeader(t("title"));
+  usePageHeader(t("title"), undefined, AccountCircleIcon);
 
   const [username, setUsername] = useState("");
   const [isUsernameSubmitting, setIsUsernameSubmitting] = useState(false);
