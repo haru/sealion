@@ -48,8 +48,13 @@ test.describe("Profile Settings — US3: Page renders password change form", () 
     await expect(page.getByTestId("profile-confirm-password")).toBeVisible();
   });
 
-  test("profile settings page shows a submit button", async ({ page }) => {
+  test("profile settings page renders username field", async ({ page }) => {
+    await expect(page.getByTestId("profile-username")).toBeVisible();
+  });
+
+  test("profile settings page shows submit buttons for both forms", async ({ page }) => {
     await expect(page.getByTestId("profile-save-button")).toBeVisible();
+    await expect(page.getByTestId("profile-username-save-button")).toBeVisible();
   });
 
   test("profile settings page title appears in the titlebar", async ({ page }) => {
@@ -162,5 +167,70 @@ test.describe("Profile Settings — US3: API interaction", () => {
     await page.click('[data-testid="profile-save-button"]');
 
     await expect(page.getByTestId("profile-error-message")).toBeVisible();
+  });
+});
+
+test.describe("Profile Settings — Username change", () => {
+  test.beforeEach(async ({ page }) => {
+    await page.route("**/api/issues**", (route) =>
+      route.fulfill({ contentType: "application/json", body: EMPTY_ISSUES })
+    );
+    await page.route("**/api/sync**", (route) =>
+      route.fulfill({ contentType: "application/json", body: EMPTY_PROVIDERS })
+    );
+    await page.route("**/api/board-settings**", (route) =>
+      route.fulfill({ contentType: "application/json", body: DEFAULT_BOARD_SETTINGS })
+    );
+    await page.route("**/api/providers**", (route) =>
+      route.fulfill({ contentType: "application/json", body: EMPTY_PROVIDERS })
+    );
+    await goToProfileSettings(page);
+  });
+
+  test("shows inline success message on successful username change", async ({ page }) => {
+    await page.route("**/api/account/profile**", (route) =>
+      route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({ data: null, error: null }),
+      })
+    );
+
+    await page.fill('[data-testid="profile-username"] input', "newusername");
+    await page.click('[data-testid="profile-username-save-button"]');
+
+    await expect(page.getByTestId("profile-username-success-message")).toBeVisible();
+  });
+
+  test("shows inline error message on failed username update", async ({ page }) => {
+    await page.route("**/api/account/profile**", (route) =>
+      route.fulfill({
+        status: 400,
+        contentType: "application/json",
+        body: JSON.stringify({ data: null, error: "USERNAME_TOO_LONG" }),
+      })
+    );
+
+    await page.fill('[data-testid="profile-username"] input', "a".repeat(51));
+    await page.click('[data-testid="profile-username-save-button"]');
+
+    await expect(page.getByTestId("profile-username-error-message")).toBeVisible();
+  });
+
+  test("clears username when submitted with empty field", async ({ page }) => {
+    await page.route("**/api/account/profile**", (route) =>
+      route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({ data: null, error: null }),
+      })
+    );
+
+    const requestPromise = page.waitForRequest("**/api/account/profile**");
+
+    await page.fill('[data-testid="profile-username"] input', "");
+    await page.click('[data-testid="profile-username-save-button"]');
+
+    const request = await requestPromise;
+    const parsed = JSON.parse(request.postData() ?? "{}");
+    expect(parsed.username).toBeNull();
   });
 });
