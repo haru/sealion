@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, useRef, ReactNode } from 'react';
 import { MessageData, MessageQueueContextType, MessageType, DISPLAY_CONSTRAINTS, isValidMessage, isValidMessageType } from './types';
 import { addMessage, dismissMessage as dismissMessageUtil, closeAllMessages as closeAllMessagesUtil, processQueue } from '@/lib/message-queue';
 import MessageSnackbar from './MessageSnackbar';
@@ -35,6 +35,7 @@ interface QueueState {
  * @param props - Provider props with children
  */
 export function MessageQueueProvider({ children }: MessageQueueProviderProps) {
+  const idCounter = useRef(0);
   const [state, setState] = useState<QueueState>({
     messages: [],
     queue: [],
@@ -76,7 +77,7 @@ export function MessageQueueProvider({ children }: MessageQueueProviderProps) {
 
     const now = Date.now();
     const newMessage: MessageData = {
-      id: crypto.randomUUID(),
+      id: `msg-${now}-${++idCounter.current}`,
       type,
       message: message.trim(),
       timestamp: now,
