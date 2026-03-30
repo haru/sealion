@@ -9,7 +9,7 @@ import "./globals.css";
 
 /** Application metadata for SEO and browser tab display. */
 export const metadata: Metadata = {
-  title: "Sealion — Unified TODO",
+  title: "Sealion - All Your TODOs, One Place.",
   description: "Aggregate your GitHub, Jira, and Redmine issues in one place",
   icons: {
     icon: "/sealion.svg",

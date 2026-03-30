@@ -54,6 +54,7 @@ describe("usePageHeader", () => {
           value: {
             title: "",
             actions: null,
+            icon: null,
             setPageHeader: mockSetPageHeader,
           },
         },
@@ -65,7 +66,7 @@ describe("usePageHeader", () => {
     });
 
     // On mount, setPageHeader should have been called with the title
-    expect(mockSetPageHeader).toHaveBeenCalledWith("Temp", undefined);
+    expect(mockSetPageHeader).toHaveBeenCalledWith("Temp", undefined, undefined);
 
     act(() => {
       unmount();

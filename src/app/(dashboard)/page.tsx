@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { Box, Typography } from "@mui/material";
 import InboxIcon from "@mui/icons-material/Inbox";
+import FormatListBulletedIcon from "@mui/icons-material/FormatListBulleted";
 import { useMessageQueue } from "@/hooks/useMessageQueue";
 import { useTranslations } from "next-intl";
 import {
@@ -213,7 +214,7 @@ export default function DashboardPage() {
     [syncProviders, isSyncing, handleSyncNow]
   );
 
-  usePageHeader(t("title"), syncStatusActions);
+  usePageHeader(t("title"), syncStatusActions, FormatListBulletedIcon);
 
   useEffect(() => {
     /** Loads initial issue data and triggers a background sync unless throttled. */

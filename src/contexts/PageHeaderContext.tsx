@@ -8,18 +8,22 @@ export interface PageHeaderContextValue {
   title: string;
   /** Current right-slot content. Defaults to null. */
   actions: React.ReactNode | null;
+  /** Icon component displayed to the left of the page title. Defaults to null. */
+  icon: React.ElementType | null;
   /**
-   * Registers the current page's title and optional right-slot actions in the titlebar.
+   * Registers the current page's title, optional right-slot actions, and optional icon in the titlebar.
    * @param title - The page title to display.
    * @param actions - Optional React node rendered in the right slot.
+   * @param icon - Optional icon component rendered to the left of the title.
    */
-  setPageHeader: (title: string, actions?: React.ReactNode) => void;
+  setPageHeader: (title: string, actions?: React.ReactNode, icon?: React.ElementType) => void;
 }
 
 /** Context carrying the current page title and optional right-slot actions for the global titlebar. */
 export const PageHeaderContext = createContext<PageHeaderContextValue>({
   title: "",
   actions: null,
+  icon: null,
   setPageHeader: () => undefined,
 });
 
@@ -39,14 +43,16 @@ interface PageHeaderProviderProps {
 export function PageHeaderProvider({ children }: PageHeaderProviderProps) {
   const [title, setTitle] = useState("");
   const [actions, setActions] = useState<React.ReactNode | null>(null);
+  const [icon, setIcon] = useState<React.ElementType | null>(null);
 
-  const setPageHeader = useCallback((newTitle: string, newActions?: React.ReactNode) => {
+  const setPageHeader = useCallback((newTitle: string, newActions?: React.ReactNode, newIcon?: React.ElementType) => {
     setTitle(newTitle);
     setActions(newActions ?? null);
+    setIcon(newIcon ?? null);
   }, []);
 
   return (
-    <PageHeaderContext.Provider value={{ title, actions, setPageHeader }}>
+    <PageHeaderContext.Provider value={{ title, actions, icon, setPageHeader }}>
       {children}
     </PageHeaderContext.Provider>
   );

@@ -13,6 +13,7 @@ import {
   Box,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
+import SettingsIcon from "@mui/icons-material/Settings";
 import { useTranslations } from "next-intl";
 import { usePageHeader } from "@/hooks/usePageHeader";
 import ProviderList from "@/components/providers/ProviderList";
@@ -36,7 +37,7 @@ export default function ProvidersPage() {
   const tSync = useTranslations("sync");
 
   const { addMessage } = useMessageQueue();
-  usePageHeader(t("title"));
+  usePageHeader(t("title"), undefined, SettingsIcon);
   const [providers, setProviders] = useState<Provider[]>([]);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
