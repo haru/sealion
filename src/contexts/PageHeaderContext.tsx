@@ -19,7 +19,7 @@ export interface PageHeaderContextValue {
   setPageHeader: (title: string, actions?: React.ReactNode, icon?: React.ElementType) => void;
 }
 
-/** Context carrying the current page title and optional right-slot actions for the global titlebar. */
+/** Context carrying the current page title, optional leading icon, and optional right-slot actions for the global titlebar. */
 export const PageHeaderContext = createContext<PageHeaderContextValue>({
   title: "",
   actions: null,
@@ -48,7 +48,9 @@ export function PageHeaderProvider({ children }: PageHeaderProviderProps) {
   const setPageHeader = useCallback((newTitle: string, newActions?: React.ReactNode, newIcon?: React.ElementType) => {
     setTitle(newTitle);
     setActions(newActions ?? null);
-    setIcon(newIcon ?? null);
+    // Use the functional updater form to prevent React from treating the icon component
+    // as a state updater function (React calls functions passed to setState directly).
+    setIcon(() => newIcon ?? null);
   }, []);
 
   return (

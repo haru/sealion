@@ -66,6 +66,8 @@ export const TODAY_DROP_ZONE_ID = "today-drop-zone";
 /**
  * Drop zone and sortable list of today's flagged issues.
  * @param items - Issues to display, pre-sorted by `todayOrder`.
+ * @param showCreatedAt - When true, each task card shows the provider-created-at timestamp.
+ * @param showUpdatedAt - When true, each task card shows the provider-updated-at timestamp.
  * @param onRemove - Callback invoked when the user removes an issue from today's list.
  * @param onComplete - Callback invoked when the user clicks the "Complete" button.
  * @returns A droppable area containing a sorted list of today task items.

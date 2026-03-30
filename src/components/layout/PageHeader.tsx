@@ -25,7 +25,7 @@ export interface PageHeaderProps {
  * Shared titlebar rendered at the top of every dashboard page on desktop (md+).
  * Hidden on mobile (xs–sm) where the hamburger AppBar is shown instead.
  *
- * @param props - Title, optional right-slot actions, and optional account menu.
+ * @param props - Title, optional leading icon, optional right-slot actions, and optional account menu.
  * @returns A fixed-height header bar with a left title and optional right content.
  */
 export default function PageHeader({ title, icon, actions, accountMenu }: PageHeaderProps) {

@@ -1,10 +1,4 @@
 {
-  "permissions": {
-    "allow": [
-      "Bash(grep -rn tsdoc-param-tag /workspaces/sealion/.eslintrc* /workspaces/sealion/eslint.config*)",
-      "Bash(git stash:*)"
-    ]
-  },
   "enabledPlugins": {
     "everything-claude-code@everything-claude-code": true,
     "frontend-design@claude-plugins-official": true,
