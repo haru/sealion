@@ -126,7 +126,13 @@
     "errorTooShort": "Password must be at least 8 characters.",
     "errorCurrentRequired": "Please enter your current password.",
     "errorCurrentIncorrect": "Current password is incorrect.",
-    "errorUnexpected": "An unexpected error occurred. Please try again."
+    "errorUnexpected": "An unexpected error occurred. Please try again.",
+    "changeUsername": "Change Username",
+    "username": "Username",
+    "usernameHint": "Leave blank to clear your display name.",
+    "usernameSuccess": "Username updated successfully.",
+    "usernameErrorTooLong": "Username must be 50 characters or fewer.",
+    "usernameErrorUnexpected": "An unexpected error occurred. Please try again."
   },
   "boardSettings": {
     "title": "Board Settings",

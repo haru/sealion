@@ -5,6 +5,7 @@ import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Container from "@mui/material/Container";
+import Divider from "@mui/material/Divider";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { useTranslations } from "next-intl";
@@ -13,41 +14,78 @@ import { usePageHeader } from "@/hooks/usePageHeader";
 /**
  * Profile settings page.
  *
- * Renders a password change form with three fields: current password, new password,
- * and confirmation. Validates locally before submitting to `PATCH /api/account/password`.
- * On success, shows an inline success message without redirecting.
+ * Renders a username change form and a password change form. The username form
+ * submits to `PATCH /api/account/profile`; the password form submits to
+ * `PATCH /api/account/password`. On success, each form shows an inline success
+ * message without redirecting.
  */
 export default function ProfileSettingsPage() {
   const t = useTranslations("profileSettings");
   usePageHeader(t("title"));
 
+  const [username, setUsername] = useState("");
+  const [isUsernameSubmitting, setIsUsernameSubmitting] = useState(false);
+  const [usernameSuccess, setUsernameSuccess] = useState<string | null>(null);
+  const [usernameError, setUsernameError] = useState<string | null>(null);
+
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isPasswordSubmitting, setIsPasswordSubmitting] = useState(false);
+  const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleUsernameSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSuccessMessage(null);
-    setErrorMessage(null);
+    setUsernameSuccess(null);
+    setUsernameError(null);
 
-    // Client-side validation
+    setIsUsernameSubmitting(true);
+    try {
+      const body = username.trim() === "" ? null : username.trim();
+      const response = await fetch("/api/account/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: body }),
+      });
+
+      const json = (await response.json()) as { data: null; error: string | null };
+
+      if (!response.ok || json.error) {
+        if (json.error === "USERNAME_TOO_LONG") {
+          setUsernameError(t("usernameErrorTooLong"));
+        } else {
+          setUsernameError(t("usernameErrorUnexpected"));
+        }
+      } else {
+        setUsernameSuccess(t("usernameSuccess"));
+      }
+    } catch {
+      setUsernameError(t("usernameErrorUnexpected"));
+    } finally {
+      setIsUsernameSubmitting(false);
+    }
+  };
+
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasswordSuccess(null);
+    setPasswordError(null);
+
     if (!currentPassword) {
-      setErrorMessage(t("errorCurrentRequired"));
+      setPasswordError(t("errorCurrentRequired"));
       return;
     }
     if (newPassword.length < 8) {
-      setErrorMessage(t("errorTooShort"));
+      setPasswordError(t("errorTooShort"));
       return;
     }
     if (newPassword !== confirmPassword) {
-      setErrorMessage(t("errorMismatch"));
+      setPasswordError(t("errorMismatch"));
       return;
     }
 
-    setIsSubmitting(true);
+    setIsPasswordSubmitting(true);
     try {
       const response = await fetch("/api/account/password", {
         method: "PATCH",
@@ -58,42 +96,78 @@ export default function ProfileSettingsPage() {
       const json = (await response.json()) as { data: null; error: string | null };
 
       if (!response.ok || json.error) {
-        // Map server-side error codes to localized messages.
-        // Falling back to errorUnexpected prevents raw English server strings
-        // from leaking into non-en locales.
         if (json.error === "PASSWORD_INCORRECT") {
-          setErrorMessage(t("errorCurrentIncorrect"));
+          setPasswordError(t("errorCurrentIncorrect"));
         } else {
-          setErrorMessage(t("errorUnexpected"));
+          setPasswordError(t("errorUnexpected"));
         }
       } else {
-        setSuccessMessage(t("successMessage"));
+        setPasswordSuccess(t("successMessage"));
         setCurrentPassword("");
         setNewPassword("");
         setConfirmPassword("");
       }
     } catch {
-      setErrorMessage(t("errorUnexpected"));
+      setPasswordError(t("errorUnexpected"));
     } finally {
-      setIsSubmitting(false);
+      setIsPasswordSubmitting(false);
     }
   };
 
   return (
     <Container maxWidth="sm" sx={{ py: 4 }}>
       <Typography variant="h6" sx={{ fontWeight: 600, mb: 3 }}>
+        {t("changeUsername")}
+      </Typography>
+
+      <Box component="form" onSubmit={handleUsernameSubmit} noValidate sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+        {usernameSuccess && (
+          <Alert severity="success" data-testid="profile-username-success-message">
+            {usernameSuccess}
+          </Alert>
+        )}
+        {usernameError && (
+          <Alert severity="error" data-testid="profile-username-error-message">
+            {usernameError}
+          </Alert>
+        )}
+
+        <TextField
+          data-testid="profile-username"
+          label={t("username")}
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+          fullWidth
+          helperText={t("usernameHint")}
+          inputProps={{ maxLength: 50 }}
+        />
+
+        <Button
+          data-testid="profile-username-save-button"
+          type="submit"
+          variant="contained"
+          disabled={isUsernameSubmitting}
+          sx={{ alignSelf: "flex-start" }}
+        >
+          {t("saveChanges")}
+        </Button>
+      </Box>
+
+      <Divider sx={{ my: 5 }} />
+
+      <Typography variant="h6" sx={{ fontWeight: 600, mb: 3 }}>
         {t("changePassword")}
       </Typography>
 
-      <Box component="form" onSubmit={handleSubmit} noValidate sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-        {successMessage && (
+      <Box component="form" onSubmit={handlePasswordSubmit} noValidate sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+        {passwordSuccess && (
           <Alert severity="success" data-testid="profile-success-message">
-            {successMessage}
+            {passwordSuccess}
           </Alert>
         )}
-        {errorMessage && (
+        {passwordError && (
           <Alert severity="error" data-testid="profile-error-message">
-            {errorMessage}
+            {passwordError}
           </Alert>
         )}
 
@@ -134,7 +208,7 @@ export default function ProfileSettingsPage() {
           data-testid="profile-save-button"
           type="submit"
           variant="contained"
-          disabled={isSubmitting}
+          disabled={isPasswordSubmitting}
           sx={{ alignSelf: "flex-start" }}
         >
           {t("saveChanges")}

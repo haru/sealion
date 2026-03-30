@@ -1,0 +1,246 @@
+/** @jest-environment node */
+/**
+ * Integration test: PATCH /api/account/profile
+ * Tests username update endpoint.
+ *
+ * Prerequisites:
+ *   - DATABASE_URL environment variable pointing to test DB
+ *   - DB migrated: npx prisma migrate deploy
+ */
+
+import { PrismaClient } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
+import { NextRequest } from "next/server";
+
+const TEST_USER_ID = "profile-integration-test-user";
+const TEST_USER_EMAIL = "profile-test@integration.com";
+
+jest.mock("@/lib/auth", () => ({
+  auth: jest.fn().mockResolvedValue({
+    user: { id: TEST_USER_ID, email: TEST_USER_EMAIL, role: "USER" },
+  }),
+}));
+
+jest.mock("@/lib/db", () => ({
+  prisma: {
+    user: {
+      findUnique: jest.fn(),
+      update: jest.fn(),
+    },
+  },
+}));
+
+async function importRoute() {
+  jest.resetModules();
+  jest.doMock("@/lib/auth", () => ({
+    auth: jest.fn().mockResolvedValue({
+      user: { id: TEST_USER_ID, email: TEST_USER_EMAIL, role: "USER" },
+    }),
+  }));
+  jest.doMock("@/lib/db", () => ({ prisma }));
+  return await import("@/app/api/account/profile/route");
+}
+
+let prisma: PrismaClient;
+let dbAvailable = false;
+
+beforeAll(async () => {
+  if (!process.env.DATABASE_URL) {
+    console.warn("DATABASE_URL not set — skipping DB-dependent tests");
+    return;
+  }
+  try {
+    const { Pool } = await import("pg");
+    const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+    const adapter = new PrismaPg(pool);
+    prisma = new PrismaClient({ adapter } as Parameters<typeof PrismaClient>[0]);
+    await prisma.$connect();
+    dbAvailable = true;
+  } catch {
+    console.warn("Could not connect to test database — skipping DB-dependent tests");
+  }
+});
+
+afterAll(async () => {
+  if (dbAvailable) {
+    await prisma.user.deleteMany({ where: { id: TEST_USER_ID } });
+    await prisma.$disconnect();
+  }
+});
+
+async function seedUser(username?: string | null) {
+  const { default: bcrypt } = await import("bcryptjs");
+  const passwordHash = await bcrypt.hash("password123", 10);
+  await prisma.user.upsert({
+    where: { id: TEST_USER_ID },
+    update: { username: username ?? undefined, passwordHash },
+    create: {
+      id: TEST_USER_ID,
+      email: TEST_USER_EMAIL,
+      passwordHash,
+      role: "USER",
+      ...(username != null ? { username } : {}),
+    },
+  });
+}
+
+function makePatchRequest(body: unknown): NextRequest {
+  return new NextRequest("http://localhost/api/account/profile", {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+}
+
+describe("PATCH /api/account/profile — unauthenticated (no DB required)", () => {
+  test("returns 401 when no session exists", async () => {
+    jest.resetModules();
+    jest.doMock("@/lib/auth", () => ({
+      auth: jest.fn().mockResolvedValue(null),
+    }));
+    jest.doMock("@/lib/db", () => ({
+      prisma: {
+        user: { findUnique: jest.fn(), update: jest.fn() },
+      },
+    }));
+    const { PATCH } = await import("@/app/api/account/profile/route");
+    const req = makePatchRequest({ username: "newname" });
+    const res = await PATCH(req);
+    expect(res.status).toBe(401);
+    const json = await res.json();
+    expect(json.error).toBeTruthy();
+  });
+});
+
+describe("PATCH /api/account/profile — input validation (no DB required)", () => {
+  test("returns 400 when username exceeds 50 characters", async () => {
+    jest.resetModules();
+    jest.doMock("@/lib/auth", () => ({
+      auth: jest.fn().mockResolvedValue({
+        user: { id: TEST_USER_ID, email: TEST_USER_EMAIL, role: "USER" },
+      }),
+    }));
+    jest.doMock("@/lib/db", () => ({
+      prisma: {
+        user: { findUnique: jest.fn(), update: jest.fn() },
+      },
+    }));
+    const { PATCH } = await import("@/app/api/account/profile/route");
+    const req = makePatchRequest({ username: "a".repeat(51) });
+    const res = await PATCH(req);
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.error).toBe("USERNAME_TOO_LONG");
+  });
+
+  test("returns 400 when username contains only whitespace", async () => {
+    jest.resetModules();
+    jest.doMock("@/lib/auth", () => ({
+      auth: jest.fn().mockResolvedValue({
+        user: { id: TEST_USER_ID, email: TEST_USER_EMAIL, role: "USER" },
+      }),
+    }));
+    jest.doMock("@/lib/db", () => ({
+      prisma: {
+        user: { findUnique: jest.fn(), update: jest.fn() },
+      },
+    }));
+    const { PATCH } = await import("@/app/api/account/profile/route");
+    const req = makePatchRequest({ username: "   " });
+    const res = await PATCH(req);
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.error).toBe("USERNAME_REQUIRED");
+  });
+
+  test("returns 400 when request body is invalid JSON shape", async () => {
+    jest.resetModules();
+    jest.doMock("@/lib/auth", () => ({
+      auth: jest.fn().mockResolvedValue({
+        user: { id: TEST_USER_ID, email: TEST_USER_EMAIL, role: "USER" },
+      }),
+    }));
+    jest.doMock("@/lib/db", () => ({
+      prisma: {
+        user: { findUnique: jest.fn(), update: jest.fn() },
+      },
+    }));
+    const { PATCH } = await import("@/app/api/account/profile/route");
+    const req = makePatchRequest({ unexpectedField: "value" });
+    const res = await PATCH(req);
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.error).toBe("INVALID_INPUT");
+  });
+
+  test("returns 200 when username is set to null (clear)", async () => {
+    jest.resetModules();
+    jest.doMock("@/lib/auth", () => ({
+      auth: jest.fn().mockResolvedValue({
+        user: { id: TEST_USER_ID, email: TEST_USER_EMAIL, role: "USER" },
+      }),
+    }));
+    jest.doMock("@/lib/db", () => ({
+      prisma: {
+        user: {
+          findUnique: jest.fn().mockResolvedValue({
+            id: TEST_USER_ID,
+            email: TEST_USER_EMAIL,
+          }),
+          update: jest.fn().mockResolvedValue({
+            id: TEST_USER_ID,
+            email: TEST_USER_EMAIL,
+            username: null,
+          }),
+        },
+      },
+    }));
+    const { PATCH } = await import("@/app/api/account/profile/route");
+    const req = makePatchRequest({ username: null });
+    const res = await PATCH(req);
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.error).toBeNull();
+  });
+});
+
+describe("PATCH /api/account/profile — with real database", () => {
+  beforeAll(async () => {
+    if (!dbAvailable) return;
+    await seedUser("oldname");
+  });
+
+  const dbTest = dbAvailable ? test : test.skip;
+
+  dbTest("returns 200 and updates username on valid request", async () => {
+    const { PATCH } = await importRoute();
+    const req = makePatchRequest({ username: "newusername" });
+    const res = await PATCH(req);
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.error).toBeNull();
+
+    const user = await prisma.user.findUnique({ where: { id: TEST_USER_ID } });
+    expect(user?.username).toBe("newusername");
+  });
+
+  dbTest("trims whitespace from username", async () => {
+    const { PATCH } = await importRoute();
+    const req = makePatchRequest({ username: "  trimmed  " });
+    const res = await PATCH(req);
+    expect(res.status).toBe(200);
+
+    const user = await prisma.user.findUnique({ where: { id: TEST_USER_ID } });
+    expect(user?.username).toBe("trimmed");
+  });
+
+  dbTest("allows clearing username by setting it to null", async () => {
+    const { PATCH } = await importRoute();
+    const req = makePatchRequest({ username: null });
+    const res = await PATCH(req);
+    expect(res.status).toBe(200);
+
+    const user = await prisma.user.findUnique({ where: { id: TEST_USER_ID } });
+    expect(user?.username).toBeNull();
+  });
+});

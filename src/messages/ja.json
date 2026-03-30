@@ -126,7 +126,13 @@
     "errorTooShort": "パスワードは8文字以上で入力してください。",
     "errorCurrentRequired": "現在のパスワードを入力してください。",
     "errorCurrentIncorrect": "現在のパスワードが正しくありません。",
-    "errorUnexpected": "予期しないエラーが発生しました。もう一度お試しください。"
+    "errorUnexpected": "予期しないエラーが発生しました。もう一度お試しください。",
+    "changeUsername": "ユーザー名を変更",
+    "username": "ユーザー名",
+    "usernameHint": "空白のままにすると表示名がクリアされます。",
+    "usernameSuccess": "ユーザー名を更新しました。",
+    "usernameErrorTooLong": "ユーザー名は50文字以内で入力してください。",
+    "usernameErrorUnexpected": "予期しないエラーが発生しました。もう一度お試しください。"
   },
   "boardSettings": {
     "title": "ボード設定",
