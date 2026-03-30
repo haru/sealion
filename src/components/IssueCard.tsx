@@ -273,7 +273,7 @@ export default function IssueCard({
                   {t("createdAtLabel")}
                 </Typography>
                 <Typography sx={{ fontSize: "0.8rem", color: "text.secondary", fontWeight: 500 }}>
-                  {providerCreatedAt ? new Date(providerCreatedAt).toLocaleString() : t("notSet")}
+                  {providerCreatedAt ? new Date(providerCreatedAt).toLocaleString(undefined, { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }) : t("notSet")}
                 </Typography>
               </Box>
             )}
@@ -308,7 +308,7 @@ export default function IssueCard({
                 flexShrink: 0,
               }}
             >
-              {t("updatedAtLabel")}: {new Date(providerUpdatedAt).toLocaleString()}
+              {t("updatedAtLabel")}: {new Date(providerUpdatedAt).toLocaleString(undefined, { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" })}
             </Typography>
           )}
         </Box>
