@@ -3,11 +3,11 @@ import { test, expect } from "@playwright/test";
 test.describe("Admin User Management", () => {
   test.beforeEach(async ({ page }) => {
     // Log in as admin
-    await page.goto("http://app:3000/login");
+    await page.goto("/login");
     await page.fill('[name="email"]', process.env.E2E_ADMIN_EMAIL ?? "admin@example.com");
     await page.fill('[name="password"]', process.env.E2E_ADMIN_PASSWORD ?? "password123");
     await page.click('button[type="submit"]');
-    await page.waitForURL("http://app:3000/");
+    await page.waitForURL("/");
   });
 
   // ---------- US1: User List ----------
@@ -30,11 +30,11 @@ test.describe("Admin User Management", () => {
     const context = await browser.newContext();
     const page = await context.newPage();
 
-    await page.goto("http://app:3000/login");
+    await page.goto("/login");
     await page.fill('[name="email"]', process.env.E2E_USER_EMAIL ?? "user@example.com");
     await page.fill('[name="password"]', process.env.E2E_USER_PASSWORD ?? "password123");
     await page.click('button[type="submit"]');
-    await page.waitForURL("http://app:3000/");
+    await page.waitForURL("/");
 
     const sidebar = page.getByTestId("sidebar");
     await expect(sidebar).toBeVisible();
@@ -47,12 +47,12 @@ test.describe("Admin User Management", () => {
     const context = await browser.newContext();
     const page = await context.newPage();
 
-    await page.goto("http://app:3000/login");
+    await page.goto("/login");
     await page.fill('[name="email"]', process.env.E2E_USER_EMAIL ?? "user@example.com");
     await page.fill('[name="password"]', process.env.E2E_USER_PASSWORD ?? "password123");
     await page.click('button[type="submit"]');
 
-    await page.goto("http://app:3000/admin/users");
+    await page.goto("/admin/users");
     await page.waitForTimeout(1000);
 
     const body = await page.locator("body").textContent();
@@ -66,7 +66,7 @@ test.describe("Admin User Management", () => {
   });
 
   test("admin page is accessible for admin users", async ({ page }) => {
-    await page.goto("http://app:3000/admin/users");
+    await page.goto("/admin/users");
     await page.waitForURL(/admin\/users/, { timeout: 5000 });
     await expect(page.getByRole("heading")).toBeVisible();
   });
@@ -74,31 +74,32 @@ test.describe("Admin User Management", () => {
   test("admin page loads without JS errors", async ({ page }) => {
     const errors: string[] = [];
     page.on("pageerror", (err) => errors.push(err.message));
-    await page.goto("http://app:3000/admin/users");
+    await page.goto("/admin/users");
     await page.waitForTimeout(1000);
     expect(errors).toHaveLength(0);
   });
 
   test("dashboard is accessible after login", async ({ page }) => {
-    await expect(page).toHaveURL("http://app:3000/");
+    await expect(page).toHaveURL("/");
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
   });
 
   // ---------- US2: Create User ----------
 
   test("admin can create a new user via modal", async ({ page }) => {
-    await page.goto("http://app:3000/admin/users");
+    const uniqueEmail = `newuser+${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.com`;
+    await page.goto("/admin/users");
     await page.getByRole("button", { name: /create user|ユーザーを作成/i }).click();
-    await page.getByLabel(/email/i).fill("newuser@example.com");
+    await page.getByLabel(/email/i).fill(uniqueEmail);
     await page.getByLabel(/display name|表示名/i).fill("New Test User");
     await page.getByLabel(/password|パスワード/i).fill("password123");
     await page.getByRole("button", { name: /create user|ユーザーを作成/i }).last().click();
     // Success: modal closes and list shows the new user
-    await expect(page.getByText("newuser@example.com")).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText(uniqueEmail)).toBeVisible({ timeout: 5000 });
   });
 
   test("admin sees validation error when creating user with missing email", async ({ page }) => {
-    await page.goto("http://app:3000/admin/users");
+    await page.goto("/admin/users");
     await page.getByRole("button", { name: /create user|ユーザーを作成/i }).click();
     await page.getByLabel(/password|パスワード/i).fill("password123");
     await page.getByRole("button", { name: /create user|ユーザーを作成/i }).last().click();
@@ -109,7 +110,7 @@ test.describe("Admin User Management", () => {
   // ---------- US3: Edit User ----------
 
   test("admin can edit a user via edit button", async ({ page }) => {
-    await page.goto("http://app:3000/admin/users");
+    await page.goto("/admin/users");
     // Click the first Edit button in the table
     await page.getByRole("button", { name: /^edit|^編集/i }).first().click();
     // Modal should open with form fields
@@ -118,7 +119,7 @@ test.describe("Admin User Management", () => {
   });
 
   test("admin sees role field disabled when editing own account", async ({ page }) => {
-    await page.goto("http://app:3000/admin/users");
+    await page.goto("/admin/users");
     // Find the row for the logged-in admin and click its Edit button
     // We identify it by matching the admin email in the same row
     const adminEmail = process.env.E2E_ADMIN_EMAIL ?? "admin@example.com";
@@ -133,14 +134,14 @@ test.describe("Admin User Management", () => {
   // ---------- US4: Delete User ----------
 
   test("admin sees confirmation dialog when clicking delete", async ({ page }) => {
-    await page.goto("http://app:3000/admin/users");
+    await page.goto("/admin/users");
     await page.getByRole("button", { name: /^delete|^削除/i }).first().click();
     await expect(page.getByRole("dialog")).toBeVisible();
     await expect(page.getByRole("dialog").getByRole("button", { name: /^delete|^削除/i })).toBeVisible();
   });
 
   test("admin cannot delete their own account", async ({ page }) => {
-    await page.goto("http://app:3000/admin/users");
+    await page.goto("/admin/users");
     const adminEmail = process.env.E2E_ADMIN_EMAIL ?? "admin@example.com";
     const row = page.getByRole("row").filter({ hasText: adminEmail });
     const deleteButton = row.getByRole("button", { name: /^delete|^削除/i });

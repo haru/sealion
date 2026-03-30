@@ -220,6 +220,7 @@ describe("PATCH /api/admin/users/[id]", () => {
 
   it("returns 403 CANNOT_CHANGE_OWN_ROLE when admin tries to change their own role", async () => {
     mockAuth.mockResolvedValue(ADMIN_SESSION);
+    mockFindUnique.mockResolvedValue({ id: "admin-1", email: "admin@ex.com", role: "ADMIN" });
 
     const req = makeRequest("PATCH", { role: "USER" }, "http://localhost/api/admin/users/admin-1");
     const res = await PATCH(req, { params: Promise.resolve({ id: "admin-1" }) });
@@ -249,6 +250,60 @@ describe("PATCH /api/admin/users/[id]", () => {
     const res = await PATCH(req, { params: Promise.resolve({ id: "no-such" }) });
 
     expect(res.status).toBe(404);
+  });
+
+  it("returns 400 PASSWORD_TOO_LONG when password exceeds 72 characters", async () => {
+    mockAuth.mockResolvedValue(ADMIN_SESSION);
+    mockFindUnique.mockResolvedValue({ id: "user-2", email: "u@ex.com", role: "USER" });
+
+    const longPassword = "a".repeat(73);
+    const req = makeRequest("PATCH", { password: longPassword }, "http://localhost/api/admin/users/user-2");
+    const res = await PATCH(req, { params: Promise.resolve({ id: "user-2" }) });
+    const json = await res.json();
+
+    expect(res.status).toBe(400);
+    expect(json.error).toBe("PASSWORD_TOO_LONG");
+    expect(mockUpdate).not.toHaveBeenCalled();
+  });
+
+  it("allows PATCH when admin sends own current role (no actual role change)", async () => {
+    mockAuth.mockResolvedValue(ADMIN_SESSION);
+    mockFindUnique.mockResolvedValue({ id: "admin-1", email: "admin@ex.com", role: "ADMIN" });
+    mockUpdate.mockResolvedValue({ id: "admin-1", email: "admin@ex.com", role: "ADMIN", isActive: true });
+
+    // Sending role=ADMIN when current role is ADMIN — should NOT be blocked
+    const req = makeRequest("PATCH", { username: "New Name", role: "ADMIN" }, "http://localhost/api/admin/users/admin-1");
+    const res = await PATCH(req, { params: Promise.resolve({ id: "admin-1" }) });
+
+    expect(res.status).toBe(200);
+  });
+
+  it("returns 409 EMAIL_ALREADY_EXISTS when PATCH triggers Prisma P2002 constraint error", async () => {
+    mockAuth.mockResolvedValue(ADMIN_SESSION);
+    mockFindUnique.mockResolvedValue({ id: "user-2", email: "u@ex.com", role: "USER" });
+
+    const prismaError = Object.assign(new Error("Unique constraint failed"), { code: "P2002" });
+    mockUpdate.mockRejectedValue(prismaError);
+
+    const req = makeRequest("PATCH", { email: "taken@ex.com" }, "http://localhost/api/admin/users/user-2");
+    const res = await PATCH(req, { params: Promise.resolve({ id: "user-2" }) });
+    const json = await res.json();
+
+    expect(res.status).toBe(409);
+    expect(json.error).toBe("EMAIL_ALREADY_EXISTS");
+  });
+
+  it("returns 500 INTERNAL_ERROR when PATCH throws unexpected error", async () => {
+    mockAuth.mockResolvedValue(ADMIN_SESSION);
+    mockFindUnique.mockResolvedValue({ id: "user-2", email: "u@ex.com", role: "USER" });
+    mockUpdate.mockRejectedValue(new Error("unexpected db error"));
+
+    const req = makeRequest("PATCH", { username: "X" }, "http://localhost/api/admin/users/user-2");
+    const res = await PATCH(req, { params: Promise.resolve({ id: "user-2" }) });
+    const json = await res.json();
+
+    expect(res.status).toBe(500);
+    expect(json.error).toBe("INTERNAL_ERROR");
   });
 });
 

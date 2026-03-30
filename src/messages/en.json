@@ -175,6 +175,8 @@
   "admin": {
     "userManagement": "User Management",
     "createUser": "Create User",
+    "forbiddenTitle": "403 — Forbidden",
+    "forbiddenMessage": "You do not have permission to access this page.",
     "editUser": "Edit User",
     "deleteUser": "Delete User",
     "updateUser": "Save Changes",
@@ -247,6 +249,7 @@
     "INTERNAL_ERROR": "An unexpected error occurred. Please try again.",
     "CONFLICT": "This project is already registered",
     "CANNOT_DELETE_SELF": "You cannot delete your own account",
+    "CANNOT_DEACTIVATE_SELF": "You cannot deactivate your own account",
     "CANNOT_CHANGE_OWN_ROLE": "You cannot change your own role"
   },
   "sync": {

@@ -175,6 +175,8 @@
   "admin": {
     "userManagement": "ユーザー管理",
     "createUser": "ユーザーを作成",
+    "forbiddenTitle": "403 — アクセス禁止",
+    "forbiddenMessage": "このページへのアクセス権限がありません。",
     "editUser": "ユーザーを編集",
     "deleteUser": "ユーザーを削除",
     "updateUser": "変更を保存",
@@ -247,6 +249,7 @@
     "INTERNAL_ERROR": "予期しないエラーが発生しました。もう一度お試しください。",
     "CONFLICT": "このプロジェクトはすでに登録されています",
     "CANNOT_DELETE_SELF": "自分のアカウントを削除することはできません",
+    "CANNOT_DEACTIVATE_SELF": "自分のアカウントを無効化することはできません",
     "CANNOT_CHANGE_OWN_ROLE": "自分のロールを変更することはできません"
   },
   "sync": {

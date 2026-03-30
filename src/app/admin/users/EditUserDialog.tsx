@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Alert,
   Button,
@@ -45,8 +45,10 @@ interface EditUserDialogProps {
  *
  * - Pre-populates all editable fields from the provided `user` object.
  * - Password field is intentionally left blank; if left empty, the password is not updated.
- * - When `isSelf` is `true`, the Role select is disabled to prevent self-downgrade.
- * - Shows an inline `<Alert>` on API or validation errors.
+ * - When `isSelf` is `true`, the Role select is disabled and `role` is omitted from the PATCH body
+ *   to prevent self-downgrade and API 403 errors.
+ * - Shows an inline `<Alert>` on API or validation errors; error codes are translated via the
+ *   `errors` message namespace.
  * - On success, fires `onSaved` so the parent can refresh the list and shows a toast via
  *   `useMessageQueue`.
  *
@@ -56,6 +58,7 @@ interface EditUserDialogProps {
 export default function EditUserDialog({ user, isSelf, onClose, onSaved }: EditUserDialogProps) {
   const t = useTranslations("admin");
   const tCommon = useTranslations("common");
+  const tErrors = useTranslations("errors");
   const { addMessage } = useMessageQueue();
 
   const [email, setEmail] = useState("");
@@ -65,33 +68,45 @@ export default function EditUserDialog({ user, isSelf, onClose, onSaved }: EditU
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
-  // Sync state when the dialog opens with a new user
   const open = user !== null;
 
-  // Reset form fields each time a different user is passed in
-  const userId = user?.id ?? "";
-  const [lastUserId, setLastUserId] = useState("");
-  if (userId !== lastUserId) {
-    setLastUserId(userId);
-    setEmail(user?.email ?? "");
-    setUsername(user?.username ?? "");
-    setPassword("");
-    setRole(user?.role ?? "USER");
-    setError(null);
-  }
+  // Reset form fields each time a different user is opened in the dialog
+  useEffect(() => {
+    if (user) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setEmail(user.email);
+      setUsername(user.username ?? "");
+      setPassword("");
+      setRole(user.role);
+      setError(null);
+    }
+  }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  /** Submits the PATCH request with only changed fields. */
+  /** Submits the PATCH request with only the fields that changed. */
   async function handleSave() {
     if (!user) return;
     setSaving(true);
     setError(null);
 
-    const body: Record<string, unknown> = {
-      email: email.trim(),
-      username: username.trim(),
-      role,
-    };
-    if (password) body.password = password;
+    const trimmedEmail = email.trim();
+    const trimmedUsername = username.trim();
+    const body: Record<string, unknown> = {};
+
+    if (trimmedEmail !== user.email) {
+      body.email = trimmedEmail;
+    }
+
+    if (trimmedUsername !== (user.username ?? "")) {
+      body.username = trimmedUsername;
+    }
+
+    if (!isSelf && role !== user.role) {
+      body.role = role;
+    }
+
+    if (password) {
+      body.password = password;
+    }
 
     const res = await fetch(`/api/admin/users/${user.id}`, {
       method: "PATCH",
@@ -105,7 +120,11 @@ export default function EditUserDialog({ user, isSelf, onClose, onSaved }: EditU
       onSaved();
       onClose();
     } else {
-      setError(json.error ?? tCommon("error"));
+      const code = json?.error as string | undefined;
+      const translated = code
+        ? tErrors(code as Parameters<typeof tErrors>[0], { defaultMessage: code })
+        : tCommon("error");
+      setError(translated);
     }
     setSaving(false);
   }

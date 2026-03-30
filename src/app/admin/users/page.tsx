@@ -51,6 +51,7 @@ interface User {
 export default function AdminUsersPage() {
   const t = useTranslations("admin");
   const tCommon = useTranslations("common");
+  const tErrors = useTranslations("errors");
   const currentUserId = useAdminUserId();
   const { addMessage } = useMessageQueue();
 
@@ -81,9 +82,24 @@ export default function AdminUsersPage() {
   }, []);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     void fetchUsers();
   }, [fetchUsers]);
+
+  /**
+   * Translates an API error code into a user-facing string.
+   * Falls back to the generic error message when the code has no translation.
+   *
+   * @param code - The error code string returned by the API, or undefined.
+   * @returns A localised error message.
+   */
+  function translateError(code: string | undefined): string {
+    if (!code) return tCommon("error");
+    try {
+      return tErrors(code as Parameters<typeof tErrors>[0]);
+    } catch {
+      return tCommon("error");
+    }
+  }
 
   /** Toggles the active status of a user. */
   async function handleToggleActive(user: User) {
@@ -97,7 +113,7 @@ export default function AdminUsersPage() {
     if (res.ok) {
       setUsers((prev) => prev.map((u) => (u.id === user.id ? { ...u, isActive: !u.isActive } : u)));
     } else {
-      addMessage("error", json.error ?? tCommon("error"));
+      addMessage("error", translateError(json?.error as string | undefined));
     }
   }
 
@@ -122,7 +138,7 @@ export default function AdminUsersPage() {
       addMessage("information", t("createSuccess"));
       await fetchUsers();
     } else {
-      setFormError(json.error ?? tCommon("error"));
+      setFormError(translateError(json?.error as string | undefined));
     }
     setCreating(false);
   }
@@ -132,18 +148,35 @@ export default function AdminUsersPage() {
     if (!deleteTarget) return;
     setDeleting(true);
 
-    const res = await fetch(`/api/admin/users/${deleteTarget.id}`, { method: "DELETE" });
-    const json = await res.json();
+    try {
+      const res = await fetch(`/api/admin/users/${deleteTarget.id}`, { method: "DELETE" });
+      const contentType = res.headers.get("content-type") ?? "";
+      let json: unknown = null;
+      if (contentType.includes("application/json")) {
+        json = await res.json();
+      }
 
-    if (res.ok) {
-      addMessage("information", t("deleteSuccess"));
+      if (res.ok) {
+        addMessage("information", t("deleteSuccess"));
+        setDeleteTarget(null);
+        await fetchUsers();
+      } else {
+        const code =
+          json != null &&
+          typeof json === "object" &&
+          "error" in json &&
+          typeof (json as { error?: unknown }).error === "string"
+            ? (json as { error: string }).error
+            : undefined;
+        addMessage("error", translateError(code));
+        setDeleteTarget(null);
+      }
+    } catch {
+      addMessage("error", tCommon("error"));
       setDeleteTarget(null);
-      await fetchUsers();
-    } else {
-      addMessage("error", json.error ?? tCommon("error"));
-      setDeleteTarget(null);
+    } finally {
+      setDeleting(false);
     }
-    setDeleting(false);
   }
 
   return (
