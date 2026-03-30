@@ -23,6 +23,8 @@ const APP_BAR_HEIGHT = 56;
 interface DashboardShellProps {
   /** Authenticated user's email address, forwarded to the {@link Sidebar} profile footer. */
   email: string;
+  /** Authenticated user's role, used to conditionally show admin navigation. */
+  role: string;
   /** Page content rendered inside the main scrollable area. */
   children: React.ReactNode;
 }
@@ -31,7 +33,7 @@ interface DashboardShellProps {
  * Inner shell that reads the current page header from context and renders layout.
  * Kept separate so it can consume `PageHeaderContext` provided by the outer wrapper.
  */
-function DashboardShellInner({ email, children }: DashboardShellProps) {
+function DashboardShellInner({ email, role, children }: DashboardShellProps) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -83,6 +85,7 @@ function DashboardShellInner({ email, children }: DashboardShellProps) {
           open={drawerOpen}
           onClose={() => setDrawerOpen(false)}
           variant={isMobile ? "temporary" : "permanent"}
+          isAdmin={role === "ADMIN"}
         />
 
         {/* Main content — fills remaining width */}
@@ -106,14 +109,14 @@ function DashboardShellInner({ email, children }: DashboardShellProps) {
 
 /**
  * Top-level authenticated shell with sidebar, global titlebar, and main content area.
- * @param props - Shell props containing the authenticated user's email and page children.
+ * @param props - Shell props containing the authenticated user's email, role, and page children.
  * @returns The full dashboard layout wrapped in context providers.
  */
-export default function DashboardShell({ email, children }: DashboardShellProps) {
+export default function DashboardShell({ email, role, children }: DashboardShellProps) {
   return (
     <MessageQueueProvider>
       <PageHeaderProvider>
-        <DashboardShellInner email={email}>{children}</DashboardShellInner>
+        <DashboardShellInner email={email} role={role}>{children}</DashboardShellInner>
       </PageHeaderProvider>
     </MessageQueueProvider>
   );

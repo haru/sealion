@@ -22,6 +22,14 @@ export default auth(async function middleware(req: NextRequest & { auth: { user?
     return NextResponse.next();
   }
 
+  // Admin page routes: non-admin users get a 403 response
+  if (pathname.startsWith("/admin")) {
+    const role = (req.auth as { user?: { role?: string } } | null)?.user?.role;
+    if (role !== "ADMIN") {
+      return new NextResponse("Forbidden", { status: 403 });
+    }
+  }
+
   return NextResponse.next();
 });
 

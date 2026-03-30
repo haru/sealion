@@ -212,6 +212,8 @@ Use `http://app:3000` instead — `app` is the hostname of the Next.js dev conta
 - PostgreSQL 16 via Prisma (no schema changes — existing `User.passwordHash` updated) (021-account-menu-titlebar)
 - TypeScript 5 / Node.js 20 LTS + Next.js 16 (App Router), Auth.js v5, MUI v7, next-intl 4, Prisma 7, bcryptjs (022-admin-first-setup)
 - PostgreSQL 16 via Prisma 7 — no schema changes required (022-admin-first-setup)
+- TypeScript 5 / Node.js 20 LTS + Next.js 16 (App Router), MUI v7, Auth.js v5, next-intl 4, Prisma 7, bcryptjs (023-admin-user-management)
+- PostgreSQL 16 via Prisma 7 — schema changes: **none** (023-admin-user-management)
 
 ## Recent Changes
 - 009-task-display-cleanup: Removed `priority` field from Issue model; added `providerCreatedAt` / `providerUpdatedAt` fields; added Today tasks area with drag-and-drop reorder (dnd-kit)

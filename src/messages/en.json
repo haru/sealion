@@ -103,6 +103,8 @@
     "todo": "TODO",
     "projectManagement": "Project Management",
     "boardSettings": "Board Settings",
+    "systemAdmin": "System Administration",
+    "userManagement": "User Management",
     "tagline": "All Your TODOs, One Place.",
     "version": "Sealion v{version}",
     "settings": "Settings"
@@ -173,23 +175,36 @@
   "admin": {
     "userManagement": "User Management",
     "createUser": "Create User",
+    "forbiddenTitle": "403 — Forbidden",
+    "forbiddenMessage": "You do not have permission to access this page.",
+    "editUser": "Edit User",
+    "deleteUser": "Delete User",
+    "updateUser": "Save Changes",
     "enableUser": "Enable",
     "disableUser": "Disable",
+    "confirmDelete": "Are you sure you want to delete this user? All associated data (providers, projects, issues) will also be deleted.",
+    "cannotDeactivateSelf": "You cannot deactivate your own account",
+    "cannotDeleteSelf": "You cannot delete your own account",
+    "cannotChangeOwnRole": "You cannot change your own role",
+    "deleteSuccess": "User deleted successfully",
+    "updateSuccess": "User updated successfully",
+    "createSuccess": "User created successfully",
     "role": {
       "USER": "User",
       "ADMIN": "Administrator"
     },
-    "cannotDeactivateSelf": "You cannot deactivate your own account",
     "columns": {
       "email": "Email",
       "username": "Display Name",
       "role": "Role",
       "status": "Status",
+      "createdAt": "Created At",
       "actions": "Actions"
     },
     "fields": {
       "email": "Email",
       "password": "Password",
+      "passwordHint": "Leave blank to keep current password",
       "username": "Display Name",
       "role": "Role"
     }
@@ -232,7 +247,10 @@
     "INVALID_INPUT": "Invalid input",
     "PASSWORD_TOO_LONG": "Password must be 72 characters or fewer",
     "INTERNAL_ERROR": "An unexpected error occurred. Please try again.",
-    "CONFLICT": "This project is already registered"
+    "CONFLICT": "This project is already registered",
+    "CANNOT_DELETE_SELF": "You cannot delete your own account",
+    "CANNOT_DEACTIVATE_SELF": "You cannot deactivate your own account",
+    "CANNOT_CHANGE_OWN_ROLE": "You cannot change your own role"
   },
   "sync": {
     "error": {
