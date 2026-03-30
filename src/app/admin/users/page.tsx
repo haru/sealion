@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from "react";
 import {
   Container,
-  Typography,
   Paper,
   Table,
   TableBody,
@@ -30,6 +29,8 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import { useTranslations } from "next-intl";
 import { useMessageQueue } from "@/components/MessageQueue";
 import { useAdminUserId } from "../AdminSessionProvider";
+import { usePageHeader } from "@/hooks/usePageHeader";
+import PeopleIcon from "@mui/icons-material/People";
 import EditUserDialog from "./EditUserDialog";
 import TextField from "@mui/material/TextField";
 import FormControl from "@mui/material/FormControl";
@@ -60,6 +61,9 @@ export default function AdminUsersPage() {
 
   // --- Create dialog state ---
   const [createOpen, setCreateOpen] = useState(false);
+
+  usePageHeader(t("userManagement"), undefined, PeopleIcon);
+
   const [newEmail, setNewEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [newUsername, setNewUsername] = useState("");
@@ -181,10 +185,7 @@ export default function AdminUsersPage() {
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Stack direction="row" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h4" component="h1">
-          {t("userManagement")}
-        </Typography>
+      <Stack direction="row" justifyContent="flex-end" mb={3}>
         <Button
           variant="contained"
           startIcon={<AddIcon />}

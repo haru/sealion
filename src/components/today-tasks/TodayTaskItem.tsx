@@ -37,6 +37,10 @@ interface TodayTaskItemProps {
    * A pin button is intentionally NOT rendered here — pinning is only available in the main task list.
    */
   pinned: boolean;
+  /** Whether to show the provider-created-at timestamp. */
+  showCreatedAt?: boolean;
+  /** Whether to show the provider-updated-at timestamp. */
+  showUpdatedAt?: boolean;
   /** Called when the user removes the issue from today's list. */
   onRemove: (id: string) => void;
   /**
@@ -59,6 +63,8 @@ export default function TodayTaskItem({
   projectName,
   providerCreatedAt,
   providerUpdatedAt,
+  showCreatedAt,
+  showUpdatedAt,
   onRemove,
   onComplete,
 }: TodayTaskItemProps) {
@@ -99,6 +105,8 @@ export default function TodayTaskItem({
       projectName={projectName}
       providerCreatedAt={providerCreatedAt}
       providerUpdatedAt={providerUpdatedAt}
+      showCreatedAt={showCreatedAt}
+      showUpdatedAt={showUpdatedAt}
       actionButton={actionButton}
       dragContainerRef={setNodeRef}
       dragHandleAttributes={attributes}
