@@ -24,6 +24,7 @@ services:
     environment:
       DATABASE_URL: "postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-password}@db:5432/${POSTGRES_DB:-sealion_dev}"
       AUTH_SECRET: "${AUTH_SECRET}"
+      AUTH_URL: "${AUTH_URL:-http://localhost:3000}"
       CREDENTIALS_ENCRYPTION_KEY: "${CREDENTIALS_ENCRYPTION_KEY}"
       DB_HOST: db
       AUTH_TRUST_HOST: "true"
