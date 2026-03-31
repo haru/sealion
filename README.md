@@ -79,9 +79,11 @@ Paste the generated values into `docker/.env`:
 
 ```dotenv
 AUTH_SECRET="<paste value here>"
+AUTH_URL="http://localhost:3000"
 CREDENTIALS_ENCRYPTION_KEY="<paste value here>"
 ```
 
+> For server deployments, set `AUTH_URL` to your public app URL (for example `https://todo.example.com`).
 > The other settings (`POSTGRES_USER`, etc.) work fine with their defaults.
 
 ### 3. Start the app
@@ -168,6 +170,7 @@ Database migrations run automatically on container startup.
 | `POSTGRES_PASSWORD` | | PostgreSQL password | `password` |
 | `POSTGRES_DB` | | Database name | `sealion_dev` |
 | `AUTH_SECRET` | ✅ | Session encryption key | — |
+| `AUTH_URL` | ✅ | Public app URL used by Auth.js redirect resolution | `http://localhost:3000` |
 | `CREDENTIALS_ENCRYPTION_KEY` | ✅ | Credential encryption key (64 hex chars) | — |
 | `HOST_PORT` | | Host-side port mapping | `3000` |
 
