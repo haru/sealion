@@ -100,12 +100,32 @@
       "search": "プロジェクトを検索..."
     }
   },
+  "authSettings": {
+    "title": "認証設定",
+    "allowUserSignup": "ユーザーによるアカウント追加",
+    "allowUserSignupHint": "無効にすると、サインアップページが非表示になり、新規アカウント登録がブロックされます。",
+    "sessionTimeout": "セッションタイムアウト",
+    "timeout": {
+      "none": "なし",
+      "1h": "1時間",
+      "6h": "6時間",
+      "12h": "12時間",
+      "24h": "24時間",
+      "1w": "1週間",
+      "30d": "30日",
+      "90d": "90日"
+    },
+    "save": "保存",
+    "saveSuccess": "認証設定を保存しました",
+    "saveError": "認証設定の保存に失敗しました。再試行してください。"
+  },
   "sidebar": {
     "todo": "TODO",
     "projectManagement": "プロジェクト管理",
     "boardSettings": "ボード設定",
     "systemAdmin": "システム管理",
     "userManagement": "ユーザー管理",
+    "authSettings": "認証設定",
     "tagline": "All Your TODOs, One Place.",
     "version": "Sealion v{version}",
     "settings": "設定"
@@ -257,7 +277,9 @@
     "CONFLICT": "このプロジェクトはすでに登録されています",
     "CANNOT_DELETE_SELF": "自分のアカウントを削除することはできません",
     "CANNOT_DEACTIVATE_SELF": "自分のアカウントを無効化することはできません",
-    "CANNOT_CHANGE_OWN_ROLE": "自分のロールを変更することはできません"
+    "CANNOT_CHANGE_OWN_ROLE": "自分のロールを変更することはできません",
+    "SIGNUP_DISABLED": "現在、管理者によりユーザー登録が無効化されています",
+    "INVALID_TIMEOUT": "セッションタイムアウトの値が無効です"
   },
   "sync": {
     "error": {

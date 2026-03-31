@@ -9,6 +9,10 @@ jest.mock("@/lib/db", () => ({
       findUnique: jest.fn(),
       create: jest.fn(),
     },
+    authSettings: {
+      findUnique: jest.fn(),
+      create: jest.fn(),
+    },
   },
 }));
 
@@ -21,6 +25,7 @@ import { prisma } from "@/lib/db";
 
 const mockFindUnique = prisma.user.findUnique as jest.Mock;
 const mockCreate = prisma.user.create as jest.Mock;
+const mockAuthSettingsFindUnique = prisma.authSettings.findUnique as jest.Mock;
 
 function makeRequest(body: object): NextRequest {
   return new NextRequest("http://localhost/api/auth/signup", {
@@ -33,6 +38,8 @@ function makeRequest(body: object): NextRequest {
 describe("POST /api/auth/signup", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    // Default: signup enabled
+    mockAuthSettingsFindUnique.mockResolvedValue({ id: "singleton", allowUserSignup: true, sessionTimeoutMinutes: null, updatedAt: new Date() });
   });
 
   it("returns 201 and user data on success", async () => {
@@ -112,5 +119,27 @@ describe("POST /api/auth/signup", () => {
     const res = await POST(req);
 
     expect(res.status).toBe(400);
+  });
+
+  it("returns 403 SIGNUP_DISABLED when allowUserSignup is false", async () => {
+    mockAuthSettingsFindUnique.mockResolvedValue({ id: "singleton", allowUserSignup: false, sessionTimeoutMinutes: null, updatedAt: new Date() });
+
+    const req = makeRequest({ email: "user@example.com", password: "password123", username: "Alice" });
+    const res = await POST(req);
+    const json = await res.json();
+
+    expect(res.status).toBe(403);
+    expect(json.error).toBe("SIGNUP_DISABLED");
+  });
+
+  it("proceeds normally when allowUserSignup is true", async () => {
+    mockAuthSettingsFindUnique.mockResolvedValue({ id: "singleton", allowUserSignup: true, sessionTimeoutMinutes: null, updatedAt: new Date() });
+    mockFindUnique.mockResolvedValue(null);
+    mockCreate.mockResolvedValue({ id: "clyyyy", email: "user2@example.com", role: "USER" });
+
+    const req = makeRequest({ email: "user2@example.com", password: "password123", username: "Bob" });
+    const res = await POST(req);
+
+    expect(res.status).toBe(201);
   });
 });

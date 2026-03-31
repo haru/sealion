@@ -12,8 +12,14 @@ import Alert from "@mui/material/Alert";
 import { AuthCard } from "@/components/ui/AuthCard";
 import { AuthFooterLink } from "@/components/ui/AuthFooterLink";
 
+/** Props for {@link LoginForm}. */
+interface LoginFormProps {
+  /** When true, the "Sign Up" footer link is rendered. */
+  showSignup: boolean;
+}
+
 /** Login form with email and password credentials. */
-export function LoginForm() {
+export function LoginForm({ showSignup }: LoginFormProps) {
   const t = useTranslations("auth");
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -101,7 +107,7 @@ export function LoginForm() {
         </Button>
       </Box>
 
-      <AuthFooterLink prompt={t("noAccount")} href="/signup" label={t("signup")} />
+      {showSignup && <AuthFooterLink prompt={t("noAccount")} href="/signup" label={t("signup")} />}
     </AuthCard>
   );
 }

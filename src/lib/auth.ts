@@ -4,11 +4,12 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
 import { authConfig } from "@/lib/auth.config";
+import { getAuthSettings } from "@/lib/auth-settings";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
   adapter: PrismaAdapter(prisma),
-  session: { strategy: "jwt", maxAge: 30 * 24 * 60 * 60 },
+  session: { strategy: "jwt", maxAge: 90 * 24 * 60 * 60 },
   providers: [
     Credentials({
       credentials: {
@@ -35,4 +36,35 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       },
     }),
   ],
+  callbacks: {
+    ...authConfig.callbacks,
+    /**
+     * JWT callback — extends the base callback from auth.config.ts with session timeout support.
+     *
+     * On `signIn`, reads `sessionTimeoutMinutes` from AuthSettings and sets `token.exp` when
+     * a non-null timeout is configured. Other triggers leave the token unchanged.
+     *
+     * @param token - The current JWT payload.
+     * @param user - The authenticated user object (present only on signIn).
+     * @param trigger - The event that triggered the callback.
+     * @returns The updated JWT token.
+     */
+    async jwt({ token, user, trigger }) {
+      // Propagate user id and role into the token on initial sign-in
+      if (user) {
+        token.id = user.id;
+        token.role = (user as { id: string; email?: string | null; role: string }).role;
+      }
+
+      // Only set session expiry on sign-in; leave existing sessions unaffected (EC-003)
+      if (trigger === "signIn") {
+        const { sessionTimeoutMinutes } = await getAuthSettings();
+        if (sessionTimeoutMinutes !== null) {
+          token.exp = Math.floor(Date.now() / 1000) + sessionTimeoutMinutes * 60;
+        }
+      }
+
+      return token;
+    },
+  },
 });

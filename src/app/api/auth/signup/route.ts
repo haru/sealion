@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
+import { getAuthSettings } from "@/lib/auth-settings";
 import { ok, fail } from "@/lib/api-response";
 
 /**
@@ -13,8 +14,18 @@ function isValidEmail(email: string): boolean {
 
 /**
  * POST /api/auth/signup — Registers a new user account.
+ *
+ * Returns 403 SIGNUP_DISABLED when user signup has been disabled by an administrator.
+ *
+ * @param request - The incoming registration request.
+ * @returns 201 with created user, or an appropriate error response.
  */
 export async function POST(request: NextRequest) {
+  const { allowUserSignup } = await getAuthSettings();
+  if (!allowUserSignup) {
+    return fail("SIGNUP_DISABLED", 403);
+  }
+
   const body = await request.json().catch(() => null);
 
   if (!body || typeof body.email !== "string" || typeof body.password !== "string") {
