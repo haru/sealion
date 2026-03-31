@@ -2,7 +2,6 @@
 
 import {
   Box,
-  Button,
   IconButton,
   Paper,
   Tooltip,
@@ -10,6 +9,7 @@ import {
 } from "@mui/material";
 import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
+import TaskAltIcon from "@mui/icons-material/TaskAlt";
 import { useTranslations } from "next-intl";
 import ProviderIcon from "@/components/ProviderIcon";
 import type { DraggableSyntheticListeners, DraggableAttributes } from "@dnd-kit/core";
@@ -185,27 +185,22 @@ export default function IssueCard({
           {/* Action buttons */}
           <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, flexShrink: 0 }}>
             {onComplete && (
-              <Button
-                size="small"
-                variant="outlined"
-                onClick={() => onComplete(id)}
-                sx={{
-                  borderRadius: "8px",
-                  fontSize: "0.85rem",
-                  fontWeight: 500,
-                  borderColor: "#e2e8f0",
-                  color: "text.secondary",
-                  px: 2,
-                  height: 32,
-                  "&:hover": {
-                    borderColor: "primary.main",
-                    color: "primary.main",
-                    bgcolor: "#eef2ff",
-                  },
-                }}
-              >
-                {tModal("confirmButton")}
-              </Button>
+              <Tooltip title={tModal("confirmButton")}>
+                <IconButton
+                  size="small"
+                  onClick={() => onComplete(id)}
+                  aria-label={tModal("confirmButton")}
+                  sx={{
+                    color: "text.secondary",
+                    "&:hover": {
+                      color: "primary.main",
+                      bgcolor: "#eef2ff",
+                    },
+                  }}
+                >
+                  <TaskAltIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
             )}
 
             {actionButton}
