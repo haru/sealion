@@ -2,6 +2,9 @@
 import { NextRequest } from "next/server";
 
 jest.mock("@/lib/auth", () => ({ auth: jest.fn() }));
+jest.mock("@/lib/auth-settings", () => ({
+  getAuthSettings: jest.fn(),
+}));
 jest.mock("@/lib/db", () => ({
   prisma: {
     authSettings: {
@@ -11,9 +14,11 @@ jest.mock("@/lib/db", () => ({
 }));
 
 import { auth } from "@/lib/auth";
+import { getAuthSettings } from "@/lib/auth-settings";
 import { prisma } from "@/lib/db";
 
 const mockAuth = auth as jest.Mock;
+const mockGetAuthSettings = getAuthSettings as jest.Mock;
 const mockUpsert = prisma.authSettings.upsert as jest.Mock;
 
 const ADMIN_SESSION = { user: { id: "admin-1", email: "admin@ex.com", role: "ADMIN" } };
@@ -30,7 +35,7 @@ function makeGetRequest(): NextRequest {
   return new NextRequest("http://localhost/api/admin/auth-settings");
 }
 
-function makePatchRequest(body: object): NextRequest {
+function makePatchRequest(body: unknown): NextRequest {
   return new NextRequest("http://localhost/api/admin/auth-settings", {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
@@ -59,7 +64,7 @@ describe("GET /api/admin/auth-settings", () => {
 
   it("returns 200 with default settings when ADMIN", async () => {
     mockAuth.mockResolvedValue(ADMIN_SESSION);
-    mockUpsert.mockResolvedValue(DEFAULT_SETTINGS);
+    mockGetAuthSettings.mockResolvedValue(DEFAULT_SETTINGS);
     const { GET } = await import("@/app/api/admin/auth-settings/route");
     const res = await GET(makeGetRequest());
     const json = await res.json();
@@ -148,5 +153,35 @@ describe("PATCH /api/admin/auth-settings", () => {
     const { PATCH } = await import("@/app/api/admin/auth-settings/route");
     const res = await PATCH(makePatchRequest({ sessionTimeoutMinutes: 129600 }));
     expect(res.status).toBe(200);
+  });
+
+  it("returns 400 INVALID_INPUT for null JSON body", async () => {
+    mockAuth.mockResolvedValue(ADMIN_SESSION);
+    const { PATCH } = await import("@/app/api/admin/auth-settings/route");
+    const res = await PATCH(makePatchRequest(null));
+    const json = await res.json();
+
+    expect(res.status).toBe(400);
+    expect(json.error).toBe("INVALID_INPUT");
+  });
+
+  it("returns 400 INVALID_INPUT for non-object JSON body (string)", async () => {
+    mockAuth.mockResolvedValue(ADMIN_SESSION);
+    const { PATCH } = await import("@/app/api/admin/auth-settings/route");
+    const res = await PATCH(makePatchRequest("not-an-object"));
+    const json = await res.json();
+
+    expect(res.status).toBe(400);
+    expect(json.error).toBe("INVALID_INPUT");
+  });
+
+  it("returns 400 INVALID_INPUT for array JSON body", async () => {
+    mockAuth.mockResolvedValue(ADMIN_SESSION);
+    const { PATCH } = await import("@/app/api/admin/auth-settings/route");
+    const res = await PATCH(makePatchRequest([1, 2, 3]));
+    const json = await res.json();
+
+    expect(res.status).toBe(400);
+    expect(json.error).toBe("INVALID_INPUT");
   });
 });

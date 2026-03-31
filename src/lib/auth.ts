@@ -9,7 +9,7 @@ import { getAuthSettings } from "@/lib/auth-settings";
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
   adapter: PrismaAdapter(prisma),
-  session: { strategy: "jwt", maxAge: 30 * 24 * 60 * 60 },
+  session: { strategy: "jwt", maxAge: 90 * 24 * 60 * 60 },
   providers: [
     Credentials({
       credentials: {

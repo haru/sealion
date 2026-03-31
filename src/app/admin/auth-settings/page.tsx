@@ -55,42 +55,71 @@ export default function AuthSettingsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/admin/auth-settings")
-      .then((res) => res.json() as Promise<{ data: AuthSettingsData }>)
-      .then((json) => {
+    const loadSettings = async () => {
+      try {
+        const res = await fetch("/api/admin/auth-settings");
+
+        if (!res.ok) {
+          addMessage("error", t("saveError"));
+          return;
+        }
+
+        const json = (await res.json()) as {
+          data: AuthSettingsData | null;
+          error: string | null;
+        };
+
+        if (!json.data) {
+          addMessage("error", t("saveError"));
+          return;
+        }
+
         setSaved(json.data);
         setAllowUserSignup(json.data.allowUserSignup);
         setSessionTimeoutMinutes(json.data.sessionTimeoutMinutes);
-      })
-      .finally(() => setLoading(false));
-  }, []);
+      } catch {
+        addMessage("error", t("saveError"));
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    void loadSettings();
+  }, [addMessage, t]);
 
   /** Saves the current form state to the API. On failure, reverts to last saved values. */
   async function handleSave() {
     setSaving(true);
 
-    const res = await fetch("/api/admin/auth-settings", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ allowUserSignup, sessionTimeoutMinutes }),
-    });
+    try {
+      const res = await fetch("/api/admin/auth-settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ allowUserSignup, sessionTimeoutMinutes }),
+      });
 
-    if (res.ok) {
-      const json = await res.json() as { data: AuthSettingsData };
-      setSaved(json.data);
-      setAllowUserSignup(json.data.allowUserSignup);
-      setSessionTimeoutMinutes(json.data.sessionTimeoutMinutes);
-      addMessage("information", t("saveSuccess"));
-    } else {
-      // Revert to last successfully fetched values
+      if (res.ok) {
+        const json = (await res.json()) as { data: AuthSettingsData };
+        setSaved(json.data);
+        setAllowUserSignup(json.data.allowUserSignup);
+        setSessionTimeoutMinutes(json.data.sessionTimeoutMinutes);
+        addMessage("information", t("saveSuccess"));
+      } else {
+        if (saved) {
+          setAllowUserSignup(saved.allowUserSignup);
+          setSessionTimeoutMinutes(saved.sessionTimeoutMinutes);
+        }
+        addMessage("error", t("saveError"));
+      }
+    } catch {
       if (saved) {
         setAllowUserSignup(saved.allowUserSignup);
         setSessionTimeoutMinutes(saved.sessionTimeoutMinutes);
       }
       addMessage("error", t("saveError"));
+    } finally {
+      setSaving(false);
     }
-
-    setSaving(false);
   }
 
   if (loading) {

@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
+import { getAuthSettings } from "@/lib/auth-settings";
 import { prisma } from "@/lib/db";
 import { ok, fail } from "@/lib/api-response";
 
@@ -25,11 +26,7 @@ export async function GET() {
   const { error } = await requireAdmin();
   if (error) return error;
 
-  const settings = await prisma.authSettings.upsert({
-    where: { id: "singleton" },
-    update: {},
-    create: { id: "singleton" },
-  });
+  const settings = await getAuthSettings();
 
   return ok({ allowUserSignup: settings.allowUserSignup, sessionTimeoutMinutes: settings.sessionTimeoutMinutes });
 }
@@ -47,17 +44,22 @@ export async function PATCH(req: NextRequest) {
   const { error } = await requireAdmin();
   if (error) return error;
 
-  const body = await req.json().catch(() => ({})) as Record<string, unknown>;
+  const body = await req.json().catch(() => ({})) as unknown;
 
-  const data: { allowUserSignup?: boolean; sessionTimeoutMinutes?: number | null } = {};
-
-  if ("allowUserSignup" in body) {
-    if (typeof body.allowUserSignup !== "boolean") return fail("INVALID_INPUT", 400);
-    data.allowUserSignup = body.allowUserSignup;
+  if (body === null || typeof body !== "object" || Array.isArray(body)) {
+    return fail("INVALID_INPUT", 400);
   }
 
-  if ("sessionTimeoutMinutes" in body) {
-    const val = body.sessionTimeoutMinutes;
+  const record = body as Record<string, unknown>;
+  const data: { allowUserSignup?: boolean; sessionTimeoutMinutes?: number | null } = {};
+
+  if ("allowUserSignup" in record) {
+    if (typeof record.allowUserSignup !== "boolean") return fail("INVALID_INPUT", 400);
+    data.allowUserSignup = record.allowUserSignup;
+  }
+
+  if ("sessionTimeoutMinutes" in record) {
+    const val = record.sessionTimeoutMinutes;
     if (val !== null && typeof val !== "number") return fail("INVALID_INPUT", 400);
     if (!VALID_TIMEOUT_VALUES.has(val as number | null)) return fail("INVALID_TIMEOUT", 400);
     data.sessionTimeoutMinutes = val as number | null;

@@ -10,7 +10,8 @@ jest.mock("@/lib/db", () => ({
       create: jest.fn(),
     },
     authSettings: {
-      upsert: jest.fn(),
+      findUnique: jest.fn(),
+      create: jest.fn(),
     },
   },
 }));
@@ -24,7 +25,7 @@ import { prisma } from "@/lib/db";
 
 const mockFindUnique = prisma.user.findUnique as jest.Mock;
 const mockCreate = prisma.user.create as jest.Mock;
-const mockAuthSettingsUpsert = prisma.authSettings.upsert as jest.Mock;
+const mockAuthSettingsFindUnique = prisma.authSettings.findUnique as jest.Mock;
 
 function makeRequest(body: object): NextRequest {
   return new NextRequest("http://localhost/api/auth/signup", {
@@ -38,7 +39,7 @@ describe("POST /api/auth/signup", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     // Default: signup enabled
-    mockAuthSettingsUpsert.mockResolvedValue({ id: "singleton", allowUserSignup: true, sessionTimeoutMinutes: null, updatedAt: new Date() });
+    mockAuthSettingsFindUnique.mockResolvedValue({ id: "singleton", allowUserSignup: true, sessionTimeoutMinutes: null, updatedAt: new Date() });
   });
 
   it("returns 201 and user data on success", async () => {
@@ -121,7 +122,7 @@ describe("POST /api/auth/signup", () => {
   });
 
   it("returns 403 SIGNUP_DISABLED when allowUserSignup is false", async () => {
-    mockAuthSettingsUpsert.mockResolvedValue({ id: "singleton", allowUserSignup: false, sessionTimeoutMinutes: null, updatedAt: new Date() });
+    mockAuthSettingsFindUnique.mockResolvedValue({ id: "singleton", allowUserSignup: false, sessionTimeoutMinutes: null, updatedAt: new Date() });
 
     const req = makeRequest({ email: "user@example.com", password: "password123", username: "Alice" });
     const res = await POST(req);
@@ -132,7 +133,7 @@ describe("POST /api/auth/signup", () => {
   });
 
   it("proceeds normally when allowUserSignup is true", async () => {
-    mockAuthSettingsUpsert.mockResolvedValue({ id: "singleton", allowUserSignup: true, sessionTimeoutMinutes: null, updatedAt: new Date() });
+    mockAuthSettingsFindUnique.mockResolvedValue({ id: "singleton", allowUserSignup: true, sessionTimeoutMinutes: null, updatedAt: new Date() });
     mockFindUnique.mockResolvedValue(null);
     mockCreate.mockResolvedValue({ id: "clyyyy", email: "user2@example.com", role: "USER" });
 

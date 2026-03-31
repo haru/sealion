@@ -21,14 +21,17 @@ jest.mock("next-auth/providers/credentials", () => jest.fn(() => ({ id: "credent
 jest.mock("@/lib/db", () => ({
   prisma: {
     authSettings: {
-      upsert: jest.fn(),
+      findUnique: jest.fn(),
+      create: jest.fn(),
     },
   },
 }));
 
 import { prisma } from "@/lib/db";
 
-const mockAuthSettingsUpsert = prisma.authSettings.upsert as jest.Mock;
+const mockAuthSettingsFindUnique = prisma.authSettings.findUnique as jest.Mock;
+
+
 
 function makeToken(extra: Record<string, unknown> = {}) {
   return { sub: "user-1", id: "user-1", role: "USER", ...extra };
@@ -52,7 +55,7 @@ describe("jwt callback — sessionTimeoutMinutes", () => {
   });
 
   it("sets token.exp on signIn when sessionTimeoutMinutes is non-null", async () => {
-    mockAuthSettingsUpsert.mockResolvedValue({
+    mockAuthSettingsFindUnique.mockResolvedValue({
       id: "singleton",
       allowUserSignup: true,
       sessionTimeoutMinutes: 60,
@@ -75,7 +78,7 @@ describe("jwt callback — sessionTimeoutMinutes", () => {
   });
 
   it("does NOT override token.exp on signIn when sessionTimeoutMinutes is null", async () => {
-    mockAuthSettingsUpsert.mockResolvedValue({
+    mockAuthSettingsFindUnique.mockResolvedValue({
       id: "singleton",
       allowUserSignup: true,
       sessionTimeoutMinutes: null,
@@ -108,7 +111,7 @@ describe("jwt callback — sessionTimeoutMinutes", () => {
       session: undefined,
     });
 
-    expect(mockAuthSettingsUpsert).not.toHaveBeenCalled();
+    expect(mockAuthSettingsFindUnique).not.toHaveBeenCalled();
   });
 
   it("does NOT call getAuthSettings when trigger is undefined (EC-003)", async () => {
@@ -123,11 +126,11 @@ describe("jwt callback — sessionTimeoutMinutes", () => {
       session: undefined,
     });
 
-    expect(mockAuthSettingsUpsert).not.toHaveBeenCalled();
+    expect(mockAuthSettingsFindUnique).not.toHaveBeenCalled();
   });
 
   it("sets token.id and token.role from user on signIn", async () => {
-    mockAuthSettingsUpsert.mockResolvedValue({
+    mockAuthSettingsFindUnique.mockResolvedValue({
       id: "singleton",
       allowUserSignup: true,
       sessionTimeoutMinutes: null,
