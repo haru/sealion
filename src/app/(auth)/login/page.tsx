@@ -1,12 +1,13 @@
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
+import { getAuthSettings } from "@/lib/auth-settings";
 import { LoginForm } from "./LoginForm";
 
 /**
  * Login page — server component.
  *
  * Redirects to `/setup` when no users exist in the database (first-time setup).
- * Otherwise renders the login form.
+ * Otherwise renders the login form, passing the current `allowUserSignup` setting.
  */
 export default async function LoginPage() {
   const count = await prisma.user.count();
@@ -14,5 +15,7 @@ export default async function LoginPage() {
     redirect("/setup");
   }
 
-  return <LoginForm />;
+  const { allowUserSignup } = await getAuthSettings();
+
+  return <LoginForm showSignup={allowUserSignup} />;
 }

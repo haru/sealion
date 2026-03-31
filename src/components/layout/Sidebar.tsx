@@ -15,6 +15,7 @@ import FormatListBulletedIcon from "@mui/icons-material/FormatListBulleted";
 import TuneIcon from "@mui/icons-material/Tune";
 import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 import PeopleIcon from "@mui/icons-material/People";
+import SecurityOutlinedIcon from "@mui/icons-material/SecurityOutlined";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import Image from "next/image";
@@ -245,6 +246,36 @@ export default function Sidebar({ open, onClose, variant, isAdmin }: SidebarProp
                   <ListItemText
                     primary={t("userManagement")}
                     primaryTypographyProps={{ fontSize: "0.85rem", fontWeight: pathname === "/admin/users" ? 600 : 500 }}
+                  />
+                </ListItemButton>
+
+                <ListItemButton
+                  component={Link}
+                  href="/admin/auth-settings"
+                  selected={pathname === "/admin/auth-settings"}
+                  onClick={variant === "temporary" ? onClose : undefined}
+                  sx={{
+                    borderRadius: "8px",
+                    mb: 0.5,
+                    pl: 3.5,
+                    pr: 1.5,
+                    py: 0.875,
+                    color: "text.secondary",
+                    "&.Mui-selected": {
+                      bgcolor: "#eef2ff",
+                      color: "primary.main",
+                      "& .MuiListItemIcon-root": { color: "primary.main" },
+                      "&:hover": { bgcolor: "#e0e7ff" },
+                    },
+                    "&:hover": { bgcolor: "#f1f5f9" },
+                  }}
+                >
+                  <ListItemIcon sx={{ minWidth: 32, color: "inherit" }}>
+                    <SecurityOutlinedIcon sx={{ fontSize: 18 }} />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={t("authSettings")}
+                    primaryTypographyProps={{ fontSize: "0.85rem", fontWeight: pathname === "/admin/auth-settings" ? 600 : 500 }}
                   />
                 </ListItemButton>
               </List>

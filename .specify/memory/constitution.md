@@ -1,18 +1,28 @@
 <!--
 SYNC IMPACT REPORT
 ==================
+Version change: 1.2.0 → 1.2.1
+Modified principles: None
+Changed technology standards:
+  - UI library version corrected: MUI v6 → MUI v7 (codebase already on v7; constitution was stale)
+Added sections: None
+Added rules: None
+Removed sections: None
+Templates checked:
+  - .specify/templates/plan-template.md ✅ no impact
+  - .specify/templates/spec-template.md ✅ no impact
+  - .specify/templates/tasks-template.md ✅ no impact
+Follow-up TODOs: None.
+
+---
+
+Previous entry (1.1.0 → 1.2.0):
 Version change: 1.1.0 → 1.2.0
 Modified principles: None
 Added sections:
   - Principle VI. Code Documentation (TSDoc mandatory for all exported symbols)
 Added rules:
   - Development Workflow › Code Quality Gates: added gate #6 "TSDoc present on all exported symbols"
-Removed sections: None
-Templates checked:
-  - .specify/templates/plan-template.md ✅ "Constitution Check" section is template-driven; no impact
-  - .specify/templates/spec-template.md ✅ no impact
-  - .specify/templates/tasks-template.md ✅ no impact; documentation is a gate, not a new task type
-Follow-up TODOs: None.
 -->
 
 # Sealion Constitution
@@ -120,7 +130,7 @@ amendment.
 
 - **Runtime**: Node.js 20 LTS / TypeScript 5
 - **Framework**: Next.js 16 (App Router) — no Pages Router patterns
-- **UI**: MUI v6 (Material UI) + Material Icons — no other component libraries
+- **UI**: MUI v7 (Material UI) + Material Icons — no other component libraries
 - **Auth**: Auth.js v5 (next-auth) with Prisma adapter; credentials-based (email/password)
 - **Database**: PostgreSQL 16 via Prisma 7 ORM — raw SQL MUST only be used where Prisma cannot
   express the query
@@ -186,4 +196,4 @@ arises between this document and any other guideline, this constitution takes pr
 - Complexity violations MUST be justified in the plan's Complexity Tracking table.
 - Security and TDD compliance MUST be verified during code review on every PR.
 
-**Version**: 1.2.0 | **Ratified**: 2026-03-20 | **Last Amended**: 2026-03-21
+**Version**: 1.2.1 | **Ratified**: 2026-03-20 | **Last Amended**: 2026-03-31

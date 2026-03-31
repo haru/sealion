@@ -100,12 +100,32 @@
       "search": "Search projects..."
     }
   },
+  "authSettings": {
+    "title": "Auth Settings",
+    "allowUserSignup": "Allow User Signup",
+    "allowUserSignupHint": "When disabled, the signup page will be hidden and new account registration will be blocked.",
+    "sessionTimeout": "Session Timeout",
+    "timeout": {
+      "none": "None",
+      "1h": "1 hour",
+      "6h": "6 hours",
+      "12h": "12 hours",
+      "24h": "24 hours",
+      "1w": "1 week",
+      "30d": "30 days",
+      "90d": "90 days"
+    },
+    "save": "Save",
+    "saveSuccess": "Auth settings saved successfully",
+    "saveError": "Failed to save auth settings. Please try again."
+  },
   "sidebar": {
     "todo": "TODO",
     "projectManagement": "Project Management",
     "boardSettings": "Board Settings",
     "systemAdmin": "System Administration",
     "userManagement": "User Management",
+    "authSettings": "Auth Settings",
     "tagline": "All Your TODOs, One Place.",
     "version": "Sealion v{version}",
     "settings": "Settings"
@@ -257,7 +277,9 @@
     "CONFLICT": "This project is already registered",
     "CANNOT_DELETE_SELF": "You cannot delete your own account",
     "CANNOT_DEACTIVATE_SELF": "You cannot deactivate your own account",
-    "CANNOT_CHANGE_OWN_ROLE": "You cannot change your own role"
+    "CANNOT_CHANGE_OWN_ROLE": "You cannot change your own role",
+    "SIGNUP_DISABLED": "User signup is currently disabled by the administrator",
+    "INVALID_TIMEOUT": "Invalid session timeout value"
   },
   "sync": {
     "error": {
