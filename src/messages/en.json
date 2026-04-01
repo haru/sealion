@@ -47,7 +47,8 @@
     "source": {
       "GITHUB": "GitHub",
       "JIRA": "Jira",
-      "REDMINE": "Redmine"
+      "REDMINE": "Redmine",
+      "GITLAB": "GitLab"
     },
     "dueDate": "Due: {date}",
     "dueDateLabel": "Due",
@@ -72,7 +73,8 @@
     "type": {
       "GITHUB": "GitHub",
       "JIRA": "Jira",
-      "REDMINE": "Redmine"
+      "REDMINE": "Redmine",
+      "GITLAB": "GitLab"
     },
     "fields": {
       "type": "Type",

@@ -18,7 +18,7 @@ import {
 import { useTranslations } from "next-intl";
 import { formatProviderApiError, type ProviderApiErrorResponse } from "@/lib/error-utils";
 
-type ProviderType = "GITHUB" | "JIRA" | "REDMINE";
+type ProviderType = "GITHUB" | "JIRA" | "REDMINE" | "GITLAB";
 
 interface Provider {
   id: string;
@@ -67,6 +67,8 @@ export default function ProviderEditModal({
     try {
       const body: Record<string, unknown> = { displayName, changeCredentials };
       if (provider.type === "JIRA" || provider.type === "REDMINE") {
+        body.baseUrl = baseUrl;
+      } else if (provider.type === "GITLAB" && baseUrl.trim() !== "") {
         body.baseUrl = baseUrl;
       }
       if (changeCredentials) {
@@ -120,7 +122,7 @@ export default function ProviderEditModal({
               fullWidth
             />
 
-            {(provider.type === "JIRA" || provider.type === "REDMINE") && (
+            {(provider.type === "JIRA" || provider.type === "REDMINE" || provider.type === "GITLAB") && (
               <TextField
                 label={t("fields.baseUrl")}
                 value={baseUrl}
@@ -181,6 +183,17 @@ export default function ProviderEditModal({
                 type="password"
                 value={credentials.apiKey ?? ""}
                 onChange={(e) => handleCredentialChange("apiKey", e.target.value)}
+                required
+                fullWidth
+              />
+            )}
+
+            {changeCredentials && provider.type === "GITLAB" && (
+              <TextField
+                label={t("fields.token")}
+                type="password"
+                value={credentials.token ?? ""}
+                onChange={(e) => handleCredentialChange("token", e.target.value)}
                 required
                 fullWidth
               />

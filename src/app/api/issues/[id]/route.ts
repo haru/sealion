@@ -47,7 +47,7 @@ async function handleCloseIssue(id: string, userId: string, comment?: string) {
   } catch {
     return fail("INVALID_CREDENTIALS", 400);
   }
-  const adapter = createAdapter(issue.project.issueProvider.type, credentials);
+  const adapter = createAdapter(issue.project.issueProvider.type, credentials, issue.project.issueProvider.baseUrl);
 
   try {
     await adapter.closeIssue(issue.project.externalId, issue.externalId);

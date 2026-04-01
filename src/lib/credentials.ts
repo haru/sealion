@@ -3,6 +3,7 @@ import { ProviderType } from "@prisma/client";
 import { decrypt } from "@/lib/encryption";
 import type {
   GitHubCredentials,
+  GitLabCredentials,
   JiraCredentials,
   ProviderCredentials,
   RedmineCredentials,
@@ -25,6 +26,11 @@ const redmineCredentialsSchema = z.object({
   baseUrl: z.string().min(1),
   apiKey: z.string().min(1),
 }) satisfies z.ZodType<RedmineCredentials>;
+
+/** Zod schema for GitLab credentials. */
+const gitlabCredentialsSchema = z.object({
+  token: z.string().min(1),
+}) satisfies z.ZodType<GitLabCredentials>;
 
 /**
  * Validates and converts a plain `Record<string, string>` of user-supplied credentials
@@ -50,6 +56,8 @@ export function buildTypedCredentials(
       return jiraCredentialsSchema.parse(raw);
     case ProviderType.REDMINE:
       return redmineCredentialsSchema.parse(raw);
+    case ProviderType.GITLAB:
+      return gitlabCredentialsSchema.parse(raw);
     default:
       throw new Error(`Unsupported provider type: ${type}`);
   }
@@ -66,7 +74,7 @@ export function buildTypedCredentials(
  * @param encryptedCredentials - The AES-256-GCM encrypted credentials string
  *   stored in `IssueProvider.encryptedCredentials`.
  * @param baseUrl - Optional base URL stored alongside the encrypted credentials
- *   (used by Jira and Redmine providers). Pass `null` or `undefined` to omit.
+ *   (used by Jira, Redmine, and GitLab providers). Pass `null` or `undefined` to omit.
  * @param type - The provider type used to select the appropriate Zod schema for
  *   shape validation.
  * @returns Typed provider credentials ready to pass to {@link createAdapter}.
@@ -88,6 +96,8 @@ export function decryptProviderCredentials(
       return jiraCredentialsSchema.parse(merged);
     case ProviderType.REDMINE:
       return redmineCredentialsSchema.parse(merged);
+    case ProviderType.GITLAB:
+      return gitlabCredentialsSchema.parse(merged);
     default:
       throw new Error(`Unsupported provider type: ${type}`);
   }

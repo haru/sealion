@@ -86,6 +86,24 @@ describe('decryptProviderCredentials', () => {
     mockDecrypt.mockReturnValue(JSON.stringify({ apiKey: 'key123' }));
     expect(() => decryptProviderCredentials('encrypted-data', null, ProviderType.REDMINE)).toThrow();
   });
+
+  it('returns GitLab credentials with token', () => {
+    mockDecrypt.mockReturnValue(JSON.stringify({ token: 'glpat_test123' }));
+    const result = decryptProviderCredentials('encrypted-data', 'https://gitlab.com', ProviderType.GITLAB);
+    expect(result).toEqual({ token: 'glpat_test123' });
+  });
+
+  it('does not include baseUrl in GitLab credentials (it is not part of the schema)', () => {
+    mockDecrypt.mockReturnValue(JSON.stringify({ token: 'glpat_test123' }));
+    const result = decryptProviderCredentials('encrypted-data', 'https://gitlab.example.com', ProviderType.GITLAB);
+    expect(result).not.toHaveProperty('baseUrl');
+    expect(result).toEqual({ token: 'glpat_test123' });
+  });
+
+  it('throws when GitLab credentials are missing required token field', () => {
+    mockDecrypt.mockReturnValue(JSON.stringify({ email: 'wrong@field.com' }));
+    expect(() => decryptProviderCredentials('encrypted-data', null, ProviderType.GITLAB)).toThrow();
+  });
 });
 
 describe('buildTypedCredentials', () => {
@@ -126,5 +144,14 @@ describe('buildTypedCredentials', () => {
     expect(() => buildTypedCredentials(ProviderType.REDMINE, {
       baseUrl: 'https://redmine.example.com',
     })).toThrow();
+  });
+
+  it('returns typed GitLabCredentials for GITLAB type', () => {
+    const result = buildTypedCredentials(ProviderType.GITLAB, { token: 'glpat_test' });
+    expect(result).toEqual({ token: 'glpat_test' });
+  });
+
+  it('throws when GitLab token is missing', () => {
+    expect(() => buildTypedCredentials(ProviderType.GITLAB, { email: 'wrong@field.com' })).toThrow();
   });
 });

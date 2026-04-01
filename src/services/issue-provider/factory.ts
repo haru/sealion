@@ -3,6 +3,7 @@ import { IssueProviderAdapter } from "@/lib/types";
 import { GitHubAdapter } from "./github";
 import { JiraAdapter } from "./jira";
 import { RedmineAdapter } from "./redmine";
+import { GitLabAdapter } from "./gitlab";
 
 export interface GitHubCredentials {
   token: string;
@@ -19,10 +20,16 @@ export interface RedmineCredentials {
   apiKey: string;
 }
 
+/** Credentials for a GitLab provider. */
+export interface GitLabCredentials {
+  token: string;
+}
+
 export type ProviderCredentials =
   | GitHubCredentials
   | JiraCredentials
-  | RedmineCredentials;
+  | RedmineCredentials
+  | GitLabCredentials;
 
 /**
  * Returns the icon URL for the given provider type, or null if unknown.
@@ -33,6 +40,7 @@ export function getProviderIconUrl(type: ProviderType): string | null {
     case ProviderType.GITHUB: return GitHubAdapter.iconUrl;
     case ProviderType.JIRA: return JiraAdapter.iconUrl;
     case ProviderType.REDMINE: return RedmineAdapter.iconUrl;
+    case ProviderType.GITLAB: return GitLabAdapter.iconUrl;
     default: return null;
   }
 }
@@ -41,11 +49,15 @@ export function getProviderIconUrl(type: ProviderType): string | null {
  * Creates an {@link IssueProviderAdapter} for the given provider type and credentials.
  * @param type - The issue provider type.
  * @param credentials - Decrypted credentials for the provider.
+ * @param baseUrl - Optional base URL for providers that use a separate base URL
+ *   (e.g. GitLab self-hosted instances). Ignored by GitHub/Jira/Redmine whose
+ *   `baseUrl` is already embedded in their credential types.
  * @throws If the provider type is not supported.
  */
 export function createAdapter(
   type: ProviderType,
-  credentials: ProviderCredentials
+  credentials: ProviderCredentials,
+  baseUrl?: string | null,
 ): IssueProviderAdapter {
   switch (type) {
     case ProviderType.GITHUB: {
@@ -59,6 +71,11 @@ export function createAdapter(
     case ProviderType.REDMINE: {
       const creds = credentials as RedmineCredentials;
       return new RedmineAdapter(creds.baseUrl, creds.apiKey);
+    }
+    case ProviderType.GITLAB: {
+      const creds = credentials as GitLabCredentials;
+      const normalized = baseUrl?.trim();
+      return new GitLabAdapter(creds.token, normalized || undefined);
     }
     default:
       throw new Error(`Unsupported provider type: ${type}`);

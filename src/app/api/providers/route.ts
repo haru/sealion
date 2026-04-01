@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
   // Test connection before saving (pass full credentials including baseUrl to adapter)
   try {
     const typedCredentials = buildTypedCredentials(type as ProviderType, credentials);
-    const adapter = createAdapter(type as ProviderType, typedCredentials);
+    const adapter = createAdapter(type as ProviderType, typedCredentials, baseUrl);
     await adapter.testConnection();
   } catch (error) {
     console.error("[provider] Connection test failed:", error instanceof Error ? error.message : String(error));

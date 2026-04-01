@@ -829,6 +829,11 @@ describe("proxy agent injection — adapters do NOT pass agents when no proxy en
 // ---------------------------------------------------------------------------
 
 describe("createAdapter factory", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    (axios.create as jest.Mock).mockReturnValue(mockAxiosInstance);
+  });
+
   it("creates GitHubAdapter for GITHUB type", async () => {
     const { createAdapter } = await import("@/services/issue-provider/factory");
     const adapter = createAdapter("GITHUB" as never, { token: "test" });
@@ -854,8 +859,50 @@ describe("createAdapter factory", () => {
     expect(adapter).toBeDefined();
   });
 
+  it("creates GitLabAdapter for GITLAB type", async () => {
+    const { createAdapter } = await import("@/services/issue-provider/factory");
+    const adapter = createAdapter("GITLAB" as never, { token: "test" }, "https://gitlab.example.com");
+    expect(adapter).toBeDefined();
+  });
+
+  it("creates GitLabAdapter with default baseUrl when not provided", async () => {
+    const { createAdapter } = await import("@/services/issue-provider/factory");
+    const adapter = createAdapter("GITLAB" as never, { token: "test" });
+    expect(adapter).toBeDefined();
+  });
+
   it("throws for unknown provider type", async () => {
     const { createAdapter } = await import("@/services/issue-provider/factory");
     expect(() => createAdapter("UNKNOWN" as never, {})).toThrow();
+  });
+
+  it("normalizes empty string baseUrl for GITLAB to use default GitLab.com", async () => {
+    const { createAdapter } = await import("@/services/issue-provider/factory");
+    createAdapter("GITLAB" as never, { token: "test" }, "");
+    expect(axios.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        baseURL: "https://gitlab.com/api/v4",
+      }),
+    );
+  });
+
+  it("normalizes whitespace-only baseUrl for GITLAB to use default GitLab.com", async () => {
+    const { createAdapter } = await import("@/services/issue-provider/factory");
+    createAdapter("GITLAB" as never, { token: "test" }, "   ");
+    expect(axios.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        baseURL: "https://gitlab.com/api/v4",
+      }),
+    );
+  });
+
+  it("trims whitespace from baseUrl for GITLAB before passing to adapter", async () => {
+    const { createAdapter } = await import("@/services/issue-provider/factory");
+    createAdapter("GITLAB" as never, { token: "test" }, "  https://gitlab.example.com  ");
+    expect(axios.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        baseURL: "https://gitlab.example.com/api/v4",
+      }),
+    );
   });
 });
