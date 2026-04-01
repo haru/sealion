@@ -14,5 +14,10 @@
         "repo": "affaan-m/everything-claude-code"
       }
     }
+  },
+  "permissions": {
+    "allow": [
+      "Bash(gh repo:*)"
+    ]
   }
 }
