@@ -24,7 +24,7 @@ export async function GET(req: NextRequest, { params }: Params) {
 
   const decryptedCredentials = JSON.parse(decrypt(provider.encryptedCredentials));
   const credentials = { ...decryptedCredentials, ...(provider.baseUrl ? { baseUrl: provider.baseUrl } : {}) };
-  const adapter = createAdapter(provider.type, credentials);
+  const adapter = createAdapter(provider.type, credentials, provider.baseUrl);
 
   const externalProjects = await adapter.listProjects();
 

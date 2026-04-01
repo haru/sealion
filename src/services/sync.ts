@@ -65,7 +65,7 @@ export async function syncProviders(userId: string): Promise<SyncErrorInfo[]> {
           return credentialErrors;
         }
 
-        const adapter = createAdapter(provider.type, credentials);
+        const adapter = createAdapter(provider.type, credentials, provider.baseUrl);
 
         const projectErrorLists = await Promise.all(
           provider.projects.map((project) =>

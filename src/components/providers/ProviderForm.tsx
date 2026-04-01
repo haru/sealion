@@ -16,7 +16,7 @@ import {
 import { useTranslations } from "next-intl";
 
 /** Provider type identifier. */
-export type ProviderType = "GITHUB" | "JIRA" | "REDMINE";
+export type ProviderType = "GITHUB" | "JIRA" | "REDMINE" | "GITLAB";
 
 /** Data shape submitted by {@link ProviderForm}. */
 export interface ProviderFormData {
@@ -29,7 +29,7 @@ interface ProviderFormProps {
   onSubmit: (data: ProviderFormData) => Promise<void>;
 }
 
-const PROVIDER_TYPES: ProviderType[] = ["GITHUB", "JIRA", "REDMINE"];
+const PROVIDER_TYPES: ProviderType[] = ["GITHUB", "JIRA", "REDMINE", "GITLAB"];
 
 /** Form fields for GitHub provider credentials. */
 function GitHubFields({
@@ -126,6 +126,38 @@ function RedmineFields({
   );
 }
 
+/** Form fields for GitLab provider credentials. */
+function GitLabFields({
+  credentials,
+  onChange,
+  t,
+}: {
+  credentials: Record<string, string>;
+  onChange: (key: string, value: string) => void;
+  t: ReturnType<typeof useTranslations>;
+}) {
+  return (
+    <>
+      <TextField
+        label={t("fields.baseUrl")}
+        placeholder="https://gitlab.com"
+        value={credentials.baseUrl ?? ""}
+        onChange={(e) => onChange("baseUrl", e.target.value)}
+        fullWidth
+      />
+      <TextField
+        label={t("fields.token")}
+        type="password"
+        value={credentials.token ?? ""}
+        onChange={(e) => onChange("token", e.target.value)}
+        required
+        fullWidth
+        inputProps={{ "data-testid": "gitlab-token-input" }}
+      />
+    </>
+  );
+}
+
 /** Form for creating a new issue provider, with provider-type selection and credential fields. */
 export default function ProviderForm({ onSubmit }: ProviderFormProps) {
   const t = useTranslations("providers");
@@ -213,6 +245,9 @@ export default function ProviderForm({ onSubmit }: ProviderFormProps) {
         )}
         {type === "REDMINE" && (
           <RedmineFields credentials={credentials} onChange={handleCredentialChange} t={t} />
+        )}
+        {type === "GITLAB" && (
+          <GitLabFields credentials={credentials} onChange={handleCredentialChange} t={t} />
         )}
 
         <Button

@@ -98,7 +98,7 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
   // Test connection
   try {
     const typedCredentials = buildTypedCredentials(provider.type, effectiveCredentials);
-    const adapter = createAdapter(provider.type, typedCredentials);
+    const adapter = createAdapter(provider.type, typedCredentials, baseUrl || provider.baseUrl);
     await adapter.testConnection();
   } catch (error) {
     console.error("[provider] Connection test failed:", error instanceof Error ? error.message : String(error));

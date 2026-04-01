@@ -20,7 +20,7 @@ import ProviderIcon from "@/components/ProviderIcon";
 
 interface Provider {
   id: string;
-  type: "GITHUB" | "JIRA" | "REDMINE";
+  type: "GITHUB" | "JIRA" | "REDMINE" | "GITLAB";
   displayName: string;
   baseUrl: string | null;
   iconUrl: string | null;

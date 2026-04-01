@@ -17,6 +17,7 @@ enum ProviderType {
   GITHUB
   JIRA
   REDMINE
+  GITLAB
 }
 
 // ─── Models ─────────────────────────────────────────────────────────────────

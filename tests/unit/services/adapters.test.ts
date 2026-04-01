@@ -854,6 +854,18 @@ describe("createAdapter factory", () => {
     expect(adapter).toBeDefined();
   });
 
+  it("creates GitLabAdapter for GITLAB type", async () => {
+    const { createAdapter } = await import("@/services/issue-provider/factory");
+    const adapter = createAdapter("GITLAB" as never, { token: "test" }, "https://gitlab.example.com");
+    expect(adapter).toBeDefined();
+  });
+
+  it("creates GitLabAdapter with default baseUrl when not provided", async () => {
+    const { createAdapter } = await import("@/services/issue-provider/factory");
+    const adapter = createAdapter("GITLAB" as never, { token: "test" });
+    expect(adapter).toBeDefined();
+  });
+
   it("throws for unknown provider type", async () => {
     const { createAdapter } = await import("@/services/issue-provider/factory");
     expect(() => createAdapter("UNKNOWN" as never, {})).toThrow();

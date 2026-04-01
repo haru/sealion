@@ -187,7 +187,8 @@ describe("PATCH /api/issues/[id]", () => {
 
     expect(createAdapter).toHaveBeenCalledWith(
       "JIRA",
-      expect.objectContaining({ baseUrl: "https://example.atlassian.net" })
+      expect.objectContaining({ baseUrl: "https://example.atlassian.net" }),
+      "https://example.atlassian.net"
     );
   });
 
