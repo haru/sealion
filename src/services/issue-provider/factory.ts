@@ -74,7 +74,8 @@ export function createAdapter(
     }
     case ProviderType.GITLAB: {
       const creds = credentials as GitLabCredentials;
-      return new GitLabAdapter(creds.token, baseUrl ?? undefined);
+      const normalized = baseUrl?.trim();
+      return new GitLabAdapter(creds.token, normalized || undefined);
     }
     default:
       throw new Error(`Unsupported provider type: ${type}`);

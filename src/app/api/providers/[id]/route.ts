@@ -48,12 +48,16 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
   const body = await req.json().catch(() => null);
   if (!body) return fail("INVALID_BODY", 400);
 
-  const { displayName, baseUrl, changeCredentials, credentials } = body as {
+  const { displayName, baseUrl: rawBaseUrl, changeCredentials, credentials } = body as {
     displayName: string;
     baseUrl?: string;
     changeCredentials: boolean;
     credentials?: Record<string, string>;
   };
+
+  const baseUrl = (provider.type === ProviderType.GITLAB && rawBaseUrl?.trim() === "")
+    ? undefined
+    : rawBaseUrl;
 
   // Validate displayName
   if (!displayName) return fail("MISSING_FIELDS", 400);

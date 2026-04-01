@@ -66,7 +66,9 @@ export default function ProviderEditModal({
 
     try {
       const body: Record<string, unknown> = { displayName, changeCredentials };
-      if (provider.type === "JIRA" || provider.type === "REDMINE" || provider.type === "GITLAB") {
+      if (provider.type === "JIRA" || provider.type === "REDMINE") {
+        body.baseUrl = baseUrl;
+      } else if (provider.type === "GITLAB" && baseUrl.trim() !== "") {
         body.baseUrl = baseUrl;
       }
       if (changeCredentials) {

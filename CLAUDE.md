@@ -217,7 +217,7 @@ Use `http://app:3000` instead — `app` is the hostname of the Next.js dev conta
 - TypeScript 5 / Node.js 20 LTS + Next.js 16 (App Router), MUI v7, Auth.js v5, Prisma 7, next-intl 4 (024-auth-settings)
 - PostgreSQL 16 via Prisma 7 — added `AuthSettings` table (024-auth-settings)
 - TypeScript 5 / Node.js 20 LTS + Next.js 16 (App Router), axios, Prisma 7, Zod, next-intl 4 (025-add-gitlab-provider)
-- PostgreSQL 16 via Prisma 7 — `ProviderType` enum に `GITLAB` 追加のみ (025-add-gitlab-provider)
+- PostgreSQL 16 via Prisma 7 — `ProviderType` enum updated to add `GITLAB` value only (025-add-gitlab-provider)
 
 ## Recent Changes
 - 009-task-display-cleanup: Removed `priority` field from Issue model; added `providerCreatedAt` / `providerUpdatedAt` fields; added Today tasks area with drag-and-drop reorder (dnd-kit)
