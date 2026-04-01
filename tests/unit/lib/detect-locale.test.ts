@@ -39,4 +39,10 @@ describe("detectLocale", () => {
   it("handles whitespace around entries", () => {
     expect(detectLocale("en-US, en;q=0.9, ja;q=0.8")).toBe("en");
   });
+
+  it("handles q-factor when it is not the first parameter after the locale", () => {
+    // "ja" appears first but has lower q=0.4; "en" has higher q=0.9 → should return "en"
+    // Bug: parts[1] is "foo=bar" (NaN), so both default to q=1.0 and "ja" wins incorrectly
+    expect(detectLocale("ja;foo=bar;q=0.4,en;foo=bar;q=0.9")).toBe("en");
+  });
 });

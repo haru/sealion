@@ -1,7 +1,7 @@
 import { getRequestConfig } from "next-intl/server";
 import { headers } from "next/headers";
 
-/** Supported locales in order of preference. */
+/** Supported locales. The array order does not affect detection precedence. */
 const SUPPORTED_LOCALES = ["en", "ja"] as const;
 
 type SupportedLocale = (typeof SUPPORTED_LOCALES)[number];
@@ -22,8 +22,11 @@ export function detectLocale(acceptLanguage: string): SupportedLocale {
     .map((entry) => {
       const parts = entry.trim().split(";");
       const lang = parts[0].trim().toLowerCase();
-      const qPart = parts[1]?.trim();
-      const q = qPart ? parseFloat(qPart.replace("q=", "").trim()) : 1.0;
+      const qParam = parts
+        .slice(1)
+        .map((part) => part.trim())
+        .find((part) => part.toLowerCase().startsWith("q="));
+      const q = qParam ? parseFloat(qParam.slice(2).trim()) : 1.0;
       return { lang, q: isNaN(q) ? 1.0 : q };
     })
     .sort((a, b) => b.q - a.q);
