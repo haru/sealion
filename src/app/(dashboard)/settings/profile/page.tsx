@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -25,7 +25,28 @@ export default function ProfileSettingsPage() {
   usePageHeader(t("title"), undefined, AccountCircleIcon);
 
   const [username, setUsername] = useState("");
+  const [isUsernameLoading, setIsUsernameLoading] = useState(true);
+  const [usernameLoadError, setUsernameLoadError] = useState<string | null>(null);
   const [isUsernameSubmitting, setIsUsernameSubmitting] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/account/profile")
+      .then(async (res) => {
+        const json = (await res.json()) as { data: { username: string | null } | null; error: string | null };
+        if (!res.ok || !json.data) {
+          throw new Error(json.error ?? "load failed");
+        }
+        return json;
+      })
+      .then((json) => {
+        setUsername(json.data?.username ?? "");
+        setIsUsernameLoading(false);
+      })
+      .catch(() => {
+        setUsernameLoadError(t("usernameLoadError"));
+        // Keep isUsernameLoading=true so the form remains disabled
+      });
+  }, [t]);
   const [usernameSuccess, setUsernameSuccess] = useState<string | null>(null);
   const [usernameError, setUsernameError] = useState<string | null>(null);
 
@@ -123,6 +144,11 @@ export default function ProfileSettingsPage() {
       </Typography>
 
       <Box component="form" onSubmit={handleUsernameSubmit} noValidate sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+        {usernameLoadError && (
+          <Alert severity="error" data-testid="profile-username-load-error">
+            {usernameLoadError}
+          </Alert>
+        )}
         {usernameSuccess && (
           <Alert severity="success" data-testid="profile-username-success-message">
             {usernameSuccess}
@@ -140,15 +166,16 @@ export default function ProfileSettingsPage() {
           value={username}
           onChange={(e) => setUsername(e.target.value)}
           fullWidth
-          helperText={t("usernameHint")}
+
           inputProps={{ maxLength: 50 }}
+          disabled={isUsernameLoading}
         />
 
         <Button
           data-testid="profile-username-save-button"
           type="submit"
           variant="contained"
-          disabled={isUsernameSubmitting}
+          disabled={isUsernameSubmitting || isUsernameLoading}
           sx={{ alignSelf: "flex-start" }}
         >
           {t("saveChanges")}

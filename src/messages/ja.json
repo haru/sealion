@@ -152,7 +152,7 @@
     "errorUnexpected": "予期しないエラーが発生しました。もう一度お試しください。",
     "changeUsername": "ユーザー名を変更",
     "username": "ユーザー名",
-    "usernameHint": "空白のままにすると表示名がクリアされます。",
+    "usernameLoadError": "現在のユーザー名を取得できませんでした。ページを再読み込みしてください。",
     "usernameSuccess": "ユーザー名を更新しました。",
     "usernameErrorTooLong": "ユーザー名は50文字以内で入力してください。",
     "usernameErrorUnexpected": "予期しないエラーが発生しました。もう一度お試しください。"

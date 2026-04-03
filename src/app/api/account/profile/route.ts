@@ -6,6 +6,39 @@ import { ok, fail } from "@/lib/api-response";
 const MAX_USERNAME_LENGTH = 50;
 
 /**
+ * Returns the authenticated user's profile (username).
+ *
+ * @returns `200 { data: { username: string | null }, error: null }` on success,
+ *          `401` if unauthenticated or user not found,
+ *          `500` on unexpected server error.
+ */
+export async function GET() {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return fail("UNAUTHORIZED", 401);
+  }
+
+  const userId = session.user.id;
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { username: true },
+    });
+    if (!user) {
+      return fail("UNAUTHORIZED", 401);
+    }
+    return ok({ username: user.username });
+  } catch (err: unknown) {
+    console.error("[account/profile] GET failed", {
+      userId,
+      error: err instanceof Error ? err.message : String(err),
+    });
+    return fail("INTERNAL_ERROR", 500);
+  }
+}
+
+/**
  * Updates the authenticated user's profile (username).
  *
  * Accepts `{ username: string | null }`. The value is trimmed; if the trimmed

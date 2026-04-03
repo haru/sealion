@@ -152,7 +152,7 @@
     "errorUnexpected": "An unexpected error occurred. Please try again.",
     "changeUsername": "Change Username",
     "username": "Username",
-    "usernameHint": "Leave blank to clear your display name.",
+    "usernameLoadError": "Failed to load your current username. Please reload the page.",
     "usernameSuccess": "Username updated successfully.",
     "usernameErrorTooLong": "Username must be 50 characters or fewer.",
     "usernameErrorUnexpected": "An unexpected error occurred. Please try again."

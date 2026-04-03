@@ -1,7 +1,7 @@
 /** @jest-environment node */
 /**
- * Integration test: PATCH /api/account/profile
- * Tests username update endpoint.
+ * Integration test: GET and PATCH /api/account/profile
+ * Tests username fetch and update endpoint.
  *
  * Prerequisites:
  *   - DATABASE_URL environment variable pointing to test DB
@@ -269,6 +269,100 @@ describe("PATCH /api/account/profile — user not found (no DB required)", () =>
     expect(res.status).toBe(401);
     const json = await res.json();
     expect(json.error).toBeTruthy();
+  });
+});
+
+describe("GET /api/account/profile — unauthenticated (no DB required)", () => {
+  test("returns 401 when no session exists", async () => {
+    jest.resetModules();
+    jest.doMock("@/lib/auth", () => ({
+      auth: jest.fn().mockResolvedValue(null),
+    }));
+    jest.doMock("@/lib/db", () => ({
+      prisma: { user: { findUnique: jest.fn() } },
+    }));
+    const { GET } = await import("@/app/api/account/profile/route");
+    const req = new Request("http://localhost/api/account/profile");
+    const res = await GET(req);
+    expect(res.status).toBe(401);
+    const json = await res.json();
+    expect(json.error).toBeTruthy();
+  });
+});
+
+describe("GET /api/account/profile — with mocked DB (no DB required)", () => {
+  test("returns username when user has a username set", async () => {
+    jest.resetModules();
+    jest.doMock("@/lib/auth", () => ({
+      auth: jest.fn().mockResolvedValue({
+        user: { id: TEST_USER_ID, email: TEST_USER_EMAIL, role: "USER" },
+      }),
+    }));
+    jest.doMock("@/lib/db", () => ({
+      prisma: {
+        user: {
+          findUnique: jest.fn().mockResolvedValue({
+            id: TEST_USER_ID,
+            email: TEST_USER_EMAIL,
+            username: "testuser",
+          }),
+        },
+      },
+    }));
+    const { GET } = await import("@/app/api/account/profile/route");
+    const req = new Request("http://localhost/api/account/profile");
+    const res = await GET(req);
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.data).toEqual({ username: "testuser" });
+    expect(json.error).toBeNull();
+  });
+
+  test("returns null username when user has no username set", async () => {
+    jest.resetModules();
+    jest.doMock("@/lib/auth", () => ({
+      auth: jest.fn().mockResolvedValue({
+        user: { id: TEST_USER_ID, email: TEST_USER_EMAIL, role: "USER" },
+      }),
+    }));
+    jest.doMock("@/lib/db", () => ({
+      prisma: {
+        user: {
+          findUnique: jest.fn().mockResolvedValue({
+            id: TEST_USER_ID,
+            email: TEST_USER_EMAIL,
+            username: null,
+          }),
+        },
+      },
+    }));
+    const { GET } = await import("@/app/api/account/profile/route");
+    const req = new Request("http://localhost/api/account/profile");
+    const res = await GET(req);
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.data).toEqual({ username: null });
+    expect(json.error).toBeNull();
+  });
+
+  test("returns 401 when user record not found in DB", async () => {
+    jest.resetModules();
+    jest.doMock("@/lib/auth", () => ({
+      auth: jest.fn().mockResolvedValue({
+        user: { id: TEST_USER_ID, email: TEST_USER_EMAIL, role: "USER" },
+      }),
+    }));
+    jest.doMock("@/lib/db", () => ({
+      prisma: {
+        user: {
+          findUnique: jest.fn().mockResolvedValue(null),
+        },
+      },
+    }));
+    const { GET } = await import("@/app/api/account/profile/route");
+    const req = new Request("http://localhost/api/account/profile");
+    const res = await GET(req);
+    expect(res.status).toBe(401);
   });
 });
 
