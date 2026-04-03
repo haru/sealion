@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -25,7 +25,24 @@ export default function ProfileSettingsPage() {
   usePageHeader(t("title"), undefined, AccountCircleIcon);
 
   const [username, setUsername] = useState("");
+  const [isUsernameLoading, setIsUsernameLoading] = useState(true);
   const [isUsernameSubmitting, setIsUsernameSubmitting] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/account/profile")
+      .then((res) => res.json())
+      .then((json: { data: { username: string | null } | null; error: string | null }) => {
+        if (json.data) {
+          setUsername(json.data.username ?? "");
+        }
+      })
+      .catch(() => {
+        // Leave username as empty on fetch failure
+      })
+      .finally(() => {
+        setIsUsernameLoading(false);
+      });
+  }, []);
   const [usernameSuccess, setUsernameSuccess] = useState<string | null>(null);
   const [usernameError, setUsernameError] = useState<string | null>(null);
 
@@ -140,15 +157,16 @@ export default function ProfileSettingsPage() {
           value={username}
           onChange={(e) => setUsername(e.target.value)}
           fullWidth
-          helperText={t("usernameHint")}
+
           inputProps={{ maxLength: 50 }}
+          disabled={isUsernameLoading}
         />
 
         <Button
           data-testid="profile-username-save-button"
           type="submit"
           variant="contained"
-          disabled={isUsernameSubmitting}
+          disabled={isUsernameSubmitting || isUsernameLoading}
           sx={{ alignSelf: "flex-start" }}
         >
           {t("saveChanges")}
