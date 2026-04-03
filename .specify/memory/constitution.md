@@ -1,6 +1,21 @@
 <!--
 SYNC IMPACT REPORT
 ==================
+Version change: 1.2.1 → 1.2.2
+Modified principles:
+  - III. Multi-Provider Adapter Abstraction: added GitLab to concrete provider list
+    (was "GitHub, Jira, Redmine, future"; now "GitHub, GitLab, Jira, Redmine, future")
+Added sections: None
+Removed sections: None
+Templates checked:
+  - .specify/templates/plan-template.md ✅ no impact
+  - .specify/templates/spec-template.md ✅ no impact
+  - .specify/templates/tasks-template.md ✅ no impact
+Follow-up TODOs: None.
+
+---
+
+Previous entry (1.2.0 → 1.2.1):
 Version change: 1.2.0 → 1.2.1
 Modified principles: None
 Changed technology standards:
@@ -64,8 +79,8 @@ A breach of one user's data must not cascade to others.
 
 Issue provider integrations MUST be implemented behind a shared `IssueProviderAdapter` interface.
 
-- New providers (GitHub, Jira, Redmine, future) MUST implement the adapter interface defined in
-  `src/lib/types.ts`.
+- New providers (GitHub, GitLab, Jira, Redmine, future) MUST implement the adapter interface
+  defined in `src/lib/types.ts`.
 - `src/services/issue-provider/factory.ts` is the single creation point; callers MUST NOT
   instantiate adapters directly.
 - The domain model (`User → IssueProvider → Project → Issue`) is canonical; adapters MUST
@@ -196,4 +211,4 @@ arises between this document and any other guideline, this constitution takes pr
 - Complexity violations MUST be justified in the plan's Complexity Tracking table.
 - Security and TDD compliance MUST be verified during code review on every PR.
 
-**Version**: 1.2.1 | **Ratified**: 2026-03-20 | **Last Amended**: 2026-03-31
+**Version**: 1.2.2 | **Ratified**: 2026-03-20 | **Last Amended**: 2026-04-03
