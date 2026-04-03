@@ -104,16 +104,16 @@ export default function ProvidersPage() {
 
   return (
     <Container maxWidth="md" sx={{ py: 4 }}>
+      <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 2 }}>
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={() => setDialogOpen(true)}
+        >
+          {t("addProvider")}
+        </Button>
+      </Box>
       <Paper sx={{ p: 3, mb: 3 }}>
-        <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 2 }}>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => setDialogOpen(true)}
-          >
-            {t("addProvider")}
-          </Button>
-        </Box>
         <ProviderList
           providers={providers}
           onDelete={(id) => setDeleteId(id)}
