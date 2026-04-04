@@ -253,7 +253,7 @@ export default function ProfileSettingsPage() {
         </Button>
       </Box>
 
-      {!isLastAdmin && (
+      {!isUsernameLoading && !isLastAdmin && (
         <>
           <Divider sx={{ my: 5 }} />
 

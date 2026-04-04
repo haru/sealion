@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { ok, fail } from "@/lib/api-response";
-import { UserRole } from "@prisma/client";
+import { UserRole, UserStatus } from "@prisma/client";
 
 const MAX_USERNAME_LENGTH = 50;
 
@@ -38,7 +38,10 @@ export async function GET() {
 
     let isLastAdmin = false;
     if (user.role === UserRole.ADMIN) {
-      const adminCount = await prisma.user.count({ where: { role: UserRole.ADMIN } });
+      // Count only ACTIVE admins — suspended or pending admins must not affect this decision.
+      const adminCount = await prisma.user.count({
+        where: { role: UserRole.ADMIN, status: UserStatus.ACTIVE },
+      });
       isLastAdmin = adminCount <= 1;
     }
 

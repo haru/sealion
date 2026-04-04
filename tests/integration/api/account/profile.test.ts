@@ -455,6 +455,36 @@ describe("GET /api/account/profile — with mocked DB (no DB required)", () => {
     expect(json.data.isLastAdmin).toBe(false);
     expect(json.data.email).toBe(TEST_USER_EMAIL);
   });
+
+  test("isLastAdmin count query filters by ACTIVE status to exclude suspended admins", async () => {
+    jest.resetModules();
+    const mockCount = jest.fn().mockResolvedValue(1);
+    jest.doMock("@/lib/auth", () => ({
+      auth: jest.fn().mockResolvedValue({
+        user: { id: TEST_USER_ID, email: TEST_USER_EMAIL, role: "ADMIN" },
+      }),
+    }));
+    jest.doMock("@/lib/db", () => ({
+      prisma: {
+        user: {
+          findUnique: jest.fn().mockResolvedValue({
+            id: TEST_USER_ID,
+            email: TEST_USER_EMAIL,
+            username: null,
+            role: "ADMIN",
+          }),
+          count: mockCount,
+        },
+      },
+    }));
+    const { GET } = await import("@/app/api/account/profile/route");
+    const req = new Request("http://localhost/api/account/profile");
+    await GET(req);
+    // Must filter by both role and status to avoid counting suspended/pending admins.
+    expect(mockCount).toHaveBeenCalledWith({
+      where: { role: "ADMIN", status: "ACTIVE" },
+    });
+  });
 });
 
 describe("PATCH /api/account/profile — with real database", () => {

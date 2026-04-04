@@ -11,7 +11,7 @@ const TEST_USER_ID = "test-user-cascade-001";
 
 /** Creates a mock Prisma client with controllable transaction behaviour. */
 function makeMockPrisma(transactionImpl?: (ops: unknown[]) => Promise<unknown[]>) {
-  const issueDeleMany = jest.fn().mockResolvedValue({ count: 0 });
+  const issueDeleteMany = jest.fn().mockResolvedValue({ count: 0 });
   const projectDeleteMany = jest.fn().mockResolvedValue({ count: 0 });
   const issueProviderDeleteMany = jest.fn().mockResolvedValue({ count: 0 });
   const boardSettingsDeleteMany = jest.fn().mockResolvedValue({ count: 0 });
@@ -22,13 +22,13 @@ function makeMockPrisma(transactionImpl?: (ops: unknown[]) => Promise<unknown[]>
     : jest.fn().mockImplementation(async (ops: unknown[]) => Promise.all(ops as Promise<unknown>[]));
 
   return {
-    issue: { deleteMany: issueDeleMany },
+    issue: { deleteMany: issueDeleteMany },
     project: { deleteMany: projectDeleteMany },
     issueProvider: { deleteMany: issueProviderDeleteMany },
     boardSettings: { deleteMany: boardSettingsDeleteMany },
     user: { delete: userDelete },
     $transaction,
-    _mocks: { issueDeleMany, projectDeleteMany, issueProviderDeleteMany, boardSettingsDeleteMany, userDelete, $transaction },
+    _mocks: { issueDeleteMany, projectDeleteMany, issueProviderDeleteMany, boardSettingsDeleteMany, userDelete, $transaction },
   };
 }
 

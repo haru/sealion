@@ -60,13 +60,20 @@ export function DeleteAccountModal({ open, userEmail, onClose }: DeleteAccountMo
       const res = await fetch("/api/account/me", { method: "DELETE" });
       if (!res.ok) {
         const json = (await res.json()) as { error: string | null };
-        setEmailError(json.error ?? t("emailMismatch"));
+        // Map server error codes to localized user-facing messages.
+        if (json.error === "LAST_ADMIN") {
+          setEmailError(t("errorLastAdmin"));
+        } else if (json.error === "UNAUTHORIZED") {
+          setEmailError(t("errorUnauthorized"));
+        } else {
+          setEmailError(t("errorUnexpected"));
+        }
         return;
       }
       // Session invalidation and redirect to login
       await signOut({ callbackUrl: "/login" });
     } catch {
-      setEmailError(t("emailMismatch"));
+      setEmailError(t("errorUnexpected"));
     } finally {
       setIsSubmitting(false);
     }
