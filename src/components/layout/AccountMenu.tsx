@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import AccountCircleIcon from "@mui/icons-material/AccountCircle";
+import LogoutIcon from "@mui/icons-material/Logout";
+import SettingsIcon from "@mui/icons-material/Settings";
 import Avatar from "@mui/material/Avatar";
 import Box from "@mui/material/Box";
 import Divider from "@mui/material/Divider";
@@ -9,12 +11,10 @@ import ListItemIcon from "@mui/material/ListItemIcon";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import Typography from "@mui/material/Typography";
-import AccountCircleIcon from "@mui/icons-material/AccountCircle";
-import LogoutIcon from "@mui/icons-material/Logout";
-import SettingsIcon from "@mui/icons-material/Settings";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
 import { useTranslations } from "next-intl";
+import { useState } from "react";
 
 /** Props for the {@link AccountMenu} component. */
 export interface AccountMenuProps {

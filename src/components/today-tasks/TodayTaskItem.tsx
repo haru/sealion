@@ -1,10 +1,11 @@
 "use client";
 
-import { IconButton, Tooltip } from "@mui/material";
-import RemoveCircleOutlineIcon from "@mui/icons-material/RemoveCircleOutline";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import RemoveCircleOutlineIcon from "@mui/icons-material/RemoveCircleOutline";
+import { IconButton, Tooltip } from "@mui/material";
 import { useTranslations } from "next-intl";
+
 import IssueCard from "@/components/IssueCard";
 
 /** Props for {@link TodayTaskItem}. */

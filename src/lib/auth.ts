@@ -1,10 +1,11 @@
-import NextAuth from "next-auth";
-import Credentials from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import bcrypt from "bcryptjs";
-import { prisma } from "@/lib/db";
-import { authConfig } from "@/lib/auth.config";
+import NextAuth from "next-auth";
+import Credentials from "next-auth/providers/credentials";
+
 import { getAuthSettings } from "@/lib/auth-settings";
+import { authConfig } from "@/lib/auth.config";
+import { prisma } from "@/lib/db";
 
 /** Seconds between re-checks of `passwordChangedAt` in the JWT callback. */
 const PWD_CHANGE_RECHECK_INTERVAL_S = 5 * 60;
@@ -20,13 +21,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) return null;
+        if (!credentials?.email || !credentials?.password) { return null; }
 
         const user = await prisma.user.findUnique({
           where: { email: credentials.email as string },
         });
 
-        if (!user) return null;
+        if (!user) { return null; }
 
         if (user.status === "PENDING") {
           throw new Error("EMAIL_NOT_VERIFIED");
@@ -40,7 +41,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           user.passwordHash
         );
 
-        if (!isValid) return null;
+        if (!isValid) { return null; }
 
         return { id: user.id, email: user.email, role: user.role };
       },

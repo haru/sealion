@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import {
   Button,
   CircularProgress,
@@ -12,6 +11,7 @@ import {
   Typography,
 } from "@mui/material";
 import { useTranslations } from "next-intl";
+import { useState } from "react";
 
 /** Props for {@link CompleteIssueModal}. */
 export interface CompleteIssueModalProps {
@@ -50,7 +50,7 @@ export default function CompleteIssueModal({
 
   /** Resets internal state when the dialog closes. */
   function handleCancel() {
-    if (loading) return;
+    if (loading) { return; }
     setComment("");
     setError(null);
     onCancel();

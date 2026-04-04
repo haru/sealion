@@ -1,6 +1,5 @@
 "use client";
 
-import { type FormEvent, useState } from "react";
 import {
   Box,
   Dialog,
@@ -16,6 +15,8 @@ import {
   CircularProgress,
 } from "@mui/material";
 import { useTranslations } from "next-intl";
+import { type FormEvent, useState } from "react";
+
 import { formatProviderApiError, type ProviderApiErrorResponse } from "@/lib/error-utils";
 
 type ProviderType = "GITHUB" | "JIRA" | "REDMINE" | "GITLAB";

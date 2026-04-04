@@ -1,7 +1,9 @@
 import axios from "axios";
-import { IssueProviderAdapter, NormalizedIssue, ExternalProject } from "@/lib/types";
-import { buildAxiosProxyConfig } from "@/lib/proxy";
 
+import { buildAxiosProxyConfig } from "@/lib/proxy";
+import type { ExternalProject, IssueProviderAdapter, NormalizedIssue } from "@/lib/types";
+
+/* eslint-disable @typescript-eslint/naming-convention */
 interface GitLabIssue {
   id: number;
   iid: number;
@@ -17,6 +19,7 @@ interface GitLabProject {
   id: number;
   name_with_namespace: string;
 }
+/* eslint-enable @typescript-eslint/naming-convention */
 
 interface GitLabUser {
   id: number;
@@ -76,7 +79,7 @@ export class GitLabAdapter implements IssueProviderAdapter {
       });
       projects.push(...data);
       const nextPage = headers["x-next-page"];
-      if (!nextPage) break;
+      if (!nextPage) { break; }
       page = Number(nextPage);
     }
 
@@ -99,7 +102,7 @@ export class GitLabAdapter implements IssueProviderAdapter {
       );
       issues.push(...data);
       const nextPage = headers["x-next-page"];
-      if (!nextPage) break;
+      if (!nextPage) { break; }
       page = Number(nextPage);
     }
 
@@ -126,7 +129,7 @@ export class GitLabAdapter implements IssueProviderAdapter {
       );
       issues.push(...data);
       const nextPage = headers["x-next-page"];
-      if (!nextPage) break;
+      if (!nextPage) { break; }
       page = Number(nextPage);
     }
 

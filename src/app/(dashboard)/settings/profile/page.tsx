@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -8,10 +8,11 @@ import Container from "@mui/material/Container";
 import Divider from "@mui/material/Divider";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import { useTranslations } from "next-intl";
-import { usePageHeader } from "@/hooks/usePageHeader";
+import { useState, useEffect } from "react";
+
 import { DeleteAccountModal } from "@/components/settings/DeleteAccountModal";
+import { usePageHeader } from "@/hooks/usePageHeader";
 
 /**
  * Profile settings page.

@@ -24,7 +24,7 @@ export const authConfig: NextAuthConfig = {
         nextUrl.pathname.startsWith("/confirm") ||
         nextUrl.pathname.startsWith("/reset-password");
 
-      if (isProtected && !isAuthenticated) return false;
+      if (isProtected && !isAuthenticated) { return false; }
       if (isAuthPage && isAuthenticated) {
         return Response.redirect(new URL("/", nextUrl));
       }

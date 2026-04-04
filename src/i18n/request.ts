@@ -1,5 +1,5 @@
-import { getRequestConfig } from "next-intl/server";
 import { headers } from "next/headers";
+import { getRequestConfig } from "next-intl/server";
 
 /** Supported locales. The array order does not affect detection precedence. */
 const SUPPORTED_LOCALES = ["en", "ja"] as const;
@@ -14,7 +14,7 @@ type SupportedLocale = (typeof SUPPORTED_LOCALES)[number];
  * @returns The best matching locale from SUPPORTED_LOCALES, defaulting to "en".
  */
 export function detectLocale(acceptLanguage: string): SupportedLocale {
-  if (!acceptLanguage) return "en";
+  if (!acceptLanguage) { return "en"; }
 
   // Parse "en-US,en;q=0.9,ja;q=0.8" into [{lang, q}, ...] sorted by q descending
   const entries = acceptLanguage

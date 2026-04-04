@@ -1,7 +1,8 @@
-import { NextRequest } from "next/server";
+import type { NextRequest } from "next/server";
+
+import { ok, fail } from "@/lib/api-response";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { ok, fail } from "@/lib/api-response";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -13,7 +14,7 @@ type Params = { params: Promise<{ id: string }> };
  */
 export async function PATCH(req: NextRequest, { params }: Params) {
   const session = await auth();
-  if (!session) return fail("UNAUTHORIZED", 401);
+  if (!session) { return fail("UNAUTHORIZED", 401); }
 
   const { id } = await params;
 
@@ -30,11 +31,11 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       select: { id: true, includeUnassigned: true },
     })
     .catch((e: unknown) => {
-      if ((e as { code?: string }).code === "P2025") return null;
+      if ((e as { code?: string }).code === "P2025") { return null; }
       throw e;
     });
 
-  if (!updated) return fail("FORBIDDEN", 403);
+  if (!updated) { return fail("FORBIDDEN", 403); }
 
   return ok(updated);
 }
@@ -44,14 +45,14 @@ export async function PATCH(req: NextRequest, { params }: Params) {
  */
 export async function DELETE(_req: NextRequest, { params }: Params) {
   const session = await auth();
-  if (!session) return fail("UNAUTHORIZED", 401);
+  if (!session) { return fail("UNAUTHORIZED", 401); }
 
   const { id } = await params;
 
   const result = await prisma.project.deleteMany({
     where: { id, issueProvider: { userId: session.user.id } },
   });
-  if (result.count === 0) return fail("NOT_FOUND", 404);
+  if (result.count === 0) { return fail("NOT_FOUND", 404); }
 
   return new Response(null, { status: 204 });
 }

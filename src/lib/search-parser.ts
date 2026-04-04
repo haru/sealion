@@ -55,6 +55,51 @@ const CREATED_UPDATED_PRESETS: ReadonlySet<string> = new Set<CreatedUpdatedPrese
 ]);
 
 /**
+ * Advances `i` past a standalone double-quoted phrase and pushes the phrase
+ * content (trimmed) into `tokens`. If the quote is unclosed, splits the
+ * remaining text as plain tokens and returns `raw.length` to signal "done".
+ * @param raw - The full raw query string.
+ * @param i - Index of the opening `"` character.
+ * @param tokens - Mutable token array to push into.
+ * @returns The index to continue scanning from.
+ */
+function consumeQuotedPhrase(raw: string, i: number, tokens: string[]): number {
+  const closeIdx = raw.indexOf('"', i + 1);
+  if (closeIdx === -1) {
+    // Unclosed quote — treat remaining content as plain tokens
+    const rest = raw.slice(i + 1).trim();
+    if (rest.length > 0) {
+      tokens.push(...rest.split(/\s+/).filter((t) => t.length > 0));
+    }
+    return raw.length;
+  }
+  const phrase = raw.slice(i + 1, closeIdx).trim();
+  if (phrase.length > 0) { tokens.push(phrase); }
+  return closeIdx + 1;
+}
+
+/**
+ * Finds the end index of a plain token (or `key:"value"` token) starting at
+ * `start`. Does NOT consume whitespace — stops at the first space.
+ * @param raw - The full raw query string.
+ * @param start - Start index of the token.
+ * @returns Index one past the last character of the token.
+ */
+function findPlainTokenEnd(raw: string, start: number): number {
+  let end = start;
+  while (end < raw.length && raw[end] !== " ") {
+    if (raw[end] === '"' && end > start && raw[end - 1] === ":") {
+      // key:"value" pattern: extend token to closing quote
+      const closeQuote = raw.indexOf('"', end + 1);
+      if (closeQuote !== -1) { return closeQuote + 1; }
+      return raw.length; // unclosed quote — include remainder
+    }
+    end++;
+  }
+  return end;
+}
+
+/**
  * Tokenises a raw query string, respecting double-quoted phrases.
  * Also handles the `key:"value with spaces"` pattern used when appending filter
  * tokens that contain spaces (e.g. project names).
@@ -68,44 +113,13 @@ function tokenise(raw: string): string[] {
 
   while (i < raw.length) {
     // Skip whitespace
-    while (i < raw.length && raw[i] === " ") i++;
-    if (i >= raw.length) break;
+    while (i < raw.length && raw[i] === " ") { i++; }
+    if (i >= raw.length) { break; }
 
     if (raw[i] === '"') {
-      // Standalone quoted phrase
-      const closeIdx = raw.indexOf('"', i + 1);
-      if (closeIdx !== -1) {
-        // Properly closed quoted phrase
-        const phrase = raw.slice(i + 1, closeIdx).trim();
-        if (phrase.length > 0) tokens.push(phrase);
-        i = closeIdx + 1;
-      } else {
-        // Unclosed quote — treat remaining content as plain tokens
-        const rest = raw.slice(i + 1).trim();
-        if (rest.length > 0) {
-          tokens.push(...rest.split(/\s+/).filter((t) => t.length > 0));
-        }
-        break;
-      }
+      i = consumeQuotedPhrase(raw, i, tokens);
     } else {
-      // Plain token or key:"value with spaces" pattern.
-      // Read character by character until whitespace, but if we encounter
-      // the pattern `:"` (quote immediately after colon), extend the token
-      // to include the entire quoted value.
-      let end = i;
-      while (end < raw.length && raw[end] !== " ") {
-        if (raw[end] === '"' && end > i && raw[end - 1] === ":") {
-          // key:"value" pattern: extend token to closing quote
-          const closeQuote = raw.indexOf('"', end + 1);
-          if (closeQuote !== -1) {
-            end = closeQuote + 1;
-          } else {
-            end = raw.length; // unclosed quote — include remainder
-          }
-          break;
-        }
-        end++;
-      }
+      const end = findPlainTokenEnd(raw, i);
       tokens.push(raw.slice(i, end));
       i = end;
     }
@@ -123,7 +137,7 @@ function tokenise(raw: string): string[] {
  */
 export function parseSearchQuery(raw: string): ParsedQuery {
   const trimmed = raw.trim();
-  if (trimmed.length === 0) return { keywords: [] };
+  if (trimmed.length === 0) { return { keywords: [] }; }
 
   const tokens = tokenise(trimmed);
   const result: ParsedQuery = { keywords: [] };

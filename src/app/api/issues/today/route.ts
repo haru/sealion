@@ -1,6 +1,6 @@
+import { ok, fail } from "@/lib/api-response";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { ok, fail } from "@/lib/api-response";
 import { getProviderIconUrl } from "@/services/issue-provider/factory";
 
 /**
@@ -15,7 +15,7 @@ import { getProviderIconUrl } from "@/services/issue-provider/factory";
  */
 export async function GET() {
   const session = await auth();
-  if (!session) return fail("UNAUTHORIZED", 401);
+  if (!session) { return fail("UNAUTHORIZED", 401); }
 
   const items = await prisma.issue.findMany({
     where: {

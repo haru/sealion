@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+
 import { allProjectsProcessed, shouldThrottleSync, SYNC_THROTTLE_MS } from "@/lib/sync-utils";
 
 /** Provider with project sync status, as returned by GET /api/sync. */
@@ -81,29 +82,29 @@ export function useSyncPolling(
 
   // Poll for sync completion
   useEffect(() => {
-    if (!isSyncing) return;
+    if (!isSyncing) { return; }
 
     let cancelled = false;
     let pollTimeout: ReturnType<typeof setTimeout>;
 
     /** Polls the sync status endpoint and refreshes data when all providers have synced. */
     async function poll() {
-      if (cancelled) return;
+      if (cancelled) { return; }
 
       try {
         const syncRes = await fetch("/api/sync");
-        if (!cancelled && syncRes.ok) {
-          const json = await syncRes.json();
-          const providers: SyncProvider[] = json.data;
-          setSyncProviders(providers);
+        if (cancelled || !syncRes.ok) { return; }
 
-          const since = syncStartedAtRef.current;
-          if (since && allProjectsProcessed(providers, since)) {
-            if (!cancelled) await onSyncComplete();
-            setIsSyncing(false);
-            return;
-          }
-        }
+        const json = await syncRes.json();
+        const providers: SyncProvider[] = json.data;
+        setSyncProviders(providers);
+
+        const since = syncStartedAtRef.current;
+        if (!since || !allProjectsProcessed(providers, since)) { return; }
+
+        if (!cancelled) { await onSyncComplete(); }
+        setIsSyncing(false);
+        return;
       } catch {
         // Network error during poll — stop syncing and notify user
         if (!cancelled) {

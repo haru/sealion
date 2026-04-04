@@ -1,9 +1,10 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
-import { useTranslations } from "next-intl";
 import Alert from "@mui/material/Alert";
 import Typography from "@mui/material/Typography";
+import { useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
+
 import { AuthCard } from "@/components/ui/AuthCard";
 import { AuthFooterLink } from "@/components/ui/AuthFooterLink";
 

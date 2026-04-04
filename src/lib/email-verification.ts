@@ -1,8 +1,10 @@
 import { randomBytes } from "crypto";
+
+import { type UserStatus } from "@prisma/client";
+
 import { prisma } from "@/lib/db";
-import { getSmtpSettings } from "@/lib/smtp-settings";
 import { sendMail } from "@/lib/smtp-mailer";
-import type { UserStatus } from "@prisma/client";
+import { getSmtpSettings } from "@/lib/smtp-settings";
 
 /**
  * Returns the application base URL for constructing absolute links.
@@ -106,7 +108,7 @@ export class TokenExpiredError extends Error {
 export async function verifyToken(
   token: string,
 ): Promise<{ id: string; email: string; status: UserStatus } | null> {
-  if (!token) return null;
+  if (!token) { return null; }
 
   const user = await prisma.user.findUnique({
     where: { emailVerificationToken: token },
@@ -119,9 +121,9 @@ export async function verifyToken(
     },
   });
 
-  if (!user) return null;
-  if (!user.emailVerificationTokenExpires) return null;
-  if (new Date() > user.emailVerificationTokenExpires) throw new TokenExpiredError();
+  if (!user) { return null; }
+  if (!user.emailVerificationTokenExpires) { return null; }
+  if (new Date() > user.emailVerificationTokenExpires) { throw new TokenExpiredError(); }
 
   return { id: user.id, email: user.email, status: user.status };
 }

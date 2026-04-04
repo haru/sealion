@@ -1,6 +1,6 @@
-import { Prisma } from "@prisma/client";
+import { Prisma, type AuthSettings } from "@prisma/client";
+
 import { prisma } from "@/lib/db";
-import type { AuthSettings } from "@prisma/client";
 
 /**
  * Retrieves the current AuthSettings singleton record, creating it with defaults if absent.

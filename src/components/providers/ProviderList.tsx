@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import DeleteIcon from "@mui/icons-material/Delete";
+import EditIcon from "@mui/icons-material/Edit";
 import {
   IconButton,
   Chip,
@@ -9,11 +10,12 @@ import {
   Tooltip,
   Paper,
 } from "@mui/material";
-import DeleteIcon from "@mui/icons-material/Delete";
-import EditIcon from "@mui/icons-material/Edit";
 import { useTranslations } from "next-intl";
-import ProviderEditModal from "./ProviderEditModal";
+import { useState } from "react";
+
 import ProviderIcon from "@/components/ProviderIcon";
+
+import ProviderEditModal from "./ProviderEditModal";
 
 interface Provider {
   id: string;
@@ -108,7 +110,7 @@ export default function ProviderList({ providers, onDelete, onUpdated }: Provide
       {editingProvider && (
         <ProviderEditModal
           provider={editingProvider}
-          open={true}
+          open
           onClose={() => setEditingProvider(null)}
           onUpdated={(updated) => {
             onUpdated(updated);

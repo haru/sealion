@@ -1,14 +1,15 @@
 "use client";
 
-import { useState } from "react";
-import { signIn } from "next-auth/react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useTranslations } from "next-intl";
+import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import Alert from "@mui/material/Alert";
+import { useRouter, useSearchParams } from "next/navigation";
+import { signIn } from "next-auth/react";
+import { useTranslations } from "next-intl";
+import { useState } from "react";
+
 import { AuthCard } from "@/components/ui/AuthCard";
 import { AuthFooterLink } from "@/components/ui/AuthFooterLink";
 

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import AddIcon from "@mui/icons-material/Add";
+import SettingsIcon from "@mui/icons-material/Settings";
 import {
   Container,
   Paper,
@@ -12,14 +13,14 @@ import {
   Button,
   Box,
 } from "@mui/material";
-import AddIcon from "@mui/icons-material/Add";
-import SettingsIcon from "@mui/icons-material/Settings";
 import { useTranslations } from "next-intl";
-import { usePageHeader } from "@/hooks/usePageHeader";
-import ProviderList from "@/components/providers/ProviderList";
+import { useState, useEffect, useCallback } from "react";
+
 import AddProviderDialog from "@/components/providers/AddProviderDialog";
 import type { ProviderFormData } from "@/components/providers/ProviderForm";
+import ProviderList from "@/components/providers/ProviderList";
 import { useMessageQueue } from "@/hooks/useMessageQueue";
+import { usePageHeader } from "@/hooks/usePageHeader";
 import { formatProviderApiError, type ProviderApiErrorResponse } from "@/lib/error-utils";
 
 interface Provider {
@@ -91,7 +92,7 @@ export default function ProvidersPage() {
 
   /** Sends the delete request for the currently selected provider. */
   async function handleDeleteConfirm() {
-    if (!deleteId) return;
+    if (!deleteId) { return; }
 
     const res = await fetch(`/api/providers/${deleteId}`, { method: "DELETE" });
     if (res.ok) {

@@ -1,7 +1,8 @@
-import { NextRequest } from "next/server";
+import type { NextRequest } from "next/server";
+
+import { ok, fail } from "@/lib/api-response";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { ok, fail } from "@/lib/api-response";
 
 /**
  * PATCH /api/issues/today/reorder — Reorders today's flagged issues for the authenticated user.
@@ -10,10 +11,10 @@ import { ok, fail } from "@/lib/api-response";
  */
 export async function PATCH(req: NextRequest) {
   const session = await auth();
-  if (!session) return fail("UNAUTHORIZED", 401);
+  if (!session) { return fail("UNAUTHORIZED", 401); }
 
   const body = await req.json().catch(() => null);
-  if (!body) return fail("INVALID_BODY", 400);
+  if (!body) { return fail("INVALID_BODY", 400); }
 
   const { orderedIds } = body as { orderedIds?: unknown[] };
   if (!Array.isArray(orderedIds) || orderedIds.length === 0 || orderedIds.length > 100) {

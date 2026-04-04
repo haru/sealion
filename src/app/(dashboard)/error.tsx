@@ -1,7 +1,7 @@
 "use client";
 
-import { Box, Button, Typography } from "@mui/material";
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
+import { Box, Button, Typography } from "@mui/material";
 import { useTranslations } from "next-intl";
 
 /** Props for the dashboard error boundary. */

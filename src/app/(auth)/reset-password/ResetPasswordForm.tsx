@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
-import { useTranslations } from "next-intl";
+import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import Alert from "@mui/material/Alert";
+import { useTranslations } from "next-intl";
+import { useState } from "react";
+
 import { AuthCard } from "@/components/ui/AuthCard";
 
 /**

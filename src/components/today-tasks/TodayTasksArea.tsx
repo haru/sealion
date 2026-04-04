@@ -1,11 +1,12 @@
 "use client";
 
-import { Box, Typography } from "@mui/material";
-import GpsFixedIcon from "@mui/icons-material/GpsFixed";
-import AddIcon from "@mui/icons-material/Add";
-import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { useDroppable } from "@dnd-kit/core";
+import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import AddIcon from "@mui/icons-material/Add";
+import GpsFixedIcon from "@mui/icons-material/GpsFixed";
+import { Box, Typography } from "@mui/material";
 import { useTranslations } from "next-intl";
+
 import TodayTaskItem from "./TodayTaskItem";
 
 /**

@@ -1,6 +1,7 @@
 import axios from "axios";
-import { IssueProviderAdapter, NormalizedIssue, ExternalProject } from "@/lib/types";
+
 import { buildAxiosProxyConfig } from "@/lib/proxy";
+import type { ExternalProject, IssueProviderAdapter, NormalizedIssue } from "@/lib/types";
 
 interface JiraIssue {
   id: string;
@@ -91,10 +92,10 @@ export class JiraAdapter implements IssueProviderAdapter {
 
     while (true) {
       const body: Record<string, unknown> = { jql, maxResults, fields: ["summary", "status", "duedate", "created", "updated"] };
-      if (nextPageToken) body.nextPageToken = nextPageToken;
+      if (nextPageToken) { body.nextPageToken = nextPageToken; }
       const { data } = await this.client.post<JiraSearchResponse>("/search/jql", body);
       issues.push(...data.issues);
-      if (!data.nextPageToken || data.issues.length < maxResults) break;
+      if (!data.nextPageToken || data.issues.length < maxResults) { break; }
       nextPageToken = data.nextPageToken;
     }
 

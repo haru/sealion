@@ -1,9 +1,11 @@
 'use client';
 
-import { createContext, useContext, useState, useCallback, useEffect, useRef, ReactNode } from 'react';
-import { MessageData, MessageQueueContextType, MessageType, DISPLAY_CONSTRAINTS, isValidMessage, isValidMessageType } from './types';
+import { createContext, useContext, useState, useCallback, useEffect, useRef, type ReactNode } from 'react';
+
 import { addMessage, dismissMessage as dismissMessageUtil, closeAllMessages as closeAllMessagesUtil, processQueue } from '@/lib/message-queue';
+
 import MessageSnackbar from './MessageSnackbar';
+import { type MessageData, type MessageQueueContextType, type MessageType, DISPLAY_CONSTRAINTS, isValidMessage, isValidMessageType } from './types';
 
 /**
  * Message Queue Context

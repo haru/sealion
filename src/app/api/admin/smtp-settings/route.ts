@@ -1,8 +1,9 @@
-import { NextRequest } from "next/server";
+import type { NextRequest } from "next/server";
 import { z } from "zod";
+
+import { ok, fail } from "@/lib/api-response";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { ok, fail } from "@/lib/api-response";
 import { encrypt } from "@/lib/encryption";
 import { SMTP_DUMMY_PASSWORD } from "@/lib/smtp-mailer";
 
@@ -43,8 +44,8 @@ const smtpSettingsSchema = z
 /** Verifies the current session belongs to an admin user. */
 async function requireAdmin() {
   const session = await auth();
-  if (!session) return { error: fail("UNAUTHORIZED", 401), session: null };
-  if (session.user.role !== "ADMIN") return { error: fail("FORBIDDEN", 403), session: null };
+  if (!session) { return { error: fail("UNAUTHORIZED", 401), session: null }; }
+  if (session.user.role !== "ADMIN") { return { error: fail("FORBIDDEN", 403), session: null }; }
   return { error: null, session };
 }
 
@@ -60,8 +61,8 @@ async function requireAdmin() {
  * @returns The encrypted password to persist, or `null`.
  */
 function resolvePassword(incoming: string | null, existing: string | null): string | null {
-  if (incoming === SMTP_DUMMY_PASSWORD) return existing;
-  if (incoming === null || incoming.length === 0) return null;
+  if (incoming === SMTP_DUMMY_PASSWORD) { return existing; }
+  if (incoming === null || incoming.length === 0) { return null; }
   return encrypt(incoming);
 }
 
@@ -74,7 +75,7 @@ function resolvePassword(incoming: string | null, existing: string | null): stri
  */
 export async function GET() {
   const { error } = await requireAdmin();
-  if (error) return error;
+  if (error) { return error; }
 
   const settings = await prisma.smtpSettings.findUnique({ where: { id: "singleton" } });
 
@@ -106,13 +107,13 @@ export async function GET() {
  */
 export async function PUT(req: NextRequest) {
   const { error } = await requireAdmin();
-  if (error) return error;
+  if (error) { return error; }
 
   const body = await req.json().catch(() => null);
-  if (!body) return fail("INVALID_INPUT", 400);
+  if (!body) { return fail("INVALID_INPUT", 400); }
 
   const parsed = smtpSettingsSchema.safeParse(body);
-  if (!parsed.success) return fail("INVALID_INPUT", 400);
+  if (!parsed.success) { return fail("INVALID_INPUT", 400); }
 
   const { host, port, fromAddress, fromName, requireAuth, username, password, useTls } = parsed.data;
 

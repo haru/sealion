@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import EmailIcon from "@mui/icons-material/Email";
 import {
   Box,
   Button,
@@ -15,8 +15,9 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import EmailIcon from "@mui/icons-material/Email";
 import { useTranslations } from "next-intl";
+import { useState, useEffect } from "react";
+
 import { useMessageQueue } from "@/components/MessageQueue";
 import { usePageHeader } from "@/hooks/usePageHeader";
 import { SMTP_DUMMY_PASSWORD } from "@/lib/smtp-constants";
@@ -65,7 +66,7 @@ export default function SmtpSettingsPage() {
 
         const json = (await res.json()) as { data: SmtpSettingsData | null; error: string | null };
 
-        if (!json.data) return;
+        if (!json.data) { return; }
 
         const s = json.data;
         setHost(s.host);

@@ -1,9 +1,11 @@
 import pLimit from "p-limit";
-import { prisma } from "@/lib/db";
-import { createAdapter, ProviderCredentials } from "@/services/issue-provider/factory";
+
 import { decryptProviderCredentials } from "@/lib/credentials";
-import { SyncErrorInfo } from "@/lib/types";
+import { prisma } from "@/lib/db";
 import { createSyncErrorInfo } from "@/lib/error-utils";
+import type { SyncErrorInfo } from "@/lib/types";
+import { createAdapter } from "@/services/issue-provider/factory";
+import type { ProviderCredentials } from "@/services/issue-provider/factory";
 
 const PROVIDER_CONCURRENCY = 3;
 const PROJECT_CONCURRENCY = 5;
@@ -91,6 +93,7 @@ export async function syncProviders(userId: string): Promise<SyncErrorInfo[]> {
                     allIssues.map((issue) =>
                       tx.issue.upsert({
                         where: {
+                          // eslint-disable-next-line @typescript-eslint/naming-convention
                           projectId_externalId: {
                             projectId: project.id,
                             externalId: issue.externalId,

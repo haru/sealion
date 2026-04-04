@@ -1,9 +1,10 @@
-import { NextRequest } from "next/server";
+import { UserRole, UserStatus } from "@prisma/client";
+import { hash } from "bcryptjs";
+import type { NextRequest } from "next/server";
+
+import { ok, fail } from "@/lib/api-response";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { ok, fail } from "@/lib/api-response";
-import { hash } from "bcryptjs";
-import { UserRole, UserStatus } from "@prisma/client";
 import { deleteUserCascade } from "@/lib/deleteUserCascade";
 
 /** Maximum password length enforced by bcrypt. */
@@ -28,13 +29,13 @@ type Params = { params: Promise<{ id: string }> };
  */
 export async function PATCH(req: NextRequest, { params }: Params) {
   const session = await auth();
-  if (!session) return fail("UNAUTHORIZED", 401);
-  if (session.user.role !== "ADMIN") return fail("FORBIDDEN", 403);
+  if (!session) { return fail("UNAUTHORIZED", 401); }
+  if (session.user.role !== "ADMIN") { return fail("FORBIDDEN", 403); }
 
   const { id } = await params;
 
   const body = await req.json().catch(() => null);
-  if (!body) return fail("INVALID_BODY", 400);
+  if (!body) { return fail("INVALID_BODY", 400); }
 
   const { status, role, email, username, password } = body as {
     status?: string;
@@ -60,7 +61,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   }
 
   const target = await prisma.user.findUnique({ where: { id } });
-  if (!target) return fail("NOT_FOUND", 404);
+  if (!target) { return fail("NOT_FOUND", 404); }
 
   // Self-protection: cannot change own role to a *different* value
   if (id === session.user.id && role !== undefined && role !== target.role) {
@@ -68,10 +69,10 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   }
 
   const updateData: Record<string, unknown> = {};
-  if (status && VALID_STATUSES.has(status as UserStatus)) updateData.status = status;
-  if (role && Object.values(UserRole).includes(role as UserRole)) updateData.role = role;
-  if (typeof email === "string" && email.trim()) updateData.email = email.trim().toLowerCase();
-  if (typeof username === "string") updateData.username = username.trim();
+  if (status && VALID_STATUSES.has(status as UserStatus)) { updateData.status = status; }
+  if (role && Object.values(UserRole).includes(role as UserRole)) { updateData.role = role; }
+  if (typeof email === "string" && email.trim()) { updateData.email = email.trim().toLowerCase(); }
+  if (typeof username === "string") { updateData.username = username.trim(); }
   if (typeof password === "string" && password.length >= 8) {
     updateData.passwordHash = await hash(password, 12);
   }
@@ -104,15 +105,15 @@ export async function PATCH(req: NextRequest, { params }: Params) {
  */
 export async function DELETE(_req: NextRequest, { params }: Params) {
   const session = await auth();
-  if (!session) return fail("UNAUTHORIZED", 401);
-  if (session.user.role !== "ADMIN") return fail("FORBIDDEN", 403);
+  if (!session) { return fail("UNAUTHORIZED", 401); }
+  if (session.user.role !== "ADMIN") { return fail("FORBIDDEN", 403); }
 
   const { id } = await params;
 
-  if (id === session.user.id) return fail("CANNOT_DELETE_SELF", 403);
+  if (id === session.user.id) { return fail("CANNOT_DELETE_SELF", 403); }
 
   const target = await prisma.user.findUnique({ where: { id } });
-  if (!target) return fail("NOT_FOUND", 404);
+  if (!target) { return fail("NOT_FOUND", 404); }
 
   await deleteUserCascade(prisma, id);
 

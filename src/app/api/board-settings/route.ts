@@ -1,12 +1,12 @@
+import { ok, fail } from "@/lib/api-response";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { ok, fail } from "@/lib/api-response";
 import {
-  BoardSettings,
+  type BoardSettings,
   DEFAULT_BOARD_SETTINGS,
   VALID_SORT_CRITERIA,
   MAX_SORT_CRITERIA,
-  SortCriterion,
+  type SortCriterion,
 } from "@/lib/types";
 
 /**

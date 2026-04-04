@@ -2,9 +2,11 @@
 
 import { Box, Pagination, Typography } from "@mui/material";
 import { useTranslations } from "next-intl";
+
+import type { ClientIssue } from "@/types/issue";
+
 import TodoItem from "./TodoItem";
 import TodoListSkeleton from "./TodoListSkeleton";
-import type { ClientIssue } from "@/types/issue";
 
 /** Props for {@link TodoList}. */
 interface TodoListProps {

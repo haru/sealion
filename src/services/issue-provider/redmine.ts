@@ -1,7 +1,9 @@
 import axios from "axios";
-import { IssueProviderAdapter, NormalizedIssue, ExternalProject } from "@/lib/types";
-import { buildAxiosProxyConfig } from "@/lib/proxy";
 
+import { buildAxiosProxyConfig } from "@/lib/proxy";
+import type { ExternalProject, IssueProviderAdapter, NormalizedIssue } from "@/lib/types";
+
+/* eslint-disable @typescript-eslint/naming-convention */
 interface RedmineIssue {
   id: number;
   subject: string;
@@ -23,6 +25,16 @@ interface RedmineIssueStatus {
   name: string;
   is_closed: boolean;
 }
+
+interface RedmineIssueListResponse {
+  issues: RedmineIssue[];
+  total_count: number;
+}
+
+interface RedmineIssueStatusResponse {
+  issue_statuses: RedmineIssueStatus[];
+}
+/* eslint-enable @typescript-eslint/naming-convention */
 
 /** Adapter for the Redmine issue provider. */
 export class RedmineAdapter implements IssueProviderAdapter {
@@ -67,10 +79,7 @@ export class RedmineAdapter implements IssueProviderAdapter {
     const limit = 100;
 
     while (true) {
-      const { data } = await this.client.get<{
-        issues: RedmineIssue[];
-        total_count: number;
-      }>("/issues.json", {
+      const { data } = await this.client.get<RedmineIssueListResponse>("/issues.json", {
         params: {
           project_id: projectExternalId,
           assigned_to_id: "me",
@@ -80,7 +89,7 @@ export class RedmineAdapter implements IssueProviderAdapter {
         },
       });
       issues.push(...data.issues);
-      if (!data.total_count || issues.length >= data.total_count) break;
+      if (!data.total_count || issues.length >= data.total_count) { break; }
       offset += limit;
     }
 
@@ -111,10 +120,7 @@ export class RedmineAdapter implements IssueProviderAdapter {
     let serverTotal = 0;
 
     while (fetchedPages < MAX_PAGES) {
-      const { data } = await this.client.get<{
-        issues: RedmineIssue[];
-        total_count: number;
-      }>("/issues.json", {
+      const { data } = await this.client.get<RedmineIssueListResponse>("/issues.json", {
         params: {
           project_id: projectExternalId,
           status_id: "open",
@@ -125,7 +131,7 @@ export class RedmineAdapter implements IssueProviderAdapter {
       allOpenIssues.push(...data.issues);
       serverTotal = data.total_count ?? 0;
       fetchedPages++;
-      if (!data.total_count || allOpenIssues.length >= data.total_count) break;
+      if (!data.total_count || allOpenIssues.length >= data.total_count) { break; }
       offset += limit;
     }
 
@@ -152,9 +158,7 @@ export class RedmineAdapter implements IssueProviderAdapter {
 
   /** {@inheritDoc} */
   async closeIssue(projectExternalId: string, issueExternalId: string): Promise<void> {
-    const { data } = await this.client.get<{ issue_statuses: RedmineIssueStatus[] }>(
-      "/issue_statuses.json"
-    );
+    const { data } = await this.client.get<RedmineIssueStatusResponse>("/issue_statuses.json");
     const closedStatus = data.issue_statuses.find((s) => s.is_closed);
     if (!closedStatus) {
       throw new Error("No closed status found in Redmine");

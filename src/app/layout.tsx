@@ -1,10 +1,12 @@
+import CssBaseline from "@mui/material/CssBaseline";
+import { ThemeProvider } from "@mui/material/styles";
+import { AppRouterCacheProvider } from "@mui/material-nextjs/v15-appRouter";
 import type { Metadata } from "next";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
-import { AppRouterCacheProvider } from "@mui/material-nextjs/v15-appRouter";
-import { ThemeProvider } from "@mui/material/styles";
-import CssBaseline from "@mui/material/CssBaseline";
+
 import { theme } from "@/lib/theme";
+
 import "./globals.css";
 
 /** Application metadata for SEO and browser tab display. */

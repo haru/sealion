@@ -1,6 +1,5 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import {
   Alert,
   Button,
@@ -16,6 +15,8 @@ import {
   TextField,
 } from "@mui/material";
 import { useTranslations } from "next-intl";
+import { useState, useEffect } from "react";
+
 import { useMessageQueue } from "@/components/MessageQueue";
 
 /** A user record as returned by GET /api/admin/users. */
@@ -85,7 +86,7 @@ export default function EditUserDialog({ user, isSelf, onClose, onSaved }: EditU
 
   /** Submits the PATCH request with only the fields that changed. */
   async function handleSave() {
-    if (!user) return;
+    if (!user) { return; }
     setSaving(true);
     setError(null);
 

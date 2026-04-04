@@ -1,7 +1,9 @@
 import { redirect } from "next/navigation";
-import { prisma } from "@/lib/db";
+
 import { getAuthSettings } from "@/lib/auth-settings";
+import { prisma } from "@/lib/db";
 import { getSmtpSettings } from "@/lib/smtp-settings";
+
 import { LoginForm } from "./LoginForm";
 
 /**
