@@ -121,6 +121,25 @@
     "saveSuccess": "Auth settings saved successfully",
     "saveError": "Failed to save auth settings. Please try again."
   },
+  "smtpSettings": {
+    "title": "Email (SMTP) Settings",
+    "host": "SMTP Host",
+    "port": "Port",
+    "fromAddress": "From Address",
+    "fromName": "From Name",
+    "requireAuth": "Require Authentication",
+    "username": "Username",
+    "password": "Password",
+    "useTls": "Use TLS",
+    "save": "Save",
+    "saveSuccess": "SMTP settings saved successfully",
+    "saveError": "Failed to save SMTP settings. Please try again.",
+    "testSend": "Send Test Email",
+    "testSendSuccess": "Test email sent successfully",
+    "testSendError": "Failed to send test email: {message}",
+    "unknownError": "Unknown error",
+    "networkError": "Network error"
+  },
   "sidebar": {
     "todo": "TODO",
     "projectManagement": "Project Management",
@@ -128,6 +147,7 @@
     "systemAdmin": "System Administration",
     "userManagement": "User Management",
     "authSettings": "Auth Settings",
+    "smtpSettings": "Email Settings",
     "tagline": "All Your TODOs, One Place.",
     "version": "Sealion v{version}",
     "settings": "Settings"

@@ -121,6 +121,25 @@
     "saveSuccess": "認証設定を保存しました",
     "saveError": "認証設定の保存に失敗しました。再試行してください。"
   },
+  "smtpSettings": {
+    "title": "メール送信設定",
+    "host": "SMTPホスト",
+    "port": "ポート",
+    "fromAddress": "送信元アドレス",
+    "fromName": "送信者名",
+    "requireAuth": "要認証",
+    "username": "ユーザー名",
+    "password": "パスワード",
+    "useTls": "TLSを使用",
+    "save": "保存",
+    "saveSuccess": "メール送信設定を保存しました",
+    "saveError": "メール送信設定の保存に失敗しました。再試行してください。",
+    "testSend": "テスト送信",
+    "testSendSuccess": "テストメールを送信しました",
+    "testSendError": "テストメールの送信に失敗しました: {message}",
+    "unknownError": "不明なエラー",
+    "networkError": "ネットワークエラー"
+  },
   "sidebar": {
     "todo": "TODO",
     "projectManagement": "プロジェクト管理",
@@ -128,6 +147,7 @@
     "systemAdmin": "システム管理",
     "userManagement": "ユーザー管理",
     "authSettings": "認証設定",
+    "smtpSettings": "メール送信設定",
     "tagline": "All Your TODOs, One Place.",
     "version": "Sealion v{version}",
     "settings": "設定"

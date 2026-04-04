@@ -118,6 +118,21 @@ model Issue {
   @@index([pinned])
 }
 
+// ─── SMTP Settings ───────────────────────────────────────────────────────────
+
+model SmtpSettings {
+  id                String   @id @default("singleton")
+  host              String
+  port              Int      @default(587)
+  fromAddress       String
+  fromName          String   @default("Sealion")
+  requireAuth       Boolean  @default(false)
+  username          String?
+  encryptedPassword String?
+  useTls            Boolean  @default(false)
+  updatedAt         DateTime @updatedAt
+}
+
 // ─── Auth Settings ───────────────────────────────────────────────────────────
 
 model AuthSettings {
