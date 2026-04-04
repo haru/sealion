@@ -11,6 +11,7 @@ import Typography from "@mui/material/Typography";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import { useTranslations } from "next-intl";
 import { usePageHeader } from "@/hooks/usePageHeader";
+import { DeleteAccountModal } from "@/components/settings/DeleteAccountModal";
 
 /**
  * Profile settings page.
@@ -25,14 +26,20 @@ export default function ProfileSettingsPage() {
   usePageHeader(t("title"), undefined, AccountCircleIcon);
 
   const [username, setUsername] = useState("");
+  const [userEmail, setUserEmail] = useState("");
+  const [isLastAdmin, setIsLastAdmin] = useState(false);
   const [isUsernameLoading, setIsUsernameLoading] = useState(true);
   const [usernameLoadError, setUsernameLoadError] = useState<string | null>(null);
   const [isUsernameSubmitting, setIsUsernameSubmitting] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
 
   useEffect(() => {
     fetch("/api/account/profile")
       .then(async (res) => {
-        const json = (await res.json()) as { data: { username: string | null } | null; error: string | null };
+        const json = (await res.json()) as {
+          data: { username: string | null; email: string; isLastAdmin: boolean } | null;
+          error: string | null;
+        };
         if (!res.ok || !json.data) {
           throw new Error(json.error ?? "load failed");
         }
@@ -40,6 +47,8 @@ export default function ProfileSettingsPage() {
       })
       .then((json) => {
         setUsername(json.data?.username ?? "");
+        setUserEmail(json.data?.email ?? "");
+        setIsLastAdmin(json.data?.isLastAdmin ?? false);
         setIsUsernameLoading(false);
       })
       .catch(() => {
@@ -243,6 +252,43 @@ export default function ProfileSettingsPage() {
           {t("saveChanges")}
         </Button>
       </Box>
+
+      {!isLastAdmin && (
+        <>
+          <Divider sx={{ my: 5 }} />
+
+          <Box
+            data-testid="danger-zone-section"
+            sx={{
+              border: "1px solid",
+              borderColor: "error.main",
+              borderRadius: 1,
+              p: 3,
+            }}
+          >
+            <Typography variant="h6" sx={{ fontWeight: 600, mb: 1, color: "error.main" }}>
+              {t("dangerZone.title")}
+            </Typography>
+            <Typography variant="body2" sx={{ mb: 2, color: "text.secondary" }}>
+              {t("dangerZone.deleteAccountDescription")}
+            </Typography>
+            <Button
+              data-testid="delete-account-button"
+              variant="outlined"
+              color="error"
+              onClick={() => setDeleteModalOpen(true)}
+            >
+              {t("dangerZone.deleteAccount")}
+            </Button>
+          </Box>
+
+          <DeleteAccountModal
+            open={deleteModalOpen}
+            userEmail={userEmail}
+            onClose={() => setDeleteModalOpen(false)}
+          />
+        </>
+      )}
     </Container>
   );
 }

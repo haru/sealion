@@ -2,13 +2,20 @@ import { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { ok, fail } from "@/lib/api-response";
+import { UserRole } from "@prisma/client";
 
 const MAX_USERNAME_LENGTH = 50;
 
 /**
- * Returns the authenticated user's profile (username).
+ * Returns the authenticated user's profile.
  *
- * @returns `200 { data: { username: string | null }, error: null }` on success,
+ * Response fields:
+ * - `username` — the user's display name (may be null)
+ * - `email` — the user's email address
+ * - `isLastAdmin` — true when the user is an ADMIN and the only active admin in the system;
+ *   always false for regular users. Used to conditionally hide the "Delete Account" button.
+ *
+ * @returns `200 { data: { username, email, isLastAdmin }, error: null }` on success,
  *          `401` if unauthenticated or user not found,
  *          `500` on unexpected server error.
  */
@@ -23,12 +30,19 @@ export async function GET() {
   try {
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { username: true },
+      select: { username: true, email: true, role: true },
     });
     if (!user) {
       return fail("UNAUTHORIZED", 401);
     }
-    return ok({ username: user.username });
+
+    let isLastAdmin = false;
+    if (user.role === UserRole.ADMIN) {
+      const adminCount = await prisma.user.count({ where: { role: UserRole.ADMIN } });
+      isLastAdmin = adminCount <= 1;
+    }
+
+    return ok({ username: user.username, email: user.email, isLastAdmin });
   } catch (err: unknown) {
     console.error("[account/profile] GET failed", {
       userId,
