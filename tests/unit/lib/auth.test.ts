@@ -40,6 +40,7 @@ jest.mock("@/lib/db", () => ({
     },
     user: {
       findUnique: jest.fn(),
+      update: jest.fn(),
     },
   },
 }));
@@ -261,5 +262,101 @@ describe("authorize callback — user status checks", () => {
     });
 
     expect(result).toEqual({ id: "user-1", email: "user@example.com", role: "USER" });
+  });
+});
+
+describe("jwt callback — passwordChangedAt session invalidation", () => {
+  const MOCKED_NOW = 1_700_000_000_000;
+
+  beforeAll(async () => {
+    await import("@/lib/auth");
+  });
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    jest.spyOn(Date, "now").mockReturnValue(MOCKED_NOW);
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  it("rejects session when token.iat < user.passwordChangedAt", async () => {
+    const passwordChangedAtMs = MOCKED_NOW + 60_000;
+    mockUserFindUnique.mockResolvedValue({
+      ...ACTIVE_USER,
+      passwordChangedAt: new Date(passwordChangedAtMs),
+    });
+
+    const jwt = capturedCallbacks?.jwt;
+    if (!jwt) throw new Error("jwt callback not captured");
+
+    const token = await jwt({
+      token: makeToken({ iat: Math.floor(MOCKED_NOW / 1000) }),
+      user: null as unknown as never,
+      trigger: undefined,
+      account: null,
+      session: undefined,
+    });
+
+    expect(token).toEqual({});
+  });
+
+  it("allows session when token.iat >= user.passwordChangedAt", async () => {
+    const passwordChangedAtMs = MOCKED_NOW - 60_000;
+    mockUserFindUnique.mockResolvedValue({
+      ...ACTIVE_USER,
+      passwordChangedAt: new Date(passwordChangedAtMs),
+    });
+
+    const jwt = capturedCallbacks?.jwt;
+    if (!jwt) throw new Error("jwt callback not captured");
+
+    const token = await jwt({
+      token: makeToken({ iat: Math.floor(MOCKED_NOW / 1000) }),
+      user: null as unknown as never,
+      trigger: undefined,
+      account: null,
+      session: undefined,
+    });
+
+    expect(token.id).toBe("user-1");
+  });
+
+  it("allows session when passwordChangedAt is null (backward compat)", async () => {
+    mockUserFindUnique.mockResolvedValue({
+      ...ACTIVE_USER,
+      passwordChangedAt: null,
+    });
+
+    const jwt = capturedCallbacks?.jwt;
+    if (!jwt) throw new Error("jwt callback not captured");
+
+    const token = await jwt({
+      token: makeToken({ iat: Math.floor(MOCKED_NOW / 1000) }),
+      user: null as unknown as never,
+      trigger: undefined,
+      account: null,
+      session: undefined,
+    });
+
+    expect(token.id).toBe("user-1");
+  });
+
+  it("allows session when user is not found (token has no sub)", async () => {
+    mockUserFindUnique.mockResolvedValue(null);
+
+    const jwt = capturedCallbacks?.jwt;
+    if (!jwt) throw new Error("jwt callback not captured");
+
+    const token = await jwt({
+      token: makeToken({ sub: undefined }),
+      user: null as unknown as never,
+      trigger: undefined,
+      account: null,
+      session: undefined,
+    });
+
+    expect(token.id).toBe("user-1");
   });
 });

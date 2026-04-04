@@ -1,6 +1,22 @@
 <!--
 SYNC IMPACT REPORT
 ==================
+Version change: 1.2.2 → 1.2.3
+Modified principles: None
+Added rules:
+  - Development Workflow › Database Migrations: migration files merged to develop
+    MUST never be modified; safe alternative is a new additive migration.
+Added sections: None
+Removed sections: None
+Templates checked:
+  - .specify/templates/plan-template.md ✅ no impact
+  - .specify/templates/spec-template.md ✅ no impact
+  - .specify/templates/tasks-template.md ✅ no impact
+Follow-up TODOs: None.
+
+---
+
+Previous entry (1.2.1 → 1.2.2)
 Version change: 1.2.1 → 1.2.2
 Modified principles:
   - III. Multi-Provider Adapter Abstraction: added GitLab to concrete provider list
@@ -178,6 +194,20 @@ amendment.
 6. TSDoc present on all newly added or modified exported symbols (summary, `@param`, `@returns`,
    and `@throws` where applicable).
 
+### Database Migrations
+
+- Migration files MUST never be modified once they have been merged into the `develop` branch.
+- If a schema change is required after a migration is merged, a new additive migration MUST be
+  created instead.
+- `prisma migrate dev` MUST NOT be run without first checking for drift
+  (`npx prisma migrate status`); if drift is detected, stop and inform the user before proceeding.
+- Destructive schema changes (dropping columns or tables) MUST be handled in a separate,
+  explicitly reviewed migration with a clear rationale.
+
+**Rationale**: Modifying an already-merged migration rewrites history that other developers
+and environments have already applied. This causes irrecoverable drift, data loss, and broken
+migration chains that are extremely difficult to recover from in production.
+
 ### Feature Development Order
 
 1. Research & Reuse — search GitHub / docs before writing new code.
@@ -211,4 +241,4 @@ arises between this document and any other guideline, this constitution takes pr
 - Complexity violations MUST be justified in the plan's Complexity Tracking table.
 - Security and TDD compliance MUST be verified during code review on every PR.
 
-**Version**: 1.2.2 | **Ratified**: 2026-03-20 | **Last Amended**: 2026-04-03
+**Version**: 1.2.3 | **Ratified**: 2026-03-20 | **Last Amended**: 2026-04-04

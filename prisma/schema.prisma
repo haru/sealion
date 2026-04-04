@@ -37,6 +37,7 @@ model User {
   status                          UserStatus  @default(ACTIVE)
   emailVerificationToken          String?     @unique
   emailVerificationTokenExpires   DateTime?
+  passwordChangedAt               DateTime?
   createdAt                       DateTime    @default(now())
   updatedAt    DateTime @updatedAt
 

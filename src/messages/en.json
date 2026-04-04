@@ -366,6 +366,30 @@
       "error": "Error"
     }
   },
+  "resetPassword": {
+    "title": "Reset Password",
+    "emailLabel": "Email",
+    "submit": "Send Reset Link",
+    "successMessage": "If an account with this email exists, a password reset link has been sent.",
+    "confirmTitle": "Set New Password",
+    "passwordLabel": "New Password",
+    "confirmPasswordLabel": "Confirm New Password",
+    "confirmSubmit": "Reset Password",
+    "passwordMismatch": "Passwords do not match",
+    "passwordTooShort": "Password must be at least 8 characters",
+    "passwordTooLong": "Password must be 72 characters or fewer",
+    "resultSuccessTitle": "Password Reset Successful",
+    "resultSuccessMessage": "Your password has been reset. You can now log in with your new password.",
+    "errorExpiredToken": "This password reset link has expired. Please request a new one.",
+    "errorInvalidToken": "This password reset link is invalid.",
+    "errorSuspended": "This account has been suspended. Password reset is not available.",
+    "errorNotFound": "This password reset link is invalid.",
+    "errorMissingToken": "The password reset link is missing a token.",
+    "requestNewLink": "Request a new reset email",
+    "forgotPassword": "Forgot password?",
+    "rateLimitError": "Please wait before requesting another reset.",
+    "generalError": "An unexpected error occurred. Please try again."
+  },
   "a11y": {
     "openMenu": "Open menu",
     "settings": "Settings"

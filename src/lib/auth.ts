@@ -51,6 +51,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
      * On `signIn`, reads `sessionTimeoutMinutes` from AuthSettings and sets `token.exp` when
      * a non-null timeout is configured. Other triggers leave the token unchanged.
      *
+     * Also checks `user.passwordChangedAt` — if the JWT was issued before the password was
+     * last changed, the session is rejected by returning an empty token object.
+     *
      * @param token - The current JWT payload.
      * @param user - The authenticated user object (present only on signIn).
      * @param trigger - The event that triggered the callback.
@@ -68,6 +71,22 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const { sessionTimeoutMinutes } = await getAuthSettings();
         if (sessionTimeoutMinutes !== null) {
           token.exp = Math.floor(Date.now() / 1000) + sessionTimeoutMinutes * 60;
+        }
+      }
+
+      // Invalidate session if password was changed after the token was issued
+      const userId = (token.sub as string | undefined) ?? (token.id as string | undefined);
+      if (userId) {
+        const dbUser = await prisma.user.findUnique({
+          where: { id: userId },
+          select: { passwordChangedAt: true },
+        });
+
+        if (dbUser?.passwordChangedAt) {
+          const iat = token.iat as number | undefined;
+          if (iat !== undefined && iat < Math.floor(dbUser.passwordChangedAt.getTime() / 1000)) {
+            return {};
+          }
         }
       }
 
