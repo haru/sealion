@@ -2,11 +2,7 @@ import { NextRequest } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
 import { ok, fail } from "@/lib/api-response";
-import {
-  verifyPasswordResetToken,
-  consumePasswordResetToken,
-  TokenExpiredError,
-} from "@/lib/password-reset";
+import { normalizeEmail, verifyPasswordResetToken, TokenExpiredError } from "@/lib/password-reset";
 
 /**
  * POST /api/auth/reset-password/confirm
@@ -14,6 +10,8 @@ import {
  * Validates the password reset token, checks the user status, hashes the new
  * password with bcrypt (cost 12), updates the user record (including
  * `passwordChangedAt` for JWT session invalidation), and consumes the token.
+ * The password update and token deletion are performed atomically within a
+ * single database transaction.
  */
 export async function POST(request: NextRequest) {
   let body: { token?: string; password?: string; confirmPassword?: string };
@@ -59,8 +57,10 @@ export async function POST(request: NextRequest) {
     return fail("INVALID_TOKEN", 410);
   }
 
+  const normalizedEmail = normalizeEmail(email);
+
   const user = await prisma.user.findUnique({
-    where: { email },
+    where: { email: normalizedEmail },
     select: { id: true, status: true },
   });
 
@@ -74,15 +74,18 @@ export async function POST(request: NextRequest) {
 
   const hashedPassword = await bcrypt.hash(password, 12);
 
-  await prisma.user.update({
-    where: { id: user.id },
-    data: {
-      passwordHash: hashedPassword,
-      passwordChangedAt: new Date(),
-    },
-  });
-
-  await consumePasswordResetToken(token);
+  await prisma.$transaction([
+    prisma.user.update({
+      where: { id: user.id },
+      data: {
+        passwordHash: hashedPassword,
+        passwordChangedAt: new Date(),
+      },
+    }),
+    prisma.verificationToken.deleteMany({
+      where: { token },
+    }),
+  ]);
 
   return ok({ message: "Password has been reset successfully." });
 }

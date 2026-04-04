@@ -1,10 +1,10 @@
 /** @jest-environment node */
 /**
- * Integration tests for token invalidation on re-request and edge cases.
+ * Integration tests for reset-password route edge cases with mocked
+ * password-reset helpers.
  *
- * These tests verify that re-requesting a password reset invalidates the
- * previous token and that suspended/deleted users are handled correctly
- * on the confirm endpoint.
+ * These tests cover request and confirm endpoint behavior, including
+ * handling suspended or deleted users during password reset confirmation.
  */
 
 import { NextRequest } from "next/server";
@@ -13,6 +13,7 @@ jest.mock("@/lib/password-reset", () => ({
   sendPasswordResetEmail: jest.fn().mockResolvedValue(undefined),
   verifyPasswordResetToken: jest.fn().mockResolvedValue("user@example.com"),
   consumePasswordResetToken: jest.fn().mockResolvedValue(undefined),
+  normalizeEmail: jest.fn((email: string) => email.trim().toLowerCase()),
   isRateLimited: jest.fn().mockReturnValue(false),
   RateLimitedError: class RateLimitedError extends Error {
     constructor() { super("Rate limit exceeded"); this.name = "RateLimitedError"; }
@@ -31,12 +32,12 @@ jest.mock("@/lib/db", () => ({
       create: jest.fn().mockResolvedValue({}),
       findUnique: jest.fn(),
       deleteMany: jest.fn().mockResolvedValue({ count: 1 }),
-      delete: jest.fn().mockResolvedValue({}),
     },
     user: {
       findUnique: jest.fn(),
       update: jest.fn().mockResolvedValue({}),
     },
+    $transaction: jest.fn((ops: Promise<unknown>[]) => Promise.all(ops)),
   },
 }));
 

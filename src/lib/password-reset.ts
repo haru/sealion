@@ -5,9 +5,20 @@ import { generateToken, getAppBaseUrl } from "@/lib/email-verification";
 
 const RATE_LIMIT_MS = 60_000;
 const TOKEN_EXPIRY_HOURS = 24;
+const RATE_LIMIT_MAX_ENTRIES = 10_000;
 
 /** In-memory rate-limit tracker: email → timestamp of last request. */
 const rateLimitMap = new Map<string, number>();
+
+/** Removes expired entries from the rate-limit map to prevent unbounded growth. */
+function cleanupExpiredEntries(): void {
+  const now = Date.now();
+  for (const [key, timestamp] of rateLimitMap) {
+    if (now - timestamp >= RATE_LIMIT_MS) {
+      rateLimitMap.delete(key);
+    }
+  }
+}
 
 /**
  * Error thrown when a password reset request is rate-limited.
@@ -30,15 +41,30 @@ export class SmtpNotConfiguredError extends Error {
 }
 
 /**
+ * Normalizes an email address for consistent storage and lookup.
+ *
+ * @param email - The raw email address.
+ * @returns The trimmed, lowercased email.
+ */
+export function normalizeEmail(email: string): string {
+  return email.trim().toLowerCase();
+}
+
+/**
  * Checks whether the given email address is currently rate-limited.
  *
- * If the email was recently requested (within `RATE_LIMIT_MS`), records the
- * current time and returns `true`. Otherwise returns `false`.
+ * If the email was recently requested (within `RATE_LIMIT_MS`), returns
+ * `true` without updating the stored timestamp. Otherwise records the current
+ * time and returns `false`.
  *
  * @param email - The email address to check.
  * @returns `true` if the request should be blocked, `false` otherwise.
  */
 export function isRateLimited(email: string): boolean {
+  if (rateLimitMap.size > RATE_LIMIT_MAX_ENTRIES) {
+    cleanupExpiredEntries();
+  }
+
   const now = Date.now();
   const lastRequest = rateLimitMap.get(email);
 
@@ -53,17 +79,19 @@ export function isRateLimited(email: string): boolean {
 /**
  * Sends a password reset email to the given address.
  *
- * Validates SMTP configuration and rate limiting before proceeding. If the
- * email has been requested recently (within 60 seconds), throws
- * {@link RateLimitedError}. Any existing password-reset tokens for the email
- * are deleted before creating a new one (FR-007).
+ * Validates SMTP configuration, checks user eligibility, and enforces rate
+ * limiting before proceeding. The email is normalized (trimmed and lowercased).
+ * If the user does not exist or is not active, returns silently without
+ * sending an email to prevent account enumeration.
  *
  * @param email - The recipient email address.
  * @throws {@link SmtpNotConfiguredError} When SMTP settings have not been configured.
  * @throws {@link RateLimitedError} When the email is rate-limited.
  */
 export async function sendPasswordResetEmail(email: string): Promise<void> {
-  if (isRateLimited(email)) {
+  const normalizedEmail = normalizeEmail(email);
+
+  if (isRateLimited(normalizedEmail)) {
     throw new RateLimitedError();
   }
 
@@ -72,7 +100,16 @@ export async function sendPasswordResetEmail(email: string): Promise<void> {
     throw new SmtpNotConfiguredError();
   }
 
-  const identifier = `password-reset:${email}`;
+  const user = await prisma.user.findUnique({
+    where: { email: normalizedEmail },
+    select: { status: true },
+  });
+
+  if (!user || user.status !== "ACTIVE") {
+    return;
+  }
+
+  const identifier = `password-reset:${normalizedEmail}`;
 
   await prisma.verificationToken.deleteMany({
     where: { identifier },
@@ -98,7 +135,7 @@ export async function sendPasswordResetEmail(email: string): Promise<void> {
       ? await decryptSmtpPassword(settings.encryptedPassword)
       : null,
     useTls: settings.useTls,
-    to: email,
+    to: normalizedEmail,
     subject: "Reset your password",
     text: `Please reset your password by clicking the following link:\n\n${resetUrl}\n\nIf you did not request a password reset, you can ignore this email.`,
   });
@@ -155,10 +192,13 @@ export async function verifyPasswordResetToken(token: string): Promise<string | 
 /**
  * Consumes (deletes) a password reset token after it has been used.
  *
+ * This operation is idempotent: if the token has already been consumed or does
+ * not exist, it completes successfully without throwing.
+ *
  * @param token - The token to delete.
  */
 export async function consumePasswordResetToken(token: string): Promise<void> {
-  await prisma.verificationToken.delete({
+  await prisma.verificationToken.deleteMany({
     where: { token },
   });
 }

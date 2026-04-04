@@ -2,11 +2,28 @@ import { NextRequest } from "next/server";
 import { ok, fail } from "@/lib/api-response";
 import {
   sendPasswordResetEmail,
+  normalizeEmail,
   RateLimitedError,
   SmtpNotConfiguredError,
 } from "@/lib/password-reset";
 
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+/**
+ * Validates the basic structure of an email address without regex.
+ *
+ * Checks that the string contains exactly one `@` with non-empty local and
+ * domain parts, and that the domain has at least one dot after the `@`.
+ *
+ * @param email - The raw email string to validate.
+ * @returns `true` if the string looks like a valid email.
+ */
+function isValidEmail(email: string): boolean {
+  const trimmed = email.trim();
+  const atIndex = trimmed.indexOf("@");
+  if (atIndex < 1) return false;
+  const dotIndex = trimmed.lastIndexOf(".");
+  if (dotIndex <= atIndex + 1 || dotIndex === trimmed.length - 1) return false;
+  return true;
+}
 
 /**
  * POST /api/auth/reset-password
@@ -24,12 +41,14 @@ export async function POST(request: NextRequest) {
 
   const { email } = body;
 
-  if (!email || typeof email !== "string" || !EMAIL_REGEX.test(email)) {
+  if (!email || typeof email !== "string" || !isValidEmail(email)) {
     return fail("INVALID_EMAIL", 400);
   }
 
+  const normalizedEmail = normalizeEmail(email);
+
   try {
-    await sendPasswordResetEmail(email);
+    await sendPasswordResetEmail(normalizedEmail);
   } catch (error: unknown) {
     if (error instanceof RateLimitedError) {
       return fail("RATE_LIMITED", 429);
@@ -37,6 +56,10 @@ export async function POST(request: NextRequest) {
     if (error instanceof SmtpNotConfiguredError) {
       return fail("INTERNAL_ERROR", 500);
     }
+    console.error("[reset-password] unexpected error sending reset email", {
+      email: normalizedEmail,
+      error: error instanceof Error ? error.message : String(error),
+    });
   }
 
   return ok({

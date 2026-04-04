@@ -4,7 +4,7 @@ import { NextRequest } from "next/server";
 
 jest.mock("@/lib/password-reset", () => ({
   verifyPasswordResetToken: jest.fn().mockResolvedValue("user@example.com"),
-  consumePasswordResetToken: jest.fn().mockResolvedValue(undefined),
+  normalizeEmail: jest.fn((email: string) => email.trim().toLowerCase()),
   TokenExpiredError: class TokenExpiredError extends Error {
     constructor() { super("Token expired"); this.name = "TokenExpiredError"; }
   },
@@ -16,6 +16,10 @@ jest.mock("@/lib/db", () => ({
       findUnique: jest.fn(),
       update: jest.fn(),
     },
+    verificationToken: {
+      deleteMany: jest.fn().mockResolvedValue({ count: 1 }),
+    },
+    $transaction: jest.fn((ops: Promise<unknown>[]) => Promise.all(ops)),
   },
 }));
 
@@ -23,14 +27,16 @@ jest.mock("bcryptjs", () => ({
   hash: jest.fn().mockResolvedValue("$2a$12$newhash"),
 }));
 
-import { verifyPasswordResetToken, consumePasswordResetToken, TokenExpiredError } from "@/lib/password-reset";
+import { verifyPasswordResetToken, normalizeEmail, TokenExpiredError } from "@/lib/password-reset";
 import { prisma } from "@/lib/db";
 import bcrypt from "bcryptjs";
 
 const mockVerify = verifyPasswordResetToken as jest.Mock;
-const mockConsume = consumePasswordResetToken as jest.Mock;
+const mockNormalizeEmail = normalizeEmail as jest.Mock;
 const mockUserFindUnique = prisma.user.findUnique as jest.Mock;
 const mockUserUpdate = prisma.user.update as jest.Mock;
+const mockVTDeleteMany = prisma.verificationToken.deleteMany as jest.Mock;
+const mockTransaction = prisma.$transaction as jest.Mock;
 const mockHash = bcrypt.hash as jest.Mock;
 
 function makeRequest(body: object): NextRequest {
@@ -52,11 +58,13 @@ describe("POST /api/auth/reset-password/confirm", () => {
     mockVerify.mockResolvedValue("user@example.com");
     mockUserFindUnique.mockResolvedValue(ACTIVE_USER);
     mockUserUpdate.mockResolvedValue({ ...ACTIVE_USER, passwordChangedAt: new Date() });
+    mockNormalizeEmail.mockImplementation((email: string) => email.trim().toLowerCase());
   });
 
-  it("returns 200 and updates password on success", async () => {
+  it("returns 200 and updates password on success within a transaction", async () => {
+    const token = "a".repeat(64);
     const req = makeRequest({
-      token: "a".repeat(64),
+      token,
       password: "newpassword123",
       confirmPassword: "newpassword123",
     });
@@ -67,15 +75,25 @@ describe("POST /api/auth/reset-password/confirm", () => {
     expect(json.data.message).toBeTruthy();
     expect(json.error).toBeNull();
     expect(mockHash).toHaveBeenCalledWith("newpassword123", 12);
-    expect(mockUserUpdate).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: { id: "user-1" },
-        data: expect.objectContaining({
-          passwordChangedAt: expect.any(Date),
-        }),
-      }),
-    );
-    expect(mockConsume).toHaveBeenCalledWith("a".repeat(64));
+    expect(mockTransaction).toHaveBeenCalledTimes(1);
+    expect(mockVTDeleteMany).toHaveBeenCalledWith({ where: { token } });
+  });
+
+  it("normalizes email from the token before user lookup", async () => {
+    mockVerify.mockResolvedValue("User@Example.COM ");
+
+    const req = makeRequest({
+      token: "tok",
+      password: "newpassword123",
+      confirmPassword: "newpassword123",
+    });
+    await POST(req);
+
+    expect(mockNormalizeEmail).toHaveBeenCalledWith("User@Example.COM ");
+    expect(mockUserFindUnique).toHaveBeenCalledWith({
+      where: { email: "user@example.com" },
+      select: { id: true, status: true },
+    });
   });
 
   it("returns 400 when token is missing", async () => {

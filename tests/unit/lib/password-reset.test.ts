@@ -6,10 +6,9 @@ jest.mock("@/lib/db", () => ({
       create: jest.fn(),
       findUnique: jest.fn(),
       deleteMany: jest.fn(),
-      delete: jest.fn(),
     },
     user: {
-      findUnique: jest.fn(),
+      findUnique: jest.fn().mockResolvedValue({ id: "user-1", status: "ACTIVE" }),
       update: jest.fn(),
     },
   },
@@ -47,18 +46,32 @@ import {
   verifyPasswordResetToken,
   consumePasswordResetToken,
   isRateLimited,
+  normalizeEmail,
   TokenExpiredError,
 } from "@/lib/password-reset";
 
 const mockVTCreate = prisma.verificationToken.create as jest.Mock;
 const mockVTFindUnique = prisma.verificationToken.findUnique as jest.Mock;
 const mockVTDeleteMany = prisma.verificationToken.deleteMany as jest.Mock;
-const mockVTDelete = prisma.verificationToken.delete as jest.Mock;
 const mockSendMail = sendMail as jest.Mock;
 const mockGetSmtpSettings = getSmtpSettings as jest.Mock;
+const mockUserFindUnique = prisma.user.findUnique as jest.Mock;
 
 beforeEach(() => {
   jest.clearAllMocks();
+  mockUserFindUnique.mockResolvedValue({ id: "user-1", status: "ACTIVE" });
+  mockGetSmtpSettings.mockResolvedValue({
+    id: "singleton",
+    host: "smtp.example.com",
+    port: 587,
+    fromAddress: "no-reply@example.com",
+    fromName: "Sealion",
+    requireAuth: false,
+    username: null,
+    encryptedPassword: null,
+    useTls: false,
+    updatedAt: new Date(),
+  });
   jest.useFakeTimers();
   jest.setSystemTime(new Date("2026-01-15T12:00:00Z"));
 });
@@ -67,12 +80,22 @@ afterEach(() => {
   jest.useRealTimers();
 });
 
+describe("normalizeEmail", () => {
+  it("trims whitespace and lowercases the email", () => {
+    expect(normalizeEmail("  User@Example.COM  ")).toBe("user@example.com");
+  });
+
+  it("returns the same string when already normalized", () => {
+    expect(normalizeEmail("user@example.com")).toBe("user@example.com");
+  });
+});
+
 describe("sendPasswordResetEmail", () => {
-  it("creates a VerificationToken with password-reset:<email> identifier and 24h expiry, then sends mail", async () => {
+  it("creates a VerificationToken with normalized email identifier and 24h expiry, then sends mail", async () => {
     mockVTCreate.mockResolvedValue({});
     mockVTDeleteMany.mockResolvedValue({ count: 0 });
 
-    await sendPasswordResetEmail("user@example.com");
+    await sendPasswordResetEmail("User@Example.COM");
 
     expect(mockVTDeleteMany).toHaveBeenCalledWith({
       where: { identifier: "password-reset:user@example.com" },
@@ -103,6 +126,33 @@ describe("sendPasswordResetEmail", () => {
     isRateLimited("rate@example.com");
 
     await expect(sendPasswordResetEmail("rate@example.com")).rejects.toThrow("Rate limit exceeded");
+  });
+
+  it("returns silently when user does not exist (prevents enumeration)", async () => {
+    mockUserFindUnique.mockResolvedValue(null);
+
+    await sendPasswordResetEmail("nonexistent@example.com");
+
+    expect(mockVTCreate).not.toHaveBeenCalled();
+    expect(mockSendMail).not.toHaveBeenCalled();
+  });
+
+  it("returns silently when user is suspended", async () => {
+    mockUserFindUnique.mockResolvedValue({ id: "user-1", status: "SUSPENDED" });
+
+    await sendPasswordResetEmail("suspended@example.com");
+
+    expect(mockVTCreate).not.toHaveBeenCalled();
+    expect(mockSendMail).not.toHaveBeenCalled();
+  });
+
+  it("returns silently when user is pending", async () => {
+    mockUserFindUnique.mockResolvedValue({ id: "user-1", status: "PENDING" });
+
+    await sendPasswordResetEmail("pending@example.com");
+
+    expect(mockVTCreate).not.toHaveBeenCalled();
+    expect(mockSendMail).not.toHaveBeenCalled();
   });
 });
 
@@ -142,13 +192,22 @@ describe("verifyPasswordResetToken", () => {
 });
 
 describe("consumePasswordResetToken", () => {
-  it("deletes the token by its value", async () => {
-    mockVTDelete.mockResolvedValue({});
+  it("deletes the token idempotently using deleteMany", async () => {
+    mockVTDeleteMany.mockResolvedValue({ count: 1 });
 
     await consumePasswordResetToken("abc");
 
-    expect(mockVTDelete).toHaveBeenCalledWith({
+    expect(mockVTDeleteMany).toHaveBeenCalledWith({
       where: { token: "abc" },
+    });
+  });
+
+  it("does not throw when token does not exist (idempotent)", async () => {
+    mockVTDeleteMany.mockResolvedValue({ count: 0 });
+
+    await expect(consumePasswordResetToken("nonexistent")).resolves.toBeUndefined();
+    expect(mockVTDeleteMany).toHaveBeenCalledWith({
+      where: { token: "nonexistent" },
     });
   });
 });

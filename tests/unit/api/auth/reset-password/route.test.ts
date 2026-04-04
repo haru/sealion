@@ -4,6 +4,7 @@ import { NextRequest } from "next/server";
 
 jest.mock("@/lib/password-reset", () => ({
   sendPasswordResetEmail: jest.fn().mockResolvedValue(undefined),
+  normalizeEmail: jest.fn((email: string) => email.trim().toLowerCase()),
   RateLimitedError: class RateLimitedError extends Error {
     constructor() { super("Rate limit exceeded"); this.name = "RateLimitedError"; }
   },
@@ -12,9 +13,10 @@ jest.mock("@/lib/password-reset", () => ({
   },
 }));
 
-import { sendPasswordResetEmail, RateLimitedError, SmtpNotConfiguredError } from "@/lib/password-reset";
+import { sendPasswordResetEmail, normalizeEmail, RateLimitedError, SmtpNotConfiguredError } from "@/lib/password-reset";
 
 const mockSendPasswordResetEmail = sendPasswordResetEmail as jest.Mock;
+const mockNormalizeEmail = normalizeEmail as jest.Mock;
 
 function makeRequest(body: object): NextRequest {
   return new NextRequest("http://localhost/api/auth/reset-password", {
@@ -27,6 +29,7 @@ function makeRequest(body: object): NextRequest {
 describe("POST /api/auth/reset-password", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockNormalizeEmail.mockImplementation((email: string) => email.trim().toLowerCase());
   });
 
   it("returns 200 with success message for a valid registered email", async () => {
@@ -37,6 +40,14 @@ describe("POST /api/auth/reset-password", () => {
     expect(res.status).toBe(200);
     expect(json.data.message).toBeTruthy();
     expect(json.error).toBeNull();
+    expect(mockSendPasswordResetEmail).toHaveBeenCalledWith("user@example.com");
+  });
+
+  it("normalizes email before sending reset email", async () => {
+    const req = makeRequest({ email: "  User@Example.COM  " });
+    await POST(req);
+
+    expect(mockNormalizeEmail).toHaveBeenCalledWith("  User@Example.COM  ");
     expect(mockSendPasswordResetEmail).toHaveBeenCalledWith("user@example.com");
   });
 

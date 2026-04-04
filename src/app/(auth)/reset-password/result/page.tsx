@@ -25,6 +25,7 @@ const ERROR_KEY_MAP: Record<string, string> = {
  */
 export default function ResetPasswordResultPage() {
   const t = useTranslations("resetPassword");
+  const tAuth = useTranslations("auth");
   const searchParams = useSearchParams();
   const status = searchParams.get("status");
   const error = searchParams.get("error");
@@ -44,7 +45,7 @@ export default function ResetPasswordResultPage() {
           <Alert severity="success" sx={{ mb: 3, borderRadius: 2 }}>
             {t("resultSuccessMessage")}
           </Alert>
-          <AuthFooterLink prompt="" href="/login" label="auth.login" />
+          <AuthFooterLink prompt="" href="/login" label={tAuth("login")} />
         </>
       )}
 

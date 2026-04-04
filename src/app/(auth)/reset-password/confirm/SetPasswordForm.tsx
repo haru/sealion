@@ -9,7 +9,6 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import Alert from "@mui/material/Alert";
 import { AuthCard } from "@/components/ui/AuthCard";
-import { AuthFooterLink } from "@/components/ui/AuthFooterLink";
 
 /** Props for {@link SetPasswordForm}. */
 interface SetPasswordFormProps {
@@ -30,14 +29,12 @@ export function SetPasswordForm({ token }: SetPasswordFormProps) {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showResendLink, setShowResendLink] = useState(false);
 
   /** Submits the new password to the confirm endpoint. */
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    setShowResendLink(false);
 
     if (password.length < 8) {
       setError(t("passwordTooShort"));
@@ -72,7 +69,6 @@ export function SetPasswordForm({ token }: SetPasswordFormProps) {
       const json = await res.json();
 
       if (res.status === 410) {
-        setShowResendLink(true);
         const errorCode = json.error === "EXPIRED_TOKEN" ? "expired_token" : "invalid_token";
         router.push(`/reset-password/result?error=${errorCode}`);
         return;
@@ -147,10 +143,6 @@ export function SetPasswordForm({ token }: SetPasswordFormProps) {
           {t("confirmSubmit")}
         </Button>
       </Box>
-
-      {showResendLink && (
-        <AuthFooterLink prompt="" href="/reset-password" label={t("requestNewLink")} />
-      )}
     </AuthCard>
   );
 }
