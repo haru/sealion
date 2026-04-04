@@ -81,14 +81,43 @@ describe("sendMail", () => {
     );
   });
 
-  it("calls createTransport without auth when requireAuth is true but password is null", async () => {
+  it("throws when requireAuth is true but password is null", async () => {
+    const { sendMail } = await import("@/lib/smtp-mailer");
+
+    await expect(
+      sendMail({ ...baseConfig, requireAuth: true, username: "user@example.com", password: null })
+    ).rejects.toThrow("SMTP authentication requires both a username and password.");
+  });
+
+  it("throws when requireAuth is true but username is null", async () => {
+    const { sendMail } = await import("@/lib/smtp-mailer");
+
+    await expect(
+      sendMail({ ...baseConfig, requireAuth: true, username: null, password: "secret" })
+    ).rejects.toThrow("SMTP authentication requires both a username and password.");
+  });
+
+  it("throws when requireAuth is true but username is empty", async () => {
+    const { sendMail } = await import("@/lib/smtp-mailer");
+
+    await expect(
+      sendMail({ ...baseConfig, requireAuth: true, username: "  ", password: "secret" })
+    ).rejects.toThrow("SMTP authentication requires both a username and password.");
+  });
+
+  it("sets connection, greeting, and socket timeouts on transport", async () => {
     mockSendMail.mockResolvedValue({ messageId: "1" });
 
     const { sendMail } = await import("@/lib/smtp-mailer");
-    await sendMail({ ...baseConfig, requireAuth: true, username: "user@example.com", password: null });
+    await sendMail(baseConfig);
 
-    const transportOptions = mockCreateTransport.mock.calls[0][0] as Record<string, unknown>;
-    expect(transportOptions.auth).toBeUndefined();
+    expect(mockCreateTransport).toHaveBeenCalledWith(
+      expect.objectContaining({
+        connectionTimeout: 10_000,
+        greetingTimeout: 10_000,
+        socketTimeout: 30_000,
+      })
+    );
   });
 
   it("calls sendMail with correct from/to/subject/text", async () => {

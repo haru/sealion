@@ -139,11 +139,11 @@ export default function SmtpSettingsPage() {
         addMessage("information", t("testSendSuccess"));
       } else {
         const json = (await res.json()) as { error: string | null };
-        const message = json.error ?? "Unknown error";
+        const message = json.error ?? t("unknownError");
         addMessage("error", t("testSendError", { message }));
       }
     } catch {
-      addMessage("error", t("testSendError", { message: "Network error" }));
+      addMessage("error", t("testSendError", { message: t("networkError") }));
     } finally {
       setTesting(false);
     }

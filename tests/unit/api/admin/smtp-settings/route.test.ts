@@ -205,14 +205,41 @@ describe("PUT /api/admin/smtp-settings", () => {
     expect(callArg.update.encryptedPassword).toBe("existing:encrypted");
   });
 
-  it("keeps null when null password and no existing record", async () => {
+  it("returns 400 when requireAuth is true but username is null", async () => {
     mockAuth.mockResolvedValue(ADMIN_SESSION);
-    mockFindUnique.mockResolvedValue(null);
+    const { PUT } = await import("@/app/api/admin/smtp-settings/route");
+    const res = await PUT(makePutRequest({ ...VALID_PAYLOAD, requireAuth: true, username: null, password: "secret" }));
+    expect(res.status).toBe(400);
+  });
+
+  it("returns 400 when requireAuth is true but username is empty", async () => {
+    mockAuth.mockResolvedValue(ADMIN_SESSION);
+    const { PUT } = await import("@/app/api/admin/smtp-settings/route");
+    const res = await PUT(makePutRequest({ ...VALID_PAYLOAD, requireAuth: true, username: "  ", password: "secret" }));
+    expect(res.status).toBe(400);
+  });
+
+  it("returns 400 when requireAuth is true but password is null", async () => {
+    mockAuth.mockResolvedValue(ADMIN_SESSION);
+    const { PUT } = await import("@/app/api/admin/smtp-settings/route");
+    const res = await PUT(makePutRequest({ ...VALID_PAYLOAD, requireAuth: true, username: "u@ex.com", password: null }));
+    expect(res.status).toBe(400);
+  });
+
+  it("returns 400 when requireAuth is true but password is empty", async () => {
+    mockAuth.mockResolvedValue(ADMIN_SESSION);
+    const { PUT } = await import("@/app/api/admin/smtp-settings/route");
+    const res = await PUT(makePutRequest({ ...VALID_PAYLOAD, requireAuth: true, username: "u@ex.com", password: "" }));
+    expect(res.status).toBe(400);
+  });
+
+  it("clears encryptedPassword when null password is sent with existing record", async () => {
+    mockAuth.mockResolvedValue(ADMIN_SESSION);
+    mockFindUnique.mockResolvedValue({ ...BASE_SETTINGS, encryptedPassword: "existing:encrypted" });
     mockUpsert.mockResolvedValue({ ...BASE_SETTINGS, encryptedPassword: null });
     const { PUT } = await import("@/app/api/admin/smtp-settings/route");
-    const res = await PUT(makePutRequest(VALID_PAYLOAD));
+    const res = await PUT(makePutRequest({ ...VALID_PAYLOAD }));
     expect(res.status).toBe(200);
-    expect(mockEncrypt).not.toHaveBeenCalled();
     const callArg = mockUpsert.mock.calls[0][0];
     expect(callArg.update.encryptedPassword).toBeNull();
   });

@@ -7,16 +7,38 @@ import { getSmtpSettings } from "@/lib/smtp-settings";
 import { sendMail, SMTP_DUMMY_PASSWORD } from "@/lib/smtp-mailer";
 
 /** Zod schema for the test send POST request body. */
-const testPayloadSchema = z.object({
-  host: z.string().min(1),
-  port: z.number().int().min(1).max(65535),
-  fromAddress: z.string().email(),
-  fromName: z.string().min(1),
-  requireAuth: z.boolean(),
-  username: z.string().nullable(),
-  password: z.string().nullable(),
-  useTls: z.boolean(),
-});
+const testPayloadSchema = z
+  .object({
+    host: z.string().min(1),
+    port: z.number().int().min(1).max(65535),
+    fromAddress: z.string().email(),
+    fromName: z.string().min(1),
+    requireAuth: z.boolean(),
+    username: z.string().nullable(),
+    password: z.string().nullable(),
+    useTls: z.boolean(),
+  })
+  .superRefine((value, ctx) => {
+    if (!value.requireAuth) {
+      return;
+    }
+
+    if (value.username === null || value.username.trim().length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["username"],
+        message: "USERNAME_REQUIRED_WHEN_AUTH_ENABLED",
+      });
+    }
+
+    if (value.password === null || value.password.length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["password"],
+        message: "PASSWORD_REQUIRED_WHEN_AUTH_ENABLED",
+      });
+    }
+  });
 
 /** Verifies the current session belongs to an admin user. */
 async function requireAdmin() {
@@ -29,15 +51,16 @@ async function requireAdmin() {
 /**
  * Resolves the SMTP password for a test send operation.
  *
- * - If `incoming` is `null` or the dummy sentinel, fetches and decrypts the
- *   stored encrypted password from the database.
+ * - If `incoming` is the dummy sentinel, fetches and decrypts the stored
+ *   encrypted password from the database.
+ * - If `incoming` is `null`, returns `null` (no password / cleared).
  * - Otherwise, uses `incoming` directly (plaintext from the form).
  *
  * @param incoming - Password value from the request body.
  * @returns Resolved plaintext password, or `null` if no password is configured.
  */
 async function resolveTestPassword(incoming: string | null): Promise<string | null> {
-  if (incoming === null || incoming === SMTP_DUMMY_PASSWORD) {
+  if (incoming === SMTP_DUMMY_PASSWORD) {
     const settings = await getSmtpSettings();
     if (!settings?.encryptedPassword) return null;
     return decrypt(settings.encryptedPassword);
@@ -82,8 +105,8 @@ export async function POST(req: NextRequest) {
       password: resolvedPassword,
       useTls,
       to: recipientEmail,
-      subject: "Sealion SMTP設定テストメール",
-      text: "このメールはSealionのSMTP設定のテスト送信のために送られています。設定が正しい場合はこのメールが届いているはずです。",
+      subject: "Sealion SMTP Test Email",
+      text: "This email was sent to verify your SMTP configuration. If you received this message, your settings are correct.",
     });
 
     return ok({ sent: true });

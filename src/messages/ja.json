@@ -136,7 +136,9 @@
     "saveError": "メール送信設定の保存に失敗しました。再試行してください。",
     "testSend": "テスト送信",
     "testSendSuccess": "テストメールを送信しました",
-    "testSendError": "テストメールの送信に失敗しました: {message}"
+    "testSendError": "テストメールの送信に失敗しました: {message}",
+    "unknownError": "不明なエラー",
+    "networkError": "ネットワークエラー"
   },
   "sidebar": {
     "todo": "TODO",

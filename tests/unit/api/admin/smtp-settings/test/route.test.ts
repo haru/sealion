@@ -142,12 +142,25 @@ describe("POST /api/admin/smtp-settings/test", () => {
     );
   });
 
-  it("uses null password when dummy sentinel sent but no stored settings", async () => {
+  it("returns 400 when requireAuth is true but username is null", async () => {
     mockAuth.mockResolvedValue(ADMIN_SESSION);
-    mockGetSmtpSettings.mockResolvedValue(null);
+    const { POST } = await import("@/app/api/admin/smtp-settings/test/route");
+    const res = await POST(makePostRequest({ ...VALID_PAYLOAD, requireAuth: true, username: null, password: "secret" }));
+    expect(res.status).toBe(400);
+  });
+
+  it("returns 400 when requireAuth is true but password is null", async () => {
+    mockAuth.mockResolvedValue(ADMIN_SESSION);
+    const { POST } = await import("@/app/api/admin/smtp-settings/test/route");
+    const res = await POST(makePostRequest({ ...VALID_PAYLOAD, requireAuth: true, username: "u@ex.com", password: null }));
+    expect(res.status).toBe(400);
+  });
+
+  it("uses null password when null (non-dummy) is sent and no stored settings", async () => {
+    mockAuth.mockResolvedValue(ADMIN_SESSION);
     mockSendMail.mockResolvedValue(undefined);
     const { POST } = await import("@/app/api/admin/smtp-settings/test/route");
-    await POST(makePostRequest({ ...VALID_PAYLOAD, password: SMTP_DUMMY_PASSWORD }));
+    await POST(makePostRequest({ ...VALID_PAYLOAD, password: null }));
     expect(mockSendMail).toHaveBeenCalledWith(
       expect.objectContaining({ password: null })
     );
@@ -162,5 +175,14 @@ describe("POST /api/admin/smtp-settings/test", () => {
     expect(mockSendMail).toHaveBeenCalledWith(
       expect.objectContaining({ password: null })
     );
+    expect(mockGetSmtpSettings).toHaveBeenCalled();
+  });
+
+  it("does not fetch stored settings when password is null (non-dummy)", async () => {
+    mockAuth.mockResolvedValue(ADMIN_SESSION);
+    mockSendMail.mockResolvedValue(undefined);
+    const { POST } = await import("@/app/api/admin/smtp-settings/test/route");
+    await POST(makePostRequest({ ...VALID_PAYLOAD, password: null }));
+    expect(mockGetSmtpSettings).not.toHaveBeenCalled();
   });
 });

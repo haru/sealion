@@ -40,11 +40,21 @@ export interface SendMailConfig {
 export async function sendMail(config: SendMailConfig): Promise<void> {
   const { host, port, fromAddress, fromName, requireAuth, username, password, useTls, to, subject, text } = config;
 
+  const smtpUsername = username?.trim() ?? "";
+  const smtpPassword = password?.trim() ?? "";
+
+  if (requireAuth && (!smtpUsername || !smtpPassword)) {
+    throw new Error("SMTP authentication requires both a username and password.");
+  }
+
   const transport = nodemailer.createTransport({
     host,
     port,
     secure: useTls,
-    auth: requireAuth && password ? { user: username ?? "", pass: password } : undefined,
+    auth: requireAuth ? { user: smtpUsername, pass: smtpPassword } : undefined,
+    connectionTimeout: 10_000,
+    greetingTimeout: 10_000,
+    socketTimeout: 30_000,
   });
 
   await transport.sendMail({

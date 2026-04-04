@@ -136,7 +136,9 @@
     "saveError": "Failed to save SMTP settings. Please try again.",
     "testSend": "Send Test Email",
     "testSendSuccess": "Test email sent successfully",
-    "testSendError": "Failed to send test email: {message}"
+    "testSendError": "Failed to send test email: {message}",
+    "unknownError": "Unknown error",
+    "networkError": "Network error"
   },
   "sidebar": {
     "todo": "TODO",

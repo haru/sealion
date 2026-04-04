@@ -7,16 +7,38 @@ import { encrypt } from "@/lib/encryption";
 import { SMTP_DUMMY_PASSWORD } from "@/lib/smtp-mailer";
 
 /** Zod schema for the SMTP settings PUT request body. */
-const smtpSettingsSchema = z.object({
-  host: z.string().min(1),
-  port: z.number().int().min(1).max(65535),
-  fromAddress: z.string().email(),
-  fromName: z.string().min(1),
-  requireAuth: z.boolean(),
-  username: z.string().nullable(),
-  password: z.string().nullable(),
-  useTls: z.boolean(),
-});
+const smtpSettingsSchema = z
+  .object({
+    host: z.string().min(1),
+    port: z.number().int().min(1).max(65535),
+    fromAddress: z.string().email(),
+    fromName: z.string().min(1),
+    requireAuth: z.boolean(),
+    username: z.string().nullable(),
+    password: z.string().nullable(),
+    useTls: z.boolean(),
+  })
+  .superRefine((value, ctx) => {
+    if (!value.requireAuth) {
+      return;
+    }
+
+    if (value.username === null || value.username.trim().length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["username"],
+        message: "USERNAME_REQUIRED_WHEN_AUTH_ENABLED",
+      });
+    }
+
+    if (value.password === null || value.password.length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["password"],
+        message: "PASSWORD_REQUIRED_WHEN_AUTH_ENABLED",
+      });
+    }
+  });
 
 /** Verifies the current session belongs to an admin user. */
 async function requireAdmin() {
@@ -29,7 +51,8 @@ async function requireAdmin() {
 /**
  * Resolves the stored password value for a PUT (save) operation.
  *
- * - If `incoming` is `null` or the dummy sentinel, keeps `existing` unchanged.
+ * - If `incoming` is the dummy sentinel, keeps `existing` unchanged.
+ * - If `incoming` is `null` or empty, clears the password (returns `null`).
  * - Otherwise, encrypts the new plaintext password.
  *
  * @param incoming - Password value from the request body.
@@ -37,7 +60,8 @@ async function requireAdmin() {
  * @returns The encrypted password to persist, or `null`.
  */
 function resolvePassword(incoming: string | null, existing: string | null): string | null {
-  if (incoming === null || incoming === SMTP_DUMMY_PASSWORD) return existing;
+  if (incoming === SMTP_DUMMY_PASSWORD) return existing;
+  if (incoming === null || incoming.length === 0) return null;
   return encrypt(incoming);
 }
 

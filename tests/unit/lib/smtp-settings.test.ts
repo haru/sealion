@@ -43,7 +43,7 @@ describe("getSmtpSettings", () => {
     expect(mockFindUnique).toHaveBeenCalledWith({ where: { id: "singleton" } });
   });
 
-  it("returns record without encryptedPassword when record exists", async () => {
+  it("returns record with encryptedPassword when present", async () => {
     const recordWithPassword = { ...SINGLETON, encryptedPassword: "encrypted:abc:def" };
     mockFindUnique.mockResolvedValue(recordWithPassword);
 
