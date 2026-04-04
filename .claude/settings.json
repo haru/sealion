@@ -2,7 +2,6 @@
   "permissions": {
     "allow": [
       "Bash(gh repo:*)",
-      "Bash(head -5 ls /workspaces/sealion/node_modules/@prisma/client/*.d.ts)"
     ]
   },
   "enabledPlugins": {
