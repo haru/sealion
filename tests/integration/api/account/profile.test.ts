@@ -291,7 +291,7 @@ describe("GET /api/account/profile — unauthenticated (no DB required)", () => 
 });
 
 describe("GET /api/account/profile — with mocked DB (no DB required)", () => {
-  test("returns username when user has a username set", async () => {
+  test("returns username and email when user has a username set", async () => {
     jest.resetModules();
     jest.doMock("@/lib/auth", () => ({
       auth: jest.fn().mockResolvedValue({
@@ -305,7 +305,9 @@ describe("GET /api/account/profile — with mocked DB (no DB required)", () => {
             id: TEST_USER_ID,
             email: TEST_USER_EMAIL,
             username: "testuser",
+            role: "USER",
           }),
+          count: jest.fn().mockResolvedValue(0),
         },
       },
     }));
@@ -314,7 +316,7 @@ describe("GET /api/account/profile — with mocked DB (no DB required)", () => {
     const res = await GET(req);
     expect(res.status).toBe(200);
     const json = await res.json();
-    expect(json.data).toEqual({ username: "testuser" });
+    expect(json.data).toMatchObject({ username: "testuser", email: TEST_USER_EMAIL, isLastAdmin: false });
     expect(json.error).toBeNull();
   });
 
@@ -332,7 +334,9 @@ describe("GET /api/account/profile — with mocked DB (no DB required)", () => {
             id: TEST_USER_ID,
             email: TEST_USER_EMAIL,
             username: null,
+            role: "USER",
           }),
+          count: jest.fn().mockResolvedValue(0),
         },
       },
     }));
@@ -341,7 +345,7 @@ describe("GET /api/account/profile — with mocked DB (no DB required)", () => {
     const res = await GET(req);
     expect(res.status).toBe(200);
     const json = await res.json();
-    expect(json.data).toEqual({ username: null });
+    expect(json.data).toMatchObject({ username: null, isLastAdmin: false });
     expect(json.error).toBeNull();
   });
 
@@ -356,6 +360,7 @@ describe("GET /api/account/profile — with mocked DB (no DB required)", () => {
       prisma: {
         user: {
           findUnique: jest.fn().mockResolvedValue(null),
+          count: jest.fn().mockResolvedValue(0),
         },
       },
     }));
@@ -363,6 +368,122 @@ describe("GET /api/account/profile — with mocked DB (no DB required)", () => {
     const req = new Request("http://localhost/api/account/profile");
     const res = await GET(req);
     expect(res.status).toBe(401);
+  });
+
+  test("returns isLastAdmin: true when sole ADMIN requests profile", async () => {
+    jest.resetModules();
+    jest.doMock("@/lib/auth", () => ({
+      auth: jest.fn().mockResolvedValue({
+        user: { id: TEST_USER_ID, email: TEST_USER_EMAIL, role: "ADMIN" },
+      }),
+    }));
+    jest.doMock("@/lib/db", () => ({
+      prisma: {
+        user: {
+          findUnique: jest.fn().mockResolvedValue({
+            id: TEST_USER_ID,
+            email: TEST_USER_EMAIL,
+            username: null,
+            role: "ADMIN",
+          }),
+          count: jest.fn().mockResolvedValue(1),
+        },
+      },
+    }));
+    const { GET } = await import("@/app/api/account/profile/route");
+    const req = new Request("http://localhost/api/account/profile");
+    const res = await GET(req);
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.data.isLastAdmin).toBe(true);
+    expect(json.data.email).toBe(TEST_USER_EMAIL);
+  });
+
+  test("returns isLastAdmin: false when multiple ADMINs exist", async () => {
+    jest.resetModules();
+    jest.doMock("@/lib/auth", () => ({
+      auth: jest.fn().mockResolvedValue({
+        user: { id: TEST_USER_ID, email: TEST_USER_EMAIL, role: "ADMIN" },
+      }),
+    }));
+    jest.doMock("@/lib/db", () => ({
+      prisma: {
+        user: {
+          findUnique: jest.fn().mockResolvedValue({
+            id: TEST_USER_ID,
+            email: TEST_USER_EMAIL,
+            username: null,
+            role: "ADMIN",
+          }),
+          count: jest.fn().mockResolvedValue(2),
+        },
+      },
+    }));
+    const { GET } = await import("@/app/api/account/profile/route");
+    const req = new Request("http://localhost/api/account/profile");
+    const res = await GET(req);
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.data.isLastAdmin).toBe(false);
+  });
+
+  test("returns isLastAdmin: false for regular USER regardless of admin count", async () => {
+    jest.resetModules();
+    jest.doMock("@/lib/auth", () => ({
+      auth: jest.fn().mockResolvedValue({
+        user: { id: TEST_USER_ID, email: TEST_USER_EMAIL, role: "USER" },
+      }),
+    }));
+    jest.doMock("@/lib/db", () => ({
+      prisma: {
+        user: {
+          findUnique: jest.fn().mockResolvedValue({
+            id: TEST_USER_ID,
+            email: TEST_USER_EMAIL,
+            username: "testuser",
+            role: "USER",
+          }),
+          count: jest.fn().mockResolvedValue(1),
+        },
+      },
+    }));
+    const { GET } = await import("@/app/api/account/profile/route");
+    const req = new Request("http://localhost/api/account/profile");
+    const res = await GET(req);
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.data.isLastAdmin).toBe(false);
+    expect(json.data.email).toBe(TEST_USER_EMAIL);
+  });
+
+  test("isLastAdmin count query filters by ACTIVE status to exclude suspended admins", async () => {
+    jest.resetModules();
+    const mockCount = jest.fn().mockResolvedValue(1);
+    jest.doMock("@/lib/auth", () => ({
+      auth: jest.fn().mockResolvedValue({
+        user: { id: TEST_USER_ID, email: TEST_USER_EMAIL, role: "ADMIN" },
+      }),
+    }));
+    jest.doMock("@/lib/db", () => ({
+      prisma: {
+        user: {
+          findUnique: jest.fn().mockResolvedValue({
+            id: TEST_USER_ID,
+            email: TEST_USER_EMAIL,
+            username: null,
+            role: "ADMIN",
+          }),
+          count: mockCount,
+        },
+      },
+    }));
+    const { GET } = await import("@/app/api/account/profile/route");
+    const req = new Request("http://localhost/api/account/profile");
+    await GET(req);
+    // Must filter by both role and status to avoid counting suspended/pending admins.
+    expect(mockCount).toHaveBeenCalledWith({
+      where: { role: "ADMIN", status: "ACTIVE" },
+    });
   });
 });
 

@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { ok, fail } from "@/lib/api-response";
 import { hash } from "bcryptjs";
 import { UserRole, UserStatus } from "@prisma/client";
+import { deleteUserCascade } from "@/lib/deleteUserCascade";
 
 /** Maximum password length enforced by bcrypt. */
 const MAX_PASSWORD_LENGTH = 72;
@@ -113,13 +114,7 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
   const target = await prisma.user.findUnique({ where: { id } });
   if (!target) return fail("NOT_FOUND", 404);
 
-  await prisma.$transaction([
-    prisma.issue.deleteMany({ where: { project: { issueProvider: { userId: id } } } }),
-    prisma.project.deleteMany({ where: { issueProvider: { userId: id } } }),
-    prisma.issueProvider.deleteMany({ where: { userId: id } }),
-    prisma.boardSettings.deleteMany({ where: { userId: id } }),
-    prisma.user.delete({ where: { id } }),
-  ]);
+  await deleteUserCascade(prisma, id);
 
   return ok(null);
 }

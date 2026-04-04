@@ -187,7 +187,24 @@
     "usernameLoadError": "現在のユーザー名を取得できませんでした。ページを再読み込みしてください。",
     "usernameSuccess": "ユーザー名を更新しました。",
     "usernameErrorTooLong": "ユーザー名は50文字以内で入力してください。",
-    "usernameErrorUnexpected": "予期しないエラーが発生しました。もう一度お試しください。"
+    "usernameErrorUnexpected": "予期しないエラーが発生しました。もう一度お試しください。",
+    "dangerZone": {
+      "title": "危険な操作",
+      "deleteAccount": "アカウントを削除",
+      "deleteAccountDescription": "アカウントとすべての関連データを完全に削除します。この操作は取り消せません。",
+      "modal": {
+        "title": "アカウントを削除",
+        "description": "アカウントとすべての関連データ（Issueトラッカー、プロジェクト、Issue）を完全に削除します。この操作は取り消せません。",
+        "emailLabel": "メールアドレスを確認",
+        "emailPlaceholder": "確認のためメールアドレスを入力",
+        "emailMismatch": "メールアドレスが一致しません。",
+        "errorLastAdmin": "唯一の管理者のため、アカウントを削除できません。",
+        "errorUnauthorized": "セッションが期限切れです。再度ログインしてください。",
+        "errorUnexpected": "予期しないエラーが発生しました。もう一度お試しください。",
+        "confirm": "アカウントを削除する",
+        "cancel": "キャンセル"
+      }
+    }
   },
   "boardSettings": {
     "title": "ボード設定",

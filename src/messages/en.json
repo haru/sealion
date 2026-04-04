@@ -187,7 +187,24 @@
     "usernameLoadError": "Failed to load your current username. Please reload the page.",
     "usernameSuccess": "Username updated successfully.",
     "usernameErrorTooLong": "Username must be 50 characters or fewer.",
-    "usernameErrorUnexpected": "An unexpected error occurred. Please try again."
+    "usernameErrorUnexpected": "An unexpected error occurred. Please try again.",
+    "dangerZone": {
+      "title": "Danger Zone",
+      "deleteAccount": "Delete Account",
+      "deleteAccountDescription": "Permanently delete your account and all associated data. This action cannot be undone.",
+      "modal": {
+        "title": "Delete Account",
+        "description": "This will permanently delete your account and all associated data (issue trackers, projects, issues). This action cannot be undone.",
+        "emailLabel": "Confirm your email address",
+        "emailPlaceholder": "Enter your email to confirm",
+        "emailMismatch": "Email address does not match.",
+        "errorLastAdmin": "You are the only administrator and cannot delete your account.",
+        "errorUnauthorized": "Your session has expired. Please log in again.",
+        "errorUnexpected": "An unexpected error occurred. Please try again.",
+        "confirm": "Delete My Account",
+        "cancel": "Cancel"
+      }
+    }
   },
   "boardSettings": {
     "title": "Board Settings",
