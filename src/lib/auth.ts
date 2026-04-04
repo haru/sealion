@@ -23,7 +23,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           where: { email: credentials.email as string },
         });
 
-        if (!user || !user.isActive) return null;
+        if (!user) return null;
+
+        if (user.status === "PENDING") {
+          throw new Error("EMAIL_NOT_VERIFIED");
+        }
+        if (user.status === "SUSPENDED") {
+          return null;
+        }
 
         const isValid = await bcrypt.compare(
           credentials.password as string,

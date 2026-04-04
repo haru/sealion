@@ -1,12 +1,60 @@
 /** @jest-environment node */
 /**
- * Unit tests for the jwt callback in src/lib/auth.ts.
- * Focuses on sessionTimeoutMinutes integration (T022).
+ * Unit tests for the jwt callback and authorize callback in src/lib/auth.ts.
+ * Covers sessionTimeoutMinutes integration (T022) and user status checks (T007).
  */
 
 import type { NextAuthConfig } from "next-auth";
 
 let capturedCallbacks: NextAuthConfig["callbacks"];
+let capturedProviderConfig:
+  | {
+      credentials?: Record<string, unknown>;
+      authorize?: (
+        credentials: Record<string, unknown> | undefined,
+      ) => Promise<unknown>;
+    }
+  | undefined;
+
+jest.mock("@auth/prisma-adapter", () => ({ PrismaAdapter: jest.fn(() => ({})) }));
+
+jest.mock("bcryptjs", () => ({
+  compare: jest.fn().mockResolvedValue(true),
+  hash: jest.fn(),
+}));
+
+jest.mock("@/lib/auth-settings", () => ({
+  getAuthSettings: jest.fn().mockResolvedValue({
+    id: "singleton",
+    allowUserSignup: true,
+    sessionTimeoutMinutes: null,
+    updatedAt: new Date(),
+  }),
+}));
+
+jest.mock("@/lib/db", () => ({
+  prisma: {
+    authSettings: {
+      findUnique: jest.fn(),
+      create: jest.fn(),
+    },
+    user: {
+      findUnique: jest.fn(),
+    },
+  },
+}));
+
+const mockProviderFactory = jest.fn((config: unknown) => {
+  capturedProviderConfig = config as {
+    credentials?: Record<string, unknown>;
+    authorize?: (
+      credentials: Record<string, unknown> | undefined,
+    ) => Promise<unknown>;
+  };
+  return { id: "credentials", ...config };
+});
+
+jest.mock("next-auth/providers/credentials", () => mockProviderFactory);
 
 jest.mock("next-auth", () => ({
   __esModule: true,
@@ -16,32 +64,46 @@ jest.mock("next-auth", () => ({
   }),
 }));
 
-jest.mock("@auth/prisma-adapter", () => ({ PrismaAdapter: jest.fn(() => ({})) }));
-jest.mock("next-auth/providers/credentials", () => jest.fn(() => ({ id: "credentials" })));
-jest.mock("@/lib/db", () => ({
-  prisma: {
-    authSettings: {
-      findUnique: jest.fn(),
-      create: jest.fn(),
-    },
-  },
-}));
-
+import { getAuthSettings } from "@/lib/auth-settings";
 import { prisma } from "@/lib/db";
 
+const mockGetAuthSettings = getAuthSettings as jest.Mock;
 const mockAuthSettingsFindUnique = prisma.authSettings.findUnique as jest.Mock;
-
+const mockUserFindUnique = prisma.user.findUnique as jest.Mock;
 
 
 function makeToken(extra: Record<string, unknown> = {}) {
   return { sub: "user-1", id: "user-1", role: "USER", ...extra };
 }
 
+const ACTIVE_USER = {
+  id: "user-1",
+  email: "user@example.com",
+  passwordHash: "$2a$12$hash",
+  role: "USER",
+  status: "ACTIVE",
+  isActive: true,
+  username: "TestUser",
+  createdAt: new Date(),
+  updatedAt: new Date(),
+};
+
+const PENDING_USER = {
+  ...ACTIVE_USER,
+  id: "user-2",
+  status: "PENDING",
+};
+
+const SUSPENDED_USER = {
+  ...ACTIVE_USER,
+  id: "user-3",
+  status: "SUSPENDED",
+};
+
 describe("jwt callback — sessionTimeoutMinutes", () => {
-  const MOCKED_NOW = 1_700_000_000_000; // fixed timestamp
+  const MOCKED_NOW = 1_700_000_000_000;
 
   beforeAll(async () => {
-    // Import auth to trigger NextAuth mock and capture callbacks
     await import("@/lib/auth");
   });
 
@@ -55,7 +117,7 @@ describe("jwt callback — sessionTimeoutMinutes", () => {
   });
 
   it("sets token.exp on signIn when sessionTimeoutMinutes is non-null", async () => {
-    mockAuthSettingsFindUnique.mockResolvedValue({
+    mockGetAuthSettings.mockResolvedValue({
       id: "singleton",
       allowUserSignup: true,
       sessionTimeoutMinutes: 60,
@@ -78,7 +140,7 @@ describe("jwt callback — sessionTimeoutMinutes", () => {
   });
 
   it("does NOT override token.exp on signIn when sessionTimeoutMinutes is null", async () => {
-    mockAuthSettingsFindUnique.mockResolvedValue({
+    mockGetAuthSettings.mockResolvedValue({
       id: "singleton",
       allowUserSignup: true,
       sessionTimeoutMinutes: null,
@@ -111,7 +173,7 @@ describe("jwt callback — sessionTimeoutMinutes", () => {
       session: undefined,
     });
 
-    expect(mockAuthSettingsFindUnique).not.toHaveBeenCalled();
+    expect(mockGetAuthSettings).not.toHaveBeenCalled();
   });
 
   it("does NOT call getAuthSettings when trigger is undefined (EC-003)", async () => {
@@ -126,11 +188,11 @@ describe("jwt callback — sessionTimeoutMinutes", () => {
       session: undefined,
     });
 
-    expect(mockAuthSettingsFindUnique).not.toHaveBeenCalled();
+    expect(mockGetAuthSettings).not.toHaveBeenCalled();
   });
 
   it("sets token.id and token.role from user on signIn", async () => {
-    mockAuthSettingsFindUnique.mockResolvedValue({
+    mockGetAuthSettings.mockResolvedValue({
       id: "singleton",
       allowUserSignup: true,
       sessionTimeoutMinutes: null,
@@ -150,5 +212,54 @@ describe("jwt callback — sessionTimeoutMinutes", () => {
 
     expect(token.id).toBe("user-42");
     expect(token.role).toBe("ADMIN");
+  });
+});
+
+describe("authorize callback — user status checks", () => {
+  beforeAll(async () => {
+    await import("@/lib/auth");
+  });
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("throws EMAIL_NOT_VERIFIED for user with status PENDING", async () => {
+    mockUserFindUnique.mockResolvedValue(PENDING_USER);
+
+    if (!capturedProviderConfig?.authorize) throw new Error("authorize not captured");
+
+    await expect(
+      capturedProviderConfig.authorize({
+        email: "pending@example.com",
+        password: "password123",
+      }),
+    ).rejects.toThrow("EMAIL_NOT_VERIFIED");
+  });
+
+  it("returns null for user with status SUSPENDED", async () => {
+    mockUserFindUnique.mockResolvedValue(SUSPENDED_USER);
+
+    if (!capturedProviderConfig?.authorize) throw new Error("authorize not captured");
+
+    const result = await capturedProviderConfig.authorize({
+      email: "suspended@example.com",
+      password: "password123",
+    });
+
+    expect(result).toBeNull();
+  });
+
+  it("proceeds normally for user with status ACTIVE", async () => {
+    mockUserFindUnique.mockResolvedValue(ACTIVE_USER);
+
+    if (!capturedProviderConfig?.authorize) throw new Error("authorize not captured");
+
+    const result = await capturedProviderConfig.authorize({
+      email: "user@example.com",
+      password: "password123",
+    });
+
+    expect(result).toEqual({ id: "user-1", email: "user@example.com", role: "USER" });
   });
 });

@@ -20,7 +20,7 @@ async function requireAdmin() {
  *
  * Creates the singleton record with defaults if it does not yet exist.
  *
- * @returns 200 with `{ allowUserSignup, sessionTimeoutMinutes }`, 401, or 403.
+ * @returns 200 with `{ allowUserSignup, sessionTimeoutMinutes, requireEmailVerification }`, 401, or 403.
  */
 export async function GET() {
   const { error } = await requireAdmin();
@@ -28,16 +28,21 @@ export async function GET() {
 
   const settings = await getAuthSettings();
 
-  return ok({ allowUserSignup: settings.allowUserSignup, sessionTimeoutMinutes: settings.sessionTimeoutMinutes });
+  return ok({
+    allowUserSignup: settings.allowUserSignup,
+    sessionTimeoutMinutes: settings.sessionTimeoutMinutes,
+    requireEmailVerification: settings.requireEmailVerification,
+  });
 }
 
 /**
  * PATCH /api/admin/auth-settings — Partially updates auth settings (admin only).
  *
- * Accepted fields: `allowUserSignup` (boolean), `sessionTimeoutMinutes` (number|null).
- * Unknown fields are ignored. An empty body is accepted without making changes.
+ * Accepted fields: `allowUserSignup` (boolean), `sessionTimeoutMinutes` (number|null),
+ * `requireEmailVerification` (boolean). Unknown fields are ignored.
+ * `requireEmailVerification` can only be `true` when `allowUserSignup` is `true`.
  *
- * @param req - The incoming request with optional `allowUserSignup` and/or `sessionTimeoutMinutes`.
+ * @param req - The incoming request with optional fields.
  * @returns 200 with updated settings, 400 for validation errors, 401, or 403.
  */
 export async function PATCH(req: NextRequest) {
@@ -51,7 +56,11 @@ export async function PATCH(req: NextRequest) {
   }
 
   const record = body as Record<string, unknown>;
-  const data: { allowUserSignup?: boolean; sessionTimeoutMinutes?: number | null } = {};
+  const data: {
+    allowUserSignup?: boolean;
+    sessionTimeoutMinutes?: number | null;
+    requireEmailVerification?: boolean;
+  } = {};
 
   if ("allowUserSignup" in record) {
     if (typeof record.allowUserSignup !== "boolean") return fail("INVALID_INPUT", 400);
@@ -65,11 +74,28 @@ export async function PATCH(req: NextRequest) {
     data.sessionTimeoutMinutes = val as number | null;
   }
 
+  if ("requireEmailVerification" in record) {
+    if (typeof record.requireEmailVerification !== "boolean") return fail("INVALID_INPUT", 400);
+    data.requireEmailVerification = record.requireEmailVerification;
+  }
+
+  // Validate that requireEmailVerification requires allowUserSignup to be true
+  if (data.requireEmailVerification === true) {
+    const effectiveAllowSignup = data.allowUserSignup ?? (await getAuthSettings()).allowUserSignup;
+    if (!effectiveAllowSignup) {
+      return fail("INVALID_INPUT", 400);
+    }
+  }
+
   const settings = await prisma.authSettings.upsert({
     where: { id: "singleton" },
     update: data,
     create: { id: "singleton", ...data },
   });
 
-  return ok({ allowUserSignup: settings.allowUserSignup, sessionTimeoutMinutes: settings.sessionTimeoutMinutes });
+  return ok({
+    allowUserSignup: settings.allowUserSignup,
+    sessionTimeoutMinutes: settings.sessionTimeoutMinutes,
+    requireEmailVerification: settings.requireEmailVerification,
+  });
 }

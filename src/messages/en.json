@@ -25,7 +25,17 @@
     "emailAlreadyExists": "This email is already registered",
     "setupTitle": "Create Admin Account",
     "setupInfo": "The first user will be registered as an administrator.",
-    "setupSubmit": "Register as Administrator"
+    "setupSubmit": "Register as Administrator",
+    "verificationSent": "A verification email has been sent. Please check your inbox.",
+    "emailVerified": "Your email has been verified. You can now log in.",
+    "emailNotVerified": "Your email has not been verified. Please check your inbox for the verification email.",
+    "checkEmail": "Please check your email",
+    "confirmTitle": "Email Verification",
+    "confirmSuccess": "Your email has been verified successfully.",
+    "confirmError": "Email verification failed.",
+    "errorMissingToken": "The verification link is missing a token.",
+    "errorExpiredToken": "The verification link has expired. Please request a new one.",
+    "errorInvalidToken": "The verification link is invalid."
   },
   "todo": {
     "title": "My TODO List",
@@ -106,6 +116,8 @@
     "title": "Auth Settings",
     "allowUserSignup": "Allow User Signup",
     "allowUserSignupHint": "When disabled, the signup page will be hidden and new account registration will be blocked.",
+    "requireEmailVerification": "Require Email Verification",
+    "requireEmailVerificationHint": "When enabled, new users must verify their email before they can log in. SMTP must be configured.",
     "sessionTimeout": "Session Timeout",
     "timeout": {
       "none": "None",
@@ -235,12 +247,18 @@
     "cannotDeactivateSelf": "You cannot deactivate your own account",
     "cannotDeleteSelf": "You cannot delete your own account",
     "cannotChangeOwnRole": "You cannot change your own role",
+    "cannotChangeOwnStatus": "You cannot change your own status",
     "deleteSuccess": "User deleted successfully",
     "updateSuccess": "User updated successfully",
     "createSuccess": "User created successfully",
     "role": {
       "USER": "User",
       "ADMIN": "Administrator"
+    },
+    "status": {
+      "PENDING": "Pending",
+      "ACTIVE": "Active",
+      "SUSPENDED": "Suspended"
     },
     "columns": {
       "email": "Email",
@@ -255,7 +273,8 @@
       "password": "Password",
       "passwordHint": "Leave blank to keep current password",
       "username": "Display Name",
-      "role": "Role"
+      "role": "Role",
+      "status": "Status"
     }
   },
   "todayTasks": {
@@ -300,8 +319,13 @@
     "CANNOT_DELETE_SELF": "You cannot delete your own account",
     "CANNOT_DEACTIVATE_SELF": "You cannot deactivate your own account",
     "CANNOT_CHANGE_OWN_ROLE": "You cannot change your own role",
+    "CANNOT_CHANGE_OWN_STATUS": "You cannot change your own status",
     "SIGNUP_DISABLED": "User signup is currently disabled by the administrator",
-    "INVALID_TIMEOUT": "Invalid session timeout value"
+    "INVALID_TIMEOUT": "Invalid session timeout value",
+    "EMAIL_NOT_VERIFIED": "Your email address has not been verified",
+    "INVALID_TOKEN": "Invalid verification token",
+    "EXPIRED_TOKEN": "Verification token has expired",
+    "MISSING_TOKEN": "Verification token is missing"
   },
   "sync": {
     "error": {

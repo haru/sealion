@@ -27,6 +27,7 @@ const USER_SESSION = { user: { id: "user-1", email: "user@ex.com", role: "USER" 
 const DEFAULT_SETTINGS = {
   id: "singleton",
   allowUserSignup: true,
+  requireEmailVerification: false,
   sessionTimeoutMinutes: null,
   updatedAt: new Date(),
 };
@@ -70,7 +71,7 @@ describe("GET /api/admin/auth-settings", () => {
     const json = await res.json();
 
     expect(res.status).toBe(200);
-    expect(json.data).toEqual({ allowUserSignup: true, sessionTimeoutMinutes: null });
+    expect(json.data).toEqual({ allowUserSignup: true, sessionTimeoutMinutes: null, requireEmailVerification: false });
     expect(json.error).toBeNull();
   });
 });
@@ -179,6 +180,28 @@ describe("PATCH /api/admin/auth-settings", () => {
     mockAuth.mockResolvedValue(ADMIN_SESSION);
     const { PATCH } = await import("@/app/api/admin/auth-settings/route");
     const res = await PATCH(makePatchRequest([1, 2, 3]));
+    const json = await res.json();
+
+    expect(res.status).toBe(400);
+    expect(json.error).toBe("INVALID_INPUT");
+  });
+
+  it("returns 200 with requireEmailVerification true when allowUserSignup is true", async () => {
+    mockAuth.mockResolvedValue(ADMIN_SESSION);
+    mockUpsert.mockResolvedValue({ ...DEFAULT_SETTINGS, requireEmailVerification: true });
+    const { PATCH } = await import("@/app/api/admin/auth-settings/route");
+    const res = await PATCH(makePatchRequest({ requireEmailVerification: true }));
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(json.data.requireEmailVerification).toBe(true);
+  });
+
+  it("returns 400 INVALID_INPUT when requireEmailVerification is true and allowUserSignup is false", async () => {
+    mockAuth.mockResolvedValue(ADMIN_SESSION);
+    mockUpsert.mockResolvedValue({ ...DEFAULT_SETTINGS, allowUserSignup: false });
+    const { PATCH } = await import("@/app/api/admin/auth-settings/route");
+    const res = await PATCH(makePatchRequest({ allowUserSignup: false, requireEmailVerification: true }));
     const json = await res.json();
 
     expect(res.status).toBe(400);

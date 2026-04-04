@@ -33,6 +33,9 @@ export function LoginForm({ showSignup }: LoginFormProps) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  const verified = searchParams.get("verified");
+  const verificationSent = searchParams.get("verification_sent");
+
   /** Submits credentials to Auth.js and redirects on success. */
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -48,7 +51,11 @@ export function LoginForm({ showSignup }: LoginFormProps) {
     setLoading(false);
 
     if (result?.error) {
-      setError("invalidCredentials");
+      if (result.error === "EMAIL_NOT_VERIFIED") {
+        setError("emailNotVerified");
+      } else {
+        setError("invalidCredentials");
+      }
       return;
     }
 
@@ -61,9 +68,27 @@ export function LoginForm({ showSignup }: LoginFormProps) {
         {t("loginTitle")}
       </Typography>
 
-      {error && (
+      {verified && (
+        <Alert severity="info" sx={{ mb: 3, borderRadius: 2 }}>
+          {t("emailVerified")}
+        </Alert>
+      )}
+
+      {verificationSent && (
+        <Alert severity="info" sx={{ mb: 3, borderRadius: 2 }}>
+          {t("verificationSent")}
+        </Alert>
+      )}
+
+      {error === "emailNotVerified" && (
+        <Alert severity="warning" sx={{ mb: 3, borderRadius: 2 }}>
+          {t("emailNotVerified")}
+        </Alert>
+      )}
+
+      {error === "invalidCredentials" && (
         <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>
-          {t(error as Parameters<typeof t>[0])}
+          {t("invalidCredentials")}
         </Alert>
       )}
 

@@ -114,6 +114,88 @@ test.describe("Auth Settings — US2: allowUserSignup toggle", () => {
   });
 });
 
+test.describe("Auth Settings — US4: requireEmailVerification toggle", () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto("/login");
+    await page.fill('[name="email"]', ADMIN_EMAIL);
+    await page.fill('[name="password"]', ADMIN_PASSWORD);
+    await page.click('button[type="submit"]');
+    await page.waitForURL("/");
+    await page.goto("/admin/auth-settings");
+    await page.waitForURL(/admin\/auth-settings/);
+  });
+
+  test("requireEmailVerification toggle is visible when allowUserSignup is enabled", async ({ page }) => {
+    const signupToggle = page.getByRole("checkbox", { name: /allow user signup|ユーザーによるアカウント追加/i });
+    if (!(await signupToggle.isChecked())) {
+      await signupToggle.click();
+      await page.getByRole("button", { name: /save|保存/i }).click();
+      await expect(page.getByRole("alert")).toBeVisible({ timeout: 3000 });
+      await page.reload();
+      await page.waitForURL(/admin\/auth-settings/);
+    }
+
+    const emailVerifyToggle = page.getByRole("checkbox", {
+      name: /require email verification|メール確認/i,
+    });
+    await expect(emailVerifyToggle).toBeVisible();
+  });
+
+  test("requireEmailVerification toggle is hidden when allowUserSignup is disabled", async ({ page }) => {
+    const signupToggle = page.getByRole("checkbox", { name: /allow user signup|ユーザーによるアカウント追加/i });
+    if (await signupToggle.isChecked()) {
+      await signupToggle.click();
+      await page.getByRole("button", { name: /save|保存/i }).click();
+      await expect(page.getByRole("alert")).toBeVisible({ timeout: 3000 });
+      await page.reload();
+      await page.waitForURL(/admin\/auth-settings/);
+    }
+
+    const emailVerifyToggle = page.getByRole("checkbox", {
+      name: /require email verification|メール確認/i,
+    });
+    await expect(emailVerifyToggle).not.toBeVisible();
+
+    // Restore allowUserSignup
+    await page.getByRole("checkbox", { name: /allow user signup|ユーザーによるアカウント追加/i }).click();
+    await page.getByRole("button", { name: /save|保存/i }).click();
+    await expect(page.getByRole("alert")).toBeVisible({ timeout: 3000 });
+  });
+
+  test("admin can toggle requireEmailVerification on and off", async ({ page }) => {
+    // Ensure allowUserSignup is on first
+    const signupToggle = page.getByRole("checkbox", { name: /allow user signup|ユーザーによるアカウント追加/i });
+    if (!(await signupToggle.isChecked())) {
+      await signupToggle.click();
+      await page.getByRole("button", { name: /save|保存/i }).click();
+      await expect(page.getByRole("alert")).toBeVisible({ timeout: 3000 });
+      await page.reload();
+      await page.waitForURL(/admin\/auth-settings/);
+    }
+
+    const emailVerifyToggle = page.getByRole("checkbox", {
+      name: /require email verification|メール確認/i,
+    });
+    const initialState = await emailVerifyToggle.isChecked();
+    await emailVerifyToggle.click();
+    await page.getByRole("button", { name: /save|保存/i }).click();
+    await expect(page.getByRole("alert")).toBeVisible({ timeout: 3000 });
+
+    // Verify persists after reload
+    await page.reload();
+    await page.waitForURL(/admin\/auth-settings/);
+    const afterToggle = page.getByRole("checkbox", {
+      name: /require email verification|メール確認/i,
+    });
+    expect(await afterToggle.isChecked()).toBe(!initialState);
+
+    // Restore original state
+    await afterToggle.click();
+    await page.getByRole("button", { name: /save|保存/i }).click();
+    await expect(page.getByRole("alert")).toBeVisible({ timeout: 3000 });
+  });
+});
+
 test.describe("Auth Settings — US3: Session timeout", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/login");

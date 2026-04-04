@@ -11,7 +11,6 @@ import {
   TableHead,
   TableRow,
   Chip,
-  Switch,
   Button,
   Dialog,
   DialogTitle,
@@ -44,9 +43,16 @@ interface User {
   email: string;
   username: string | null;
   role: "USER" | "ADMIN";
-  isActive: boolean;
+  status: "PENDING" | "ACTIVE" | "SUSPENDED";
   createdAt: string;
 }
+
+/** Maps user status values to MUI Chip color props. */
+const STATUS_CHIP_PROPS: Record<string, { color: "warning" | "success" | "error" }> = {
+  PENDING: { color: "warning" },
+  ACTIVE: { color: "success" },
+  SUSPENDED: { color: "error" },
+};
 
 /** Admin page for managing user accounts (list, create, edit, delete). */
 export default function AdminUsersPage() {
@@ -102,22 +108,6 @@ export default function AdminUsersPage() {
       return tErrors(code as Parameters<typeof tErrors>[0]);
     } catch {
       return tCommon("error");
-    }
-  }
-
-  /** Toggles the active status of a user. */
-  async function handleToggleActive(user: User) {
-    const res = await fetch(`/api/admin/users/${user.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ isActive: !user.isActive }),
-    });
-
-    const json = await res.json();
-    if (res.ok) {
-      setUsers((prev) => prev.map((u) => (u.id === user.id ? { ...u, isActive: !u.isActive } : u)));
-    } else {
-      addMessage("error", translateError(json?.error as string | undefined));
     }
   }
 
@@ -210,6 +200,7 @@ export default function AdminUsersPage() {
           <TableBody>
             {users.map((user) => {
               const isSelf = user.id === currentUserId;
+              const chipProps = STATUS_CHIP_PROPS[user.status] ?? { color: "default" as const };
               return (
                 <TableRow key={user.id}>
                   <TableCell>{user.email}</TableCell>
@@ -222,11 +213,10 @@ export default function AdminUsersPage() {
                     />
                   </TableCell>
                   <TableCell>
-                    <Switch
-                      checked={user.isActive}
-                      onChange={() => handleToggleActive(user)}
-                      aria-label={user.isActive ? t("disableUser") : t("enableUser")}
-                      disabled={isSelf}
+                    <Chip
+                      label={t(`status.${user.status}`)}
+                      color={chipProps.color}
+                      size="small"
                     />
                   </TableCell>
                   <TableCell>{new Date(user.createdAt).toLocaleDateString()}</TableCell>

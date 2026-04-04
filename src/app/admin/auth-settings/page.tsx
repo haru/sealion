@@ -39,6 +39,7 @@ const TIMEOUT_OPTIONS: Array<{ value: number | null; labelKey: string }> = [
 interface AuthSettingsData {
   allowUserSignup: boolean;
   sessionTimeoutMinutes: number | null;
+  requireEmailVerification: boolean;
 }
 
 /** Auth settings admin page — allows ADMIN to configure signup and session timeout. */
@@ -51,6 +52,7 @@ export default function AuthSettingsPage() {
   const [saved, setSaved] = useState<AuthSettingsData | null>(null);
   const [allowUserSignup, setAllowUserSignup] = useState(true);
   const [sessionTimeoutMinutes, setSessionTimeoutMinutes] = useState<number | null>(null);
+  const [requireEmailVerification, setRequireEmailVerification] = useState(false);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -77,6 +79,7 @@ export default function AuthSettingsPage() {
         setSaved(json.data);
         setAllowUserSignup(json.data.allowUserSignup);
         setSessionTimeoutMinutes(json.data.sessionTimeoutMinutes);
+        setRequireEmailVerification(json.data.requireEmailVerification);
       } catch {
         addMessage("error", t("saveError"));
       } finally {
@@ -95,7 +98,7 @@ export default function AuthSettingsPage() {
       const res = await fetch("/api/admin/auth-settings", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ allowUserSignup, sessionTimeoutMinutes }),
+        body: JSON.stringify({ allowUserSignup, sessionTimeoutMinutes, requireEmailVerification }),
       });
 
       if (res.ok) {
@@ -103,11 +106,13 @@ export default function AuthSettingsPage() {
         setSaved(json.data);
         setAllowUserSignup(json.data.allowUserSignup);
         setSessionTimeoutMinutes(json.data.sessionTimeoutMinutes);
+        setRequireEmailVerification(json.data.requireEmailVerification);
         addMessage("information", t("saveSuccess"));
       } else {
         if (saved) {
           setAllowUserSignup(saved.allowUserSignup);
           setSessionTimeoutMinutes(saved.sessionTimeoutMinutes);
+          setRequireEmailVerification(saved.requireEmailVerification);
         }
         addMessage("error", t("saveError"));
       }
@@ -115,6 +120,7 @@ export default function AuthSettingsPage() {
       if (saved) {
         setAllowUserSignup(saved.allowUserSignup);
         setSessionTimeoutMinutes(saved.sessionTimeoutMinutes);
+        setRequireEmailVerification(saved.requireEmailVerification);
       }
       addMessage("error", t("saveError"));
     } finally {
@@ -141,7 +147,10 @@ export default function AuthSettingsPage() {
               control={
                 <Switch
                   checked={allowUserSignup}
-                  onChange={(e) => setAllowUserSignup(e.target.checked)}
+                  onChange={(e) => {
+                    setAllowUserSignup(e.target.checked);
+                    if (!e.target.checked) setRequireEmailVerification(false);
+                  }}
                   inputProps={{ "aria-label": t("allowUserSignup") }}
                 />
               }
@@ -149,6 +158,23 @@ export default function AuthSettingsPage() {
             />
             <FormHelperText sx={{ ml: 0 }}>{t("allowUserSignupHint")}</FormHelperText>
           </Stack>
+
+          {/* requireEmailVerification — only shown when allowUserSignup is true */}
+          {allowUserSignup && (
+            <Stack spacing={1}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={requireEmailVerification}
+                    onChange={(e) => setRequireEmailVerification(e.target.checked)}
+                    inputProps={{ "aria-label": t("requireEmailVerification") }}
+                  />
+                }
+                label={<Typography fontWeight={500}>{t("requireEmailVerification")}</Typography>}
+              />
+              <FormHelperText sx={{ ml: 0 }}>{t("requireEmailVerificationHint")}</FormHelperText>
+            </Stack>
+          )}
 
           <Divider />
 
