@@ -6,6 +6,9 @@ import { prisma } from "@/lib/db";
 import { authConfig } from "@/lib/auth.config";
 import { getAuthSettings } from "@/lib/auth-settings";
 
+/** Seconds between re-checks of `passwordChangedAt` in the JWT callback. */
+const PWD_CHANGE_RECHECK_INTERVAL_S = 5 * 60;
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
   adapter: PrismaAdapter(prisma),
@@ -51,23 +54,50 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
      * On `signIn`, reads `sessionTimeoutMinutes` from AuthSettings and sets `token.exp` when
      * a non-null timeout is configured. Other triggers leave the token unchanged.
      *
+     * Also checks `user.passwordChangedAt` to invalidate sessions after a password change.
+     * To reduce database load, `passwordChangedAt` is cached in the JWT token and only
+     * re-queried from the database every {@link PWD_CHANGE_RECHECK_INTERVAL_S} seconds.
+     *
      * @param token - The current JWT payload.
      * @param user - The authenticated user object (present only on signIn).
      * @param trigger - The event that triggered the callback.
-     * @returns The updated JWT token.
+     * @returns The updated JWT token, or an empty object to reject the session.
      */
     async jwt({ token, user, trigger }) {
-      // Propagate user id and role into the token on initial sign-in
       if (user) {
         token.id = user.id;
         token.role = (user as { id: string; email?: string | null; role: string }).role;
       }
 
-      // Only set session expiry on sign-in; leave existing sessions unaffected (EC-003)
       if (trigger === "signIn") {
         const { sessionTimeoutMinutes } = await getAuthSettings();
         if (sessionTimeoutMinutes !== null) {
           token.exp = Math.floor(Date.now() / 1000) + sessionTimeoutMinutes * 60;
+        }
+      }
+
+      const userId = (token.sub as string | undefined) ?? (token.id as string | undefined);
+      if (userId) {
+        const now = Math.floor(Date.now() / 1000);
+        const lastChecked = (token.pwdCheckedAt as number | undefined) ?? 0;
+
+        if (now - lastChecked >= PWD_CHANGE_RECHECK_INTERVAL_S) {
+          const dbUser = await prisma.user.findUnique({
+            where: { id: userId },
+            select: { passwordChangedAt: true },
+          });
+
+          token.pwdChangedAt = dbUser?.passwordChangedAt
+            ? Math.floor(dbUser.passwordChangedAt.getTime() / 1000)
+            : null;
+          token.pwdCheckedAt = now;
+        }
+
+        if (token.pwdChangedAt != null) {
+          const iat = token.iat as number | undefined;
+          if (iat !== undefined && iat < (token.pwdChangedAt as number)) {
+            return {};
+          }
         }
       }
 

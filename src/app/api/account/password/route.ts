@@ -72,7 +72,7 @@ export async function PATCH(request: NextRequest) {
     const newHash = await bcrypt.hash(newPassword, 10);
     await prisma.user.update({
       where: { id: userId },
-      data: { passwordHash: newHash },
+      data: { passwordHash: newHash, passwordChangedAt: new Date() },
     });
 
     return ok(null);

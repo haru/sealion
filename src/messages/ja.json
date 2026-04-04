@@ -366,6 +366,30 @@
       "error": "エラー"
     }
   },
+  "resetPassword": {
+    "title": "パスワードリセット",
+    "emailLabel": "メールアドレス",
+    "submit": "リセットリンクを送信",
+    "successMessage": "このメールアドレスのアカウントが存在する場合、パスワードリセットリンクを送信しました。",
+    "confirmTitle": "新しいパスワードを設定",
+    "passwordLabel": "新しいパスワード",
+    "confirmPasswordLabel": "新しいパスワード（確認）",
+    "confirmSubmit": "パスワードをリセット",
+    "passwordMismatch": "パスワードが一致しません",
+    "passwordTooShort": "パスワードは8文字以上で入力してください",
+    "passwordTooLong": "パスワードは72文字以内で入力してください",
+    "resultSuccessTitle": "パスワードリセット完了",
+    "resultSuccessMessage": "パスワードがリセットされました。新しいパスワードでログインできます。",
+    "errorExpiredToken": "このパスワードリセットリンクの有効期限が切れています。新しいリンクをリクエストしてください。",
+    "errorInvalidToken": "このパスワードリセットリンクは無効です。",
+    "errorSuspended": "このアカウントは停止されています。パスワードリセットは利用できません。",
+    "errorNotFound": "このパスワードリセットリンクは無効です。",
+    "errorMissingToken": "パスワードリセットリンクにトークンが含まれていません。",
+    "requestNewLink": "新しいリセットメールをリクエスト",
+    "forgotPassword": "パスワードを忘れた方",
+    "rateLimitError": "しばらくしてから再度お試しください。",
+    "generalError": "予期しないエラーが発生しました。もう一度お試しください。"
+  },
   "a11y": {
     "openMenu": "メニューを開く",
     "settings": "設定"

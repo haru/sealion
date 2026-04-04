@@ -21,7 +21,8 @@ export const authConfig: NextAuthConfig = {
         nextUrl.pathname.startsWith("/login") ||
         nextUrl.pathname.startsWith("/signup") ||
         nextUrl.pathname.startsWith("/setup") ||
-        nextUrl.pathname.startsWith("/confirm");
+        nextUrl.pathname.startsWith("/confirm") ||
+        nextUrl.pathname.startsWith("/reset-password");
 
       if (isProtected && !isAuthenticated) return false;
       if (isAuthPage && isAuthenticated) {

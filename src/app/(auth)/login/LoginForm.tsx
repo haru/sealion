@@ -16,11 +16,14 @@ import { AuthFooterLink } from "@/components/ui/AuthFooterLink";
 interface LoginFormProps {
   /** When true, the "Sign Up" footer link is rendered. */
   showSignup: boolean;
+  /** When true, the "Forgot password?" footer link is rendered. */
+  showPasswordReset: boolean;
 }
 
 /** Login form with email and password credentials. */
-export function LoginForm({ showSignup }: LoginFormProps) {
+export function LoginForm({ showSignup, showPasswordReset }: LoginFormProps) {
   const t = useTranslations("auth");
+  const tReset = useTranslations("resetPassword");
   const router = useRouter();
   const searchParams = useSearchParams();
   const rawCallback = searchParams.get("callbackUrl");
@@ -133,6 +136,7 @@ export function LoginForm({ showSignup }: LoginFormProps) {
       </Box>
 
       {showSignup && <AuthFooterLink prompt={t("noAccount")} href="/signup" label={t("signup")} />}
+      {showPasswordReset && <AuthFooterLink prompt="" href="/reset-password" label={tReset("forgotPassword")} />}
     </AuthCard>
   );
 }
