@@ -170,9 +170,9 @@ export default function TaskSearchBar({
     const labels: Record<keyof TaskFilterState, string> = {
       provider: t("provider"),
       project: t("project"),
-      dueDateFilter: t("dueDate"),
-      createdFilter: t("createdDate"),
-      updatedFilter: t("updatedDate"),
+      dueDateFilter: t("dueDateFilter"),
+      createdFilter: t("createdFilter"),
+      updatedFilter: t("updatedFilter"),
       assignee: t("assignee"),
     };
     return labels[key];

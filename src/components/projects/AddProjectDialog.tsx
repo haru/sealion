@@ -24,7 +24,7 @@ import {
 } from "@mui/material";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 
 import ProviderIcon from "@/components/ProviderIcon";
 
@@ -158,7 +158,7 @@ export default function AddProjectDialog({ open, onClose }: AddProjectDialogProp
     p.displayName.toLowerCase().includes(filter.toLowerCase())
   );
 
-  let providerContent;
+  let providerContent: React.ReactNode;
   if (loadingProviders) {
     providerContent = (
       <Box sx={{ display: "flex", justifyContent: "center", py: 3 }}>
@@ -202,7 +202,7 @@ export default function AddProjectDialog({ open, onClose }: AddProjectDialogProp
     );
   }
 
-  let projectsContent;
+  let projectsContent: React.ReactNode;
   if (loadingProjects) {
     projectsContent = (
       <Box sx={{ display: "flex", justifyContent: "center", py: 3 }}>

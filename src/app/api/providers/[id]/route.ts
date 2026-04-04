@@ -24,6 +24,7 @@ function hasRequiredCredentialFields(
   if (type === ProviderType.GITHUB && !credentials.token) { return false; }
   if (type === ProviderType.JIRA && (!credentials.email || !credentials.apiToken)) { return false; }
   if (type === ProviderType.REDMINE && !credentials.apiKey) { return false; }
+  if (type === ProviderType.GITLAB && !credentials.token) { return false; }
   return true;
 }
 

@@ -60,6 +60,15 @@ jest.mock("@/services/issue-provider/redmine", () => ({
   ),
 }));
 
+jest.mock("@/services/issue-provider/gitlab", () => ({
+  GitLabAdapter: Object.assign(
+    jest.fn().mockImplementation(() => ({
+      testConnection: jest.fn().mockResolvedValue(undefined),
+    })),
+    { iconUrl: "/gitlab.svg" }
+  ),
+}));
+
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { encrypt, decrypt } from "@/lib/encryption";
@@ -632,5 +641,41 @@ describe("PATCH /api/providers/[id]", () => {
     expect(res.status).toBe(500);
     const json = await res.json();
     expect(json.error).toBe("INTERNAL_ERROR");
+  });
+
+  // GitLab credential validation
+  it("returns 400 when GitLab changeCredentials=true but token is missing", async () => {
+    mockFindFirst.mockResolvedValue({ id: "p1", userId: "user-1", type: "GITLAB", encryptedCredentials: "enc", baseUrl: null });
+
+    const req = makeRequest("PATCH", {
+      displayName: "My GitLab",
+      changeCredentials: true,
+      credentials: {},
+    }, "http://localhost/api/providers/p1");
+    const res = await PATCH(req, { params: Promise.resolve({ id: "p1" }) });
+
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.error).toBe("MISSING_FIELDS");
+  });
+
+  it("returns 200 when GitLab changeCredentials=true with valid token", async () => {
+    const { GitLabAdapter } = jest.requireMock("@/services/issue-provider/gitlab");
+    GitLabAdapter.mockImplementationOnce(() => ({
+      testConnection: jest.fn().mockResolvedValue(undefined),
+    }));
+
+    mockFindFirst.mockResolvedValue({ id: "p1", userId: "user-1", type: "GITLAB", encryptedCredentials: "enc", baseUrl: null });
+    mockUpdate.mockResolvedValue({ id: "p1", type: "GITLAB", displayName: "My GitLab", baseUrl: null, createdAt: new Date() });
+
+    const req = makeRequest("PATCH", {
+      displayName: "My GitLab",
+      changeCredentials: true,
+      credentials: { token: "glpat-xxx" },
+    }, "http://localhost/api/providers/p1");
+    const res = await PATCH(req, { params: Promise.resolve({ id: "p1" }) });
+
+    expect(res.status).toBe(200);
+    expect(mockEncrypt).toHaveBeenCalled();
   });
 });

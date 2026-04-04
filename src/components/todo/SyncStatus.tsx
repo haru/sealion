@@ -6,7 +6,7 @@ import SyncIcon from "@mui/icons-material/Sync";
 import WarningIcon from "@mui/icons-material/Warning";
 import { Box, Button, Chip } from "@mui/material";
 import { useTranslations } from "next-intl";
-import { useEffect, useMemo, useRef } from "react";
+import React, { useEffect, useMemo, useRef } from "react";
 
 import { useMessageQueue } from "@/hooks/useMessageQueue";
 import { formatSyncErrorMessage, parseSyncErrorInfo } from "@/lib/error-utils";
@@ -87,7 +87,7 @@ export default function SyncStatus({ providers, isSyncing, onSyncNow }: SyncStat
 
   const hasError = allSyncErrors.length > 0;
 
-  let icon;
+  let icon: React.ReactNode;
   if (isSyncing) {
     icon = (
       <SyncIcon
