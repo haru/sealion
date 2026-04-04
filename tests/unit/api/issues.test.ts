@@ -339,4 +339,32 @@ describe("GET /api/issues", () => {
       expect(call.where.isUnassigned).toBe(true);
     });
   });
+
+  describe("invalid page and limit params", () => {
+    beforeEach(() => {
+      mockFindMany.mockResolvedValue([]);
+      mockCount.mockResolvedValue(0);
+    });
+
+    it("falls back to page=1 when page is non-numeric", async () => {
+      const res = await GET(makeRequest("?page=abc"));
+      expect(res.status).toBe(200);
+      const call = mockFindMany.mock.calls[0][0];
+      expect(call.skip).toBe(0); // (1 - 1) * 20 = 0
+    });
+
+    it("falls back to limit=20 when limit is non-numeric", async () => {
+      const res = await GET(makeRequest("?limit=xyz"));
+      expect(res.status).toBe(200);
+      const call = mockFindMany.mock.calls[0][0];
+      expect(call.take).toBe(20);
+    });
+
+    it("falls back to page=1 when page is a float string", async () => {
+      const res = await GET(makeRequest("?page=1.5"));
+      expect(res.status).toBe(200);
+      const call = mockFindMany.mock.calls[0][0];
+      expect(call.skip).toBe(0);
+    });
+  });
 });
