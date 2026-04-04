@@ -175,7 +175,7 @@ const eslintConfig = defineConfig([
       "react/no-multi-comp": "error",
 
       // ── Complexity Control ────────────────────────────────────────────────
-      complexity: ["error", { max: 30 }],
+      complexity: ["error", { max: 20 }],
       "max-depth": ["error", { max: 3 }],
       "no-nested-ternary": "error",
 

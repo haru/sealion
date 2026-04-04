@@ -104,6 +104,56 @@ function buildAssigneeWhere(effectiveAssignee: string | undefined): Record<strin
   return {};
 }
 
+/** Resolved filter values derived from query parameters and embedded search tokens. */
+type ResolvedFilters = {
+  page: number;
+  limit: number;
+  orderBy: PrismaOrderBy[];
+  effectiveProvider: string | undefined;
+  effectiveProject: string | undefined;
+  effectiveDueDateRange: string | undefined;
+  effectiveCreatedRange: string | undefined;
+  effectiveUpdatedRange: string | undefined;
+  effectiveAssignee: string | undefined;
+  keywords: string[];
+};
+
+/**
+ * Parses URL search params and merges them with embedded search tokens from `q`.
+ * Explicit query params always take precedence over tokens embedded in `q`.
+ *
+ * @param searchParams - The URLSearchParams from the incoming request.
+ * @returns Resolved filter values ready to be used in the Prisma query.
+ */
+function resolveFilters(searchParams: URLSearchParams): ResolvedFilters {
+  const page = Math.max(1, Number(searchParams.get("page") ?? "1"));
+  const limit = Math.min(100, Math.max(1, Number(searchParams.get("limit") ?? "20")));
+  const orderBy = parseSortOrder(searchParams.get("sortOrder"));
+
+  const rawQ = searchParams.get("q") ?? "";
+  const provider = searchParams.get("provider") ?? undefined;
+  const project = searchParams.get("project") ?? undefined;
+  const dueDateRange = searchParams.get("dueDateRange") ?? undefined;
+  const createdRange = searchParams.get("createdRange") ?? undefined;
+  const updatedRange = searchParams.get("updatedRange") ?? undefined;
+  const assignee = searchParams.get("assignee") ?? undefined;
+
+  const parsed = parseSearchQuery(rawQ);
+
+  return {
+    page,
+    limit,
+    orderBy,
+    effectiveProvider: provider ?? parsed.provider,
+    effectiveProject: project ?? parsed.project,
+    effectiveDueDateRange: dueDateRange ?? parsed.dueDateFilter?.preset,
+    effectiveCreatedRange: createdRange ?? parsed.createdFilter?.preset,
+    effectiveUpdatedRange: updatedRange ?? parsed.updatedFilter?.preset,
+    effectiveAssignee: assignee ?? parsed.assignee,
+    keywords: parsed.keywords,
+  };
+}
+
 /**
  * GET /api/issues — Returns a paginated list of issues for the authenticated user.
  * Issues in the today list (todayFlag=true) are excluded — those are shown in the Today widget.
@@ -127,34 +177,24 @@ export async function GET(req: NextRequest) {
   if (!session) { return fail("UNAUTHORIZED", 401); }
 
   const { searchParams } = new URL(req.url);
-  const page = Math.max(1, Number(searchParams.get("page") ?? "1"));
-  const limit = Math.min(100, Math.max(1, Number(searchParams.get("limit") ?? "20")));
-  const orderBy = parseSortOrder(searchParams.get("sortOrder"));
-
-  // Search and filter params
-  const rawQ = searchParams.get("q") ?? "";
-  const provider = searchParams.get("provider") ?? undefined;
-  const project = searchParams.get("project") ?? undefined;
-  const dueDateRange = searchParams.get("dueDateRange") ?? undefined;
-  const createdRange = searchParams.get("createdRange") ?? undefined;
-  const updatedRange = searchParams.get("updatedRange") ?? undefined;
-  const assignee = searchParams.get("assignee") ?? undefined;
-
-  const parsed = parseSearchQuery(rawQ);
-
-  // Explicit query params take precedence over filters parsed from q
-  const effectiveProvider = provider ?? parsed.provider;
-  const effectiveProject = project ?? parsed.project;
-  const effectiveDueDateRange = dueDateRange ?? parsed.dueDateFilter?.preset;
-  const effectiveCreatedRange = createdRange ?? parsed.createdFilter?.preset;
-  const effectiveUpdatedRange = updatedRange ?? parsed.updatedFilter?.preset;
-  const effectiveAssignee = assignee ?? parsed.assignee;
+  const {
+    page,
+    limit,
+    orderBy,
+    effectiveProvider,
+    effectiveProject,
+    effectiveDueDateRange,
+    effectiveCreatedRange,
+    effectiveUpdatedRange,
+    effectiveAssignee,
+    keywords,
+  } = resolveFilters(searchParams);
 
   // Build keyword conditions (OR per keyword, ANDed with filters)
   const keywordWhere =
-    parsed.keywords.length > 0
+    keywords.length > 0
       ? {
-          OR: parsed.keywords.map((kw) => ({
+          OR: keywords.map((kw) => ({
             title: { contains: kw, mode: "insensitive" as const },
           })),
         }

@@ -36,6 +36,70 @@ interface ProviderEditModalProps {
   onUpdated: (updated: Provider) => void;
 }
 
+/**
+ * Returns the credential input fields for the given provider type.
+ *
+ * @param providerType - The type of issue provider.
+ * @param credentials - Current credential field values.
+ * @param onChange - Callback to update a single credential field.
+ * @param t - Translation function for the "providers" namespace.
+ * @returns JSX for the credential fields, or null if the type is unrecognized.
+ */
+function renderCredentialFields(
+  providerType: ProviderType,
+  credentials: Record<string, string>,
+  onChange: (key: string, value: string) => void,
+  t: ReturnType<typeof useTranslations<"providers">>,
+) {
+  if (providerType === "GITHUB" || providerType === "GITLAB") {
+    return (
+      <TextField
+        label={t("fields.token")}
+        type="password"
+        value={credentials.token ?? ""}
+        onChange={(e) => onChange("token", e.target.value)}
+        required
+        fullWidth
+      />
+    );
+  }
+  if (providerType === "JIRA") {
+    return (
+      <>
+        <TextField
+          label={t("fields.email")}
+          type="email"
+          value={credentials.email ?? ""}
+          onChange={(e) => onChange("email", e.target.value)}
+          required
+          fullWidth
+        />
+        <TextField
+          label={t("fields.apiToken")}
+          type="password"
+          value={credentials.apiToken ?? ""}
+          onChange={(e) => onChange("apiToken", e.target.value)}
+          required
+          fullWidth
+        />
+      </>
+    );
+  }
+  if (providerType === "REDMINE") {
+    return (
+      <TextField
+        label={t("fields.apiKey")}
+        type="password"
+        value={credentials.apiKey ?? ""}
+        onChange={(e) => onChange("apiKey", e.target.value)}
+        required
+        fullWidth
+      />
+    );
+  }
+  return null;
+}
+
 /** Modal dialog for editing an existing issue provider's display name, base URL, or credentials. */
 export default function ProviderEditModal({
   provider,
@@ -146,59 +210,7 @@ export default function ProviderEditModal({
               label={t("changeCredentials")}
             />
 
-            {changeCredentials && provider.type === "GITHUB" && (
-              <TextField
-                label={t("fields.token")}
-                type="password"
-                value={credentials.token ?? ""}
-                onChange={(e) => handleCredentialChange("token", e.target.value)}
-                required
-                fullWidth
-              />
-            )}
-
-            {changeCredentials && provider.type === "JIRA" && (
-              <>
-                <TextField
-                  label={t("fields.email")}
-                  type="email"
-                  value={credentials.email ?? ""}
-                  onChange={(e) => handleCredentialChange("email", e.target.value)}
-                  required
-                  fullWidth
-                />
-                <TextField
-                  label={t("fields.apiToken")}
-                  type="password"
-                  value={credentials.apiToken ?? ""}
-                  onChange={(e) => handleCredentialChange("apiToken", e.target.value)}
-                  required
-                  fullWidth
-                />
-              </>
-            )}
-
-            {changeCredentials && provider.type === "REDMINE" && (
-              <TextField
-                label={t("fields.apiKey")}
-                type="password"
-                value={credentials.apiKey ?? ""}
-                onChange={(e) => handleCredentialChange("apiKey", e.target.value)}
-                required
-                fullWidth
-              />
-            )}
-
-            {changeCredentials && provider.type === "GITLAB" && (
-              <TextField
-                label={t("fields.token")}
-                type="password"
-                value={credentials.token ?? ""}
-                onChange={(e) => handleCredentialChange("token", e.target.value)}
-                required
-                fullWidth
-              />
-            )}
+            {changeCredentials && renderCredentialFields(provider.type, credentials, handleCredentialChange, t)}
           </Stack>
         </Box>
       </DialogContent>
