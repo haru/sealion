@@ -1,7 +1,8 @@
-import { NextRequest } from "next/server";
 import bcrypt from "bcryptjs";
-import { prisma } from "@/lib/db";
+import type { NextRequest } from "next/server";
+
 import { ok, fail } from "@/lib/api-response";
+import { prisma } from "@/lib/db";
 import { normalizeEmail, verifyPasswordResetToken, TokenExpiredError } from "@/lib/password-reset";
 
 /**

@@ -26,11 +26,13 @@ function assertNever(_value: never): never {
  * @returns Negative if `a < b`, positive if `a > b`, zero if equal. Nulls sort to the end.
  */
 function compareDateAsc(a: string | null, b: string | null): number {
-  if (a === null && b === null) return 0;
-  if (a === null) return 1;
-  if (b === null) return -1;
+  if (a === null && b === null) { return 0; }
+  if (a === null) { return 1; }
+  if (b === null) { return -1; }
   // Lexicographic comparison is valid because all date strings are ISO 8601 format.
-  return a < b ? -1 : a > b ? 1 : 0;
+  if (a < b) { return -1; }
+  if (a > b) { return 1; }
+  return 0;
 }
 
 /**
@@ -41,11 +43,13 @@ function compareDateAsc(a: string | null, b: string | null): number {
  * @returns Positive if `a < b`, negative if `a > b`, zero if equal. Nulls sort to the end.
  */
 function compareDateDesc(a: string | null, b: string | null): number {
-  if (a === null && b === null) return 0;
-  if (a === null) return 1;
-  if (b === null) return -1;
+  if (a === null && b === null) { return 0; }
+  if (a === null) { return 1; }
+  if (b === null) { return -1; }
   // Lexicographic comparison is valid because all date strings are ISO 8601 format.
-  return a < b ? 1 : a > b ? -1 : 0;
+  if (a < b) { return 1; }
+  if (a > b) { return -1; }
+  return 0;
 }
 
 /**
@@ -58,7 +62,7 @@ function compareDateDesc(a: string | null, b: string | null): number {
  */
 export function sortIssues<T extends SortableIssue>(issues: T[], criteria: SortCriterion[]): T[] {
   return [...issues].sort((a, b) => {
-    if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
+    if (a.pinned !== b.pinned) { return a.pinned ? -1 : 1; }
 
     for (const criterion of criteria) {
       let cmp = 0;
@@ -75,9 +79,11 @@ export function sortIssues<T extends SortableIssue>(issues: T[], criteria: SortC
         default:
           return assertNever(criterion);
       }
-      if (cmp !== 0) return cmp;
+      if (cmp !== 0) { return cmp; }
     }
 
-    return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+    if (a.id < b.id) { return -1; }
+    if (a.id > b.id) { return 1; }
+    return 0;
   });
 }

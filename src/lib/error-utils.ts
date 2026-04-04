@@ -1,4 +1,6 @@
-import { SyncErrorCause, SyncErrorInfo } from './types';
+import type { AxiosError } from 'axios';
+
+import { SyncErrorCause, type SyncErrorInfo } from './types';
 
 /**
  * Type guard to check if an error is an AxiosError.
@@ -6,7 +8,7 @@ import { SyncErrorCause, SyncErrorInfo } from './types';
  * @param error - The error to check.
  * @returns True if the error is an AxiosError.
  */
-function isAxiosError(error: unknown): error is import('axios').AxiosError {
+function isAxiosError(error: unknown): error is AxiosError {
   return (
     error !== null &&
     typeof error === 'object' &&

@@ -1,6 +1,9 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import AddIcon from "@mui/icons-material/Add";
+import DeleteIcon from "@mui/icons-material/Delete";
+import EditIcon from "@mui/icons-material/Edit";
+import PeopleIcon from "@mui/icons-material/People";
 import {
   Container,
   Paper,
@@ -22,20 +25,19 @@ import {
   IconButton,
   Tooltip,
 } from "@mui/material";
-import AddIcon from "@mui/icons-material/Add";
-import EditIcon from "@mui/icons-material/Edit";
-import DeleteIcon from "@mui/icons-material/Delete";
-import { useTranslations } from "next-intl";
-import { useMessageQueue } from "@/components/MessageQueue";
-import { useAdminUserId } from "../AdminSessionProvider";
-import { usePageHeader } from "@/hooks/usePageHeader";
-import PeopleIcon from "@mui/icons-material/People";
-import EditUserDialog from "./EditUserDialog";
-import TextField from "@mui/material/TextField";
 import FormControl from "@mui/material/FormControl";
 import InputLabel from "@mui/material/InputLabel";
-import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
+import Select from "@mui/material/Select";
+import TextField from "@mui/material/TextField";
+import { useTranslations } from "next-intl";
+import { useState, useEffect, useCallback } from "react";
+
+import { useAdminUserId } from "@/app/admin/AdminSessionProvider";
+import { useMessageQueue } from "@/components/MessageQueue";
+import { usePageHeader } from "@/hooks/usePageHeader";
+
+import EditUserDialog from "./EditUserDialog";
 
 /** A user record as returned by GET /api/admin/users. */
 interface User {
@@ -103,7 +105,7 @@ export default function AdminUsersPage() {
    * @returns A localised error message.
    */
   function translateError(code: string | undefined): string {
-    if (!code) return tCommon("error");
+    if (!code) { return tCommon("error"); }
     try {
       return tErrors(code as Parameters<typeof tErrors>[0]);
     } catch {
@@ -139,7 +141,7 @@ export default function AdminUsersPage() {
 
   /** Executes the cascade delete for the current deleteTarget. */
   async function handleDeleteConfirm() {
-    if (!deleteTarget) return;
+    if (!deleteTarget) { return; }
     setDeleting(true);
 
     try {

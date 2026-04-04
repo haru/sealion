@@ -1,10 +1,11 @@
-import { NextRequest } from "next/server";
+import type { NextRequest } from "next/server";
 import { z } from "zod";
-import { auth } from "@/lib/auth";
+
 import { ok, fail } from "@/lib/api-response";
+import { auth } from "@/lib/auth";
 import { decrypt } from "@/lib/encryption";
-import { getSmtpSettings } from "@/lib/smtp-settings";
 import { sendMail, SMTP_DUMMY_PASSWORD } from "@/lib/smtp-mailer";
+import { getSmtpSettings } from "@/lib/smtp-settings";
 
 /** Zod schema for the test send POST request body. */
 const testPayloadSchema = z
@@ -43,8 +44,8 @@ const testPayloadSchema = z
 /** Verifies the current session belongs to an admin user. */
 async function requireAdmin() {
   const session = await auth();
-  if (!session) return { error: fail("UNAUTHORIZED", 401), session: null };
-  if (session.user.role !== "ADMIN") return { error: fail("FORBIDDEN", 403), session: null };
+  if (!session) { return { error: fail("UNAUTHORIZED", 401), session: null }; }
+  if (session.user.role !== "ADMIN") { return { error: fail("FORBIDDEN", 403), session: null }; }
   return { error: null, session };
 }
 
@@ -62,7 +63,7 @@ async function requireAdmin() {
 async function resolveTestPassword(incoming: string | null): Promise<string | null> {
   if (incoming === SMTP_DUMMY_PASSWORD) {
     const settings = await getSmtpSettings();
-    if (!settings?.encryptedPassword) return null;
+    if (!settings?.encryptedPassword) { return null; }
     return decrypt(settings.encryptedPassword);
   }
   return incoming;
@@ -79,18 +80,18 @@ async function resolveTestPassword(incoming: string | null): Promise<string | nu
  */
 export async function POST(req: NextRequest) {
   const { error, session } = await requireAdmin();
-  if (error) return error;
+  if (error) { return error; }
 
   const body = await req.json().catch(() => null);
-  if (!body) return fail("INVALID_INPUT", 400);
+  if (!body) { return fail("INVALID_INPUT", 400); }
 
   const parsed = testPayloadSchema.safeParse(body);
-  if (!parsed.success) return fail("INVALID_INPUT", 400);
+  if (!parsed.success) { return fail("INVALID_INPUT", 400); }
 
   const { host, port, fromAddress, fromName, requireAuth, username, password, useTls } = parsed.data;
 
   const recipientEmail = session?.user?.email ?? null;
-  if (!recipientEmail) return fail("USER_EMAIL_MISSING", 400);
+  if (!recipientEmail) { return fail("USER_EMAIL_MISSING", 400); }
 
   const resolvedPassword = await resolveTestPassword(password);
 

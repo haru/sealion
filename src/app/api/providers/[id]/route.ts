@@ -1,21 +1,38 @@
-import { NextRequest } from "next/server";
+import { ProviderType } from "@prisma/client";
+import type { NextRequest } from "next/server";
+
+import { ok, fail, failWithDetails } from "@/lib/api-response";
 import { auth } from "@/lib/auth";
+import { buildTypedCredentials } from "@/lib/credentials";
 import { prisma } from "@/lib/db";
 import { encrypt, decrypt } from "@/lib/encryption";
-import { ok, fail, failWithDetails } from "@/lib/api-response";
-import { createAdapter, getProviderIconUrl } from "@/services/issue-provider/factory";
-import { ProviderType } from "@prisma/client";
 import { createConnectionTestErrorDetails } from "@/lib/error-utils";
-import { buildTypedCredentials } from "@/lib/credentials";
+import { createAdapter, getProviderIconUrl } from "@/services/issue-provider/factory";
 
 type RouteContext = { params: Promise<{ id: string }> };
+
+/**
+ * Validates provider-specific required credential fields.
+ * @param type - The provider type to validate credentials for.
+ * @param credentials - Credential fields from the request body.
+ * @returns `true` if all required fields are present, `false` otherwise.
+ */
+function hasRequiredCredentialFields(
+  type: ProviderType,
+  credentials: Record<string, string>,
+): boolean {
+  if (type === ProviderType.GITHUB && !credentials.token) { return false; }
+  if (type === ProviderType.JIRA && (!credentials.email || !credentials.apiToken)) { return false; }
+  if (type === ProviderType.REDMINE && !credentials.apiKey) { return false; }
+  return true;
+}
 
 /**
  * DELETE /api/providers/[id] — Deletes an issue provider owned by the authenticated user.
  */
 export async function DELETE(req: NextRequest, { params }: RouteContext) {
   const session = await auth();
-  if (!session) return fail("UNAUTHORIZED", 401);
+  if (!session) { return fail("UNAUTHORIZED", 401); }
 
   const { id } = await params;
 
@@ -24,7 +41,7 @@ export async function DELETE(req: NextRequest, { params }: RouteContext) {
     where: { id, userId: session.user.id },
   });
 
-  if (!provider) return fail("FORBIDDEN", 403);
+  if (!provider) { return fail("FORBIDDEN", 403); }
 
   await prisma.issueProvider.delete({ where: { id } });
 
@@ -36,17 +53,17 @@ export async function DELETE(req: NextRequest, { params }: RouteContext) {
  */
 export async function PATCH(req: NextRequest, { params }: RouteContext) {
   const session = await auth();
-  if (!session) return fail("UNAUTHORIZED", 401);
+  if (!session) { return fail("UNAUTHORIZED", 401); }
 
   const { id } = await params;
 
   const provider = await prisma.issueProvider.findFirst({
     where: { id, userId: session.user.id },
   });
-  if (!provider) return fail("FORBIDDEN", 403);
+  if (!provider) { return fail("FORBIDDEN", 403); }
 
   const body = await req.json().catch(() => null);
-  if (!body) return fail("INVALID_BODY", 400);
+  if (!body) { return fail("INVALID_BODY", 400); }
 
   const { displayName, baseUrl: rawBaseUrl, changeCredentials, credentials } = body as {
     displayName: string;
@@ -60,22 +77,20 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
     : rawBaseUrl;
 
   // Validate displayName
-  if (!displayName) return fail("MISSING_FIELDS", 400);
+  if (!displayName) { return fail("MISSING_FIELDS", 400); }
 
   // Validate baseUrl for Jira/Redmine
   const requiresBaseUrl = provider.type === ProviderType.JIRA || provider.type === ProviderType.REDMINE;
-  if (requiresBaseUrl && !baseUrl) return fail("MISSING_FIELDS", 400);
+  if (requiresBaseUrl && !baseUrl) { return fail("MISSING_FIELDS", 400); }
 
   // Determine the effective credentials for connection test
   let encryptedToStore: string | undefined;
   let effectiveCredentials: Record<string, string>;
 
   if (changeCredentials) {
-    if (!credentials) return fail("MISSING_FIELDS", 400);
+    if (!credentials) { return fail("MISSING_FIELDS", 400); }
     // Validate provider-specific required fields
-    if (provider.type === ProviderType.GITHUB && !credentials.token) return fail("MISSING_FIELDS", 400);
-    if (provider.type === ProviderType.JIRA && (!credentials.email || !credentials.apiToken)) return fail("MISSING_FIELDS", 400);
-    if (provider.type === ProviderType.REDMINE && !credentials.apiKey) return fail("MISSING_FIELDS", 400);
+    if (!hasRequiredCredentialFields(provider.type, credentials)) { return fail("MISSING_FIELDS", 400); }
 
     effectiveCredentials = { ...credentials, ...(baseUrl ? { baseUrl } : {}) };
     // Strip baseUrl from credentials before encrypting (stored separately in DB column)
@@ -96,7 +111,8 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
       console.error("[provider] Failed to decrypt existing credentials for provider", id);
       return fail("CREDENTIALS_DECRYPT_FAILED", 500);
     }
-    effectiveCredentials = { ...existingCreds, ...(baseUrl ? { baseUrl } : provider.baseUrl ? { baseUrl: provider.baseUrl } : {}) };
+    const effectiveBaseUrl = baseUrl ?? provider.baseUrl ?? null;
+    effectiveCredentials = { ...existingCreds, ...(effectiveBaseUrl ? { baseUrl: effectiveBaseUrl } : {}) };
   }
 
   // Test connection

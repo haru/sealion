@@ -1,13 +1,14 @@
 "use client";
 
-import { useState } from "react";
-import { Box, Button, Container } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import FolderOpenIcon from "@mui/icons-material/FolderOpen";
+import { Box, Button, Container } from "@mui/material";
 import { useTranslations } from "next-intl";
-import { usePageHeader } from "@/hooks/usePageHeader";
-import ProjectList from "@/components/projects/ProjectList";
+import { useState } from "react";
+
 import AddProjectDialog from "@/components/projects/AddProjectDialog";
+import ProjectList from "@/components/projects/ProjectList";
+import { usePageHeader } from "@/hooks/usePageHeader";
 
 /** Projects management page for registering and removing external projects. */
 export default function ProjectsPage() {
@@ -19,7 +20,7 @@ export default function ProjectsPage() {
   /** Handles dialog close and triggers a list refresh if a project was saved. */
   function handleDialogClose(saved: boolean) {
     setDialogOpen(false);
-    if (saved) setRefreshSignal((n) => n + 1);
+    if (saved) { setRefreshSignal((n) => n + 1); }
   }
 
   return (

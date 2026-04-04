@@ -1,5 +1,14 @@
 "use client";
 
+import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
+import EmailOutlinedIcon from "@mui/icons-material/EmailOutlined";
+import ExpandLessIcon from "@mui/icons-material/ExpandLess";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import FolderOpenIcon from "@mui/icons-material/FolderOpen";
+import FormatListBulletedIcon from "@mui/icons-material/FormatListBulleted";
+import PeopleIcon from "@mui/icons-material/People";
+import SecurityOutlinedIcon from "@mui/icons-material/SecurityOutlined";
+import TuneIcon from "@mui/icons-material/Tune";
 import {
   Box,
   Collapse,
@@ -10,21 +19,13 @@ import {
   ListItemText,
   Typography,
 } from "@mui/material";
-import FolderOpenIcon from "@mui/icons-material/FolderOpen";
-import FormatListBulletedIcon from "@mui/icons-material/FormatListBulleted";
-import TuneIcon from "@mui/icons-material/Tune";
-import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
-import PeopleIcon from "@mui/icons-material/People";
-import SecurityOutlinedIcon from "@mui/icons-material/SecurityOutlined";
-import EmailOutlinedIcon from "@mui/icons-material/EmailOutlined";
-import ExpandLessIcon from "@mui/icons-material/ExpandLess";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
-import { version } from "../../../package.json";
+
+import { version } from "@/../package.json";
 
 const DRAWER_WIDTH = 240;
 const RELEASE_URL = `https://github.com/haru/sealion/`;

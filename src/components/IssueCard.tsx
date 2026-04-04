@@ -1,19 +1,14 @@
 "use client";
 
-import {
-  Box,
-  IconButton,
-  Paper,
-  Tooltip,
-  Typography,
-} from "@mui/material";
+import type { DraggableSyntheticListeners, DraggableAttributes } from "@dnd-kit/core";
 import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import TaskAltIcon from "@mui/icons-material/TaskAlt";
+import { Box, IconButton, Paper, Tooltip, Typography } from "@mui/material";
 import { useTranslations } from "next-intl";
-import ProviderIcon from "@/components/ProviderIcon";
-import type { DraggableSyntheticListeners, DraggableAttributes } from "@dnd-kit/core";
 import type { CSSProperties, ReactNode, Ref } from "react";
+
+import ProviderIcon from "@/components/ProviderIcon";
 
 /** Props for {@link IssueCard}. */
 interface IssueCardProps {
@@ -90,6 +85,15 @@ export default function IssueCard({
   const t = useTranslations("todo");
   const tModal = useTranslations("completeModal");
 
+  let cardOpacity: number;
+  if (isGhost) {
+    cardOpacity = 0.15;
+  } else if (isDragging) {
+    cardOpacity = 0.6;
+  } else {
+    cardOpacity = 1;
+  }
+
   return (
     <Paper
       ref={dragContainerRef}
@@ -105,7 +109,7 @@ export default function IssueCard({
         overflow: "hidden",
         display: "flex",
         alignItems: "flex-start",
-        opacity: isGhost ? 0.15 : isDragging ? 0.6 : 1,
+        opacity: cardOpacity,
         transition: "border-color 0.2s, box-shadow 0.2s",
         "&:hover": {
           borderColor: isToday ? "#4f46e5" : "#cbd5e1",

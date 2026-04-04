@@ -1,13 +1,14 @@
 "use client";
 
-import { Popover, Box, Typography, MenuItem, ListItemIcon, ListItemText } from "@mui/material";
-import StorageIcon from "@mui/icons-material/Storage";
-import FolderIcon from "@mui/icons-material/Folder";
-import EventIcon from "@mui/icons-material/Event";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
-import UpdateIcon from "@mui/icons-material/Update";
+import EventIcon from "@mui/icons-material/Event";
+import FolderIcon from "@mui/icons-material/Folder";
 import PersonIcon from "@mui/icons-material/Person";
+import StorageIcon from "@mui/icons-material/Storage";
+import UpdateIcon from "@mui/icons-material/Update";
+import { Popover, Box, Typography, MenuItem, ListItemIcon, ListItemText } from "@mui/material";
 import { useTranslations } from "next-intl";
+
 import type { TaskFilterState } from "@/hooks/useTaskSearch";
 import type { DateRangePreset, CreatedUpdatedPreset } from "@/lib/search-parser";
 
@@ -25,18 +26,18 @@ const FILTER_KEYS: (keyof TaskFilterState)[] = [
 type SearchTranslationKey =
   | "provider"
   | "project"
-  | "dueDate"
-  | "createdDate"
-  | "updatedDate"
+  | "dueDateFilter"
+  | "createdFilter"
+  | "updatedFilter"
   | "assignee";
 
-/** Maps each filter key to its i18n translation key in the "search" namespace. */
+/** Maps each filter field key to its translation key in the "search" namespace. */
 const FILTER_KEY_LABEL: Record<keyof TaskFilterState, SearchTranslationKey> = {
   provider: "provider",
   project: "project",
-  dueDateFilter: "dueDate",
-  createdFilter: "createdDate",
-  updatedFilter: "updatedDate",
+  dueDateFilter: "dueDateFilter",
+  createdFilter: "createdFilter",
+  updatedFilter: "updatedFilter",
   assignee: "assignee",
 };
 
@@ -47,12 +48,12 @@ const FILTER_KEY_LABEL: Record<keyof TaskFilterState, SearchTranslationKey> = {
  */
 function filterKeyIcon(key: keyof TaskFilterState) {
   switch (key) {
-    case "provider":      return StorageIcon;
-    case "project":       return FolderIcon;
+    case "provider": return StorageIcon;
+    case "project": return FolderIcon;
     case "dueDateFilter": return EventIcon;
     case "createdFilter": return AddCircleOutlineIcon;
     case "updatedFilter": return UpdateIcon;
-    case "assignee":      return PersonIcon;
+    case "assignee": return PersonIcon;
   }
 }
 
@@ -172,7 +173,7 @@ export default function SearchFilterDropdown({
   }
 
   // ── selectValue mode ──────────────────────────────────────────────────────
-  if (!pendingFilterKey) return null;
+  if (!pendingFilterKey) { return null; }
 
   const items = buildValueItems(
     pendingFilterKey,
@@ -261,10 +262,10 @@ function buildValueItems(
 
     case "dueDateFilter": {
       const opts: { preset: DateRangePreset; label: string }[] = [
-        { preset: "today",     label: t("today") },
-        { preset: "thisWeek",  label: t("thisWeek") },
+        { preset: "today", label: t("today") },
+        { preset: "thisWeek", label: t("thisWeek") },
         { preset: "thisMonth", label: t("thisMonth") },
-        { preset: "none",      label: t("noDeadline") },
+        { preset: "none", label: t("noDeadline") },
       ];
       return opts.map(({ preset, label }) => ({
         value: preset,
@@ -279,10 +280,10 @@ function buildValueItems(
 
     case "createdFilter": {
       const opts: { preset: CreatedUpdatedPreset; label: string }[] = [
-        { preset: "today",      label: t("today") },
-        { preset: "past7days",  label: t("past7days") },
+        { preset: "today", label: t("today") },
+        { preset: "past7days", label: t("past7days") },
         { preset: "past30days", label: t("past30days") },
-        { preset: "pastYear",   label: t("pastYear") },
+        { preset: "pastYear", label: t("pastYear") },
       ];
       return opts.map(({ preset, label }) => ({
         value: preset,
@@ -297,10 +298,10 @@ function buildValueItems(
 
     case "updatedFilter": {
       const opts: { preset: CreatedUpdatedPreset; label: string }[] = [
-        { preset: "today",      label: t("today") },
-        { preset: "past7days",  label: t("past7days") },
+        { preset: "today", label: t("today") },
+        { preset: "past7days", label: t("past7days") },
         { preset: "past30days", label: t("past30days") },
-        { preset: "pastYear",   label: t("pastYear") },
+        { preset: "pastYear", label: t("pastYear") },
       ];
       return opts.map(({ preset, label }) => ({
         value: preset,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import SecurityIcon from "@mui/icons-material/Security";
 import {
   Container,
   Paper,
@@ -18,8 +18,9 @@ import {
   CircularProgress,
   Box,
 } from "@mui/material";
-import SecurityIcon from "@mui/icons-material/Security";
 import { useTranslations } from "next-intl";
+import { useState, useEffect } from "react";
+
 import { useMessageQueue } from "@/components/MessageQueue";
 import { usePageHeader } from "@/hooks/usePageHeader";
 
@@ -149,7 +150,7 @@ export default function AuthSettingsPage() {
                   checked={allowUserSignup}
                   onChange={(e) => {
                     setAllowUserSignup(e.target.checked);
-                    if (!e.target.checked) setRequireEmailVerification(false);
+                    if (!e.target.checked) { setRequireEmailVerification(false); }
                   }}
                   inputProps={{ "aria-label": t("allowUserSignup") }}
                 />

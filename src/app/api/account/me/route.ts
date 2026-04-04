@@ -1,8 +1,9 @@
+import { UserRole, UserStatus } from "@prisma/client";
+
+import { ok, fail } from "@/lib/api-response";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { ok, fail } from "@/lib/api-response";
 import { deleteUserCascade } from "@/lib/deleteUserCascade";
-import { UserRole, UserStatus } from "@prisma/client";
 
 /**
  * DELETE /api/account/me — Deletes the authenticated user's own account.

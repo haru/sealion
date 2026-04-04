@@ -1,5 +1,6 @@
-import { z } from "zod";
 import { ProviderType } from "@prisma/client";
+import { z } from "zod";
+
 import { decrypt } from "@/lib/encryption";
 import type {
   GitHubCredentials,

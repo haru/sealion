@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import {
   Box,
   Button,
@@ -14,6 +13,7 @@ import {
   CircularProgress,
 } from "@mui/material";
 import { useTranslations } from "next-intl";
+import { useState } from "react";
 
 /** Provider type identifier. */
 export type ProviderType = "GITHUB" | "JIRA" | "REDMINE" | "GITLAB";
@@ -31,16 +31,14 @@ interface ProviderFormProps {
 
 const PROVIDER_TYPES: ProviderType[] = ["GITHUB", "JIRA", "REDMINE", "GITLAB"];
 
-/** Form fields for GitHub provider credentials. */
-function GitHubFields({
-  credentials,
-  onChange,
-  t,
-}: {
+type FieldProps = {
   credentials: Record<string, string>;
   onChange: (key: string, value: string) => void;
   t: ReturnType<typeof useTranslations>;
-}) {
+};
+
+/** Renders form fields for GitHub provider credentials. */
+function githubFields({ credentials, onChange, t }: FieldProps) {
   return (
     <TextField
       label={t("fields.token")}
@@ -54,16 +52,8 @@ function GitHubFields({
   );
 }
 
-/** Form fields for Jira provider credentials. */
-function JiraFields({
-  credentials,
-  onChange,
-  t,
-}: {
-  credentials: Record<string, string>;
-  onChange: (key: string, value: string) => void;
-  t: ReturnType<typeof useTranslations>;
-}) {
+/** Renders form fields for Jira provider credentials. */
+function jiraFields({ credentials, onChange, t }: FieldProps) {
   return (
     <>
       <TextField
@@ -94,16 +84,8 @@ function JiraFields({
   );
 }
 
-/** Form fields for Redmine provider credentials. */
-function RedmineFields({
-  credentials,
-  onChange,
-  t,
-}: {
-  credentials: Record<string, string>;
-  onChange: (key: string, value: string) => void;
-  t: ReturnType<typeof useTranslations>;
-}) {
+/** Renders form fields for Redmine provider credentials. */
+function redmineFields({ credentials, onChange, t }: FieldProps) {
   return (
     <>
       <TextField
@@ -126,16 +108,8 @@ function RedmineFields({
   );
 }
 
-/** Form fields for GitLab provider credentials. */
-function GitLabFields({
-  credentials,
-  onChange,
-  t,
-}: {
-  credentials: Record<string, string>;
-  onChange: (key: string, value: string) => void;
-  t: ReturnType<typeof useTranslations>;
-}) {
+/** Renders form fields for GitLab provider credentials. */
+function gitLabFields({ credentials, onChange, t }: FieldProps) {
   return (
     <>
       <TextField
@@ -199,6 +173,8 @@ export default function ProviderForm({ onSubmit }: ProviderFormProps) {
     }
   }
 
+  const fieldProps: FieldProps = { credentials, onChange: handleCredentialChange, t };
+
   return (
     <Box component="form" onSubmit={handleSubmit}>
       {/* Honeypot fields to prevent browser from autofilling real fields */}
@@ -237,18 +213,10 @@ export default function ProviderForm({ onSubmit }: ProviderFormProps) {
           inputProps={{ "data-testid": "provider-name-input" }}
         />
 
-        {type === "GITHUB" && (
-          <GitHubFields credentials={credentials} onChange={handleCredentialChange} t={t} />
-        )}
-        {type === "JIRA" && (
-          <JiraFields credentials={credentials} onChange={handleCredentialChange} t={t} />
-        )}
-        {type === "REDMINE" && (
-          <RedmineFields credentials={credentials} onChange={handleCredentialChange} t={t} />
-        )}
-        {type === "GITLAB" && (
-          <GitLabFields credentials={credentials} onChange={handleCredentialChange} t={t} />
-        )}
+        {type === "GITHUB" && githubFields(fieldProps)}
+        {type === "JIRA" && jiraFields(fieldProps)}
+        {type === "REDMINE" && redmineFields(fieldProps)}
+        {type === "GITLAB" && gitLabFields(fieldProps)}
 
         <Button
           type="submit"

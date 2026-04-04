@@ -1,13 +1,15 @@
 "use client";
 
+import ClearIcon from "@mui/icons-material/Clear";
+import SearchIcon from "@mui/icons-material/Search";
+import { TextField, InputAdornment, IconButton, Box } from "@mui/material";
+import { useTranslations } from "next-intl";
 import { useState, useCallback, useRef } from "react";
 import type { KeyboardEvent } from "react";
-import { TextField, InputAdornment, IconButton, Box } from "@mui/material";
-import SearchIcon from "@mui/icons-material/Search";
-import ClearIcon from "@mui/icons-material/Clear";
-import { useTranslations } from "next-intl";
+
 import type { TaskFilterState } from "@/hooks/useTaskSearch";
 import { parseSearchQuery } from "@/lib/search-parser";
+
 import SearchFilterDropdown from "./SearchFilterDropdown";
 
 /**
@@ -22,12 +24,12 @@ type DropdownPhase = "closed" | "selectKey" | "selectValue";
 
 /** Maps each filter key to its raw query token prefix (as used by the parser). */
 const FILTER_KEY_PREFIX: Record<keyof TaskFilterState, string> = {
-  provider:      "provider",
-  project:       "project",
+  provider: "provider",
+  project: "project",
   dueDateFilter: "dueDate",
   createdFilter: "createdDate",
   updatedFilter: "updatedDate",
-  assignee:      "assignee",
+  assignee: "assignee",
 };
 
 /** The ordered list of filterable keys (must match SearchFilterDropdown). */
@@ -64,7 +66,7 @@ function filterValueToTokenText(
   key: keyof TaskFilterState,
   val: TaskFilterState[keyof TaskFilterState]
 ): string | null {
-  if (val === undefined) return null;
+  if (val === undefined) { return null; }
 
   if (key === "provider" || key === "project" || key === "assignee") {
     const s = val as string;
@@ -91,7 +93,7 @@ function appendOrReplaceFilterInText(
   const prefix = FILTER_KEY_PREFIX[key];
   const cleaned = removeFilterToken(currentText, prefix);
   const valueText = filterValueToTokenText(key, val);
-  if (valueText === null) return cleaned;
+  if (valueText === null) { return cleaned; }
   const token = `${prefix}:${valueText}`;
   return cleaned.length > 0 ? `${cleaned} ${token}` : token;
 }
@@ -166,12 +168,12 @@ export default function TaskSearchBar({
   /** Returns the human-readable label for a filter key. */
   function getKeyLabel(key: keyof TaskFilterState): string {
     const labels: Record<keyof TaskFilterState, string> = {
-      provider:      t("provider"),
-      project:       t("project"),
+      provider: t("provider"),
+      project: t("project"),
       dueDateFilter: t("dueDate"),
       createdFilter: t("createdDate"),
       updatedFilter: t("updatedDate"),
-      assignee:      t("assignee"),
+      assignee: t("assignee"),
     };
     return labels[key];
   }
@@ -182,26 +184,28 @@ export default function TaskSearchBar({
    * - selectKey phase → `localInput` (text typed to filter key names)
    * - selectValue phase → `"<KeyLabel>:<localInput>"` (prefix + value filter text)
    */
-  const displayValue =
-    phase === "selectKey"
-      ? localInput
-      : phase === "selectValue" && pendingKey
-        ? `${getKeyLabel(pendingKey)}:${localInput}`
-        : value;
+  let displayValue: string;
+  if (phase === "selectKey") {
+    displayValue = localInput;
+  } else if (phase === "selectValue" && pendingKey) {
+    displayValue = `${getKeyLabel(pendingKey)}:${localInput}`;
+  } else {
+    displayValue = value;
+  }
 
   const hasContent = value.trim().length > 0;
 
   /** Active filters derived from the current raw query text (for dropdown state). */
   const activeFilters: TaskFilterState = (() => {
-    if (!value.trim()) return {};
+    if (!value.trim()) { return {}; }
     const p = parseSearchQuery(value);
     return {
-      provider:      p.provider,
-      project:       p.project,
+      provider: p.provider,
+      project: p.project,
       dueDateFilter: p.dueDateFilter,
       createdFilter: p.createdFilter,
       updatedFilter: p.updatedFilter,
-      assignee:      p.assignee,
+      assignee: p.assignee,
     };
   })();
 

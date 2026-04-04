@@ -1,6 +1,6 @@
+import { ok, fail } from "@/lib/api-response";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { ok, fail } from "@/lib/api-response";
 import { syncProviders } from "@/services/sync";
 
 /**
@@ -9,7 +9,7 @@ import { syncProviders } from "@/services/sync";
  */
 export async function POST() {
   const session = await auth();
-  if (!session) return fail("UNAUTHORIZED", 401);
+  if (!session) { return fail("UNAUTHORIZED", 401); }
 
   // Fire-and-forget sync — returns 202 immediately
   syncProviders(session.user.id).catch(console.error);
@@ -22,7 +22,7 @@ export async function POST() {
  */
 export async function GET() {
   const session = await auth();
-  if (!session) return fail("UNAUTHORIZED", 401);
+  if (!session) { return fail("UNAUTHORIZED", 401); }
 
   const providers = await prisma.issueProvider.findMany({
     where: { userId: session.user.id },

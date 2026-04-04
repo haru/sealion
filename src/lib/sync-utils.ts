@@ -31,17 +31,17 @@ export const SYNC_THROTTLE_MS = 15 * 60 * 1000;
  */
 export function shouldThrottleSync(providers: SyncProvider[], throttleMs: number): boolean {
   const projects = providers.flatMap((p) => p.projects);
-  if (projects.length === 0) return false;
+  if (projects.length === 0) { return false; }
 
   const hasSuccessfulProject = projects.some(
     (p) => p.syncError === null && p.lastSyncedAt !== null
   );
-  if (!hasSuccessfulProject) return false;
+  if (!hasSuccessfulProject) { return false; }
 
   const timestamps = projects
     .filter((p) => p.lastSyncedAt !== null)
     .map((p) => new Date(p.lastSyncedAt!).getTime());
-  if (timestamps.length === 0) return false;
+  if (timestamps.length === 0) { return false; }
 
   const elapsed = Date.now() - Math.max(...timestamps);
   return elapsed < throttleMs;
@@ -62,7 +62,7 @@ export function shouldThrottleSync(providers: SyncProvider[], throttleMs: number
  */
 export function allProjectsProcessed(providers: SyncProvider[], since: Date): boolean {
   const projects = providers.flatMap((p) => p.projects);
-  if (projects.length === 0) return true;
+  if (projects.length === 0) { return true; }
   return projects.every(
     (proj) =>
       proj.lastSyncedAt !== null &&

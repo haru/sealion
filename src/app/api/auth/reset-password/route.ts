@@ -1,4 +1,5 @@
-import { NextRequest } from "next/server";
+import type { NextRequest } from "next/server";
+
 import { ok, fail } from "@/lib/api-response";
 import {
   sendPasswordResetEmail,
@@ -19,9 +20,9 @@ import {
 function isValidEmail(email: string): boolean {
   const trimmed = email.trim();
   const atIndex = trimmed.indexOf("@");
-  if (atIndex < 1) return false;
+  if (atIndex < 1) { return false; }
   const dotIndex = trimmed.lastIndexOf(".");
-  if (dotIndex <= atIndex + 1 || dotIndex === trimmed.length - 1) return false;
+  if (dotIndex <= atIndex + 1 || dotIndex === trimmed.length - 1) { return false; }
   return true;
 }
 

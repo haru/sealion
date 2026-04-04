@@ -1,15 +1,16 @@
-import { NextRequest } from "next/server";
+import { UserRole } from "@prisma/client";
+import { hash } from "bcryptjs";
+import type { NextRequest } from "next/server";
+
+import { ok, fail } from "@/lib/api-response";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { ok, fail } from "@/lib/api-response";
-import { hash } from "bcryptjs";
-import { UserRole } from "@prisma/client";
 
 /** Verifies the current session belongs to an admin user. */
 async function requireAdmin() {
   const session = await auth();
-  if (!session) return { error: fail("UNAUTHORIZED", 401), session: null };
-  if (session.user.role !== "ADMIN") return { error: fail("FORBIDDEN", 403), session: null };
+  if (!session) { return { error: fail("UNAUTHORIZED", 401), session: null }; }
+  if (session.user.role !== "ADMIN") { return { error: fail("FORBIDDEN", 403), session: null }; }
   return { error: null, session };
 }
 
@@ -18,7 +19,7 @@ async function requireAdmin() {
  */
 export async function GET() {
   const { error } = await requireAdmin();
-  if (error) return error;
+  if (error) { return error; }
 
   const users = await prisma.user.findMany({
     select: { id: true, email: true, username: true, role: true, status: true, createdAt: true },
@@ -33,10 +34,10 @@ export async function GET() {
  */
 export async function POST(req: NextRequest) {
   const { error } = await requireAdmin();
-  if (error) return error;
+  if (error) { return error; }
 
   const body = await req.json().catch(() => null);
-  if (!body) return fail("INVALID_BODY", 400);
+  if (!body) { return fail("INVALID_BODY", 400); }
 
   if (typeof body.email !== "string" || typeof body.password !== "string") {
     return fail("INVALID_INPUT", 400);
@@ -47,12 +48,12 @@ export async function POST(req: NextRequest) {
   const role = body.role as string | undefined;
   const username = typeof body.username === "string" ? body.username.trim() : "";
 
-  if (!email || !password) return fail("MISSING_FIELDS", 400);
-  if (!username) return fail("MISSING_USERNAME", 400);
-  if (password.length < 8) return fail("PASSWORD_TOO_SHORT", 400);
+  if (!email || !password) { return fail("MISSING_FIELDS", 400); }
+  if (!username) { return fail("MISSING_USERNAME", 400); }
+  if (password.length < 8) { return fail("PASSWORD_TOO_SHORT", 400); }
 
   const existing = await prisma.user.findUnique({ where: { email } });
-  if (existing) return fail("EMAIL_ALREADY_EXISTS", 409);
+  if (existing) { return fail("EMAIL_ALREADY_EXISTS", 409); }
 
   const userRole =
     role && Object.values(UserRole).includes(role as UserRole) ? (role as UserRole) : UserRole.USER;

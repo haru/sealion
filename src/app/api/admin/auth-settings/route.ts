@@ -1,8 +1,9 @@
-import { NextRequest } from "next/server";
+import type { NextRequest } from "next/server";
+
+import { ok, fail } from "@/lib/api-response";
 import { auth } from "@/lib/auth";
 import { getAuthSettings } from "@/lib/auth-settings";
 import { prisma } from "@/lib/db";
-import { ok, fail } from "@/lib/api-response";
 
 /** Valid values for sessionTimeoutMinutes (null = no timeout). */
 const VALID_TIMEOUT_VALUES = new Set([null, 60, 360, 720, 1440, 10080, 43200, 129600]);
@@ -10,8 +11,8 @@ const VALID_TIMEOUT_VALUES = new Set([null, 60, 360, 720, 1440, 10080, 43200, 12
 /** Verifies the current session belongs to an admin user. */
 async function requireAdmin() {
   const session = await auth();
-  if (!session) return { error: fail("UNAUTHORIZED", 401) };
-  if (session.user.role !== "ADMIN") return { error: fail("FORBIDDEN", 403) };
+  if (!session) { return { error: fail("UNAUTHORIZED", 401) }; }
+  if (session.user.role !== "ADMIN") { return { error: fail("FORBIDDEN", 403) }; }
   return { error: null };
 }
 
@@ -24,7 +25,7 @@ async function requireAdmin() {
  */
 export async function GET() {
   const { error } = await requireAdmin();
-  if (error) return error;
+  if (error) { return error; }
 
   const settings = await getAuthSettings();
 
@@ -47,7 +48,7 @@ export async function GET() {
  */
 export async function PATCH(req: NextRequest) {
   const { error } = await requireAdmin();
-  if (error) return error;
+  if (error) { return error; }
 
   const body = await req.json().catch(() => ({})) as unknown;
 
@@ -63,19 +64,19 @@ export async function PATCH(req: NextRequest) {
   } = {};
 
   if ("allowUserSignup" in record) {
-    if (typeof record.allowUserSignup !== "boolean") return fail("INVALID_INPUT", 400);
+    if (typeof record.allowUserSignup !== "boolean") { return fail("INVALID_INPUT", 400); }
     data.allowUserSignup = record.allowUserSignup;
   }
 
   if ("sessionTimeoutMinutes" in record) {
     const val = record.sessionTimeoutMinutes;
-    if (val !== null && typeof val !== "number") return fail("INVALID_INPUT", 400);
-    if (!VALID_TIMEOUT_VALUES.has(val as number | null)) return fail("INVALID_TIMEOUT", 400);
+    if (val !== null && typeof val !== "number") { return fail("INVALID_INPUT", 400); }
+    if (!VALID_TIMEOUT_VALUES.has(val as number | null)) { return fail("INVALID_TIMEOUT", 400); }
     data.sessionTimeoutMinutes = val as number | null;
   }
 
   if ("requireEmailVerification" in record) {
-    if (typeof record.requireEmailVerification !== "boolean") return fail("INVALID_INPUT", 400);
+    if (typeof record.requireEmailVerification !== "boolean") { return fail("INVALID_INPUT", 400); }
     data.requireEmailVerification = record.requireEmailVerification;
   }
 

@@ -1,4 +1,4 @@
-import { MessageData, DISPLAY_CONSTRAINTS } from '@/components/types';
+import { type MessageData, DISPLAY_CONSTRAINTS } from '@/components/types';
 
 /**
  * Adds a message to the queue or pending queue based on throttle interval.

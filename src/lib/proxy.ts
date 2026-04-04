@@ -1,5 +1,4 @@
-import { HttpProxyAgent } from "hpagent";
-import { HttpsProxyAgent } from "hpagent";
+import { HttpProxyAgent, HttpsProxyAgent } from "hpagent";
 
 /**
  * Axios-compatible proxy agent configuration to be spread into `axios.create()`.
@@ -34,7 +33,7 @@ function getProxyUrl(scheme: "http" | "https"): string | null {
  */
 function parseNoProxyList(): string[] {
   const raw = process.env.no_proxy ?? process.env.NO_PROXY ?? null;
-  if (!raw) return [];
+  if (!raw) { return []; }
   return raw.split(",").map((s) => s.trim()).filter(Boolean);
 }
 
@@ -56,25 +55,25 @@ function isNoProxy(hostname: string, port?: number): boolean {
   for (const entry of entries) {
     const lowerEntry = entry.toLowerCase();
 
-    if (lowerEntry === "*") return true;
+    if (lowerEntry === "*") { return true; }
 
     // Port-specific entry: "example.com:8080"
     if (lowerEntry.includes(":")) {
       const colonIdx = lowerEntry.lastIndexOf(":");
       const entryHost = lowerEntry.slice(0, colonIdx);
       const entryPort = parseInt(lowerEntry.slice(colonIdx + 1), 10);
-      if (lowerHost === entryHost && port === entryPort) return true;
+      if (lowerHost === entryHost && port === entryPort) { return true; }
       continue;
     }
 
     // Domain-suffix match: ".example.com"
     if (lowerEntry.startsWith(".")) {
-      if (lowerHost.endsWith(lowerEntry)) return true;
+      if (lowerHost.endsWith(lowerEntry)) { return true; }
       continue;
     }
 
     // Exact match
-    if (lowerHost === lowerEntry) return true;
+    if (lowerHost === lowerEntry) { return true; }
   }
 
   return false;
@@ -140,7 +139,7 @@ export function buildAxiosProxyConfig(baseUrl: string): ProxyAgentConfig {
   const hostname = parsed.hostname;
   const port = parsed.port ? parseInt(parsed.port, 10) : undefined;
 
-  if (isNoProxy(hostname, port)) return {};
+  if (isNoProxy(hostname, port)) { return {}; }
 
   // HTTPS targets fall back to http_proxy when https_proxy is unset (curl convention).
   // HTTP targets do NOT fall back to https_proxy — that direction is non-standard.
@@ -148,7 +147,7 @@ export function buildAxiosProxyConfig(baseUrl: string): ProxyAgentConfig {
     scheme === "https"
       ? (getProxyUrl("https") ?? getProxyUrl("http"))
       : getProxyUrl("http");
-  if (!proxyUrl) return {};
+  if (!proxyUrl) { return {}; }
 
   // Validate the proxy URL: must be a valid http/https URL with a hostname
   try {

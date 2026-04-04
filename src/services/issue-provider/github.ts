@@ -1,7 +1,9 @@
 import axios from "axios";
-import { IssueProviderAdapter, NormalizedIssue, ExternalProject } from "@/lib/types";
-import { buildAxiosProxyConfig } from "@/lib/proxy";
 
+import { buildAxiosProxyConfig } from "@/lib/proxy";
+import type { ExternalProject, IssueProviderAdapter, NormalizedIssue } from "@/lib/types";
+
+/* eslint-disable @typescript-eslint/naming-convention */
 interface GitHubIssue {
   number: number;
   title: string;
@@ -16,6 +18,7 @@ interface GitHubIssue {
 interface GitHubRepo {
   full_name: string;
 }
+/* eslint-enable @typescript-eslint/naming-convention */
 
 interface GitHubUser {
   login: string;
@@ -68,7 +71,7 @@ export class GitHubAdapter implements IssueProviderAdapter {
         params: { per_page: 100, page },
       });
       repos.push(...data);
-      if (data.length < 100) break;
+      if (data.length < 100) { break; }
       page++;
     }
 
@@ -88,7 +91,7 @@ export class GitHubAdapter implements IssueProviderAdapter {
         { params: { state: "open", assignee, per_page: 100, page } }
       );
       issues.push(...data);
-      if (data.length < 100) break;
+      if (data.length < 100) { break; }
       page++;
     }
 
@@ -115,7 +118,7 @@ export class GitHubAdapter implements IssueProviderAdapter {
         { params: { state: "open", assignee: "none", per_page: 100, page } }
       );
       issues.push(...data);
-      if (data.length < 100) break;
+      if (data.length < 100) { break; }
       page++;
     }
 

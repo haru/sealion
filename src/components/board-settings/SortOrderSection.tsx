@@ -1,6 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
+import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
+import KeyboardDoubleArrowDownIcon from "@mui/icons-material/KeyboardDoubleArrowDown";
+import KeyboardDoubleArrowUpIcon from "@mui/icons-material/KeyboardDoubleArrowUp";
 import {
   Box,
   Button,
@@ -11,12 +14,10 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import KeyboardDoubleArrowUpIcon from "@mui/icons-material/KeyboardDoubleArrowUp";
-import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
-import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
-import KeyboardDoubleArrowDownIcon from "@mui/icons-material/KeyboardDoubleArrowDown";
 import { useTranslations } from "next-intl";
-import { SortCriterion, VALID_SORT_CRITERIA } from "@/lib/types";
+import { useState } from "react";
+
+import { type SortCriterion, VALID_SORT_CRITERIA } from "@/lib/types";
 
 interface SortOrderSectionProps {
   /** Current ordered list of active sort criteria. */
@@ -66,27 +67,27 @@ export default function SortOrderSection({ value, onChange }: SortOrderSectionPr
 
   /** Moves the selected available item to the end of the active list. */
   function add() {
-    if (!selectedAvailable) return;
+    if (!selectedAvailable) { return; }
     onChange([...value, selectedAvailable]);
     setSelectedAvailable(null);
   }
 
   /** Moves the selected active item back to the available list. */
   function remove() {
-    if (!selectedActive) return;
+    if (!selectedActive) { return; }
     onChange(value.filter((c) => c !== selectedActive));
     setSelectedActive(null);
   }
 
   /** Moves the selected active item to the top of the list (highest priority). */
   function moveToTop() {
-    if (!selectedActive) return;
+    if (!selectedActive) { return; }
     onChange([selectedActive, ...value.filter((c) => c !== selectedActive)]);
   }
 
   /** Moves the selected active item one position up. */
   function moveUp() {
-    if (!selectedActive || activeIndex <= 0) return;
+    if (!selectedActive || activeIndex <= 0) { return; }
     const next = [...value];
     [next[activeIndex - 1], next[activeIndex]] = [next[activeIndex], next[activeIndex - 1]];
     onChange(next);
@@ -94,7 +95,7 @@ export default function SortOrderSection({ value, onChange }: SortOrderSectionPr
 
   /** Moves the selected active item one position down. */
   function moveDown() {
-    if (!selectedActive || activeIndex === value.length - 1) return;
+    if (!selectedActive || activeIndex === value.length - 1) { return; }
     const next = [...value];
     [next[activeIndex + 1], next[activeIndex]] = [next[activeIndex], next[activeIndex + 1]];
     onChange(next);
@@ -102,7 +103,7 @@ export default function SortOrderSection({ value, onChange }: SortOrderSectionPr
 
   /** Moves the selected active item to the bottom of the list (lowest priority). */
   function moveToBottom() {
-    if (!selectedActive) return;
+    if (!selectedActive) { return; }
     onChange([...value.filter((c) => c !== selectedActive), selectedActive]);
   }
 

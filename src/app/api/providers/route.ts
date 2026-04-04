@@ -1,19 +1,20 @@
-import { NextRequest } from "next/server";
+import { ProviderType } from "@prisma/client";
+import type { NextRequest } from "next/server";
+
+import { ok, fail, failWithDetails } from "@/lib/api-response";
 import { auth } from "@/lib/auth";
+import { buildTypedCredentials } from "@/lib/credentials";
 import { prisma } from "@/lib/db";
 import { encrypt } from "@/lib/encryption";
-import { ok, fail, failWithDetails } from "@/lib/api-response";
-import { createAdapter, getProviderIconUrl } from "@/services/issue-provider/factory";
-import { ProviderType } from "@prisma/client";
 import { createConnectionTestErrorDetails } from "@/lib/error-utils";
-import { buildTypedCredentials } from "@/lib/credentials";
+import { createAdapter, getProviderIconUrl } from "@/services/issue-provider/factory";
 
 /**
  * GET /api/providers — Returns all issue providers for the authenticated user.
  */
 export async function GET() {
   const session = await auth();
-  if (!session) return fail("UNAUTHORIZED", 401);
+  if (!session) { return fail("UNAUTHORIZED", 401); }
 
   const providers = await prisma.issueProvider.findMany({
     where: { userId: session.user.id },
@@ -29,10 +30,10 @@ export async function GET() {
  */
 export async function POST(req: NextRequest) {
   const session = await auth();
-  if (!session) return fail("UNAUTHORIZED", 401);
+  if (!session) { return fail("UNAUTHORIZED", 401); }
 
   const body = await req.json().catch(() => null);
-  if (!body) return fail("INVALID_BODY", 400);
+  if (!body) { return fail("INVALID_BODY", 400); }
 
   const { type, displayName, credentials } = body as {
     type: string;

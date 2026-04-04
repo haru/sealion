@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import DeleteIcon from "@mui/icons-material/Delete";
 import {
   Table,
   TableBody,
@@ -25,8 +25,9 @@ import {
   Switch,
   FormControlLabel,
 } from "@mui/material";
-import DeleteIcon from "@mui/icons-material/Delete";
 import { useTranslations } from "next-intl";
+import { useState, useEffect, useCallback } from "react";
+
 import ProviderIcon from "@/components/ProviderIcon";
 
 interface IssueProvider {
@@ -67,7 +68,7 @@ export default function ProjectList({ refreshSignal }: ProjectListProps) {
     setError(null);
     try {
       const res = await fetch("/api/projects");
-      if (!res.ok) throw new Error();
+      if (!res.ok) { throw new Error(); }
       const json = await res.json();
       setProjects(json.data);
     } catch {
@@ -112,7 +113,7 @@ export default function ProjectList({ refreshSignal }: ProjectListProps) {
 
   /** Sends the delete request for the currently pending deletion target. */
   async function handleDeleteConfirm() {
-    if (!deleteId) return;
+    if (!deleteId) { return; }
     try {
       const res = await fetch(`/api/projects/${deleteId}`, { method: "DELETE" });
       if (res.ok) {

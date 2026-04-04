@@ -1,9 +1,10 @@
-import { NextRequest } from "next/server";
 import bcrypt from "bcryptjs";
-import { prisma } from "@/lib/db";
-import { getAuthSettings } from "@/lib/auth-settings";
-import { generateToken, sendVerificationEmail } from "@/lib/email-verification";
+import type { NextRequest } from "next/server";
+
 import { ok, fail } from "@/lib/api-response";
+import { getAuthSettings } from "@/lib/auth-settings";
+import { prisma } from "@/lib/db";
+import { generateToken, sendVerificationEmail } from "@/lib/email-verification";
 
 /**
  * Returns true if the string matches a basic email format.

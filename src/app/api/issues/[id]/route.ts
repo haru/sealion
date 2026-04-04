@@ -1,11 +1,12 @@
-import { NextRequest } from "next/server";
-import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/db";
-import { ok, fail } from "@/lib/api-response";
-import { createAdapter } from "@/services/issue-provider/factory";
-import { decryptProviderCredentials } from "@/lib/credentials";
-import { extractAxiosStatus } from "@/lib/error-utils";
 import { Prisma } from "@prisma/client";
+import type { NextRequest } from "next/server";
+
+import { ok, fail } from "@/lib/api-response";
+import { auth } from "@/lib/auth";
+import { decryptProviderCredentials } from "@/lib/credentials";
+import { prisma } from "@/lib/db";
+import { extractAxiosStatus } from "@/lib/error-utils";
+import { createAdapter } from "@/services/issue-provider/factory";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -35,7 +36,7 @@ async function handleCloseIssue(id: string, userId: string, comment?: string) {
     },
   });
 
-  if (!issue) return fail("FORBIDDEN", 403);
+  if (!issue) { return fail("FORBIDDEN", 403); }
 
   let credentials;
   try {
@@ -55,8 +56,14 @@ async function handleCloseIssue(id: string, userId: string, comment?: string) {
       await adapter.addComment(issue.project.externalId, issue.externalId, comment.trim());
     }
   } catch (err) {
-    const message =
-      err instanceof Error ? err.message : typeof err === "string" ? err : "Unknown error";
+    let message: string;
+    if (err instanceof Error) {
+      message = err.message;
+    } else if (typeof err === "string") {
+      message = err;
+    } else {
+      message = "Unknown error";
+    }
     // Best-effort HTTP status extraction (e.g., from AxiosError) without logging headers or URLs.
     const status = extractAxiosStatus(err);
     // Avoid logging the raw error object to prevent leaking sensitive data (e.g., Authorization headers).
@@ -74,7 +81,7 @@ async function handleCloseIssue(id: string, userId: string, comment?: string) {
   // Use deleteMany so that a concurrent close request (which already deleted the record)
   // produces a graceful 404 rather than an unhandled Prisma P2025 error.
   const { count } = await prisma.issue.deleteMany({ where: { id } });
-  if (count === 0) return fail("NOT_FOUND", 404);
+  if (count === 0) { return fail("NOT_FOUND", 404); }
 
   return ok({ id });
 }
@@ -95,7 +102,7 @@ async function handlePinnedToggle(id: string, pinned: boolean, userId: string) {
     select: { id: true },
   });
 
-  if (!issue) return fail("FORBIDDEN", 403);
+  if (!issue) { return fail("FORBIDDEN", 403); }
 
   try {
     const updated = await prisma.issue.update({
@@ -111,7 +118,7 @@ async function handlePinnedToggle(id: string, pinned: boolean, userId: string) {
       typeof err === "object" &&
       err !== null &&
       (err as { code?: string }).code === "P2025";
-    if (isRecordNotFound) return fail("NOT_FOUND", 404);
+    if (isRecordNotFound) { return fail("NOT_FOUND", 404); }
     throw err;
   }
 }
@@ -131,7 +138,7 @@ async function handleTodayFlagUpdate(id: string, todayFlag: boolean, userId: str
     select: { id: true, todayFlag: true, todayOrder: true, todayAddedAt: true },
   });
 
-  if (!issue) return fail("FORBIDDEN", 403);
+  if (!issue) { return fail("FORBIDDEN", 403); }
 
   if (todayFlag) {
     // Idempotency: already flagged — return current state without corrupting todayOrder
@@ -182,24 +189,24 @@ async function handleTodayFlagUpdate(id: string, todayFlag: boolean, userId: str
  */
 export async function PATCH(req: NextRequest, { params }: Params) {
   const session = await auth();
-  if (!session) return fail("UNAUTHORIZED", 401);
+  if (!session) { return fail("UNAUTHORIZED", 401); }
 
   const { id } = await params;
   const body = await req.json().catch(() => null);
-  if (!body) return fail("INVALID_BODY", 400);
+  if (!body) { return fail("INVALID_BODY", 400); }
 
   if ("pinned" in body) {
-    if (typeof body.pinned !== "boolean") return fail("INVALID_INPUT", 400);
+    if (typeof body.pinned !== "boolean") { return fail("INVALID_INPUT", 400); }
     return handlePinnedToggle(id, body.pinned as boolean, session.user.id);
   }
 
   if ("todayFlag" in body) {
-    if (typeof body.todayFlag !== "boolean") return fail("INVALID_INPUT", 400);
+    if (typeof body.todayFlag !== "boolean") { return fail("INVALID_INPUT", 400); }
     return handleTodayFlagUpdate(id, body.todayFlag as boolean, session.user.id);
   }
 
   if ("closed" in body) {
-    if (body.closed !== true) return fail("INVALID_INPUT", 400);
+    if (body.closed !== true) { return fail("INVALID_INPUT", 400); }
     const comment = typeof body.comment === "string" ? body.comment : undefined;
     return handleCloseIssue(id, session.user.id, comment);
   }

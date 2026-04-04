@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import SearchIcon from "@mui/icons-material/Search";
 import {
   Dialog,
   DialogTitle,
@@ -22,9 +22,10 @@ import {
   Typography,
   Chip,
 } from "@mui/material";
-import SearchIcon from "@mui/icons-material/Search";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
+import { useState, useEffect } from "react";
+
 import ProviderIcon from "@/components/ProviderIcon";
 
 interface Provider {
@@ -64,7 +65,7 @@ export default function AddProjectDialog({ open, onClose }: AddProjectDialogProp
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) { return; }
     setStep("provider");
     setSelectedProvider(null);
     setExternalProjects([]);
@@ -75,7 +76,7 @@ export default function AddProjectDialog({ open, onClose }: AddProjectDialogProp
     setLoadingProviders(true);
     fetch("/api/providers")
       .then((res) => {
-        if (!res.ok) throw new Error();
+        if (!res.ok) { throw new Error(); }
         return res.json();
       })
       .then((json) => setProviders(json.data ?? []))
@@ -90,13 +91,13 @@ export default function AddProjectDialog({ open, onClose }: AddProjectDialogProp
 
   /** Loads external projects for the selected provider. */
   async function handleNextStep() {
-    if (!selectedProvider) return;
+    if (!selectedProvider) { return; }
     setStep("projects");
     setLoadingProjects(true);
     setError(null);
     try {
       const res = await fetch(`/api/providers/${selectedProvider.id}/projects`);
-      if (!res.ok) throw new Error();
+      if (!res.ok) { throw new Error(); }
       const json = await res.json();
       setExternalProjects(json.data ?? []);
     } catch {
@@ -121,7 +122,7 @@ export default function AddProjectDialog({ open, onClose }: AddProjectDialogProp
 
   /** Saves the selected projects via the API. */
   async function handleSave() {
-    if (!selectedProvider || selected.size === 0) return;
+    if (!selectedProvider || selected.size === 0) { return; }
     setSaving(true);
     setError(null);
     try {
@@ -157,6 +158,108 @@ export default function AddProjectDialog({ open, onClose }: AddProjectDialogProp
     p.displayName.toLowerCase().includes(filter.toLowerCase())
   );
 
+  let providerContent;
+  if (loadingProviders) {
+    providerContent = (
+      <Box sx={{ display: "flex", justifyContent: "center", py: 3 }}>
+        <CircularProgress size={32} />
+      </Box>
+    );
+  } else if (providers.length === 0) {
+    providerContent = (
+      <Box sx={{ py: 2 }}>
+        <Typography color="text.secondary" gutterBottom>
+          {t("noProviders")}
+        </Typography>
+        <Button component={Link} href="/settings/providers" variant="outlined" size="small">
+          {t("goToProviders")}
+        </Button>
+      </Box>
+    );
+  } else {
+    providerContent = (
+      <List disablePadding>
+        {providers.map((provider) => (
+          <ListItemButton
+            key={provider.id}
+            onClick={() => handleSelectProvider(provider)}
+            selected={selectedProvider?.id === provider.id}
+          >
+            <ListItemIcon>
+              <Radio
+                checked={selectedProvider?.id === provider.id}
+                tabIndex={-1}
+                readOnly
+              />
+            </ListItemIcon>
+            <ListItemIcon>
+              <ProviderIcon iconUrl={provider.iconUrl} label={provider.type} />
+            </ListItemIcon>
+            <ListItemText primary={provider.displayName} />
+          </ListItemButton>
+        ))}
+      </List>
+    );
+  }
+
+  let projectsContent;
+  if (loadingProjects) {
+    projectsContent = (
+      <Box sx={{ display: "flex", justifyContent: "center", py: 3 }}>
+        <CircularProgress size={32} />
+      </Box>
+    );
+  } else if (externalProjects.length === 0) {
+    projectsContent = (
+      <Typography color="text.secondary" sx={{ py: 2 }}>
+        {t("noProjects")}
+      </Typography>
+    );
+  } else {
+    projectsContent = (
+      <>
+        <TextField
+          size="small"
+          fullWidth
+          placeholder={t("searchProjects")}
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+          sx={{ mb: 1 }}
+          slotProps={{
+            input: {
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon fontSize="small" />
+                </InputAdornment>
+              ),
+            },
+          }}
+        />
+        <List disablePadding>
+          {filteredProjects.map((project) => (
+            <ListItemButton
+              key={project.externalId}
+              disableGutters
+              disabled={project.isRegistered}
+              onClick={() => !project.isRegistered && toggleProject(project.externalId)}
+            >
+              <Checkbox
+                checked={project.isRegistered || selected.has(project.externalId)}
+                disabled={project.isRegistered}
+                tabIndex={-1}
+                readOnly
+              />
+              <ListItemText primary={project.displayName} />
+              {project.isRegistered && (
+                <Chip label={t("alreadyRegistered")} size="small" sx={{ ml: 1 }} />
+              )}
+            </ListItemButton>
+          ))}
+        </List>
+      </>
+    );
+  }
+
   return (
     <Dialog open={open} onClose={() => onClose(false)} fullWidth maxWidth="sm">
       <DialogTitle>
@@ -173,100 +276,11 @@ export default function AddProjectDialog({ open, onClose }: AddProjectDialogProp
         {step === "provider" && (
           <>
             <DialogContentText sx={{ mb: 1 }}>{t("selectProviderSubtitle")}</DialogContentText>
-
-            {loadingProviders ? (
-              <Box sx={{ display: "flex", justifyContent: "center", py: 3 }}>
-                <CircularProgress size={32} />
-              </Box>
-            ) : providers.length === 0 ? (
-              <Box sx={{ py: 2 }}>
-                <Typography color="text.secondary" gutterBottom>
-                  {t("noProviders")}
-                </Typography>
-                <Button component={Link} href="/settings/providers" variant="outlined" size="small">
-                  {t("goToProviders")}
-                </Button>
-              </Box>
-            ) : (
-              <List disablePadding>
-                {providers.map((provider) => (
-                  <ListItemButton
-                    key={provider.id}
-                    onClick={() => handleSelectProvider(provider)}
-                    selected={selectedProvider?.id === provider.id}
-                  >
-                    <ListItemIcon>
-                      <Radio
-                        checked={selectedProvider?.id === provider.id}
-                        tabIndex={-1}
-                        readOnly
-                      />
-                    </ListItemIcon>
-                    <ListItemIcon>
-                      <ProviderIcon iconUrl={provider.iconUrl} label={provider.type} />
-                    </ListItemIcon>
-                    <ListItemText primary={provider.displayName} />
-                  </ListItemButton>
-                ))}
-              </List>
-            )}
+            {providerContent}
           </>
         )}
 
-        {step === "projects" && (
-          <>
-            {loadingProjects ? (
-              <Box sx={{ display: "flex", justifyContent: "center", py: 3 }}>
-                <CircularProgress size={32} />
-              </Box>
-            ) : externalProjects.length === 0 ? (
-              <Typography color="text.secondary" sx={{ py: 2 }}>
-                {t("noProjects")}
-              </Typography>
-            ) : (
-              <>
-                <TextField
-                  size="small"
-                  fullWidth
-                  placeholder={t("searchProjects")}
-                  value={filter}
-                  onChange={(e) => setFilter(e.target.value)}
-                  sx={{ mb: 1 }}
-                  slotProps={{
-                    input: {
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <SearchIcon fontSize="small" />
-                        </InputAdornment>
-                      ),
-                    },
-                  }}
-                />
-                <List disablePadding>
-                  {filteredProjects.map((project) => (
-                    <ListItemButton
-                      key={project.externalId}
-                      disableGutters
-                      disabled={project.isRegistered}
-                      onClick={() => !project.isRegistered && toggleProject(project.externalId)}
-                    >
-                      <Checkbox
-                        checked={project.isRegistered || selected.has(project.externalId)}
-                        disabled={project.isRegistered}
-                        tabIndex={-1}
-                        readOnly
-                      />
-                      <ListItemText primary={project.displayName} />
-                      {project.isRegistered && (
-                        <Chip label={t("alreadyRegistered")} size="small" sx={{ ml: 1 }} />
-                      )}
-                    </ListItemButton>
-                  ))}
-                </List>
-              </>
-            )}
-          </>
-        )}
+        {step === "projects" && projectsContent}
       </DialogContent>
 
       <DialogActions>

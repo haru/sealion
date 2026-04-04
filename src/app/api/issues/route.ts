@@ -1,11 +1,12 @@
-import { NextRequest } from "next/server";
-import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/db";
+import type { NextRequest } from "next/server";
+
 import { ok, fail } from "@/lib/api-response";
-import { getProviderIconUrl } from "@/services/issue-provider/factory";
-import { VALID_SORT_CRITERIA, MAX_SORT_CRITERIA, SortCriterion } from "@/lib/types";
-import { parseSearchQuery } from "@/lib/search-parser";
+import { auth } from "@/lib/auth";
 import { buildDateWhere } from "@/lib/date-where";
+import { prisma } from "@/lib/db";
+import { parseSearchQuery } from "@/lib/search-parser";
+import { VALID_SORT_CRITERIA, MAX_SORT_CRITERIA, type SortCriterion } from "@/lib/types";
+import { getProviderIconUrl } from "@/services/issue-provider/factory";
 
 type PrismaOrderBy = Record<string, { sort: string; nulls?: string } | string>;
 
@@ -61,6 +62,49 @@ function parseSortOrder(raw: string | null): PrismaOrderBy[] {
 }
 
 /**
+ * Builds the Prisma where clause fragment for provider and project filtering.
+ * @param userId - Authenticated user's ID.
+ * @param effectiveProvider - Provider type filter, or undefined.
+ * @param effectiveProject - Project display name filter, or undefined.
+ * @returns Prisma where condition fragment.
+ */
+function buildProviderProjectWhere(
+  userId: string,
+  effectiveProvider: string | undefined,
+  effectiveProject: string | undefined,
+): Record<string, unknown> {
+  if (!effectiveProvider && !effectiveProject) { return {}; }
+  const issueProviderWhere: Record<string, unknown> = { userId };
+  if (effectiveProvider) { issueProviderWhere.type = effectiveProvider; }
+  if (effectiveProvider && effectiveProject) {
+    return {
+      project: {
+        issueProvider: issueProviderWhere,
+        displayName: { contains: effectiveProject, mode: "insensitive" as const },
+      },
+    };
+  }
+  if (effectiveProvider) { return { project: { issueProvider: issueProviderWhere } }; }
+  return {
+    project: {
+      issueProvider: { userId },
+      displayName: { contains: effectiveProject, mode: "insensitive" as const },
+    },
+  };
+}
+
+/**
+ * Builds the Prisma where clause fragment for assignee filtering.
+ * @param effectiveAssignee - Assignee filter value, or undefined.
+ * @returns Prisma where condition fragment.
+ */
+function buildAssigneeWhere(effectiveAssignee: string | undefined): Record<string, unknown> {
+  if (effectiveAssignee === "unassigned") { return { isUnassigned: true }; }
+  if (effectiveAssignee === "assigned") { return { isUnassigned: false }; }
+  return {};
+}
+
+/**
  * GET /api/issues — Returns a paginated list of issues for the authenticated user.
  * Issues in the today list (todayFlag=true) are excluded — those are shown in the Today widget.
  * Supports optional search and filter parameters:
@@ -80,7 +124,7 @@ function parseSortOrder(raw: string | null): PrismaOrderBy[] {
  */
 export async function GET(req: NextRequest) {
   const session = await auth();
-  if (!session) return fail("UNAUTHORIZED", 401);
+  if (!session) { return fail("UNAUTHORIZED", 401); }
 
   const { searchParams } = new URL(req.url);
   const page = Math.max(1, Number(searchParams.get("page") ?? "1"));
@@ -122,33 +166,14 @@ export async function GET(req: NextRequest) {
   const updatedWhere = effectiveUpdatedRange ? buildDateWhere("providerUpdatedAt", effectiveUpdatedRange) : {};
 
   // Build provider+project nested filter
-  const providerProjectWhere: Record<string, unknown> = {};
-  if (effectiveProvider || effectiveProject) {
-    const issueProviderWhere: Record<string, unknown> = { userId: session.user.id };
-    if (effectiveProvider) issueProviderWhere.type = effectiveProvider;
-
-    if (effectiveProvider && effectiveProject) {
-      providerProjectWhere.project = {
-        issueProvider: issueProviderWhere,
-        displayName: { contains: effectiveProject, mode: "insensitive" as const },
-      };
-    } else if (effectiveProvider) {
-      providerProjectWhere.project = { issueProvider: issueProviderWhere };
-    } else if (effectiveProject) {
-      providerProjectWhere.project = {
-        issueProvider: { userId: session.user.id },
-        displayName: { contains: effectiveProject, mode: "insensitive" as const },
-      };
-    }
-  }
+  const providerProjectWhere = buildProviderProjectWhere(
+    session.user.id,
+    effectiveProvider,
+    effectiveProject,
+  );
 
   // Assignee filter
-  const assigneeWhere: Record<string, unknown> =
-    effectiveAssignee === "unassigned"
-      ? { isUnassigned: true }
-      : effectiveAssignee === "assigned"
-        ? { isUnassigned: false }
-        : {};
+  const assigneeWhere = buildAssigneeWhere(effectiveAssignee);
 
   const baseWhere = {
     project: {
@@ -213,7 +238,7 @@ export async function GET(req: NextRequest) {
     return null;
   });
 
-  if (!fetchResult) return fail("INTERNAL_ERROR", 500);
+  if (!fetchResult) { return fail("INTERNAL_ERROR", 500); }
 
   const [total, totalToday, items] = fetchResult;
 

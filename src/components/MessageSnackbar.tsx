@@ -1,13 +1,14 @@
 'use client';
 
-import { useState } from 'react';
-import Box from '@mui/material/Box';
-import Snackbar from '@mui/material/Snackbar';
-import Alert from '@mui/material/Alert';
-import IconButton from '@mui/material/IconButton';
 import CloseIcon from '@mui/icons-material/Close';
+import Alert from '@mui/material/Alert';
+import Box from '@mui/material/Box';
+import IconButton from '@mui/material/IconButton';
+import Snackbar from '@mui/material/Snackbar';
 import { useTranslations } from 'next-intl';
-import { MessageData, AUTO_DISMISS_DURATION, DISPLAY_CONSTRAINTS } from '@/components/types';
+import { useState } from 'react';
+
+import { type MessageData, AUTO_DISMISS_DURATION, DISPLAY_CONSTRAINTS } from '@/components/types';
 
 /**
  * Message Snackbar Props
@@ -47,7 +48,7 @@ export default function MessageSnackbar({ message, onClose }: MessageSnackbarPro
   const autoHideDuration = AUTO_DISMISS_DURATION[message.type];
 
   const handleClose = (_event: React.SyntheticEvent | Event, reason?: string) => {
-    if (reason === 'clickaway') return;
+    if (reason === 'clickaway') { return; }
     setOpen(false);
     onClose(message.id);
   };

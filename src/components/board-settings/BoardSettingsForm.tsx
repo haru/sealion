@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { Alert, Box, Button, CircularProgress, Typography } from "@mui/material";
 import { useTranslations } from "next-intl";
-import { BoardSettings, DEFAULT_BOARD_SETTINGS, SortCriterion } from "@/lib/types";
+import { useEffect, useState } from "react";
+
+import { useMessageQueue } from "@/hooks/useMessageQueue";
+import { type BoardSettings, DEFAULT_BOARD_SETTINGS, type SortCriterion } from "@/lib/types";
+
 import DisplayItemsSection from "./DisplayItemsSection";
 import SortOrderSection from "./SortOrderSection";
-import { useMessageQueue } from "@/hooks/useMessageQueue";
 
 /**
  * Client component that fetches the user's board settings and renders
@@ -45,7 +47,7 @@ export default function BoardSettingsForm() {
         }
       })
       .finally(() => {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) { setLoading(false); }
       });
     return () => {
       cancelled = true;

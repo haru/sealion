@@ -71,7 +71,7 @@ export const DISPLAY_CONSTRAINTS = {
  * @returns true if the value is a valid MessageData, false otherwise
  */
 export function isValidMessage(message: unknown): message is MessageData {
-  if (typeof message !== 'object' || message === null) return false;
+  if (typeof message !== 'object' || message === null) { return false; }
   const m = message as Record<string, unknown>;
   return (
     typeof m.id === 'string' &&

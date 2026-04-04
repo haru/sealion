@@ -2,6 +2,7 @@
 
 import { Chip } from "@mui/material";
 import { useTranslations } from "next-intl";
+
 import type { TaskFilterState } from "@/hooks/useTaskSearch";
 
 /** Props for the {@link SearchFilterToken} component. */

@@ -8,6 +8,7 @@ import {
   Button,
 } from "@mui/material";
 import { useTranslations } from "next-intl";
+
 import ProviderForm, { type ProviderFormData } from "@/components/providers/ProviderForm";
 
 interface AddProviderDialogProps {

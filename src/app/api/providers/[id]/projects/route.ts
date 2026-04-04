@@ -1,8 +1,9 @@
-import { NextRequest } from "next/server";
+import type { NextRequest } from "next/server";
+
+import { ok, fail } from "@/lib/api-response";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { decrypt } from "@/lib/encryption";
-import { ok, fail } from "@/lib/api-response";
 import { createAdapter } from "@/services/issue-provider/factory";
 
 type Params = { params: Promise<{ id: string }> };
@@ -12,7 +13,7 @@ type Params = { params: Promise<{ id: string }> };
  */
 export async function GET(req: NextRequest, { params }: Params) {
   const session = await auth();
-  if (!session) return fail("UNAUTHORIZED", 401);
+  if (!session) { return fail("UNAUTHORIZED", 401); }
 
   const { id } = await params;
 
@@ -20,7 +21,7 @@ export async function GET(req: NextRequest, { params }: Params) {
     where: { id, userId: session.user.id },
   });
 
-  if (!provider) return fail("FORBIDDEN", 403);
+  if (!provider) { return fail("FORBIDDEN", 403); }
 
   const decryptedCredentials = JSON.parse(decrypt(provider.encryptedCredentials));
   const credentials = { ...decryptedCredentials, ...(provider.baseUrl ? { baseUrl: provider.baseUrl } : {}) };

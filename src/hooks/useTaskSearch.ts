@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+
 import { parseSearchQuery, type ParsedQuery, type DateFilter } from "@/lib/search-parser";
 
 /**

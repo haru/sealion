@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import Alert from "@mui/material/Alert";
 import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
@@ -10,8 +9,9 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
 import TextField from "@mui/material/TextField";
-import { useTranslations } from "next-intl";
 import { signOut } from "next-auth/react";
+import { useTranslations } from "next-intl";
+import { useState } from "react";
 
 /** Props for the DeleteAccountModal component. */
 interface DeleteAccountModalProps {
@@ -41,7 +41,7 @@ export function DeleteAccountModal({ open, userEmail, onClose }: DeleteAccountMo
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleClose = () => {
-    if (isSubmitting) return;
+    if (isSubmitting) { return; }
     setEmailInput("");
     setEmailError(null);
     onClose();

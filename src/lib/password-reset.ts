@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/db";
-import { getSmtpSettings } from "@/lib/smtp-settings";
-import { sendMail } from "@/lib/smtp-mailer";
 import { generateToken, getAppBaseUrl } from "@/lib/email-verification";
+import { sendMail } from "@/lib/smtp-mailer";
+import { getSmtpSettings } from "@/lib/smtp-settings";
 
 const RATE_LIMIT_MS = 60_000;
 const TOKEN_EXPIRY_HOURS = 24;
@@ -174,17 +174,17 @@ export class TokenExpiredError extends Error {
  * @throws {@link TokenExpiredError} When the token exists but has expired.
  */
 export async function verifyPasswordResetToken(token: string): Promise<string | null> {
-  if (!token) return null;
+  if (!token) { return null; }
 
   const record = await prisma.verificationToken.findUnique({
     where: { token },
   });
 
-  if (!record) return null;
-  if (new Date() > record.expires) throw new TokenExpiredError();
+  if (!record) { return null; }
+  if (new Date() > record.expires) { throw new TokenExpiredError(); }
 
   const prefix = "password-reset:";
-  if (!record.identifier.startsWith(prefix)) return null;
+  if (!record.identifier.startsWith(prefix)) { return null; }
 
   return record.identifier.slice(prefix.length);
 }

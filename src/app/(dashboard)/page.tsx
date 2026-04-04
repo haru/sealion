@@ -1,35 +1,36 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import { Box, Typography } from "@mui/material";
-import InboxIcon from "@mui/icons-material/Inbox";
-import FormatListBulletedIcon from "@mui/icons-material/FormatListBulleted";
-import { useMessageQueue } from "@/hooks/useMessageQueue";
-import { useTranslations } from "next-intl";
 import {
   DndContext,
-  DragEndEvent,
-  DragMoveEvent,
+  type DragEndEvent,
+  type DragMoveEvent,
   DragOverlay,
-  DragStartEvent,
+  type DragStartEvent,
   PointerSensor,
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
+import FormatListBulletedIcon from "@mui/icons-material/FormatListBulleted";
+import InboxIcon from "@mui/icons-material/Inbox";
+import { Box, Typography } from "@mui/material";
+import { useTranslations } from "next-intl";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+
 import IssueCard from "@/components/IssueCard";
-import TodoList from "@/components/todo/TodoList";
-import SyncStatus from "@/components/todo/SyncStatus";
-import CompleteIssueModal from "@/components/todo/CompleteIssueModal";
-import TodayTasksArea, { TODAY_DROP_ZONE_ID } from "@/components/today-tasks/TodayTasksArea";
 import TaskSearchBar from "@/components/search/TaskSearchBar";
-import { allProjectsProcessed, shouldThrottleSync, SYNC_THROTTLE_MS } from "@/lib/sync-utils";
-import type { SyncProvider } from "@/hooks/useSyncPolling";
-import { sortIssues } from "@/lib/sort-utils";
-import { BoardSettings, DEFAULT_BOARD_SETTINGS, SortCriterion } from "@/lib/types";
+import TodayTasksArea, { TODAY_DROP_ZONE_ID } from "@/components/today-tasks/TodayTasksArea";
+import CompleteIssueModal from "@/components/todo/CompleteIssueModal";
+import SyncStatus from "@/components/todo/SyncStatus";
+import TodoList from "@/components/todo/TodoList";
+import { useMessageQueue } from "@/hooks/useMessageQueue";
 import { usePageHeader } from "@/hooks/usePageHeader";
+import type { SyncProvider } from "@/hooks/useSyncPolling";
 import { useTaskSearch } from "@/hooks/useTaskSearch";
 import { serializeKeywords } from "@/lib/search-parser";
+import { sortIssues } from "@/lib/sort-utils";
+import { allProjectsProcessed, shouldThrottleSync, SYNC_THROTTLE_MS } from "@/lib/sync-utils";
+import { type BoardSettings, DEFAULT_BOARD_SETTINGS, type SortCriterion } from "@/lib/types";
 import type { ClientIssue } from "@/types/issue";
 
 /** Main dashboard page showing today's tasks and the full issue list with drag-and-drop support. */
@@ -103,13 +104,13 @@ export default function DashboardPage() {
         sortOrder: sortParam,
       });
 
-      if (q.keywords.length > 0) params.set("q", serializeKeywords(q.keywords));
-      if (q.provider) params.set("provider", q.provider);
-      if (q.project) params.set("project", q.project);
-      if (q.dueDateFilter) params.set("dueDateRange", q.dueDateFilter.preset);
-      if (q.createdFilter) params.set("createdRange", q.createdFilter.preset);
-      if (q.updatedFilter) params.set("updatedRange", q.updatedFilter.preset);
-      if (q.assignee) params.set("assignee", q.assignee);
+      if (q.keywords.length > 0) { params.set("q", serializeKeywords(q.keywords)); }
+      if (q.provider) { params.set("provider", q.provider); }
+      if (q.project) { params.set("project", q.project); }
+      if (q.dueDateFilter) { params.set("dueDateRange", q.dueDateFilter.preset); }
+      if (q.createdFilter) { params.set("createdRange", q.createdFilter.preset); }
+      if (q.updatedFilter) { params.set("updatedRange", q.updatedFilter.preset); }
+      if (q.assignee) { params.set("assignee", q.assignee); }
 
       try {
         const res = await fetch(`/api/issues?${params.toString()}`);
@@ -161,14 +162,14 @@ export default function DashboardPage() {
   }, [addMessage, t]);
 
   useEffect(() => {
-    if (!isSyncing) return;
+    if (!isSyncing) { return; }
 
     let cancelled = false;
     let pollTimeout: ReturnType<typeof setTimeout>;
 
     /** Polls the sync status endpoint and refreshes issues when all providers have synced. */
     async function poll() {
-      if (cancelled) return;
+      if (cancelled) { return; }
 
       const syncRes = await fetch("/api/sync");
       if (!cancelled && syncRes.ok) {
@@ -178,7 +179,7 @@ export default function DashboardPage() {
 
         const since = syncStartedAtRef.current;
         if (since && allProjectsProcessed(providers, since)) {
-          if (!cancelled) await Promise.all([fetchIssues(page), fetchTodayIssues()]);
+          if (!cancelled) { await Promise.all([fetchIssues(page), fetchTodayIssues()]); }
           setIsSyncing(false);
           return;
         }
@@ -281,7 +282,7 @@ export default function DashboardPage() {
    */
   async function handleTogglePin(id: string, pinned: boolean) {
     const original = issues.find((i) => i.id === id);
-    if (!original) return;
+    if (!original) { return; }
 
     const rollback = () => {
       setIssues((prev) =>
@@ -343,7 +344,7 @@ export default function DashboardPage() {
     setIssues((prev) => prev.filter((issue) => issue.id !== issueId));
 
     const body: Record<string, unknown> = { closed: true };
-    if (comment.trim()) body.comment = comment.trim();
+    if (comment.trim()) { body.comment = comment.trim(); }
 
     try {
       const res = await fetch(`/api/issues/${issueId}`, {
@@ -391,7 +392,7 @@ export default function DashboardPage() {
   /** Optimistically moves an issue into today's list and flags it via the API. */
   async function handleAddToToday(id: string) {
     const issueToAdd = issues.find((i) => i.id === id);
-    if (!issueToAdd) return;
+    if (!issueToAdd) { return; }
 
     const maxOrder = todayIssues.reduce((max, i) => Math.max(max, i.todayOrder ?? 0), 0);
     const optimisticItem = {
@@ -443,7 +444,7 @@ export default function DashboardPage() {
   /** Optimistically removes an issue from today's list and clears the flag via the API. */
   async function handleRemoveFromToday(id: string) {
     const issue = todayIssues.find((i) => i.id === id);
-    if (!issue) return;
+    if (!issue) { return; }
 
     // Optimistic update: remove from today
     setTodayIssues((prev) => prev.filter((i) => i.id !== id));
@@ -478,7 +479,7 @@ export default function DashboardPage() {
     setTodayIssues((prev) =>
       prev.map((issue) => {
         const newOrder = orderedIds.indexOf(issue.id);
-        if (newOrder === -1) return issue;
+        if (newOrder === -1) { return issue; }
         return { ...issue, todayOrder: newOrder + 1 };
       })
     );
@@ -542,7 +543,7 @@ export default function DashboardPage() {
 
     const { active, over } = event;
     const activeData = active.data.current as { type: string; issueId: string } | undefined;
-    if (!activeData) return;
+    if (!activeData) { return; }
 
     const overData = over?.data.current as { type?: string } | undefined;
     const isOverTodayArea =

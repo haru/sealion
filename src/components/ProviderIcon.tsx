@@ -1,5 +1,5 @@
-import Image from "next/image";
 import CloudIcon from "@mui/icons-material/Cloud";
+import Image from "next/image";
 
 interface ProviderIconProps {
   iconUrl: string | null;
