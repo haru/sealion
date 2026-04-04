@@ -94,6 +94,7 @@ async function seedUserWithData(id: string, email: string) {
     data: {
       userId: id,
       type: "GITHUB",
+      displayName: "Test Provider",
       encryptedCredentials: "dummy-credentials",
     },
   });
@@ -295,6 +296,37 @@ describe("DELETE /api/account/me — last-admin guard (no DB required)", () => {
     expect(res.status).toBe(200);
     const json = await res.json();
     expect(json.error).toBeNull();
+  });
+});
+
+describe("DELETE /api/account/me — error handling (no DB required)", () => {
+  test("returns 500 INTERNAL_ERROR when deleteUserCascade throws", async () => {
+    jest.resetModules();
+    jest.doMock("@/lib/auth", () => ({
+      auth: jest.fn().mockResolvedValue({
+        user: { id: TEST_USER_ID, email: TEST_USER_EMAIL, role: "USER" },
+      }),
+    }));
+    jest.doMock("@/lib/db", () => ({
+      prisma: {
+        user: {
+          findUnique: jest.fn().mockResolvedValue({ role: "USER", status: "ACTIVE" }),
+          count: jest.fn(),
+          delete: jest.fn(),
+        },
+        $transaction: jest.fn().mockRejectedValue(new Error("DB connection lost")),
+        issue: { deleteMany: jest.fn() },
+        project: { deleteMany: jest.fn() },
+        issueProvider: { deleteMany: jest.fn() },
+        boardSettings: { deleteMany: jest.fn() },
+      },
+    }));
+    const { DELETE } = await import("@/app/api/account/me/route");
+    const req = new Request("http://localhost/api/account/me", { method: "DELETE" });
+    const res = await DELETE(req as unknown as import("next/server").NextRequest);
+    expect(res.status).toBe(500);
+    const json = await res.json();
+    expect(json.error).toBe("INTERNAL_ERROR");
   });
 });
 
