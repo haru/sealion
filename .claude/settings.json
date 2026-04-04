@@ -1,7 +1,7 @@
 {
   "permissions": {
     "allow": [
-      "Bash(gh repo:*)",
+      "Bash(gh repo:*)"
     ]
   },
   "enabledPlugins": {
