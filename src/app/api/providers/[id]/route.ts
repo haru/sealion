@@ -28,6 +28,59 @@ function hasRequiredCredentialFields(
   return true;
 }
 
+/** Result of resolving effective credentials for a provider update. */
+type CredentialResult = {
+  encryptedToStore: string | undefined;
+  effectiveCredentials: Record<string, string>;
+};
+
+/**
+ * Resolves the effective credentials to use for a provider update and connection test.
+ * When `changeCredentials` is true, validates and encrypts new credentials.
+ * When false, decrypts the existing credentials from the database.
+ *
+ * @param provider - The existing provider record.
+ * @param changeCredentials - Whether new credentials are being submitted.
+ * @param credentials - New credential fields (required when changeCredentials is true).
+ * @param baseUrl - The new base URL, if any.
+ * @returns A {@link CredentialResult} on success, or a `Response` error to return immediately.
+ */
+function resolveCredentials(
+  provider: { type: ProviderType; encryptedCredentials: string; baseUrl: string | null; id: string },
+  changeCredentials: boolean,
+  credentials: Record<string, string> | undefined,
+  baseUrl: string | undefined,
+): CredentialResult | Response {
+  if (changeCredentials) {
+    if (!credentials) { return fail("MISSING_FIELDS", 400); }
+    if (!hasRequiredCredentialFields(provider.type, credentials)) { return fail("MISSING_FIELDS", 400); }
+
+    const effectiveCredentials = { ...credentials, ...(baseUrl ? { baseUrl } : {}) };
+    const credentialsWithoutUrl = Object.fromEntries(
+      Object.entries(credentials).filter(([key]) => key !== "baseUrl"),
+    );
+    try {
+      return { encryptedToStore: encrypt(JSON.stringify(credentialsWithoutUrl)), effectiveCredentials };
+    } catch (error) {
+      console.error("[provider] Failed to encrypt credentials:", error instanceof Error ? error.message : String(error));
+      return fail("INTERNAL_ERROR", 500);
+    }
+  }
+
+  let existingCreds: Record<string, string>;
+  try {
+    existingCreds = JSON.parse(decrypt(provider.encryptedCredentials)) as Record<string, string>;
+  } catch {
+    console.error("[provider] Failed to decrypt existing credentials for provider", provider.id);
+    return fail("CREDENTIALS_DECRYPT_FAILED", 500);
+  }
+  const effectiveBaseUrl = baseUrl ?? provider.baseUrl ?? null;
+  return {
+    encryptedToStore: undefined,
+    effectiveCredentials: { ...existingCreds, ...(effectiveBaseUrl ? { baseUrl: effectiveBaseUrl } : {}) },
+  };
+}
+
 /**
  * DELETE /api/providers/[id] — Deletes an issue provider owned by the authenticated user.
  */
@@ -85,36 +138,9 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
   if (requiresBaseUrl && !baseUrl) { return fail("MISSING_FIELDS", 400); }
 
   // Determine the effective credentials for connection test
-  let encryptedToStore: string | undefined;
-  let effectiveCredentials: Record<string, string>;
-
-  if (changeCredentials) {
-    if (!credentials) { return fail("MISSING_FIELDS", 400); }
-    // Validate provider-specific required fields
-    if (!hasRequiredCredentialFields(provider.type, credentials)) { return fail("MISSING_FIELDS", 400); }
-
-    effectiveCredentials = { ...credentials, ...(baseUrl ? { baseUrl } : {}) };
-    // Strip baseUrl from credentials before encrypting (stored separately in DB column)
-    const credentialsWithoutUrl = Object.fromEntries(
-      Object.entries(credentials).filter(([key]) => key !== "baseUrl")
-    );
-    try {
-      encryptedToStore = encrypt(JSON.stringify(credentialsWithoutUrl));
-    } catch (error) {
-      console.error("[provider] Failed to encrypt credentials:", error instanceof Error ? error.message : String(error));
-      return fail("INTERNAL_ERROR", 500);
-    }
-  } else {
-    let existingCreds: Record<string, string>;
-    try {
-      existingCreds = JSON.parse(decrypt(provider.encryptedCredentials));
-    } catch {
-      console.error("[provider] Failed to decrypt existing credentials for provider", id);
-      return fail("CREDENTIALS_DECRYPT_FAILED", 500);
-    }
-    const effectiveBaseUrl = baseUrl ?? provider.baseUrl ?? null;
-    effectiveCredentials = { ...existingCreds, ...(effectiveBaseUrl ? { baseUrl: effectiveBaseUrl } : {}) };
-  }
+  const credResult = resolveCredentials(provider, changeCredentials, credentials, baseUrl);
+  if (credResult instanceof Response) { return credResult; }
+  const { encryptedToStore, effectiveCredentials } = credResult;
 
   // Test connection
   try {

@@ -15,6 +15,34 @@ const VALID_STATUSES = new Set(Object.values(UserStatus));
 
 type Params = { params: Promise<{ id: string }> };
 
+/** Fields accepted by the PATCH body. */
+type PatchBody = {
+  status?: string;
+  role?: string;
+  email?: string;
+  username?: string;
+  password?: string;
+};
+
+/**
+ * Build the Prisma update data object from validated PATCH body fields.
+ *
+ * @param body - The parsed patch request body.
+ * @returns Promise resolving to the update data record.
+ */
+async function buildUpdateData(body: PatchBody): Promise<Record<string, unknown>> {
+  const { status, role, email, username, password } = body;
+  const data: Record<string, unknown> = {};
+  if (status && VALID_STATUSES.has(status as UserStatus)) { data.status = status; }
+  if (role && Object.values(UserRole).includes(role as UserRole)) { data.role = role; }
+  if (typeof email === "string" && email.trim()) { data.email = email.trim().toLowerCase(); }
+  if (typeof username === "string") { data.username = username.trim(); }
+  if (typeof password === "string" && password.length >= 8) {
+    data.passwordHash = await hash(password, 12);
+  }
+  return data;
+}
+
 /**
  * PATCH /api/admin/users/[id] — Update a user's fields (admin only).
  *
@@ -37,13 +65,8 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   const body = await req.json().catch(() => null);
   if (!body) { return fail("INVALID_BODY", 400); }
 
-  const { status, role, email, username, password } = body as {
-    status?: string;
-    role?: string;
-    email?: string;
-    username?: string;
-    password?: string;
-  };
+  const patchBody = body as PatchBody;
+  const { status, role, password } = patchBody;
 
   // Self-protection: cannot change own status
   if (id === session.user.id && status !== undefined) {
@@ -68,14 +91,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     return fail("CANNOT_CHANGE_OWN_ROLE", 403);
   }
 
-  const updateData: Record<string, unknown> = {};
-  if (status && VALID_STATUSES.has(status as UserStatus)) { updateData.status = status; }
-  if (role && Object.values(UserRole).includes(role as UserRole)) { updateData.role = role; }
-  if (typeof email === "string" && email.trim()) { updateData.email = email.trim().toLowerCase(); }
-  if (typeof username === "string") { updateData.username = username.trim(); }
-  if (typeof password === "string" && password.length >= 8) {
-    updateData.passwordHash = await hash(password, 12);
-  }
+  const updateData = await buildUpdateData(patchBody);
 
   try {
     const updated = await prisma.user.update({
