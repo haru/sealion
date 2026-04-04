@@ -188,22 +188,24 @@ describe("POST /api/admin/users", () => {
 describe("PATCH /api/admin/users/[id]", () => {
   beforeEach(() => jest.clearAllMocks());
 
-  it("returns 403 when admin tries to deactivate self", async () => {
+  it("returns 403 when admin tries to change own status", async () => {
     mockAuth.mockResolvedValue(ADMIN_SESSION);
 
-    const req = makeRequest("PATCH", { isActive: false }, "http://localhost/api/admin/users/admin-1");
+    const req = makeRequest("PATCH", { status: "SUSPENDED" }, "http://localhost/api/admin/users/admin-1");
     const res = await PATCH(req, { params: Promise.resolve({ id: "admin-1" }) });
+    const json = await res.json();
 
     expect(res.status).toBe(403);
+    expect(json.error).toBe("CANNOT_CHANGE_OWN_STATUS");
     expect(mockUpdate).not.toHaveBeenCalled();
   });
 
-  it("returns 200 when admin updates another user", async () => {
+  it("returns 200 when admin updates another user's status", async () => {
     mockAuth.mockResolvedValue(ADMIN_SESSION);
     mockFindUnique.mockResolvedValue({ id: "user-2", email: "u@ex.com", role: "USER" });
-    mockUpdate.mockResolvedValue({ id: "user-2", isActive: false });
+    mockUpdate.mockResolvedValue({ id: "user-2", status: "SUSPENDED" });
 
-    const req = makeRequest("PATCH", { isActive: false }, "http://localhost/api/admin/users/user-2");
+    const req = makeRequest("PATCH", { status: "SUSPENDED" }, "http://localhost/api/admin/users/user-2");
     const res = await PATCH(req, { params: Promise.resolve({ id: "user-2" }) });
 
     expect(res.status).toBe(200);
@@ -212,7 +214,7 @@ describe("PATCH /api/admin/users/[id]", () => {
   it("returns 403 when non-admin tries to update", async () => {
     mockAuth.mockResolvedValue(USER_SESSION);
 
-    const req = makeRequest("PATCH", { isActive: false }, "http://localhost/api/admin/users/user-2");
+    const req = makeRequest("PATCH", { status: "SUSPENDED" }, "http://localhost/api/admin/users/user-2");
     const res = await PATCH(req, { params: Promise.resolve({ id: "user-2" }) });
 
     expect(res.status).toBe(403);
@@ -234,7 +236,7 @@ describe("PATCH /api/admin/users/[id]", () => {
   it("allows admin to update own non-role fields (email/username/password)", async () => {
     mockAuth.mockResolvedValue(ADMIN_SESSION);
     mockFindUnique.mockResolvedValue({ id: "admin-1", email: "admin@ex.com", role: "ADMIN" });
-    mockUpdate.mockResolvedValue({ id: "admin-1", email: "new@ex.com", role: "ADMIN", isActive: true });
+    mockUpdate.mockResolvedValue({ id: "admin-1", email: "new@ex.com", role: "ADMIN", status: "ACTIVE" });
 
     const req = makeRequest("PATCH", { username: "New Name" }, "http://localhost/api/admin/users/admin-1");
     const res = await PATCH(req, { params: Promise.resolve({ id: "admin-1" }) });
@@ -269,7 +271,7 @@ describe("PATCH /api/admin/users/[id]", () => {
   it("allows PATCH when admin sends own current role (no actual role change)", async () => {
     mockAuth.mockResolvedValue(ADMIN_SESSION);
     mockFindUnique.mockResolvedValue({ id: "admin-1", email: "admin@ex.com", role: "ADMIN" });
-    mockUpdate.mockResolvedValue({ id: "admin-1", email: "admin@ex.com", role: "ADMIN", isActive: true });
+    mockUpdate.mockResolvedValue({ id: "admin-1", email: "admin@ex.com", role: "ADMIN", status: "ACTIVE" });
 
     // Sending role=ADMIN when current role is ADMIN — should NOT be blocked
     const req = makeRequest("PATCH", { username: "New Name", role: "ADMIN" }, "http://localhost/api/admin/users/admin-1");

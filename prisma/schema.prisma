@@ -13,6 +13,12 @@ enum UserRole {
   ADMIN
 }
 
+enum UserStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+}
+
 enum ProviderType {
   GITHUB
   JIRA
@@ -27,9 +33,11 @@ model User {
   email        String   @unique
   passwordHash String
   username     String?
-  role         UserRole @default(USER)
-  isActive     Boolean  @default(true)
-  createdAt    DateTime @default(now())
+  role                            UserRole    @default(USER)
+  status                          UserStatus  @default(ACTIVE)
+  emailVerificationToken          String?     @unique
+  emailVerificationTokenExpires   DateTime?
+  createdAt                       DateTime    @default(now())
   updatedAt    DateTime @updatedAt
 
   issueProviders IssueProvider[]
@@ -136,10 +144,11 @@ model SmtpSettings {
 // ─── Auth Settings ───────────────────────────────────────────────────────────
 
 model AuthSettings {
-  id                    String   @id @default("singleton")
-  allowUserSignup       Boolean  @default(true)
-  sessionTimeoutMinutes Int?
-  updatedAt             DateTime @updatedAt
+  id                         String   @id @default("singleton")
+  allowUserSignup            Boolean  @default(true)
+  requireEmailVerification   Boolean  @default(false)
+  sessionTimeoutMinutes      Int?
+  updatedAt                  DateTime @updatedAt
 }
 
 // ─── Auth.js required tables ─────────────────────────────────────────────────

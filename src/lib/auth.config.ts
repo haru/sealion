@@ -20,7 +20,8 @@ export const authConfig: NextAuthConfig = {
       const isAuthPage =
         nextUrl.pathname.startsWith("/login") ||
         nextUrl.pathname.startsWith("/signup") ||
-        nextUrl.pathname.startsWith("/setup");
+        nextUrl.pathname.startsWith("/setup") ||
+        nextUrl.pathname.startsWith("/confirm");
 
       if (isProtected && !isAuthenticated) return false;
       if (isAuthPage && isAuthenticated) {

@@ -25,7 +25,17 @@
     "emailAlreadyExists": "このメールアドレスはすでに登録されています",
     "setupTitle": "管理者アカウントを作成",
     "setupInfo": "最初のユーザーは管理者として登録されます。",
-    "setupSubmit": "管理者として登録"
+    "setupSubmit": "管理者として登録",
+    "verificationSent": "確認メールを送信しました。受信箱をご確認ください。",
+    "emailVerified": "メールアドレスが確認されました。ログインできます。",
+    "emailNotVerified": "メールアドレスが確認されていません。受信箱の確認メールをご確認ください。",
+    "checkEmail": "メールをご確認ください",
+    "confirmTitle": "メール確認",
+    "confirmSuccess": "メールアドレスが正常に確認されました。",
+    "confirmError": "メール確認に失敗しました。",
+    "errorMissingToken": "確認リンクにトークンが含まれていません。",
+    "errorExpiredToken": "確認リンクの有効期限が切れています。新しいリンクをリクエストしてください。",
+    "errorInvalidToken": "確認リンクが無効です。"
   },
   "todo": {
     "title": "マイTODOリスト",
@@ -106,6 +116,8 @@
     "title": "認証設定",
     "allowUserSignup": "ユーザーによるアカウント追加",
     "allowUserSignupHint": "無効にすると、サインアップページが非表示になり、新規アカウント登録がブロックされます。",
+    "requireEmailVerification": "メール確認を必須にする",
+    "requireEmailVerificationHint": "有効にすると、新規ユーザーはログイン前にメール確認が必要です。SMTP設定が構成されている必要があります。",
     "sessionTimeout": "セッションタイムアウト",
     "timeout": {
       "none": "なし",
@@ -235,12 +247,18 @@
     "cannotDeactivateSelf": "自分のアカウントを無効化することはできません",
     "cannotDeleteSelf": "自分のアカウントを削除することはできません",
     "cannotChangeOwnRole": "自分のロールを変更することはできません",
+    "cannotChangeOwnStatus": "自分のステータスを変更することはできません",
     "deleteSuccess": "ユーザーを削除しました",
     "updateSuccess": "ユーザーを更新しました",
     "createSuccess": "ユーザーを作成しました",
     "role": {
       "USER": "一般ユーザー",
       "ADMIN": "管理者"
+    },
+    "status": {
+      "PENDING": "保留中",
+      "ACTIVE": "有効",
+      "SUSPENDED": "停止"
     },
     "columns": {
       "email": "メールアドレス",
@@ -255,7 +273,8 @@
       "password": "パスワード",
       "passwordHint": "空欄のままにすると現在のパスワードが維持されます",
       "username": "表示名",
-      "role": "ロール"
+      "role": "ロール",
+      "status": "ステータス"
     }
   },
   "todayTasks": {
@@ -300,8 +319,13 @@
     "CANNOT_DELETE_SELF": "自分のアカウントを削除することはできません",
     "CANNOT_DEACTIVATE_SELF": "自分のアカウントを無効化することはできません",
     "CANNOT_CHANGE_OWN_ROLE": "自分のロールを変更することはできません",
+    "CANNOT_CHANGE_OWN_STATUS": "自分のステータスを変更することはできません",
     "SIGNUP_DISABLED": "現在、管理者によりユーザー登録が無効化されています",
-    "INVALID_TIMEOUT": "セッションタイムアウトの値が無効です"
+    "INVALID_TIMEOUT": "セッションタイムアウトの値が無効です",
+    "EMAIL_NOT_VERIFIED": "メールアドレスが確認されていません",
+    "INVALID_TOKEN": "確認トークンが無効です",
+    "EXPIRED_TOKEN": "確認トークンの有効期限が切れています",
+    "MISSING_TOKEN": "確認トークンが見つかりません"
   },
   "sync": {
     "error": {
@@ -336,7 +360,7 @@
     "project": "プロジェクト",
     "dueDate": "期限",
     "createdDate": "作成日",
-    "updatedDate": "更新日",
+    "updatedDate": "更新",
     "assignee": "担当者",
     "unassigned": "未割り当て",
     "assigned": "割り当て済み",

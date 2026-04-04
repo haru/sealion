@@ -42,6 +42,11 @@ export default function SignupPage() {
       return;
     }
 
+    if (json.data?.verificationRequired) {
+      router.push("/login?verification_sent=true");
+      return;
+    }
+
     router.push("/login");
   }
 

@@ -3,10 +3,13 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { ok, fail } from "@/lib/api-response";
 import { hash } from "bcryptjs";
-import { UserRole } from "@prisma/client";
+import { UserRole, UserStatus } from "@prisma/client";
 
 /** Maximum password length enforced by bcrypt. */
 const MAX_PASSWORD_LENGTH = 72;
+
+/** Valid user status values. */
+const VALID_STATUSES = new Set(Object.values(UserStatus));
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -15,14 +18,10 @@ type Params = { params: Promise<{ id: string }> };
  *
  * Self-protection rules:
  * - Admin cannot change their own `role` to a different value (403 CANNOT_CHANGE_OWN_ROLE).
- * - Admin cannot deactivate their own account (403 CANNOT_DEACTIVATE_SELF).
+ * - Admin cannot change their own `status` (403 CANNOT_CHANGE_OWN_STATUS).
  * - All other self-edits (email, username, password, or setting role to same value) are permitted.
  *
- * Error handling:
- * - Prisma P2002 (unique constraint on email) → 409 EMAIL_ALREADY_EXISTS.
- * - Other unexpected errors → 500 INTERNAL_ERROR.
- *
- * @param req - Incoming request with optional body fields: isActive, role, email, username, password.
+ * @param req - Incoming request with optional body fields: status, role, email, username, password.
  * @param params - Route params containing the target user id.
  * @returns Updated user data on success, or an error response.
  */
@@ -36,17 +35,22 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   const body = await req.json().catch(() => null);
   if (!body) return fail("INVALID_BODY", 400);
 
-  const { isActive, role, email, username, password } = body as {
-    isActive?: boolean;
+  const { status, role, email, username, password } = body as {
+    status?: string;
     role?: string;
     email?: string;
     username?: string;
     password?: string;
   };
 
-  // Self-protection: cannot deactivate own account
-  if (id === session.user.id && isActive === false) {
-    return fail("CANNOT_DEACTIVATE_SELF", 403);
+  // Self-protection: cannot change own status
+  if (id === session.user.id && status !== undefined) {
+    return fail("CANNOT_CHANGE_OWN_STATUS", 403);
+  }
+
+  // Validate status value
+  if (status !== undefined && !VALID_STATUSES.has(status as UserStatus)) {
+    return fail("INVALID_INPUT", 400);
   }
 
   // Password length check
@@ -63,7 +67,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   }
 
   const updateData: Record<string, unknown> = {};
-  if (typeof isActive === "boolean") updateData.isActive = isActive;
+  if (status && VALID_STATUSES.has(status as UserStatus)) updateData.status = status;
   if (role && Object.values(UserRole).includes(role as UserRole)) updateData.role = role;
   if (typeof email === "string" && email.trim()) updateData.email = email.trim().toLowerCase();
   if (typeof username === "string") updateData.username = username.trim();
@@ -75,7 +79,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     const updated = await prisma.user.update({
       where: { id },
       data: updateData,
-      select: { id: true, email: true, username: true, role: true, isActive: true },
+      select: { id: true, email: true, username: true, role: true, status: true },
     });
 
     return ok(updated);

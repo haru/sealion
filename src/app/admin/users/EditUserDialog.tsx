@@ -24,7 +24,7 @@ interface UserRecord {
   email: string;
   username: string | null;
   role: "USER" | "ADMIN";
-  isActive: boolean;
+  status: "PENDING" | "ACTIVE" | "SUSPENDED";
   createdAt: string;
 }
 
@@ -32,7 +32,7 @@ interface UserRecord {
 interface EditUserDialogProps {
   /** The user being edited. `null` means the dialog is closed. */
   user: UserRecord | null;
-  /** Whether the target user is the currently logged-in admin (restricts role change). */
+  /** Whether the target user is the currently logged-in admin (restricts status change). */
   isSelf: boolean;
   /** Called when the dialog is closed without saving. */
   onClose: () => void;
@@ -45,8 +45,7 @@ interface EditUserDialogProps {
  *
  * - Pre-populates all editable fields from the provided `user` object.
  * - Password field is intentionally left blank; if left empty, the password is not updated.
- * - When `isSelf` is `true`, the Role select is disabled and `role` is omitted from the PATCH body
- *   to prevent self-downgrade and API 403 errors.
+ * - When `isSelf` is `true`, the Role select and Status select are disabled.
  * - Shows an inline `<Alert>` on API or validation errors; error codes are translated via the
  *   `errors` message namespace.
  * - On success, fires `onSaved` so the parent can refresh the list and shows a toast via
@@ -65,6 +64,7 @@ export default function EditUserDialog({ user, isSelf, onClose, onSaved }: EditU
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState<"USER" | "ADMIN">("USER");
+  const [status, setStatus] = useState<"PENDING" | "ACTIVE" | "SUSPENDED">("ACTIVE");
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -78,6 +78,7 @@ export default function EditUserDialog({ user, isSelf, onClose, onSaved }: EditU
       setUsername(user.username ?? "");
       setPassword("");
       setRole(user.role);
+      setStatus(user.status);
       setError(null);
     }
   }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -102,6 +103,10 @@ export default function EditUserDialog({ user, isSelf, onClose, onSaved }: EditU
 
     if (!isSelf && role !== user.role) {
       body.role = role;
+    }
+
+    if (!isSelf && status !== user.status) {
+      body.status = status;
     }
 
     if (password) {
@@ -172,6 +177,19 @@ export default function EditUserDialog({ user, isSelf, onClose, onSaved }: EditU
             >
               <MenuItem value="USER">{t("role.USER")}</MenuItem>
               <MenuItem value="ADMIN">{t("role.ADMIN")}</MenuItem>
+            </Select>
+          </FormControl>
+          <FormControl fullWidth>
+            <InputLabel>{t("fields.status")}</InputLabel>
+            <Select
+              value={status}
+              label={t("fields.status")}
+              onChange={(e) => setStatus(e.target.value as "PENDING" | "ACTIVE" | "SUSPENDED")}
+              disabled={isSelf}
+            >
+              <MenuItem value="PENDING">{t("status.PENDING")}</MenuItem>
+              <MenuItem value="ACTIVE">{t("status.ACTIVE")}</MenuItem>
+              <MenuItem value="SUSPENDED">{t("status.SUSPENDED")}</MenuItem>
             </Select>
           </FormControl>
         </Stack>
