@@ -2,6 +2,24 @@ import { randomBytes } from "crypto";
 import { prisma } from "@/lib/db";
 import { getSmtpSettings } from "@/lib/smtp-settings";
 import { sendMail } from "@/lib/smtp-mailer";
+import type { UserStatus } from "@prisma/client";
+
+/**
+ * Returns the application base URL for constructing absolute links.
+ *
+ * Prefers `AUTH_URL`, then `NEXTAUTH_URL`, then falls back to `http://localhost:3000`.
+ * Use this as the single source of truth for base URL resolution wherever an
+ * absolute URL must be constructed (e.g. email links, redirect targets).
+ *
+ * @returns The base URL string without a trailing slash.
+ */
+export function getAppBaseUrl(): string {
+  return (
+    process.env.AUTH_URL ??
+    process.env.NEXTAUTH_URL ??
+    "http://localhost:3000"
+  );
+}
 
 /**
  * Generates a cryptographically random 64-character hex string for email verification tokens.
@@ -15,7 +33,7 @@ export function generateToken(): string {
 /**
  * Sends a verification email to the given address with a link containing the token.
  *
- * Constructs the verification URL using `AUTH_URL` env var (falling back to `NEXTAUTH_URL`).
+ * Constructs the verification URL using {@link getAppBaseUrl}.
  * If SMTP settings have not been configured by the admin, logs a warning and returns
  * without throwing.
  *
@@ -34,9 +52,7 @@ export async function sendVerificationEmail(
     return;
   }
 
-  const baseUrl =
-    process.env.AUTH_URL ?? process.env.NEXTAUTH_URL ?? "http://localhost:3000";
-  const verifyUrl = `${baseUrl}/api/auth/confirm?token=${token}`;
+  const verifyUrl = `${getAppBaseUrl()}/api/auth/confirm?token=${token}`;
 
   await sendMail({
     host: settings.host,
@@ -83,12 +99,13 @@ export class TokenExpiredError extends Error {
  * (within 24 hours of issuance), returns the user's id, email, and status.
  *
  * @param token - The email verification token to validate.
- * @returns An object with `id`, `email`, and `status` if valid.
+ * @returns An object with `id`, `email`, and `status` if valid, or `null` if the token
+ *   is absent or does not match any user.
  * @throws {@link TokenExpiredError} When the token exists but has expired.
  */
 export async function verifyToken(
   token: string,
-): Promise<{ id: string; email: string; status: string } | null> {
+): Promise<{ id: string; email: string; status: UserStatus } | null> {
   if (!token) return null;
 
   const user = await prisma.user.findUnique({

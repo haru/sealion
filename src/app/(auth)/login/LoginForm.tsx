@@ -33,8 +33,8 @@ export function LoginForm({ showSignup }: LoginFormProps) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const verified = searchParams.get("verified");
-  const verificationSent = searchParams.get("verification_sent");
+  const verified = searchParams.get("verified") === "true";
+  const verificationSent = searchParams.get("verification_sent") === "true";
 
   /** Submits credentials to Auth.js and redirects on success. */
   async function handleSubmit(e: React.FormEvent) {

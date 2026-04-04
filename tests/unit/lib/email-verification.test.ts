@@ -21,11 +21,17 @@ jest.mock("@/lib/smtp-mailer", () => ({
   sendMail: jest.fn().mockResolvedValue(undefined),
 }));
 
+jest.mock("@/lib/encryption", () => ({
+  decrypt: jest.fn(),
+}));
+
 import { prisma } from "@/lib/db";
 import { getSmtpSettings } from "@/lib/smtp-settings";
 import { sendMail } from "@/lib/smtp-mailer";
+import { decrypt } from "@/lib/encryption";
 import {
   generateToken,
+  getAppBaseUrl,
   sendVerificationEmail,
   verifyToken,
   TokenExpiredError,
@@ -35,6 +41,35 @@ const mockUserFindUnique = prisma.user.findUnique as jest.Mock;
 const mockUserUpdate = prisma.user.update as jest.Mock;
 const mockGetSmtpSettings = getSmtpSettings as jest.Mock;
 const mockSendMail = sendMail as jest.Mock;
+const mockDecrypt = decrypt as jest.Mock;
+
+describe("getAppBaseUrl", () => {
+  const ORIGINAL_AUTH_URL = process.env.AUTH_URL;
+  const ORIGINAL_NEXTAUTH_URL = process.env.NEXTAUTH_URL;
+
+  afterEach(() => {
+    process.env.AUTH_URL = ORIGINAL_AUTH_URL;
+    process.env.NEXTAUTH_URL = ORIGINAL_NEXTAUTH_URL;
+  });
+
+  it("returns AUTH_URL when set", () => {
+    process.env.AUTH_URL = "https://auth.example.com";
+    process.env.NEXTAUTH_URL = "https://next.example.com";
+    expect(getAppBaseUrl()).toBe("https://auth.example.com");
+  });
+
+  it("falls back to NEXTAUTH_URL when AUTH_URL is not set", () => {
+    delete process.env.AUTH_URL;
+    process.env.NEXTAUTH_URL = "https://next.example.com";
+    expect(getAppBaseUrl()).toBe("https://next.example.com");
+  });
+
+  it("falls back to http://localhost:3000 when neither env var is set", () => {
+    delete process.env.AUTH_URL;
+    delete process.env.NEXTAUTH_URL;
+    expect(getAppBaseUrl()).toBe("http://localhost:3000");
+  });
+});
 
 describe("generateToken", () => {
   it("returns a 64-character hex string", () => {
@@ -72,7 +107,7 @@ describe("sendVerificationEmail", () => {
       fromName: "Sealion",
       requireAuth: false,
       username: null,
-      password: null,
+      encryptedPassword: null,
       useTls: false,
     });
 
@@ -98,7 +133,7 @@ describe("sendVerificationEmail", () => {
       fromName: "Sealion",
       requireAuth: false,
       username: null,
-      password: null,
+      encryptedPassword: null,
       useTls: false,
     });
 
@@ -119,6 +154,45 @@ describe("sendVerificationEmail", () => {
     expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("SMTP"));
 
     warnSpy.mockRestore();
+  });
+
+  it("passes null password to sendMail when encryptedPassword is null", async () => {
+    process.env.AUTH_URL = "https://example.com";
+    mockGetSmtpSettings.mockResolvedValue({
+      host: "smtp.example.com",
+      port: 587,
+      fromAddress: "noreply@example.com",
+      fromName: "Sealion",
+      requireAuth: false,
+      username: null,
+      encryptedPassword: null,
+      useTls: false,
+    });
+
+    await sendVerificationEmail("user@example.com", "tokenXYZ");
+
+    const call = mockSendMail.mock.calls[0][0];
+    expect(call.password).toBeNull();
+  });
+
+  it("decrypts and passes password to sendMail when encryptedPassword is set", async () => {
+    process.env.AUTH_URL = "https://example.com";
+    mockGetSmtpSettings.mockResolvedValue({
+      host: "smtp.example.com",
+      port: 587,
+      fromAddress: "noreply@example.com",
+      fromName: "Sealion",
+      requireAuth: true,
+      username: "smtp-user",
+      encryptedPassword: "encrypted-secret",
+      useTls: true,
+    });
+    mockDecrypt.mockResolvedValue("decrypted-password");
+
+    await sendVerificationEmail("user@example.com", "tokenABC");
+
+    const call = mockSendMail.mock.calls[0][0];
+    expect(call.password).toBe("decrypted-password");
   });
 });
 
@@ -166,5 +240,35 @@ describe("verifyToken", () => {
   it("returns null when token is empty/missing", async () => {
     const result = await verifyToken("");
     expect(result).toBeNull();
+  });
+
+  it("returns null when user has token but emailVerificationTokenExpires is null", async () => {
+    mockUserFindUnique.mockResolvedValue({
+      id: "user-3",
+      email: "user@example.com",
+      status: "PENDING",
+      emailVerificationToken: "some-token",
+      emailVerificationTokenExpires: null,
+    });
+
+    const result = await verifyToken("some-token");
+    expect(result).toBeNull();
+  });
+
+  it("returns status as a valid UserStatus enum value", async () => {
+    const futureExpiry = new Date(Date.now() + 60_000);
+    mockUserFindUnique.mockResolvedValue({
+      id: "user-2",
+      email: "pending@example.com",
+      status: "PENDING",
+      emailVerificationToken: "some-token",
+      emailVerificationTokenExpires: futureExpiry,
+    });
+
+    const result = await verifyToken("some-token");
+
+    expect(result).not.toBeNull();
+    // status must be one of the valid UserStatus values
+    expect(["PENDING", "ACTIVE", "SUSPENDED"]).toContain(result!.status);
   });
 });

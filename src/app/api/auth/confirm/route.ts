@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyToken, TokenExpiredError } from "@/lib/email-verification";
+import { verifyToken, TokenExpiredError, getAppBaseUrl } from "@/lib/email-verification";
 import { prisma } from "@/lib/db";
 
 /**
@@ -15,7 +15,7 @@ import { prisma } from "@/lib/db";
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const token = searchParams.get("token");
-  const baseUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
+  const baseUrl = getAppBaseUrl();
 
   if (!token) {
     return NextResponse.redirect(`${baseUrl}/confirm?error=missing_token`);

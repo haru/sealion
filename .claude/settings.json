@@ -1,4 +1,10 @@
 {
+  "permissions": {
+    "allow": [
+      "Bash(gh repo:*)",
+      "Bash(head -5 ls /workspaces/sealion/node_modules/@prisma/client/*.d.ts)"
+    ]
+  },
   "enabledPlugins": {
     "everything-claude-code@everything-claude-code": true,
     "frontend-design@claude-plugins-official": true,
@@ -14,10 +20,5 @@
         "repo": "affaan-m/everything-claude-code"
       }
     }
-  },
-  "permissions": {
-    "allow": [
-      "Bash(gh repo:*)"
-    ]
   }
 }

@@ -17,6 +17,7 @@ jest.mock("@/lib/db", () => ({
     user: {
       findUnique: jest.fn(),
       create: jest.fn(),
+      delete: jest.fn(),
     },
   },
 }));
@@ -37,6 +38,7 @@ import { generateToken, sendVerificationEmail } from "@/lib/email-verification";
 const mockGetAuthSettings = getAuthSettings as jest.Mock;
 const mockFindUnique = prisma.user.findUnique as jest.Mock;
 const mockCreate = prisma.user.create as jest.Mock;
+const mockDelete = prisma.user.delete as jest.Mock;
 const mockSendVerificationEmail = sendVerificationEmail as jest.Mock;
 
 function makeRequest(body: object): NextRequest {
@@ -138,6 +140,24 @@ describe("POST /api/auth/signup", () => {
     expect(res.status).toBe(400);
   });
 
+  it("returns 400 INVALID_INPUT when body is missing email field", async () => {
+    const req = makeRequest({ password: "password123", username: "Alice" });
+    const res = await POST(req);
+    const json = await res.json();
+
+    expect(res.status).toBe(400);
+    expect(json.error).toBe("INVALID_INPUT");
+  });
+
+  it("returns 400 INVALID_INPUT when body is missing password field", async () => {
+    const req = makeRequest({ email: "user@example.com", username: "Alice" });
+    const res = await POST(req);
+    const json = await res.json();
+
+    expect(res.status).toBe(400);
+    expect(json.error).toBe("INVALID_INPUT");
+  });
+
   it("returns 403 SIGNUP_DISABLED when allowUserSignup is false", async () => {
     mockGetAuthSettings.mockResolvedValue({
       id: "singleton",
@@ -232,5 +252,56 @@ describe("POST /api/auth/signup", () => {
       })
     );
     expect(mockSendVerificationEmail).not.toHaveBeenCalled();
+  });
+
+  it("returns 503 VERIFICATION_EMAIL_SEND_FAILED and rolls back user when sendVerificationEmail throws", async () => {
+    mockGetAuthSettings.mockResolvedValue({
+      id: "singleton",
+      allowUserSignup: true,
+      sessionTimeoutMinutes: null,
+      requireEmailVerification: true,
+      updatedAt: new Date(),
+    });
+    mockFindUnique.mockResolvedValue(null);
+    mockCreate.mockResolvedValue({
+      id: "clrollback",
+      email: "rollback@example.com",
+      role: "USER",
+    });
+    mockSendVerificationEmail.mockRejectedValue(new Error("SMTP connection refused"));
+    mockDelete.mockResolvedValue({ id: "clrollback" });
+
+    const req = makeRequest({ email: "rollback@example.com", password: "password123", username: "Grace" });
+    const res = await POST(req);
+    const json = await res.json();
+
+    expect(res.status).toBe(503);
+    expect(json.error).toBe("VERIFICATION_EMAIL_SEND_FAILED");
+    expect(mockDelete).toHaveBeenCalledWith({ where: { id: "clrollback" } });
+  });
+
+  it("returns 503 VERIFICATION_EMAIL_SEND_FAILED even when rollback delete also fails", async () => {
+    mockGetAuthSettings.mockResolvedValue({
+      id: "singleton",
+      allowUserSignup: true,
+      sessionTimeoutMinutes: null,
+      requireEmailVerification: true,
+      updatedAt: new Date(),
+    });
+    mockFindUnique.mockResolvedValue(null);
+    mockCreate.mockResolvedValue({
+      id: "clrollback2",
+      email: "rollback2@example.com",
+      role: "USER",
+    });
+    mockSendVerificationEmail.mockRejectedValue(new Error("SMTP error"));
+    mockDelete.mockRejectedValue(new Error("DB connection lost"));
+
+    const req = makeRequest({ email: "rollback2@example.com", password: "password123", username: "Hank" });
+    const res = await POST(req);
+    const json = await res.json();
+
+    expect(res.status).toBe(503);
+    expect(json.error).toBe("VERIFICATION_EMAIL_SEND_FAILED");
   });
 });

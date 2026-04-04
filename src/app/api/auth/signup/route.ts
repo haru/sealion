@@ -74,7 +74,26 @@ export async function POST(request: NextRequest) {
       select: { id: true, email: true, role: true },
     });
 
-    await sendVerificationEmail(email, token).catch(() => {});
+    try {
+      await sendVerificationEmail(email, token);
+    } catch (error) {
+      console.error("Failed to send verification email during signup.", {
+        email,
+        userId: user.id,
+        error,
+      });
+
+      try {
+        await prisma.user.delete({ where: { id: user.id } });
+      } catch (rollbackError) {
+        console.error(
+          "Failed to roll back pending user after verification email failure.",
+          { email, userId: user.id, error: rollbackError },
+        );
+      }
+
+      return fail("VERIFICATION_EMAIL_SEND_FAILED", 503);
+    }
 
     return ok({ ...user, verificationRequired: true }, 201);
   }
