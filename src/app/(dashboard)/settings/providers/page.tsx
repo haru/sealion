@@ -25,7 +25,7 @@ import { formatProviderApiError, type ProviderApiErrorResponse } from "@/lib/err
 
 interface Provider {
   id: string;
-  type: "GITHUB" | "JIRA" | "REDMINE" | "GITLAB";
+  type: string;
   displayName: string;
   baseUrl: string | null;
   iconUrl: string | null;

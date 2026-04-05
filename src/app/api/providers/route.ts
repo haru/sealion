@@ -1,4 +1,4 @@
-import { ProviderType } from "@prisma/client";
+import { type ProviderType } from "@prisma/client";
 import type { NextRequest } from "next/server";
 
 import { ok, fail, failWithDetails } from "@/lib/api-response";
@@ -8,6 +8,7 @@ import { prisma } from "@/lib/db";
 import { encrypt } from "@/lib/encryption";
 import { createConnectionTestErrorDetails } from "@/lib/error-utils";
 import { createAdapter, getProviderIconUrl } from "@/services/issue-provider/factory";
+import { getAllProviders } from "@/services/issue-provider/registry";
 
 /**
  * GET /api/providers — Returns all issue providers for the authenticated user.
@@ -45,7 +46,7 @@ export async function POST(req: NextRequest) {
     return fail("MISSING_FIELDS", 400);
   }
 
-  if (!Object.values(ProviderType).includes(type as ProviderType)) {
+  if (!getAllProviders().some((m) => m.type === type)) {
     return fail("INVALID_PROVIDER_TYPE", 400);
   }
 
@@ -54,8 +55,8 @@ export async function POST(req: NextRequest) {
 
   // Test connection before saving (pass full credentials including baseUrl to adapter)
   try {
-    const typedCredentials = buildTypedCredentials(type as ProviderType, credentials);
-    const adapter = createAdapter(type as ProviderType, typedCredentials, baseUrl);
+    const typedCredentials = buildTypedCredentials(type, credentials);
+    const adapter = createAdapter(type, typedCredentials, baseUrl);
     await adapter.testConnection();
   } catch (error) {
     console.error("[provider] Connection test failed:", error instanceof Error ? error.message : String(error));

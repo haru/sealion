@@ -14,12 +14,13 @@ import { useTranslations } from "next-intl";
 import { useState } from "react";
 
 import ProviderIcon from "@/components/ProviderIcon";
+import { getProviderMetadata } from "@/services/issue-provider/registry";
 
 import ProviderEditModal from "./ProviderEditModal";
 
 interface Provider {
   id: string;
-  type: "GITHUB" | "JIRA" | "REDMINE" | "GITLAB";
+  type: string;
   displayName: string;
   baseUrl: string | null;
   iconUrl: string | null;
@@ -72,7 +73,7 @@ export default function ProviderList({ providers, onDelete, onUpdated }: Provide
               </Typography>
               <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 0.5 }}>
                 <Chip
-                  label={t(`type.${provider.type}`)}
+                  label={getProviderMetadata(provider.type)?.displayName ?? provider.type}
                   size="small"
                   variant="outlined"
                   sx={{ flexShrink: 0 }}

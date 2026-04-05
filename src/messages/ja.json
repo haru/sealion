@@ -54,12 +54,6 @@
       "OPEN": "未完了",
       "CLOSED": "完了"
     },
-    "source": {
-      "GITHUB": "GitHub",
-      "JIRA": "Jira",
-      "REDMINE": "Redmine",
-      "GITLAB": "GitLab"
-    },
     "dueDate": "期限: {date}",
     "dueDateLabel": "期限",
     "createdAtLabel": "作成日",
@@ -80,12 +74,6 @@
     "addProvider": "issue管理システムを追加",
     "addProviderTitle": "issue管理システムを追加",
     "noProviders": "まだissue管理システムが接続されていません。",
-    "type": {
-      "GITHUB": "GitHub",
-      "JIRA": "Jira",
-      "REDMINE": "Redmine",
-      "GITLAB": "GitLab"
-    },
     "fields": {
       "type": "タイプ",
       "displayName": "表示名",

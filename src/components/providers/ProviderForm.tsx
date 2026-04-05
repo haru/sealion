@@ -15,12 +15,11 @@ import {
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 
-/** Provider type identifier. */
-export type ProviderType = "GITHUB" | "JIRA" | "REDMINE" | "GITLAB";
+import { getAllProviders } from "@/services/issue-provider/registry";
 
 /** Data shape submitted by {@link ProviderForm}. */
 export interface ProviderFormData {
-  type: ProviderType;
+  type: string;
   displayName: string;
   credentials: Record<string, string>;
 }
@@ -29,119 +28,21 @@ interface ProviderFormProps {
   onSubmit: (data: ProviderFormData) => Promise<void>;
 }
 
-const PROVIDER_TYPES: ProviderType[] = ["GITHUB", "JIRA", "REDMINE", "GITLAB"];
-
-type FieldProps = {
-  credentials: Record<string, string>;
-  onChange: (key: string, value: string) => void;
-  t: ReturnType<typeof useTranslations>;
-};
-
-/** Renders form fields for GitHub provider credentials. */
-function githubFields({ credentials, onChange, t }: FieldProps) {
-  return (
-    <TextField
-      label={t("fields.token")}
-      type="password"
-      value={credentials.token ?? ""}
-      onChange={(e) => onChange("token", e.target.value)}
-      required
-      fullWidth
-      inputProps={{ "data-testid": "github-token-input" }}
-    />
-  );
-}
-
-/** Renders form fields for Jira provider credentials. */
-function jiraFields({ credentials, onChange, t }: FieldProps) {
-  return (
-    <>
-      <TextField
-        label={t("fields.baseUrl")}
-        placeholder="https://your-org.atlassian.net"
-        value={credentials.baseUrl ?? ""}
-        onChange={(e) => onChange("baseUrl", e.target.value)}
-        required
-        fullWidth
-      />
-      <TextField
-        label={t("fields.email")}
-        type="email"
-        value={credentials.email ?? ""}
-        onChange={(e) => onChange("email", e.target.value)}
-        required
-        fullWidth
-      />
-      <TextField
-        label={t("fields.apiToken")}
-        type="password"
-        value={credentials.apiToken ?? ""}
-        onChange={(e) => onChange("apiToken", e.target.value)}
-        required
-        fullWidth
-      />
-    </>
-  );
-}
-
-/** Renders form fields for Redmine provider credentials. */
-function redmineFields({ credentials, onChange, t }: FieldProps) {
-  return (
-    <>
-      <TextField
-        label={t("fields.baseUrl")}
-        placeholder="https://redmine.example.com"
-        value={credentials.baseUrl ?? ""}
-        onChange={(e) => onChange("baseUrl", e.target.value)}
-        required
-        fullWidth
-      />
-      <TextField
-        label={t("fields.apiKey")}
-        type="password"
-        value={credentials.apiKey ?? ""}
-        onChange={(e) => onChange("apiKey", e.target.value)}
-        required
-        fullWidth
-      />
-    </>
-  );
-}
-
-/** Renders form fields for GitLab provider credentials. */
-function gitLabFields({ credentials, onChange, t }: FieldProps) {
-  return (
-    <>
-      <TextField
-        label={t("fields.baseUrl")}
-        placeholder="https://gitlab.com"
-        value={credentials.baseUrl ?? ""}
-        onChange={(e) => onChange("baseUrl", e.target.value)}
-        fullWidth
-      />
-      <TextField
-        label={t("fields.token")}
-        type="password"
-        value={credentials.token ?? ""}
-        onChange={(e) => onChange("token", e.target.value)}
-        required
-        fullWidth
-        inputProps={{ "data-testid": "gitlab-token-input" }}
-      />
-    </>
-  );
-}
-
 /** Form for creating a new issue provider, with provider-type selection and credential fields. */
 export default function ProviderForm({ onSubmit }: ProviderFormProps) {
   const t = useTranslations("providers");
   const tCommon = useTranslations("common");
 
-  const [type, setType] = useState<ProviderType>("GITHUB");
+  const providers = getAllProviders();
+  const firstType = providers[0]?.type ?? "";
+
+  const [type, setType] = useState<string>(firstType);
   const [displayName, setDisplayName] = useState("");
   const [credentials, setCredentials] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const selectedMeta = providers.find((p) => p.type === type);
 
   /** Updates a single credential field. */
   function handleCredentialChange(key: string, value: string) {
@@ -149,7 +50,7 @@ export default function ProviderForm({ onSubmit }: ProviderFormProps) {
   }
 
   /** Resets credentials when the provider type changes. */
-  function handleTypeChange(newType: ProviderType) {
+  function handleTypeChange(newType: string) {
     setType(newType);
     setCredentials({});
     setError(null);
@@ -173,8 +74,6 @@ export default function ProviderForm({ onSubmit }: ProviderFormProps) {
     }
   }
 
-  const fieldProps: FieldProps = { credentials, onChange: handleCredentialChange, t };
-
   return (
     <Box component="form" onSubmit={handleSubmit}>
       {/* Honeypot fields to prevent browser from autofilling real fields */}
@@ -192,11 +91,11 @@ export default function ProviderForm({ onSubmit }: ProviderFormProps) {
           <Select
             value={type}
             label={t("fields.type")}
-            onChange={(e) => handleTypeChange(e.target.value as ProviderType)}
+            onChange={(e) => handleTypeChange(e.target.value)}
           >
-            {PROVIDER_TYPES.map((pt) => (
-              <MenuItem key={pt} value={pt}>
-                {t(`type.${pt}`)}
+            {providers.map((meta) => (
+              <MenuItem key={meta.type} value={meta.type}>
+                {meta.displayName}
               </MenuItem>
             ))}
           </Select>
@@ -213,10 +112,29 @@ export default function ProviderForm({ onSubmit }: ProviderFormProps) {
           inputProps={{ "data-testid": "provider-name-input" }}
         />
 
-        {type === "GITHUB" && githubFields(fieldProps)}
-        {type === "JIRA" && jiraFields(fieldProps)}
-        {type === "REDMINE" && redmineFields(fieldProps)}
-        {type === "GITLAB" && gitLabFields(fieldProps)}
+        {selectedMeta && selectedMeta.baseUrlMode !== "none" && (
+          <TextField
+            label={t("fields.baseUrl")}
+            placeholder={selectedMeta.baseUrlMode === "optional" ? "https://gitlab.com" : "https://your-domain.example.com"}
+            value={credentials.baseUrl ?? ""}
+            onChange={(e) => handleCredentialChange("baseUrl", e.target.value)}
+            required={selectedMeta.baseUrlMode === "required"}
+            fullWidth
+          />
+        )}
+
+        {selectedMeta?.credentialFields.map((field) => (
+          <TextField
+            key={field.key}
+            label={t(`fields.${field.labelKey}`)}
+            type={field.inputType}
+            value={credentials[field.key] ?? ""}
+            onChange={(e) => handleCredentialChange(field.key, e.target.value)}
+            required={field.required}
+            fullWidth
+            inputProps={{ "data-testid": `${field.key}-input` }}
+          />
+        ))}
 
         <Button
           type="submit"
