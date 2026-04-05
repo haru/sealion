@@ -142,10 +142,10 @@
   },
   "sidebar": {
     "todo": "TODO",
-    "projectManagement": "Project Management",
+    "projectManagement": "Projects",
     "boardSettings": "Board Settings",
-    "systemAdmin": "System Administration",
-    "userManagement": "User Management",
+    "systemAdmin": "System Settings",
+    "userManagement": "Users",
     "authSettings": "Auth Settings",
     "smtpSettings": "Email Settings",
     "tagline": "All Your TODOs, One Place.",
@@ -239,7 +239,7 @@
     "includeUnassignedHint": "Also sync issues with no assignee"
   },
   "admin": {
-    "userManagement": "User Management",
+    "userManagement": "Users",
     "createUser": "Create User",
     "forbiddenTitle": "403 — Forbidden",
     "forbiddenMessage": "You do not have permission to access this page.",
