@@ -8,27 +8,14 @@ import { Chip } from "@mui/material";
 import { useTranslations } from "next-intl";
 import React, { useMemo } from "react";
 
+import { type SyncProvider } from "@/hooks/useSyncPolling";
 import { parseSyncErrorInfo } from "@/lib/sync/error-utils";
 import { type SyncErrorInfo } from "@/lib/types";
-
-interface Project {
-  id: string;
-  displayName: string;
-  lastSyncedAt: string | null;
-  syncError: string | null;
-}
-
-interface ProviderStatus {
-  id: string;
-  displayName: string;
-  type: string;
-  projects: Project[];
-}
 
 /** Props for the {@link SyncStatusChip} component. */
 export interface SyncStatusChipProps {
   /** List of sync providers with their project sync state. */
-  providers: ProviderStatus[];
+  providers: SyncProvider[];
   /** Whether a sync is currently in progress. */
   isSyncing: boolean;
 }

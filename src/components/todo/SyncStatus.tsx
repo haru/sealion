@@ -6,25 +6,12 @@ import { useTranslations } from "next-intl";
 import React, { useEffect, useMemo, useRef } from "react";
 
 import { useMessageQueue } from "@/hooks/useMessageQueue";
+import { type SyncProvider } from "@/hooks/useSyncPolling";
 import { formatSyncErrorMessage, parseSyncErrorInfo } from "@/lib/sync/error-utils";
 import { type SyncErrorInfo, SyncErrorCause } from "@/lib/types";
 
-interface Project {
-  id: string;
-  displayName: string;
-  lastSyncedAt: string | null;
-  syncError: string | null;
-}
-
-interface ProviderStatus {
-  id: string;
-  displayName: string;
-  type: string;
-  projects: Project[];
-}
-
 interface SyncStatusProps {
-  providers: ProviderStatus[];
+  providers: SyncProvider[];
   isSyncing: boolean;
   /** Callback invoked when the user clicks the "Sync Now" button. */
   onSyncNow: () => void;
