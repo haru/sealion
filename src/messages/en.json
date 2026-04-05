@@ -70,7 +70,7 @@
     "pinToggleError": "Failed to update pin. Please try again."
   },
   "providers": {
-    "title": "Issue Tracker Settings",
+    "title": "Issue Trackers",
     "addProvider": "Add Issue Tracker",
     "addProviderTitle": "Add Issue Tracker",
     "noProviders": "No issue trackers connected yet.",
@@ -154,7 +154,7 @@
   },
   "accountMenu": {
     "profileSettings": "Profile Settings",
-    "issueSettings": "Issue Management Settings",
+    "issueSettings": "Issue Trackers",
     "ariaLabel": "Account menu"
   },
   "profileSettings": {
@@ -231,7 +231,7 @@
     "selectProvider": "Select Issue Tracker",
     "selectProviderSubtitle": "Choose which issue tracker to add a project from",
     "noProviders": "No issue trackers configured. Please add one first.",
-    "goToProviders": "Go to Issue Tracker Settings",
+    "goToProviders": "Go to Issue Trackers",
     "alreadyRegistered": "Already added",
     "add": "Add Selected",
     "searchProjects": "Search projects...",
