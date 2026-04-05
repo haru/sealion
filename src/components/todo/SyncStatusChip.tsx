@@ -101,13 +101,15 @@ export default function SyncStatusChip({ providers, isSyncing }: SyncStatusChipP
       data-testid="sync-status-chip"
       icon={icon}
       label={label}
-      size="small"
       color={color}
       sx={{
         borderRadius: "100px",
         fontWeight: 700,
         fontSize: "0.7rem",
         letterSpacing: "0.05em",
+        height: 32,
+        pl: 0.75,
+        "& .MuiChip-label": { pl: 0.75, pr: 1.5 },
         ...(color === "success" && {
           bgcolor: "#e8f5e9",
           color: "#2e7d32",
