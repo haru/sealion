@@ -76,9 +76,7 @@ jobs:
           fi
 
           # Create a new backmerge PR
-          BODY="Automated backmerge of main to develop after release v${{ env.VERSION }}.
-
-This PR was created automatically by GitHub Actions."
+          BODY=$(printf 'Automated backmerge of main to develop after release v%s.\n\nThis PR was created automatically by GitHub Actions.' "${{ env.VERSION }}")
 
           PR_URL=$(gh pr create \
             --base develop \
