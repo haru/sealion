@@ -1,5 +1,5 @@
 /** @jest-environment node */
-import { buildAxiosProxyConfig, logProxyConfig } from "@/lib/proxy";
+import { buildAxiosProxyConfig, logProxyConfig } from "@/lib/proxy/proxy";
 
 // ---------------------------------------------------------------------------
 // Helpers

@@ -1,6 +1,6 @@
 import type { SmtpSettings } from "@prisma/client";
 
-import { prisma } from "@/lib/db";
+import { prisma } from "@/lib/db/db";
 
 /**
  * Retrieves the SmtpSettings singleton record from the database.

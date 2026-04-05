@@ -15,9 +15,9 @@ import { NextRequest } from "next/server";
 const TEST_USER_A = "board-settings-integration-user-a";
 const TEST_USER_B = "board-settings-integration-user-b";
 
-jest.mock("@/lib/auth", () => ({ auth: jest.fn() }));
+jest.mock("@/lib/auth/auth", () => ({ auth: jest.fn() }));
 
-import { auth } from "@/lib/auth";
+import { auth } from "@/lib/auth/auth";
 const mockAuth = auth as jest.Mock;
 
 let prismaClient: PrismaClient;
@@ -25,8 +25,8 @@ let dbAvailable = false;
 
 async function importRoute(p: unknown) {
   jest.resetModules();
-  jest.doMock("@/lib/db", () => ({ prisma: p }));
-  jest.doMock("@/lib/auth", () => ({
+  jest.doMock("@/lib/db/db", () => ({ prisma: p }));
+  jest.doMock("@/lib/auth/auth", () => ({
     auth: mockAuth,
   }));
   return await import("@/app/api/board-settings/route");

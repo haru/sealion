@@ -5,7 +5,7 @@
 
 import { NextRequest } from "next/server";
 
-jest.mock("@/lib/db", () => ({
+jest.mock("@/lib/db/db", () => ({
   prisma: {
     user: {
       findUnique: jest.fn(),
@@ -14,13 +14,13 @@ jest.mock("@/lib/db", () => ({
   },
 }));
 
-import { prisma } from "@/lib/db";
-import { verifyToken, TokenExpiredError, getAppBaseUrl } from "@/lib/email-verification";
+import { prisma } from "@/lib/db/db";
+import { verifyToken, TokenExpiredError, getAppBaseUrl } from "@/lib/email/email-verification";
 
 const mockUserFindUnique = prisma.user.findUnique as jest.Mock;
 const mockUserUpdate = prisma.user.update as jest.Mock;
 
-jest.mock("@/lib/email-verification", () => ({
+jest.mock("@/lib/email/email-verification", () => ({
   verifyToken: jest.fn(),
   getAppBaseUrl: jest.fn().mockReturnValue("http://localhost:3000"),
   TokenExpiredError: class extends Error {

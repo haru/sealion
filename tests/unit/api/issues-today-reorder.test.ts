@@ -2,8 +2,8 @@
 import { PATCH } from "@/app/api/issues/today/reorder/route";
 import { NextRequest } from "next/server";
 
-jest.mock("@/lib/auth", () => ({ auth: jest.fn() }));
-jest.mock("@/lib/db", () => ({
+jest.mock("@/lib/auth/auth", () => ({ auth: jest.fn() }));
+jest.mock("@/lib/db/db", () => ({
   prisma: {
     issue: {
       findMany: jest.fn(),
@@ -13,8 +13,8 @@ jest.mock("@/lib/db", () => ({
   },
 }));
 
-import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/db";
+import { auth } from "@/lib/auth/auth";
+import { prisma } from "@/lib/db/db";
 
 const mockAuth = auth as jest.Mock;
 const mockFindMany = prisma.issue.findMany as jest.Mock;

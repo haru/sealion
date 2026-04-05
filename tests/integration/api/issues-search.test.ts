@@ -12,14 +12,14 @@
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
 import { NextRequest } from "next/server";
-import { encrypt } from "@/lib/encryption";
+import { encrypt } from "@/lib/encryption/encryption";
 
 const TEST_USER_ID = "issues-search-integration-user";
 const VALID_KEY = "c".repeat(64);
 
 process.env.CREDENTIALS_ENCRYPTION_KEY = VALID_KEY;
 
-jest.mock("@/lib/auth", () => ({
+jest.mock("@/lib/auth/auth", () => ({
   auth: jest.fn().mockResolvedValue({
     user: { id: TEST_USER_ID, email: "issues-search@integration.com", role: "USER" },
   }),
@@ -199,21 +199,21 @@ async function seedOtherUserFixtures() {
 
 async function importIssuesRoute(p: unknown) {
   jest.resetModules();
-  jest.doMock("@/lib/db", () => ({ prisma: p }));
-  jest.doMock("@/lib/auth", () => ({
+  jest.doMock("@/lib/db/db", () => ({ prisma: p }));
+  jest.doMock("@/lib/auth/auth", () => ({
     auth: jest.fn().mockResolvedValue({
       user: { id: TEST_USER_ID, email: "issues-search@integration.com", role: "USER" },
     }),
   }));
-  jest.doMock("@/services/issue-provider/github", () => ({
+  jest.doMock("@/services/issue-provider/github/github", () => ({
     GitHubAdapter: Object.assign(jest.fn().mockImplementation(() => ({})), {
       iconUrl: "/github.svg",
     }),
   }));
-  jest.doMock("@/services/issue-provider/jira", () => ({
+  jest.doMock("@/services/issue-provider/jira/jira", () => ({
     JiraAdapter: Object.assign(jest.fn().mockImplementation(() => ({})), { iconUrl: "/jira.svg" }),
   }));
-  jest.doMock("@/services/issue-provider/redmine", () => ({
+  jest.doMock("@/services/issue-provider/redmine/redmine", () => ({
     RedmineAdapter: Object.assign(jest.fn().mockImplementation(() => ({})), {
       iconUrl: "/redmine.svg",
     }),

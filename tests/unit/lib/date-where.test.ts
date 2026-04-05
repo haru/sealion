@@ -1,4 +1,4 @@
-import { buildDateWhere } from "@/lib/date-where";
+import { buildDateWhere } from "@/lib/search/date-where";
 
 /**
  * Fixed point in time for deterministic date calculations.

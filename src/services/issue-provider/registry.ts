@@ -1,8 +1,8 @@
-import { githubMetadata } from "./github.metadata";
-import { gitlabMetadata } from "./gitlab.metadata";
-import { jiraMetadata } from "./jira.metadata";
+import { githubMetadata } from "./github/github.metadata";
+import { gitlabMetadata } from "./gitlab/gitlab.metadata";
+import { jiraMetadata } from "./jira/jira.metadata";
 import type { ProviderMetadata } from "./metadata";
-import { redmineMetadata } from "./redmine.metadata";
+import { redmineMetadata } from "./redmine/redmine.metadata";
 
 /** Module-level singleton registry mapping provider type string to metadata. */
 const registry = new Map<string, ProviderMetadata>();

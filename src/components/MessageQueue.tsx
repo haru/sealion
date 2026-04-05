@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, useCallback, useEffect, useRef, type ReactNode } from 'react';
 
-import { addMessage, dismissMessage as dismissMessageUtil, closeAllMessages as closeAllMessagesUtil, processQueue } from '@/lib/message-queue';
+import { addMessage, dismissMessage as dismissMessageUtil, closeAllMessages as closeAllMessagesUtil, processQueue } from '@/lib/ui/message-queue';
 
 import MessageSnackbar from './MessageSnackbar';
 import { type MessageData, type MessageQueueContextType, type MessageType, DISPLAY_CONSTRAINTS, isValidMessage, isValidMessageType } from './types';

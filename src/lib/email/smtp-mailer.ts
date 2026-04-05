@@ -1,5 +1,5 @@
 import nodemailer from "nodemailer";
-export { SMTP_DUMMY_PASSWORD } from "@/lib/smtp-constants";
+export { SMTP_DUMMY_PASSWORD } from "@/lib/email/smtp-constants";
 
 /** Configuration required to send an email via SMTP. */
 export interface SendMailConfig {

@@ -17,7 +17,7 @@ import {
 import { useTranslations } from "next-intl";
 import { type FormEvent, useState } from "react";
 
-import { formatProviderApiError, type ProviderApiErrorResponse } from "@/lib/error-utils";
+import { formatProviderApiError, type ProviderApiErrorResponse } from "@/lib/sync/error-utils";
 import { getProviderMetadata } from "@/services/issue-provider/registry";
 
 interface Provider {

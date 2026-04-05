@@ -10,7 +10,7 @@ import { Popover, Box, Typography, MenuItem, ListItemIcon, ListItemText } from "
 import { useTranslations } from "next-intl";
 
 import type { TaskFilterState } from "@/hooks/useTaskSearch";
-import type { DateRangePreset, CreatedUpdatedPreset } from "@/lib/search-parser";
+import type { DateRangePreset, CreatedUpdatedPreset } from "@/lib/search/search-parser";
 
 /** The ordered list of filterable keys shown in selectKey mode. */
 const FILTER_KEYS: (keyof TaskFilterState)[] = [

@@ -9,7 +9,7 @@ import { useTranslations } from "next-intl";
 import React, { useEffect, useMemo, useRef } from "react";
 
 import { useMessageQueue } from "@/hooks/useMessageQueue";
-import { formatSyncErrorMessage, parseSyncErrorInfo } from "@/lib/error-utils";
+import { formatSyncErrorMessage, parseSyncErrorInfo } from "@/lib/sync/error-utils";
 import { type SyncErrorInfo, SyncErrorCause } from "@/lib/types";
 
 interface Project {

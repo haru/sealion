@@ -4,7 +4,7 @@
  * double-quoted phrase, unclosed quote, prefix tokens, and combinations.
  */
 
-import { parseSearchQuery, serializeKeywords } from "@/lib/search-parser";
+import { parseSearchQuery, serializeKeywords } from "@/lib/search/search-parser";
 
 describe("parseSearchQuery", () => {
   describe("empty / whitespace input", () => {

@@ -1,8 +1,8 @@
 import pLimit from "p-limit";
 
-import { decryptProviderCredentials } from "@/lib/credentials";
-import { prisma } from "@/lib/db";
-import { createSyncErrorInfo } from "@/lib/error-utils";
+import { prisma } from "@/lib/db/db";
+import { decryptProviderCredentials } from "@/lib/encryption/credentials";
+import { createSyncErrorInfo } from "@/lib/sync/error-utils";
 import type { SyncErrorInfo } from "@/lib/types";
 import { createAdapter } from "@/services/issue-provider/factory";
 import type { ProviderCredentials } from "@/services/issue-provider/factory";

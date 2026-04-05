@@ -27,9 +27,9 @@ import { useMessageQueue } from "@/hooks/useMessageQueue";
 import { usePageHeader } from "@/hooks/usePageHeader";
 import type { SyncProvider } from "@/hooks/useSyncPolling";
 import { useTaskSearch } from "@/hooks/useTaskSearch";
-import { serializeKeywords } from "@/lib/search-parser";
-import { sortIssues } from "@/lib/sort-utils";
-import { allProjectsProcessed, shouldThrottleSync, SYNC_THROTTLE_MS } from "@/lib/sync-utils";
+import { serializeKeywords } from "@/lib/search/search-parser";
+import { sortIssues } from "@/lib/search/sort-utils";
+import { allProjectsProcessed, shouldThrottleSync, SYNC_THROTTLE_MS } from "@/lib/sync/sync-utils";
 import { type BoardSettings, DEFAULT_BOARD_SETTINGS, type SortCriterion } from "@/lib/types";
 import type { ClientIssue } from "@/types/issue";
 

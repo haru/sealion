@@ -1,4 +1,4 @@
-import { encrypt, decrypt } from "@/lib/encryption";
+import { encrypt, decrypt } from "@/lib/encryption/encryption";
 
 const VALID_KEY = "a".repeat(64); // 64-char hex string for 32 bytes
 

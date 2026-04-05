@@ -1,9 +1,9 @@
 import { UserRole, UserStatus } from "@prisma/client";
 import type { NextRequest } from "next/server";
 
-import { ok, fail } from "@/lib/api-response";
-import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/db";
+import { ok, fail } from "@/lib/api/api-response";
+import { auth } from "@/lib/auth/auth";
+import { prisma } from "@/lib/db/db";
 
 const MAX_USERNAME_LENGTH = 50;
 

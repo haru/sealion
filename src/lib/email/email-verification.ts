@@ -2,9 +2,9 @@ import { randomBytes } from "crypto";
 
 import { type UserStatus } from "@prisma/client";
 
-import { prisma } from "@/lib/db";
-import { sendMail } from "@/lib/smtp-mailer";
-import { getSmtpSettings } from "@/lib/smtp-settings";
+import { prisma } from "@/lib/db/db";
+import { sendMail } from "@/lib/email/smtp-mailer";
+import { getSmtpSettings } from "@/lib/email/smtp-settings";
 
 /**
  * Returns the application base URL for constructing absolute links.
@@ -80,7 +80,7 @@ export async function sendVerificationEmail(
  * @returns The decrypted plaintext password.
  */
 async function decryptSmtpPassword(encrypted: string): Promise<string> {
-  const { decrypt } = await import("@/lib/encryption");
+  const { decrypt } = await import("@/lib/encryption/encryption");
   return decrypt(encrypted);
 }
 

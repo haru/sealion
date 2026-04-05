@@ -2,8 +2,8 @@ import { Prisma } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import type { NextRequest } from "next/server";
 
-import { ok, fail } from "@/lib/api-response";
-import { prisma } from "@/lib/db";
+import { ok, fail } from "@/lib/api/api-response";
+import { prisma } from "@/lib/db/db";
 
 /** Maximum password length before bcrypt silently truncates input. */
 const MAX_PASSWORD_LENGTH = 72;

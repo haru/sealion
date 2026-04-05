@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import type { ProviderMetadata } from "./metadata";
+import type { ProviderMetadata } from "@/services/issue-provider/metadata";
 
 /** Zod schema for Redmine credentials (baseUrl is merged in before validation). */
 export const redmineCredentialSchema = z.object({

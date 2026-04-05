@@ -17,14 +17,14 @@ const TEST_USER_ID = "password-integration-test-user";
 const TEST_USER_EMAIL = "password-test@integration.com";
 
 // Mock auth — the route reads userId from the session, never from the request body.
-jest.mock("@/lib/auth", () => ({
+jest.mock("@/lib/auth/auth", () => ({
   auth: jest.fn().mockResolvedValue({
     user: { id: TEST_USER_ID, email: TEST_USER_EMAIL, role: "USER" },
   }),
 }));
 
 // Mock db at module level so the no-DB-required tests never touch DATABASE_URL.
-jest.mock("@/lib/db", () => ({
+jest.mock("@/lib/db/db", () => ({
   prisma: {
     user: {
       findUnique: jest.fn(),
@@ -36,12 +36,12 @@ jest.mock("@/lib/db", () => ({
 async function importRoute() {
   jest.resetModules();
   // Re-apply mocks after resetModules
-  jest.doMock("@/lib/auth", () => ({
+  jest.doMock("@/lib/auth/auth", () => ({
     auth: jest.fn().mockResolvedValue({
       user: { id: TEST_USER_ID, email: TEST_USER_EMAIL, role: "USER" },
     }),
   }));
-  jest.doMock("@/lib/db", () => ({ prisma }));
+  jest.doMock("@/lib/db/db", () => ({ prisma }));
   return await import("@/app/api/account/password/route");
 }
 
@@ -99,10 +99,10 @@ function makePatchRequest(body: unknown): NextRequest {
 describe("PATCH /api/account/password — unauthenticated (no DB required)", () => {
   test("returns 401 when no session exists", async () => {
     jest.resetModules();
-    jest.doMock("@/lib/auth", () => ({
+    jest.doMock("@/lib/auth/auth", () => ({
       auth: jest.fn().mockResolvedValue(null),
     }));
-    jest.doMock("@/lib/db", () => ({
+    jest.doMock("@/lib/db/db", () => ({
       prisma: {
         user: { findUnique: jest.fn(), update: jest.fn() },
       },
@@ -119,12 +119,12 @@ describe("PATCH /api/account/password — unauthenticated (no DB required)", () 
 describe("PATCH /api/account/password — input validation (no DB required)", () => {
   test("returns 400 when newPassword is shorter than 8 characters", async () => {
     jest.resetModules();
-    jest.doMock("@/lib/auth", () => ({
+    jest.doMock("@/lib/auth/auth", () => ({
       auth: jest.fn().mockResolvedValue({
         user: { id: TEST_USER_ID, email: TEST_USER_EMAIL, role: "USER" },
       }),
     }));
-    jest.doMock("@/lib/db", () => ({
+    jest.doMock("@/lib/db/db", () => ({
       prisma: {
         user: {
           findUnique: jest.fn(),
@@ -142,12 +142,12 @@ describe("PATCH /api/account/password — input validation (no DB required)", ()
 
   test("returns 400 when currentPassword is empty", async () => {
     jest.resetModules();
-    jest.doMock("@/lib/auth", () => ({
+    jest.doMock("@/lib/auth/auth", () => ({
       auth: jest.fn().mockResolvedValue({
         user: { id: TEST_USER_ID, email: TEST_USER_EMAIL, role: "USER" },
       }),
     }));
-    jest.doMock("@/lib/db", () => ({
+    jest.doMock("@/lib/db/db", () => ({
       prisma: {
         user: {
           findUnique: jest.fn(),
@@ -163,12 +163,12 @@ describe("PATCH /api/account/password — input validation (no DB required)", ()
 
   test("returns 400 when request body is invalid JSON shape", async () => {
     jest.resetModules();
-    jest.doMock("@/lib/auth", () => ({
+    jest.doMock("@/lib/auth/auth", () => ({
       auth: jest.fn().mockResolvedValue({
         user: { id: TEST_USER_ID, email: TEST_USER_EMAIL, role: "USER" },
       }),
     }));
-    jest.doMock("@/lib/db", () => ({
+    jest.doMock("@/lib/db/db", () => ({
       prisma: {
         user: {
           findUnique: jest.fn(),
@@ -184,12 +184,12 @@ describe("PATCH /api/account/password — input validation (no DB required)", ()
 
   test("returns error code PASSWORD_CURRENT_REQUIRED when currentPassword is empty", async () => {
     jest.resetModules();
-    jest.doMock("@/lib/auth", () => ({
+    jest.doMock("@/lib/auth/auth", () => ({
       auth: jest.fn().mockResolvedValue({
         user: { id: TEST_USER_ID, email: TEST_USER_EMAIL, role: "USER" },
       }),
     }));
-    jest.doMock("@/lib/db", () => ({
+    jest.doMock("@/lib/db/db", () => ({
       prisma: {
         user: {
           findUnique: jest.fn(),
@@ -206,12 +206,12 @@ describe("PATCH /api/account/password — input validation (no DB required)", ()
 
   test("returns error code PASSWORD_TOO_SHORT when newPassword is too short", async () => {
     jest.resetModules();
-    jest.doMock("@/lib/auth", () => ({
+    jest.doMock("@/lib/auth/auth", () => ({
       auth: jest.fn().mockResolvedValue({
         user: { id: TEST_USER_ID, email: TEST_USER_EMAIL, role: "USER" },
       }),
     }));
-    jest.doMock("@/lib/db", () => ({
+    jest.doMock("@/lib/db/db", () => ({
       prisma: {
         user: {
           findUnique: jest.fn(),
@@ -228,13 +228,13 @@ describe("PATCH /api/account/password — input validation (no DB required)", ()
 
   test("returns error code PASSWORD_INCORRECT when current password does not match hash", async () => {
     jest.resetModules();
-    jest.doMock("@/lib/auth", () => ({
+    jest.doMock("@/lib/auth/auth", () => ({
       auth: jest.fn().mockResolvedValue({
         user: { id: TEST_USER_ID, email: TEST_USER_EMAIL, role: "USER" },
       }),
     }));
     const mockHash = bcrypt.hashSync("correctpass", 10);
-    jest.doMock("@/lib/db", () => ({
+    jest.doMock("@/lib/db/db", () => ({
       prisma: {
         user: {
           findUnique: jest.fn().mockResolvedValue({

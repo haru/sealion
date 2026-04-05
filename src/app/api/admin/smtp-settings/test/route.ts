@@ -1,11 +1,11 @@
 import type { NextRequest } from "next/server";
 import { z } from "zod";
 
-import { ok, fail } from "@/lib/api-response";
-import { auth } from "@/lib/auth";
-import { decrypt } from "@/lib/encryption";
-import { sendMail, SMTP_DUMMY_PASSWORD } from "@/lib/smtp-mailer";
-import { getSmtpSettings } from "@/lib/smtp-settings";
+import { ok, fail } from "@/lib/api/api-response";
+import { auth } from "@/lib/auth/auth";
+import { sendMail, SMTP_DUMMY_PASSWORD } from "@/lib/email/smtp-mailer";
+import { getSmtpSettings } from "@/lib/email/smtp-settings";
+import { decrypt } from "@/lib/encryption/encryption";
 
 /** Zod schema for the test send POST request body. */
 const testPayloadSchema = z

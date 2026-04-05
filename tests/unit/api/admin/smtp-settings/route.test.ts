@@ -1,8 +1,8 @@
 /** @jest-environment node */
 import { NextRequest } from "next/server";
 
-jest.mock("@/lib/auth", () => ({ auth: jest.fn() }));
-jest.mock("@/lib/db", () => ({
+jest.mock("@/lib/auth/auth", () => ({ auth: jest.fn() }));
+jest.mock("@/lib/db/db", () => ({
   prisma: {
     smtpSettings: {
       findUnique: jest.fn(),
@@ -10,18 +10,18 @@ jest.mock("@/lib/db", () => ({
     },
   },
 }));
-jest.mock("@/lib/encryption", () => ({
+jest.mock("@/lib/encryption/encryption", () => ({
   encrypt: jest.fn((v: string) => `encrypted:${v}`),
   decrypt: jest.fn((v: string) => v.replace("encrypted:", "")),
 }));
-jest.mock("@/lib/smtp-mailer", () => ({
+jest.mock("@/lib/email/smtp-mailer", () => ({
   SMTP_DUMMY_PASSWORD: "__SEALION_DUMMY_SMTP_PASSWORD__",
   sendMail: jest.fn(),
 }));
 
-import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/db";
-import { encrypt } from "@/lib/encryption";
+import { auth } from "@/lib/auth/auth";
+import { prisma } from "@/lib/db/db";
+import { encrypt } from "@/lib/encryption/encryption";
 
 const mockAuth = auth as jest.Mock;
 const mockFindUnique = prisma.smtpSettings.findUnique as jest.Mock;

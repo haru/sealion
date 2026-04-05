@@ -1,23 +1,23 @@
 /** @jest-environment node */
 import { NextRequest } from "next/server";
 
-jest.mock("@/lib/auth", () => ({ auth: jest.fn() }));
-jest.mock("@/lib/smtp-mailer", () => ({
+jest.mock("@/lib/auth/auth", () => ({ auth: jest.fn() }));
+jest.mock("@/lib/email/smtp-mailer", () => ({
   SMTP_DUMMY_PASSWORD: "__SEALION_DUMMY_SMTP_PASSWORD__",
   sendMail: jest.fn(),
 }));
-jest.mock("@/lib/smtp-settings", () => ({
+jest.mock("@/lib/email/smtp-settings", () => ({
   getSmtpSettings: jest.fn(),
 }));
-jest.mock("@/lib/encryption", () => ({
+jest.mock("@/lib/encryption/encryption", () => ({
   encrypt: jest.fn((v: string) => `encrypted:${v}`),
   decrypt: jest.fn((v: string) => v.replace("encrypted:", "")),
 }));
 
-import { auth } from "@/lib/auth";
-import { sendMail, SMTP_DUMMY_PASSWORD } from "@/lib/smtp-mailer";
-import { getSmtpSettings } from "@/lib/smtp-settings";
-import { decrypt } from "@/lib/encryption";
+import { auth } from "@/lib/auth/auth";
+import { sendMail, SMTP_DUMMY_PASSWORD } from "@/lib/email/smtp-mailer";
+import { getSmtpSettings } from "@/lib/email/smtp-settings";
+import { decrypt } from "@/lib/encryption/encryption";
 
 const mockAuth = auth as jest.Mock;
 const mockSendMail = sendMail as jest.Mock;

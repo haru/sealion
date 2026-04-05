@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 
-import { parseSearchQuery, type ParsedQuery, type DateFilter } from "@/lib/search-parser";
+import { parseSearchQuery, type ParsedQuery, type DateFilter } from "@/lib/search/search-parser";
 
 /**
  * Filter state shape used by the search UI components.

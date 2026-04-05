@@ -5,7 +5,7 @@ import type { Metadata } from "next";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 
-import { theme } from "@/lib/theme";
+import { theme } from "@/lib/ui/theme";
 
 import "./globals.css";
 

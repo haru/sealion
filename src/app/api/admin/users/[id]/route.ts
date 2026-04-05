@@ -2,10 +2,10 @@ import { UserRole, UserStatus } from "@prisma/client";
 import { hash } from "bcryptjs";
 import type { NextRequest } from "next/server";
 
-import { ok, fail } from "@/lib/api-response";
-import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/db";
-import { deleteUserCascade } from "@/lib/deleteUserCascade";
+import { ok, fail } from "@/lib/api/api-response";
+import { auth } from "@/lib/auth/auth";
+import { prisma } from "@/lib/db/db";
+import { deleteUserCascade } from "@/lib/db/deleteUserCascade";
 
 /** Maximum password length enforced by bcrypt. */
 const MAX_PASSWORD_LENGTH = 72;

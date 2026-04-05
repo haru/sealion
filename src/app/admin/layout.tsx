@@ -1,7 +1,7 @@
 import { getTranslations } from "next-intl/server";
 
 import DashboardShell from "@/components/layout/DashboardShell";
-import { auth } from "@/lib/auth";
+import { auth } from "@/lib/auth/auth";
 
 import { AdminSessionProvider } from "./AdminSessionProvider";
 

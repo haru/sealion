@@ -4,7 +4,7 @@
  * Covers token generation, email sending, and token verification.
  */
 
-jest.mock("@/lib/db", () => ({
+jest.mock("@/lib/db/db", () => ({
   prisma: {
     user: {
       findUnique: jest.fn(),
@@ -13,29 +13,29 @@ jest.mock("@/lib/db", () => ({
   },
 }));
 
-jest.mock("@/lib/smtp-settings", () => ({
+jest.mock("@/lib/email/smtp-settings", () => ({
   getSmtpSettings: jest.fn(),
 }));
 
-jest.mock("@/lib/smtp-mailer", () => ({
+jest.mock("@/lib/email/smtp-mailer", () => ({
   sendMail: jest.fn().mockResolvedValue(undefined),
 }));
 
-jest.mock("@/lib/encryption", () => ({
+jest.mock("@/lib/encryption/encryption", () => ({
   decrypt: jest.fn(),
 }));
 
-import { prisma } from "@/lib/db";
-import { getSmtpSettings } from "@/lib/smtp-settings";
-import { sendMail } from "@/lib/smtp-mailer";
-import { decrypt } from "@/lib/encryption";
+import { prisma } from "@/lib/db/db";
+import { getSmtpSettings } from "@/lib/email/smtp-settings";
+import { sendMail } from "@/lib/email/smtp-mailer";
+import { decrypt } from "@/lib/encryption/encryption";
 import {
   generateToken,
   getAppBaseUrl,
   sendVerificationEmail,
   verifyToken,
   TokenExpiredError,
-} from "@/lib/email-verification";
+} from "@/lib/email/email-verification";
 
 const mockUserFindUnique = prisma.user.findUnique as jest.Mock;
 const mockUserUpdate = prisma.user.update as jest.Mock;

@@ -12,14 +12,14 @@
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
 import { NextRequest } from "next/server";
-import { encrypt } from "@/lib/encryption";
+import { encrypt } from "@/lib/encryption/encryption";
 
 const TEST_USER_ID = "issues-integration-test-user";
 const VALID_KEY = "b".repeat(64);
 
 process.env.CREDENTIALS_ENCRYPTION_KEY = VALID_KEY;
 
-jest.mock("@/lib/auth", () => ({
+jest.mock("@/lib/auth/auth", () => ({
   auth: jest.fn().mockResolvedValue({
     user: { id: TEST_USER_ID, email: "issues-test@integration.com", role: "USER" },
   }),
@@ -28,7 +28,7 @@ jest.mock("@/lib/auth", () => ({
 const mockCloseIssue = jest.fn().mockResolvedValue(undefined);
 const mockAddComment = jest.fn().mockResolvedValue(undefined);
 
-jest.mock("@/services/issue-provider/github", () => ({
+jest.mock("@/services/issue-provider/github/github", () => ({
   GitHubAdapter: Object.assign(
     jest.fn().mockImplementation(() => ({
       closeIssue: mockCloseIssue,
@@ -38,7 +38,7 @@ jest.mock("@/services/issue-provider/github", () => ({
   ),
 }));
 
-jest.mock("@/services/issue-provider/jira", () => ({
+jest.mock("@/services/issue-provider/jira/jira", () => ({
   JiraAdapter: Object.assign(
     jest.fn().mockImplementation(() => ({
       closeIssue: mockCloseIssue,
@@ -48,7 +48,7 @@ jest.mock("@/services/issue-provider/jira", () => ({
   ),
 }));
 
-jest.mock("@/services/issue-provider/redmine", () => ({
+jest.mock("@/services/issue-provider/redmine/redmine", () => ({
   RedmineAdapter: Object.assign(
     jest.fn().mockImplementation(() => ({
       closeIssue: mockCloseIssue,
@@ -106,13 +106,13 @@ async function seedTestIssue(): Promise<string> {
 
 async function importIssueIdRoute(p: unknown) {
   jest.resetModules();
-  jest.doMock("@/lib/db", () => ({ prisma: p }));
-  jest.doMock("@/lib/auth", () => ({
+  jest.doMock("@/lib/db/db", () => ({ prisma: p }));
+  jest.doMock("@/lib/auth/auth", () => ({
     auth: jest.fn().mockResolvedValue({
       user: { id: TEST_USER_ID, email: "issues-test@integration.com", role: "USER" },
     }),
   }));
-  jest.doMock("@/services/issue-provider/github", () => ({
+  jest.doMock("@/services/issue-provider/github/github", () => ({
     GitHubAdapter: Object.assign(
       jest.fn().mockImplementation(() => ({
         closeIssue: mockCloseIssue,
@@ -121,7 +121,7 @@ async function importIssueIdRoute(p: unknown) {
       { iconUrl: "/github.svg" }
     ),
   }));
-  jest.doMock("@/services/issue-provider/jira", () => ({
+  jest.doMock("@/services/issue-provider/jira/jira", () => ({
     JiraAdapter: Object.assign(
       jest.fn().mockImplementation(() => ({
         closeIssue: mockCloseIssue,
@@ -130,7 +130,7 @@ async function importIssueIdRoute(p: unknown) {
       { iconUrl: "/jira.svg" }
     ),
   }));
-  jest.doMock("@/services/issue-provider/redmine", () => ({
+  jest.doMock("@/services/issue-provider/redmine/redmine", () => ({
     RedmineAdapter: Object.assign(
       jest.fn().mockImplementation(() => ({
         closeIssue: mockCloseIssue,
@@ -228,8 +228,8 @@ describe("PATCH /api/issues/[id] — pinned toggle", () => {
     if (!dbAvailable) return;
 
     jest.resetModules();
-    jest.doMock("@/lib/db", () => ({ prisma }));
-    jest.doMock("@/lib/auth", () => ({
+    jest.doMock("@/lib/db/db", () => ({ prisma }));
+    jest.doMock("@/lib/auth/auth", () => ({
       auth: jest.fn().mockResolvedValue(null),
     }));
     const { PATCH } = await import("@/app/api/issues/[id]/route");
@@ -252,19 +252,19 @@ describe("PATCH /api/issues/[id] — pinned toggle", () => {
 
     // Import with a different user ID
     jest.resetModules();
-    jest.doMock("@/lib/db", () => ({ prisma }));
-    jest.doMock("@/lib/auth", () => ({
+    jest.doMock("@/lib/db/db", () => ({ prisma }));
+    jest.doMock("@/lib/auth/auth", () => ({
       auth: jest.fn().mockResolvedValue({
         user: { id: "different-user-id", email: "other@test.com", role: "USER" },
       }),
     }));
-    jest.doMock("@/services/issue-provider/github", () => ({
+    jest.doMock("@/services/issue-provider/github/github", () => ({
       GitHubAdapter: Object.assign(jest.fn().mockImplementation(() => ({})), { iconUrl: "/github.svg" }),
     }));
-    jest.doMock("@/services/issue-provider/jira", () => ({
+    jest.doMock("@/services/issue-provider/jira/jira", () => ({
       JiraAdapter: Object.assign(jest.fn().mockImplementation(() => ({})), { iconUrl: "/jira.svg" }),
     }));
-    jest.doMock("@/services/issue-provider/redmine", () => ({
+    jest.doMock("@/services/issue-provider/redmine/redmine", () => ({
       RedmineAdapter: Object.assign(jest.fn().mockImplementation(() => ({})), { iconUrl: "/redmine.svg" }),
     }));
     const { PATCH } = await import("@/app/api/issues/[id]/route");

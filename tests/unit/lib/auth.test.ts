@@ -23,7 +23,7 @@ jest.mock("bcryptjs", () => ({
   hash: jest.fn(),
 }));
 
-jest.mock("@/lib/auth-settings", () => ({
+jest.mock("@/lib/auth/auth-settings", () => ({
   getAuthSettings: jest.fn().mockResolvedValue({
     id: "singleton",
     allowUserSignup: true,
@@ -32,7 +32,7 @@ jest.mock("@/lib/auth-settings", () => ({
   }),
 }));
 
-jest.mock("@/lib/db", () => ({
+jest.mock("@/lib/db/db", () => ({
   prisma: {
     authSettings: {
       findUnique: jest.fn(),
@@ -65,8 +65,8 @@ jest.mock("next-auth", () => ({
   }),
 }));
 
-import { getAuthSettings } from "@/lib/auth-settings";
-import { prisma } from "@/lib/db";
+import { getAuthSettings } from "@/lib/auth/auth-settings";
+import { prisma } from "@/lib/db/db";
 
 const mockGetAuthSettings = getAuthSettings as jest.Mock;
 const mockAuthSettingsFindUnique = prisma.authSettings.findUnique as jest.Mock;
@@ -105,7 +105,7 @@ describe("jwt callback — sessionTimeoutMinutes", () => {
   const MOCKED_NOW = 1_700_000_000_000;
 
   beforeAll(async () => {
-    await import("@/lib/auth");
+    await import("@/lib/auth/auth");
   });
 
   beforeEach(() => {
@@ -218,7 +218,7 @@ describe("jwt callback — sessionTimeoutMinutes", () => {
 
 describe("authorize callback — user status checks", () => {
   beforeAll(async () => {
-    await import("@/lib/auth");
+    await import("@/lib/auth/auth");
   });
 
   beforeEach(() => {
@@ -269,7 +269,7 @@ describe("jwt callback — passwordChangedAt session invalidation", () => {
   const MOCKED_NOW = 1_700_000_000_000;
 
   beforeAll(async () => {
-    await import("@/lib/auth");
+    await import("@/lib/auth/auth");
   });
 
   beforeEach(() => {

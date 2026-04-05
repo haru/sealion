@@ -1,4 +1,4 @@
-import { allProjectsProcessed, shouldThrottleSync } from "@/lib/sync-utils";
+import { allProjectsProcessed, shouldThrottleSync } from "@/lib/sync/sync-utils";
 
 const PAST = new Date("2026-01-01T00:00:00Z");
 const SYNC_START = new Date("2026-03-15T10:00:00Z");

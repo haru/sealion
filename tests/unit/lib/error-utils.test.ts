@@ -10,8 +10,8 @@ import {
   formatProviderApiError,
   formatSyncErrorMessage,
   parseSyncErrorInfo,
-} from '@/lib/error-utils';
-import type { ConnectionTestErrorDetails } from '@/lib/error-utils';
+} from '@/lib/sync/error-utils';
+import type { ConnectionTestErrorDetails } from '@/lib/sync/error-utils';
 
 describe('parseSyncErrorInfo', () => {
   it('returns null for null input', () => {

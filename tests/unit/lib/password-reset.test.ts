@@ -1,6 +1,6 @@
 /** @jest-environment node */
 
-jest.mock("@/lib/db", () => ({
+jest.mock("@/lib/db/db", () => ({
   prisma: {
     verificationToken: {
       create: jest.fn(),
@@ -14,11 +14,11 @@ jest.mock("@/lib/db", () => ({
   },
 }));
 
-jest.mock("@/lib/smtp-mailer", () => ({
+jest.mock("@/lib/email/smtp-mailer", () => ({
   sendMail: jest.fn().mockResolvedValue(undefined),
 }));
 
-jest.mock("@/lib/smtp-settings", () => ({
+jest.mock("@/lib/email/smtp-settings", () => ({
   getSmtpSettings: jest.fn().mockResolvedValue({
     id: "singleton",
     host: "smtp.example.com",
@@ -33,14 +33,14 @@ jest.mock("@/lib/smtp-settings", () => ({
   }),
 }));
 
-jest.mock("@/lib/email-verification", () => ({
+jest.mock("@/lib/email/email-verification", () => ({
   generateToken: jest.fn().mockReturnValue("a".repeat(64)),
   getAppBaseUrl: jest.fn().mockReturnValue("http://localhost:3000"),
 }));
 
-import { prisma } from "@/lib/db";
-import { sendMail } from "@/lib/smtp-mailer";
-import { getSmtpSettings } from "@/lib/smtp-settings";
+import { prisma } from "@/lib/db/db";
+import { sendMail } from "@/lib/email/smtp-mailer";
+import { getSmtpSettings } from "@/lib/email/smtp-settings";
 import {
   sendPasswordResetEmail,
   verifyPasswordResetToken,
@@ -48,7 +48,7 @@ import {
   isRateLimited,
   normalizeEmail,
   TokenExpiredError,
-} from "@/lib/password-reset";
+} from "@/lib/email/password-reset";
 
 const mockVTCreate = prisma.verificationToken.create as jest.Mock;
 const mockVTFindUnique = prisma.verificationToken.findUnique as jest.Mock;

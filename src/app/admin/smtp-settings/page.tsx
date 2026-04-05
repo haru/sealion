@@ -20,7 +20,7 @@ import { useState, useEffect } from "react";
 
 import { useMessageQueue } from "@/components/MessageQueue";
 import { usePageHeader } from "@/hooks/usePageHeader";
-import { SMTP_DUMMY_PASSWORD } from "@/lib/smtp-constants";
+import { SMTP_DUMMY_PASSWORD } from "@/lib/email/smtp-constants";
 
 /** Shape of the data returned by GET /api/admin/smtp-settings. */
 interface SmtpSettingsData {

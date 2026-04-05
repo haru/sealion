@@ -7,9 +7,9 @@
 import { describe, it, expect, beforeEach } from '@jest/globals';
 import { syncProviders } from '@/services/sync';
 import { SyncErrorCause, SyncErrorInfo } from '@/lib/types';
-import { prisma } from '@/lib/db';
+import { prisma } from '@/lib/db/db';
 
-jest.mock('@/lib/db', () => ({
+jest.mock('@/lib/db/db', () => ({
   prisma: {
     issueProvider: { findMany: jest.fn() },
     issue: { upsert: jest.fn(), deleteMany: jest.fn() },
@@ -23,7 +23,7 @@ jest.mock('@/lib/db', () => ({
   },
 }));
 
-jest.mock('@/lib/encryption', () => ({
+jest.mock('@/lib/encryption/encryption', () => ({
   decrypt: jest.fn().mockReturnValue(JSON.stringify({ token: 'test-token' })),
 }));
 

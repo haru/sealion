@@ -1,12 +1,12 @@
 /** @jest-environment node */
-import { buildTypedCredentials, decryptProviderCredentials } from '@/lib/credentials';
+import { buildTypedCredentials, decryptProviderCredentials } from '@/lib/encryption/credentials';
 
 const mockDecrypt = jest.fn();
 const mockGetProviderMetadata = jest.fn();
 
-jest.mock('@/lib/db', () => ({ prisma: {} }));
+jest.mock('@/lib/db/db', () => ({ prisma: {} }));
 
-jest.mock('@/lib/encryption', () => ({
+jest.mock('@/lib/encryption/encryption', () => ({
   decrypt: (...args: unknown[]) => mockDecrypt(...args),
 }));
 

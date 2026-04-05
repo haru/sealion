@@ -3,7 +3,7 @@ import { POST } from "@/app/api/auth/signup/route";
 import { NextRequest } from "next/server";
 
 // Mock Prisma
-jest.mock("@/lib/db", () => ({
+jest.mock("@/lib/db/db", () => ({
   prisma: {
     user: {
       findUnique: jest.fn(),
@@ -21,7 +21,7 @@ jest.mock("bcryptjs", () => ({
   hash: jest.fn().mockResolvedValue("hashed_password"),
 }));
 
-import { prisma } from "@/lib/db";
+import { prisma } from "@/lib/db/db";
 
 const mockFindUnique = prisma.user.findUnique as jest.Mock;
 const mockCreate = prisma.user.create as jest.Mock;
