@@ -1,10 +1,9 @@
 import axios from "axios";
-import { z } from "zod";
 
 import { buildAxiosProxyConfig } from "@/lib/proxy";
 import type { ExternalProject, IssueProviderAdapter, NormalizedIssue } from "@/lib/types";
 
-import type { ProviderMetadata } from "./metadata";
+export { redmineMetadata } from "./redmine.metadata";
 
 /* eslint-disable @typescript-eslint/naming-convention */
 interface RedmineIssue {
@@ -179,23 +178,3 @@ export class RedmineAdapter implements IssueProviderAdapter {
   }
 }
 
-/** Zod schema for Redmine credentials (baseUrl is merged in before validation, used in registry). */
-const redmineCredentialSchema = z.object({
-  baseUrl: z.string().min(1),
-  apiKey: z.string().min(1),
-});
-
-/**
- * Metadata for the Redmine provider.
- * @see ProviderMetadata
- */
-export const redmineMetadata: ProviderMetadata = {
-  type: "REDMINE",
-  displayName: "Redmine",
-  iconUrl: RedmineAdapter.iconUrl,
-  baseUrlMode: "required",
-  credentialFields: [
-    { key: "apiKey", labelKey: "apiKey", inputType: "password", required: true },
-  ],
-  credentialSchema: redmineCredentialSchema,
-};

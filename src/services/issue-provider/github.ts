@@ -1,10 +1,9 @@
 import axios from "axios";
-import { z } from "zod";
 
 import { buildAxiosProxyConfig } from "@/lib/proxy";
 import type { ExternalProject, IssueProviderAdapter, NormalizedIssue } from "@/lib/types";
 
-import type { ProviderMetadata } from "./metadata";
+export { githubMetadata } from "./github.metadata";
 
 /* eslint-disable @typescript-eslint/naming-convention */
 interface GitHubIssue {
@@ -153,22 +152,3 @@ export class GitHubAdapter implements IssueProviderAdapter {
   }
 }
 
-/** Zod schema for GitHub credentials (used in registry). */
-const githubCredentialSchema = z.object({
-  token: z.string().min(1),
-});
-
-/**
- * Metadata for the GitHub provider.
- * @see ProviderMetadata
- */
-export const githubMetadata: ProviderMetadata = {
-  type: "GITHUB",
-  displayName: "GitHub",
-  iconUrl: GitHubAdapter.iconUrl,
-  baseUrlMode: "none",
-  credentialFields: [
-    { key: "token", labelKey: "token", inputType: "password", required: true },
-  ],
-  credentialSchema: githubCredentialSchema,
-};

@@ -1,10 +1,9 @@
 import axios from "axios";
-import { z } from "zod";
 
 import { buildAxiosProxyConfig } from "@/lib/proxy";
 import type { ExternalProject, IssueProviderAdapter, NormalizedIssue } from "@/lib/types";
 
-import type { ProviderMetadata } from "./metadata";
+export { jiraMetadata } from "./jira.metadata";
 
 interface JiraIssue {
   id: string;
@@ -162,25 +161,3 @@ export class JiraAdapter implements IssueProviderAdapter {
   }
 }
 
-/** Zod schema for Jira credentials (baseUrl is merged in before validation, used in registry). */
-const jiraCredentialSchema = z.object({
-  baseUrl: z.string().min(1),
-  email: z.string().min(1),
-  apiToken: z.string().min(1),
-});
-
-/**
- * Metadata for the Jira provider.
- * @see ProviderMetadata
- */
-export const jiraMetadata: ProviderMetadata = {
-  type: "JIRA",
-  displayName: "Jira",
-  iconUrl: JiraAdapter.iconUrl,
-  baseUrlMode: "required",
-  credentialFields: [
-    { key: "email", labelKey: "email", inputType: "text", required: true },
-    { key: "apiToken", labelKey: "apiToken", inputType: "password", required: true },
-  ],
-  credentialSchema: jiraCredentialSchema,
-};

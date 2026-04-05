@@ -1,10 +1,9 @@
 import axios from "axios";
-import { z } from "zod";
 
 import { buildAxiosProxyConfig } from "@/lib/proxy";
 import type { ExternalProject, IssueProviderAdapter, NormalizedIssue } from "@/lib/types";
 
-import type { ProviderMetadata } from "./metadata";
+export { gitlabMetadata } from "./gitlab.metadata";
 
 /* eslint-disable @typescript-eslint/naming-convention */
 interface GitLabIssue {
@@ -175,22 +174,3 @@ export class GitLabAdapter implements IssueProviderAdapter {
   }
 }
 
-/** Zod schema for GitLab credentials (used in registry). */
-const gitlabCredentialSchema = z.object({
-  token: z.string().min(1),
-});
-
-/**
- * Metadata for the GitLab provider.
- * @see ProviderMetadata
- */
-export const gitlabMetadata: ProviderMetadata = {
-  type: "GITLAB",
-  displayName: "GitLab",
-  iconUrl: GitLabAdapter.iconUrl,
-  baseUrlMode: "optional",
-  credentialFields: [
-    { key: "token", labelKey: "token", inputType: "password", required: true },
-  ],
-  credentialSchema: gitlabCredentialSchema,
-};
