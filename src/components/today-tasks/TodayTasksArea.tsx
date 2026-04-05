@@ -3,7 +3,7 @@
 import { useDroppable } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import AddIcon from "@mui/icons-material/Add";
-import GpsFixedIcon from "@mui/icons-material/GpsFixed";
+import TodayIcon from "@mui/icons-material/Today";
 import { Box, Typography } from "@mui/material";
 import { useTranslations } from "next-intl";
 
@@ -113,7 +113,7 @@ export default function TodayTasksArea({ items, showCreatedAt, showUpdatedAt, on
               justifyContent: "center",
             }}
           >
-            <GpsFixedIcon sx={{ fontSize: 20 }} />
+            <TodayIcon sx={{ fontSize: 20 }} />
           </Box>
           <Box>
             <Typography
