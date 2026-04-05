@@ -1,5 +1,5 @@
 import { MessageData, MessageType, AUTO_DISMISS_DURATION, DISPLAY_CONSTRAINTS } from '@/components/types';
-import { addMessage, dismissMessage, closeAllMessages, processQueue } from '@/lib/message-queue';
+import { addMessage, dismissMessage, closeAllMessages, processQueue } from '@/lib/ui/message-queue';
 
 describe('message-queue - addMessage', () => {
   it('adds message when under max limit', () => {

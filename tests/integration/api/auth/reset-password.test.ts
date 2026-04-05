@@ -9,7 +9,7 @@
 
 import { NextRequest } from "next/server";
 
-jest.mock("@/lib/password-reset", () => ({
+jest.mock("@/lib/email/password-reset", () => ({
   sendPasswordResetEmail: jest.fn().mockResolvedValue(undefined),
   verifyPasswordResetToken: jest.fn().mockResolvedValue("user@example.com"),
   consumePasswordResetToken: jest.fn().mockResolvedValue(undefined),
@@ -26,7 +26,7 @@ jest.mock("@/lib/password-reset", () => ({
   },
 }));
 
-jest.mock("@/lib/db", () => ({
+jest.mock("@/lib/db/db", () => ({
   prisma: {
     verificationToken: {
       create: jest.fn().mockResolvedValue({}),
@@ -45,8 +45,8 @@ jest.mock("bcryptjs", () => ({
   hash: jest.fn().mockResolvedValue("$2a$12$newhash"),
 }));
 
-import { sendPasswordResetEmail, verifyPasswordResetToken, consumePasswordResetToken } from "@/lib/password-reset";
-import { prisma } from "@/lib/db";
+import { sendPasswordResetEmail, verifyPasswordResetToken, consumePasswordResetToken } from "@/lib/email/password-reset";
+import { prisma } from "@/lib/db/db";
 import { POST as resetPOST } from "@/app/api/auth/reset-password/route";
 import { POST as confirmPOST } from "@/app/api/auth/reset-password/confirm/route";
 

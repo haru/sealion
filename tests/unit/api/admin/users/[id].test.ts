@@ -6,11 +6,11 @@
 
 import { NextRequest } from "next/server";
 
-jest.mock("@/lib/auth", () => ({
+jest.mock("@/lib/auth/auth", () => ({
   auth: jest.fn(),
 }));
 
-jest.mock("@/lib/db", () => ({
+jest.mock("@/lib/db/db", () => ({
   prisma: {
     user: {
       findUnique: jest.fn(),
@@ -23,8 +23,8 @@ jest.mock("bcryptjs", () => ({
   hash: jest.fn().mockResolvedValue("hashed"),
 }));
 
-import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/db";
+import { auth } from "@/lib/auth/auth";
+import { prisma } from "@/lib/db/db";
 
 const mockAuth = auth as jest.Mock;
 const mockUserFindUnique = prisma.user.findUnique as jest.Mock;

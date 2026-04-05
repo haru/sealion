@@ -9,7 +9,7 @@
  */
 export async function register(): Promise<void> {
   if (process.env.NEXT_RUNTIME !== "edge") {
-    const { logProxyConfig } = await import("@/lib/proxy");
+    const { logProxyConfig } = await import("@/lib/proxy/proxy");
     logProxyConfig();
   }
 }

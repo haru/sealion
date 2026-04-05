@@ -2,7 +2,7 @@
 import { POST } from "@/app/api/auth/reset-password/route";
 import { NextRequest } from "next/server";
 
-jest.mock("@/lib/password-reset", () => ({
+jest.mock("@/lib/email/password-reset", () => ({
   sendPasswordResetEmail: jest.fn().mockResolvedValue(undefined),
   normalizeEmail: jest.fn((email: string) => email.trim().toLowerCase()),
   RateLimitedError: class RateLimitedError extends Error {
@@ -13,7 +13,7 @@ jest.mock("@/lib/password-reset", () => ({
   },
 }));
 
-import { sendPasswordResetEmail, normalizeEmail, RateLimitedError, SmtpNotConfiguredError } from "@/lib/password-reset";
+import { sendPasswordResetEmail, normalizeEmail, RateLimitedError, SmtpNotConfiguredError } from "@/lib/email/password-reset";
 
 const mockSendPasswordResetEmail = sendPasswordResetEmail as jest.Mock;
 const mockNormalizeEmail = normalizeEmail as jest.Mock;

@@ -1,6 +1,6 @@
 import type { AxiosError } from 'axios';
 
-import { SyncErrorCause, type SyncErrorInfo } from './types';
+import { SyncErrorCause, type SyncErrorInfo } from '@/lib/types';
 
 /**
  * Type guard to check if an error is an AxiosError.

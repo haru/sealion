@@ -1,12 +1,12 @@
 import type { NextRequest } from "next/server";
 
-import { ok, fail } from "@/lib/api-response";
+import { ok, fail } from "@/lib/api/api-response";
 import {
   sendPasswordResetEmail,
   normalizeEmail,
   RateLimitedError,
   SmtpNotConfiguredError,
-} from "@/lib/password-reset";
+} from "@/lib/email/password-reset";
 
 /**
  * Validates the basic structure of an email address without regex.

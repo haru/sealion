@@ -1,9 +1,9 @@
 import type { NextRequest } from "next/server";
 
-import { ok, fail } from "@/lib/api-response";
-import { auth } from "@/lib/auth";
-import { getAuthSettings } from "@/lib/auth-settings";
-import { prisma } from "@/lib/db";
+import { ok, fail } from "@/lib/api/api-response";
+import { auth } from "@/lib/auth/auth";
+import { getAuthSettings } from "@/lib/auth/auth-settings";
+import { prisma } from "@/lib/db/db";
 
 /** Valid values for sessionTimeoutMinutes (null = no timeout). */
 const VALID_TIMEOUT_VALUES = new Set([null, 60, 360, 720, 1440, 10080, 43200, 129600]);

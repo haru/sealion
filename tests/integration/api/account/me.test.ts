@@ -25,13 +25,13 @@ const TEST_ADMIN_EMAIL = "me-admin@integration.com";
 const TEST_ADMIN2_ID = "me-integration-test-admin2";
 const TEST_ADMIN2_EMAIL = "me-admin2@integration.com";
 
-jest.mock("@/lib/auth", () => ({
+jest.mock("@/lib/auth/auth", () => ({
   auth: jest.fn().mockResolvedValue({
     user: { id: TEST_USER_ID, email: TEST_USER_EMAIL, role: "USER" },
   }),
 }));
 
-jest.mock("@/lib/db", () => ({
+jest.mock("@/lib/db/db", () => ({
   prisma: {
     user: { findUnique: jest.fn(), delete: jest.fn(), count: jest.fn() },
     issue: { deleteMany: jest.fn() },
@@ -121,12 +121,12 @@ async function seedUserWithData(id: string, email: string) {
 /** Re-import the route with the real prisma bound to it. */
 async function importRouteWithRealDb(sessionUserId: string, sessionRole: "USER" | "ADMIN") {
   jest.resetModules();
-  jest.doMock("@/lib/auth", () => ({
+  jest.doMock("@/lib/auth/auth", () => ({
     auth: jest.fn().mockResolvedValue({
       user: { id: sessionUserId, email: `${sessionUserId}@test.com`, role: sessionRole },
     }),
   }));
-  jest.doMock("@/lib/db", () => ({ prisma }));
+  jest.doMock("@/lib/db/db", () => ({ prisma }));
   return await import("@/app/api/account/me/route");
 }
 
@@ -135,10 +135,10 @@ async function importRouteWithRealDb(sessionUserId: string, sessionRole: "USER" 
 describe("DELETE /api/account/me — unauthenticated (no DB required)", () => {
   test("returns 401 when no session exists", async () => {
     jest.resetModules();
-    jest.doMock("@/lib/auth", () => ({
+    jest.doMock("@/lib/auth/auth", () => ({
       auth: jest.fn().mockResolvedValue(null),
     }));
-    jest.doMock("@/lib/db", () => ({
+    jest.doMock("@/lib/db/db", () => ({
       prisma: {
         user: { findUnique: jest.fn(), count: jest.fn() },
         $transaction: jest.fn(),
@@ -158,12 +158,12 @@ describe("DELETE /api/account/me — unauthenticated (no DB required)", () => {
 
   test("returns 401 when user record is not found in the database", async () => {
     jest.resetModules();
-    jest.doMock("@/lib/auth", () => ({
+    jest.doMock("@/lib/auth/auth", () => ({
       auth: jest.fn().mockResolvedValue({
         user: { id: TEST_USER_ID, email: TEST_USER_EMAIL, role: "USER" },
       }),
     }));
-    jest.doMock("@/lib/db", () => ({
+    jest.doMock("@/lib/db/db", () => ({
       prisma: {
         user: { findUnique: jest.fn().mockResolvedValue(null), count: jest.fn() },
         $transaction: jest.fn(),
@@ -183,12 +183,12 @@ describe("DELETE /api/account/me — unauthenticated (no DB required)", () => {
 
   test("returns 401 when user is suspended (not ACTIVE)", async () => {
     jest.resetModules();
-    jest.doMock("@/lib/auth", () => ({
+    jest.doMock("@/lib/auth/auth", () => ({
       auth: jest.fn().mockResolvedValue({
         user: { id: TEST_USER_ID, email: TEST_USER_EMAIL, role: "USER" },
       }),
     }));
-    jest.doMock("@/lib/db", () => ({
+    jest.doMock("@/lib/db/db", () => ({
       prisma: {
         user: {
           findUnique: jest.fn().mockResolvedValue({ role: "USER", status: "SUSPENDED" }),
@@ -213,12 +213,12 @@ describe("DELETE /api/account/me — unauthenticated (no DB required)", () => {
 describe("DELETE /api/account/me — last-admin guard (no DB required)", () => {
   test("returns 403 LAST_ADMIN when sole active admin tries to delete their account", async () => {
     jest.resetModules();
-    jest.doMock("@/lib/auth", () => ({
+    jest.doMock("@/lib/auth/auth", () => ({
       auth: jest.fn().mockResolvedValue({
         user: { id: TEST_ADMIN_ID, email: TEST_ADMIN_EMAIL, role: "ADMIN" },
       }),
     }));
-    jest.doMock("@/lib/db", () => ({
+    jest.doMock("@/lib/db/db", () => ({
       prisma: {
         user: {
           findUnique: jest.fn().mockResolvedValue({ role: "ADMIN", status: "ACTIVE" }),
@@ -242,12 +242,12 @@ describe("DELETE /api/account/me — last-admin guard (no DB required)", () => {
   test("admin count query filters by ACTIVE status only", async () => {
     jest.resetModules();
     const mockCount = jest.fn().mockResolvedValue(1);
-    jest.doMock("@/lib/auth", () => ({
+    jest.doMock("@/lib/auth/auth", () => ({
       auth: jest.fn().mockResolvedValue({
         user: { id: TEST_ADMIN_ID, email: TEST_ADMIN_EMAIL, role: "ADMIN" },
       }),
     }));
-    jest.doMock("@/lib/db", () => ({
+    jest.doMock("@/lib/db/db", () => ({
       prisma: {
         user: {
           findUnique: jest.fn().mockResolvedValue({ role: "ADMIN", status: "ACTIVE" }),
@@ -271,12 +271,12 @@ describe("DELETE /api/account/me — last-admin guard (no DB required)", () => {
 
   test("returns 200 when one of multiple admins deletes their account (mocked)", async () => {
     jest.resetModules();
-    jest.doMock("@/lib/auth", () => ({
+    jest.doMock("@/lib/auth/auth", () => ({
       auth: jest.fn().mockResolvedValue({
         user: { id: TEST_ADMIN_ID, email: TEST_ADMIN_EMAIL, role: "ADMIN" },
       }),
     }));
-    jest.doMock("@/lib/db", () => ({
+    jest.doMock("@/lib/db/db", () => ({
       prisma: {
         user: {
           findUnique: jest.fn().mockResolvedValue({ role: "ADMIN", status: "ACTIVE" }),
@@ -302,12 +302,12 @@ describe("DELETE /api/account/me — last-admin guard (no DB required)", () => {
 describe("DELETE /api/account/me — error handling (no DB required)", () => {
   test("returns 500 INTERNAL_ERROR when deleteUserCascade throws", async () => {
     jest.resetModules();
-    jest.doMock("@/lib/auth", () => ({
+    jest.doMock("@/lib/auth/auth", () => ({
       auth: jest.fn().mockResolvedValue({
         user: { id: TEST_USER_ID, email: TEST_USER_EMAIL, role: "USER" },
       }),
     }));
-    jest.doMock("@/lib/db", () => ({
+    jest.doMock("@/lib/db/db", () => ({
       prisma: {
         user: {
           findUnique: jest.fn().mockResolvedValue({ role: "USER", status: "ACTIVE" }),

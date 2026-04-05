@@ -1,7 +1,7 @@
 /** @jest-environment node */
-import { GitHubAdapter } from "@/services/issue-provider/github";
-import { JiraAdapter } from "@/services/issue-provider/jira";
-import { RedmineAdapter } from "@/services/issue-provider/redmine";
+import { GitHubAdapter } from "@/services/issue-provider/github/github";
+import { JiraAdapter } from "@/services/issue-provider/jira/jira";
+import { RedmineAdapter } from "@/services/issue-provider/redmine/redmine";
 
 // Mock axios
 jest.mock("axios", () => ({

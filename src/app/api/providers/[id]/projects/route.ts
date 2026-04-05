@@ -1,9 +1,9 @@
 import type { NextRequest } from "next/server";
 
-import { ok, fail } from "@/lib/api-response";
-import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/db";
-import { decrypt } from "@/lib/encryption";
+import { ok, fail } from "@/lib/api/api-response";
+import { auth } from "@/lib/auth/auth";
+import { prisma } from "@/lib/db/db";
+import { decrypt } from "@/lib/encryption/encryption";
 import { createAdapter } from "@/services/issue-provider/factory";
 
 type Params = { params: Promise<{ id: string }> };

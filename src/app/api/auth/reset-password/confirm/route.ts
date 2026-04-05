@@ -1,9 +1,9 @@
 import bcrypt from "bcryptjs";
 import type { NextRequest } from "next/server";
 
-import { ok, fail } from "@/lib/api-response";
-import { prisma } from "@/lib/db";
-import { normalizeEmail, verifyPasswordResetToken, TokenExpiredError } from "@/lib/password-reset";
+import { ok, fail } from "@/lib/api/api-response";
+import { prisma } from "@/lib/db/db";
+import { normalizeEmail, verifyPasswordResetToken, TokenExpiredError } from "@/lib/email/password-reset";
 
 /**
  * POST /api/auth/reset-password/confirm

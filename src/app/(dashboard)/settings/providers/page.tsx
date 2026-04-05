@@ -21,7 +21,7 @@ import type { ProviderFormData } from "@/components/providers/ProviderForm";
 import ProviderList from "@/components/providers/ProviderList";
 import { useMessageQueue } from "@/hooks/useMessageQueue";
 import { usePageHeader } from "@/hooks/usePageHeader";
-import { formatProviderApiError, type ProviderApiErrorResponse } from "@/lib/error-utils";
+import { formatProviderApiError, type ProviderApiErrorResponse } from "@/lib/sync/error-utils";
 
 interface Provider {
   id: string;

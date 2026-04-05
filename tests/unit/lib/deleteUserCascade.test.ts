@@ -39,7 +39,7 @@ describe("deleteUserCascade", () => {
 
   test("calls $transaction with correct operations for a user with data", async () => {
     const mockPrisma = makeMockPrisma();
-    const { deleteUserCascade } = await import("@/lib/deleteUserCascade");
+    const { deleteUserCascade } = await import("@/lib/db/deleteUserCascade");
 
     await deleteUserCascade(mockPrisma as unknown as PrismaClient, TEST_USER_ID);
 
@@ -65,7 +65,7 @@ describe("deleteUserCascade", () => {
 
   test("succeeds for a user with no associated data (all deletions return count 0)", async () => {
     const mockPrisma = makeMockPrisma();
-    const { deleteUserCascade } = await import("@/lib/deleteUserCascade");
+    const { deleteUserCascade } = await import("@/lib/db/deleteUserCascade");
 
     // Should resolve without throwing even when there are no related records
     await expect(deleteUserCascade(mockPrisma as unknown as PrismaClient, TEST_USER_ID)).resolves.toBeUndefined();
@@ -77,7 +77,7 @@ describe("deleteUserCascade", () => {
     const mockPrisma = makeMockPrisma(async () => {
       throw transactionError;
     });
-    const { deleteUserCascade } = await import("@/lib/deleteUserCascade");
+    const { deleteUserCascade } = await import("@/lib/db/deleteUserCascade");
 
     await expect(
       deleteUserCascade(mockPrisma as unknown as PrismaClient, TEST_USER_ID)

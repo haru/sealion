@@ -19,7 +19,7 @@ const mockAxiosInstance = {
 };
 (axios.create as jest.Mock).mockReturnValue(mockAxiosInstance);
 
-import { GitLabAdapter } from "@/services/issue-provider/gitlab";
+import { GitLabAdapter } from "@/services/issue-provider/gitlab/gitlab";
 
 describe("GitLabAdapter", () => {
   beforeEach(() => {

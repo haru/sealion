@@ -5,7 +5,7 @@
 
 import { Prisma } from "@prisma/client";
 
-jest.mock("@/lib/db", () => ({
+jest.mock("@/lib/db/db", () => ({
   prisma: {
     authSettings: {
       findUnique: jest.fn(),
@@ -14,7 +14,7 @@ jest.mock("@/lib/db", () => ({
   },
 }));
 
-import { prisma } from "@/lib/db";
+import { prisma } from "@/lib/db/db";
 
 const mockFindUnique = prisma.authSettings.findUnique as jest.Mock;
 const mockCreate = prisma.authSettings.create as jest.Mock;
@@ -29,7 +29,7 @@ describe("getAuthSettings", () => {
   it("returns existing record when found", async () => {
     mockFindUnique.mockResolvedValue(SINGLETON);
 
-    const { getAuthSettings } = await import("@/lib/auth-settings");
+    const { getAuthSettings } = await import("@/lib/auth/auth-settings");
     const result = await getAuthSettings();
 
     expect(result).toBe(SINGLETON);
@@ -41,7 +41,7 @@ describe("getAuthSettings", () => {
     mockFindUnique.mockResolvedValue(null);
     mockCreate.mockResolvedValue(SINGLETON);
 
-    const { getAuthSettings } = await import("@/lib/auth-settings");
+    const { getAuthSettings } = await import("@/lib/auth/auth-settings");
     const result = await getAuthSettings();
 
     expect(result).toBe(SINGLETON);
@@ -59,7 +59,7 @@ describe("getAuthSettings", () => {
     });
     mockCreate.mockRejectedValue(prismaError);
 
-    const { getAuthSettings } = await import("@/lib/auth-settings");
+    const { getAuthSettings } = await import("@/lib/auth/auth-settings");
     const result = await getAuthSettings();
 
     expect(result).toBe(SINGLETON);
@@ -75,7 +75,7 @@ describe("getAuthSettings", () => {
     });
     mockCreate.mockRejectedValue(prismaError);
 
-    const { getAuthSettings } = await import("@/lib/auth-settings");
+    const { getAuthSettings } = await import("@/lib/auth/auth-settings");
 
     await expect(getAuthSettings()).rejects.toThrow(
       "AuthSettings singleton could not be created due to a unique constraint race.",
@@ -86,7 +86,7 @@ describe("getAuthSettings", () => {
     mockFindUnique.mockResolvedValue(null);
     mockCreate.mockRejectedValue(new Error("Some DB error"));
 
-    const { getAuthSettings } = await import("@/lib/auth-settings");
+    const { getAuthSettings } = await import("@/lib/auth/auth-settings");
 
     await expect(getAuthSettings()).rejects.toThrow("Some DB error");
   });

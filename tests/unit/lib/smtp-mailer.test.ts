@@ -16,7 +16,7 @@ beforeEach(() => {
 
 describe("SMTP_DUMMY_PASSWORD", () => {
   it("has the expected sentinel value", async () => {
-    const { SMTP_DUMMY_PASSWORD } = await import("@/lib/smtp-mailer");
+    const { SMTP_DUMMY_PASSWORD } = await import("@/lib/email/smtp-mailer");
     expect(SMTP_DUMMY_PASSWORD).toBe("__SEALION_DUMMY_SMTP_PASSWORD__");
   });
 });
@@ -39,7 +39,7 @@ describe("sendMail", () => {
   it("calls createTransport with secure:false when useTls is false", async () => {
     mockSendMail.mockResolvedValue({ messageId: "1" });
 
-    const { sendMail } = await import("@/lib/smtp-mailer");
+    const { sendMail } = await import("@/lib/email/smtp-mailer");
     await sendMail(baseConfig);
 
     expect(mockCreateTransport).toHaveBeenCalledWith(
@@ -50,7 +50,7 @@ describe("sendMail", () => {
   it("calls createTransport with secure:true when useTls is true", async () => {
     mockSendMail.mockResolvedValue({ messageId: "1" });
 
-    const { sendMail } = await import("@/lib/smtp-mailer");
+    const { sendMail } = await import("@/lib/email/smtp-mailer");
     await sendMail({ ...baseConfig, useTls: true });
 
     expect(mockCreateTransport).toHaveBeenCalledWith(
@@ -61,7 +61,7 @@ describe("sendMail", () => {
   it("calls createTransport without auth when requireAuth is false", async () => {
     mockSendMail.mockResolvedValue({ messageId: "1" });
 
-    const { sendMail } = await import("@/lib/smtp-mailer");
+    const { sendMail } = await import("@/lib/email/smtp-mailer");
     await sendMail(baseConfig);
 
     const transportOptions = mockCreateTransport.mock.calls[0][0] as Record<string, unknown>;
@@ -71,7 +71,7 @@ describe("sendMail", () => {
   it("calls createTransport with auth when requireAuth is true", async () => {
     mockSendMail.mockResolvedValue({ messageId: "1" });
 
-    const { sendMail } = await import("@/lib/smtp-mailer");
+    const { sendMail } = await import("@/lib/email/smtp-mailer");
     await sendMail({ ...baseConfig, requireAuth: true, username: "user@example.com", password: "secret" });
 
     expect(mockCreateTransport).toHaveBeenCalledWith(
@@ -82,7 +82,7 @@ describe("sendMail", () => {
   });
 
   it("throws when requireAuth is true but password is null", async () => {
-    const { sendMail } = await import("@/lib/smtp-mailer");
+    const { sendMail } = await import("@/lib/email/smtp-mailer");
 
     await expect(
       sendMail({ ...baseConfig, requireAuth: true, username: "user@example.com", password: null })
@@ -90,7 +90,7 @@ describe("sendMail", () => {
   });
 
   it("throws when requireAuth is true but username is null", async () => {
-    const { sendMail } = await import("@/lib/smtp-mailer");
+    const { sendMail } = await import("@/lib/email/smtp-mailer");
 
     await expect(
       sendMail({ ...baseConfig, requireAuth: true, username: null, password: "secret" })
@@ -98,7 +98,7 @@ describe("sendMail", () => {
   });
 
   it("throws when requireAuth is true but username is empty", async () => {
-    const { sendMail } = await import("@/lib/smtp-mailer");
+    const { sendMail } = await import("@/lib/email/smtp-mailer");
 
     await expect(
       sendMail({ ...baseConfig, requireAuth: true, username: "  ", password: "secret" })
@@ -108,7 +108,7 @@ describe("sendMail", () => {
   it("sets connection, greeting, and socket timeouts on transport", async () => {
     mockSendMail.mockResolvedValue({ messageId: "1" });
 
-    const { sendMail } = await import("@/lib/smtp-mailer");
+    const { sendMail } = await import("@/lib/email/smtp-mailer");
     await sendMail(baseConfig);
 
     expect(mockCreateTransport).toHaveBeenCalledWith(
@@ -123,7 +123,7 @@ describe("sendMail", () => {
   it("calls sendMail with correct from/to/subject/text", async () => {
     mockSendMail.mockResolvedValue({ messageId: "1" });
 
-    const { sendMail } = await import("@/lib/smtp-mailer");
+    const { sendMail } = await import("@/lib/email/smtp-mailer");
     await sendMail(baseConfig);
 
     expect(mockSendMail).toHaveBeenCalledWith(
@@ -139,7 +139,7 @@ describe("sendMail", () => {
   it("throws when the transport sendMail rejects", async () => {
     mockSendMail.mockRejectedValue(new Error("Connection refused"));
 
-    const { sendMail } = await import("@/lib/smtp-mailer");
+    const { sendMail } = await import("@/lib/email/smtp-mailer");
 
     await expect(sendMail(baseConfig)).rejects.toThrow("Connection refused");
   });

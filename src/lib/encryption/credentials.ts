@@ -1,4 +1,4 @@
-import { decrypt } from "@/lib/encryption";
+import { decrypt } from "@/lib/encryption/encryption";
 import type { ProviderCredentials } from "@/services/issue-provider/factory";
 import { getProviderMetadata } from "@/services/issue-provider/registry";
 

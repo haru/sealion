@@ -2,7 +2,7 @@
 // This test imports the NextAuth route handler to include it in coverage.
 // The actual handler behavior is tested via integration tests.
 
-jest.mock("@/lib/auth", () => ({
+jest.mock("@/lib/auth/auth", () => ({
   handlers: {
     GET: jest.fn().mockReturnValue(new Response("ok")),
     POST: jest.fn().mockReturnValue(new Response("ok")),

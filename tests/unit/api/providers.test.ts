@@ -9,12 +9,12 @@ jest.mock("next-intl/server", () => ({
 }));
 
 // Mock Auth.js session
-jest.mock("@/lib/auth", () => ({
+jest.mock("@/lib/auth/auth", () => ({
   auth: jest.fn(),
 }));
 
 // Mock Prisma
-jest.mock("@/lib/db", () => ({
+jest.mock("@/lib/db/db", () => ({
   prisma: {
     issueProvider: {
       findMany: jest.fn(),
@@ -27,31 +27,31 @@ jest.mock("@/lib/db", () => ({
 }));
 
 // Mock encryption
-jest.mock("@/lib/encryption", () => ({
+jest.mock("@/lib/encryption/encryption", () => ({
   encrypt: jest.fn().mockReturnValue("encrypted:credentials"),
   decrypt: jest.fn().mockReturnValue("{}"),
 }));
 
 // Mock adapters for adapter instantiation
-jest.mock("@/services/issue-provider/github", () => ({
+jest.mock("@/services/issue-provider/github/github", () => ({
   GitHubAdapter: jest.fn().mockImplementation(() => ({
     testConnection: jest.fn().mockResolvedValue(undefined),
   })),
 }));
 
-jest.mock("@/services/issue-provider/jira", () => ({
+jest.mock("@/services/issue-provider/jira/jira", () => ({
   JiraAdapter: jest.fn().mockImplementation(() => ({
     testConnection: jest.fn().mockResolvedValue(undefined),
   })),
 }));
 
-jest.mock("@/services/issue-provider/redmine", () => ({
+jest.mock("@/services/issue-provider/redmine/redmine", () => ({
   RedmineAdapter: jest.fn().mockImplementation(() => ({
     testConnection: jest.fn().mockResolvedValue(undefined),
   })),
 }));
 
-jest.mock("@/services/issue-provider/gitlab", () => ({
+jest.mock("@/services/issue-provider/gitlab/gitlab", () => ({
   GitLabAdapter: jest.fn().mockImplementation(() => ({
     testConnection: jest.fn().mockResolvedValue(undefined),
   })),
@@ -71,9 +71,9 @@ jest.mock("@/services/issue-provider/registry", () => ({
   getAllProviders: jest.fn(() => Object.values(MOCK_REGISTRY)),
 }));
 
-import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/db";
-import { encrypt, decrypt } from "@/lib/encryption";
+import { auth } from "@/lib/auth/auth";
+import { prisma } from "@/lib/db/db";
+import { encrypt, decrypt } from "@/lib/encryption/encryption";
 
 const mockAuth = auth as jest.Mock;
 const mockFindMany = prisma.issueProvider.findMany as jest.Mock;
@@ -193,7 +193,7 @@ describe("POST /api/providers", () => {
   });
 
   it("returns 422 when credentials are invalid (connection fails)", async () => {
-    const { GitHubAdapter } = jest.requireMock("@/services/issue-provider/github");
+    const { GitHubAdapter } = jest.requireMock("@/services/issue-provider/github/github");
     GitHubAdapter.mockImplementationOnce(() => ({
       testConnection: jest.fn().mockRejectedValue(new Error("Unauthorized")),
     }));
@@ -237,7 +237,7 @@ describe("POST /api/providers", () => {
   });
 
   it("returns errorDetails in 422 response when connection test fails with axios error", async () => {
-    const { GitHubAdapter } = jest.requireMock("@/services/issue-provider/github");
+    const { GitHubAdapter } = jest.requireMock("@/services/issue-provider/github/github");
     const axiosError = Object.assign(new Error("Unauthorized"), {
       isAxiosError: true,
       response: { status: 401, data: { message: "Bad credentials" }, statusText: "Unauthorized" },
@@ -320,7 +320,7 @@ describe("POST /api/providers — baseUrl separation", () => {
   });
 
   it("stores Jira baseUrl in DB field, not in encryptedCredentials", async () => {
-    const { JiraAdapter } = jest.requireMock("@/services/issue-provider/jira");
+    const { JiraAdapter } = jest.requireMock("@/services/issue-provider/jira/jira");
     JiraAdapter.mockImplementationOnce(() => ({
       testConnection: jest.fn().mockResolvedValue(undefined),
     }));
@@ -358,7 +358,7 @@ describe("POST /api/providers — baseUrl separation", () => {
   });
 
   it("stores Redmine baseUrl in DB field, not in encryptedCredentials", async () => {
-    const { RedmineAdapter } = jest.requireMock("@/services/issue-provider/redmine");
+    const { RedmineAdapter } = jest.requireMock("@/services/issue-provider/redmine/redmine");
     RedmineAdapter.mockImplementationOnce(() => ({
       testConnection: jest.fn().mockResolvedValue(undefined),
     }));
@@ -469,7 +469,7 @@ describe("PATCH /api/providers/[id]", () => {
   });
 
   it("returns 200 updating name/URL without changing credentials (changeCredentials=false)", async () => {
-    const { GitHubAdapter } = jest.requireMock("@/services/issue-provider/github");
+    const { GitHubAdapter } = jest.requireMock("@/services/issue-provider/github/github");
     GitHubAdapter.mockImplementationOnce(() => ({
       testConnection: jest.fn().mockResolvedValue(undefined),
     }));
@@ -488,7 +488,7 @@ describe("PATCH /api/providers/[id]", () => {
   });
 
   it("returns 200 updating credentials when changeCredentials=true", async () => {
-    const { GitHubAdapter } = jest.requireMock("@/services/issue-provider/github");
+    const { GitHubAdapter } = jest.requireMock("@/services/issue-provider/github/github");
     GitHubAdapter.mockImplementationOnce(() => ({
       testConnection: jest.fn().mockResolvedValue(undefined),
     }));
@@ -510,7 +510,7 @@ describe("PATCH /api/providers/[id]", () => {
   });
 
   it("returns 422 when connection test fails", async () => {
-    const { GitHubAdapter } = jest.requireMock("@/services/issue-provider/github");
+    const { GitHubAdapter } = jest.requireMock("@/services/issue-provider/github/github");
     GitHubAdapter.mockImplementationOnce(() => ({
       testConnection: jest.fn().mockRejectedValue(new Error("Unauthorized")),
     }));
@@ -525,7 +525,7 @@ describe("PATCH /api/providers/[id]", () => {
   });
 
   it("returns errorDetails in 422 response when connection test fails with axios error", async () => {
-    const { GitHubAdapter } = jest.requireMock("@/services/issue-provider/github");
+    const { GitHubAdapter } = jest.requireMock("@/services/issue-provider/github/github");
     const axiosError = Object.assign(new Error("Unauthorized"), {
       isAxiosError: true,
       response: { status: 401, data: { message: "Bad credentials" }, statusText: "Unauthorized" },
@@ -549,7 +549,7 @@ describe("PATCH /api/providers/[id]", () => {
   });
 
   it("strips baseUrl from credentials before encrypting on PATCH (Jira)", async () => {
-    const { JiraAdapter } = jest.requireMock("@/services/issue-provider/jira");
+    const { JiraAdapter } = jest.requireMock("@/services/issue-provider/jira/jira");
     JiraAdapter.mockImplementationOnce(() => ({
       testConnection: jest.fn().mockResolvedValue(undefined),
     }));
@@ -574,7 +574,7 @@ describe("PATCH /api/providers/[id]", () => {
   });
 
   it("strips baseUrl from credentials before encrypting on PATCH (Redmine)", async () => {
-    const { RedmineAdapter } = jest.requireMock("@/services/issue-provider/redmine");
+    const { RedmineAdapter } = jest.requireMock("@/services/issue-provider/redmine/redmine");
     RedmineAdapter.mockImplementationOnce(() => ({
       testConnection: jest.fn().mockResolvedValue(undefined),
     }));
@@ -612,7 +612,7 @@ describe("PATCH /api/providers/[id]", () => {
   });
 
   it("returns 500 when Prisma update fails on PATCH", async () => {
-    const { GitHubAdapter } = jest.requireMock("@/services/issue-provider/github");
+    const { GitHubAdapter } = jest.requireMock("@/services/issue-provider/github/github");
     GitHubAdapter.mockImplementationOnce(() => ({
       testConnection: jest.fn().mockResolvedValue(undefined),
     }));
@@ -662,7 +662,7 @@ describe("PATCH /api/providers/[id]", () => {
   });
 
   it("returns 200 when GitLab changeCredentials=true with valid token", async () => {
-    const { GitLabAdapter } = jest.requireMock("@/services/issue-provider/gitlab");
+    const { GitLabAdapter } = jest.requireMock("@/services/issue-provider/gitlab/gitlab");
     GitLabAdapter.mockImplementationOnce(() => ({
       testConnection: jest.fn().mockResolvedValue(undefined),
     }));
@@ -711,7 +711,7 @@ describe("PATCH /api/providers/[id] — baseUrlMode validation", () => {
   });
 
   it("normalizes empty baseUrl to undefined for baseUrlMode=optional provider (GITLAB)", async () => {
-    const { GitLabAdapter } = jest.requireMock("@/services/issue-provider/gitlab");
+    const { GitLabAdapter } = jest.requireMock("@/services/issue-provider/gitlab/gitlab");
     GitLabAdapter.mockImplementationOnce(() => ({
       testConnection: jest.fn().mockResolvedValue(undefined),
     }));

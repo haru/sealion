@@ -3,9 +3,9 @@ import bcrypt from "bcryptjs";
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 
-import { getAuthSettings } from "@/lib/auth-settings";
-import { authConfig } from "@/lib/auth.config";
-import { prisma } from "@/lib/db";
+import { getAuthSettings } from "@/lib/auth/auth-settings";
+import { authConfig } from "@/lib/auth/auth.config";
+import { prisma } from "@/lib/db/db";
 
 /** Seconds between re-checks of `passwordChangedAt` in the JWT callback. */
 const PWD_CHANGE_RECHECK_INTERVAL_S = 5 * 60;

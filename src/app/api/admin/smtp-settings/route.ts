@@ -1,11 +1,11 @@
 import type { NextRequest } from "next/server";
 import { z } from "zod";
 
-import { ok, fail } from "@/lib/api-response";
-import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/db";
-import { encrypt } from "@/lib/encryption";
-import { SMTP_DUMMY_PASSWORD } from "@/lib/smtp-mailer";
+import { ok, fail } from "@/lib/api/api-response";
+import { auth } from "@/lib/auth/auth";
+import { prisma } from "@/lib/db/db";
+import { SMTP_DUMMY_PASSWORD } from "@/lib/email/smtp-mailer";
+import { encrypt } from "@/lib/encryption/encryption";
 
 /** Zod schema for the SMTP settings PUT request body. */
 const smtpSettingsSchema = z

@@ -12,9 +12,9 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
 import { NextRequest } from "next/server";
 
-jest.mock("@/lib/auth", () => ({ auth: jest.fn() }));
+jest.mock("@/lib/auth/auth", () => ({ auth: jest.fn() }));
 
-import { auth } from "@/lib/auth";
+import { auth } from "@/lib/auth/auth";
 const mockAuth = auth as jest.Mock;
 
 const ADMIN_SESSION = { user: { id: "int-admin-1", email: "admin@integration.test", role: "ADMIN" } };
@@ -24,8 +24,8 @@ let dbAvailable = false;
 
 async function importRoute(p: unknown) {
   jest.resetModules();
-  jest.doMock("@/lib/db", () => ({ prisma: p }));
-  jest.doMock("@/lib/auth", () => ({ auth: mockAuth }));
+  jest.doMock("@/lib/db/db", () => ({ prisma: p }));
+  jest.doMock("@/lib/auth/auth", () => ({ auth: mockAuth }));
   return await import("@/app/api/admin/auth-settings/route");
 }
 

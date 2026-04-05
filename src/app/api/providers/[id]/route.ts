@@ -1,11 +1,11 @@
 import type { NextRequest } from "next/server";
 
-import { ok, fail, failWithDetails } from "@/lib/api-response";
-import { auth } from "@/lib/auth";
-import { buildTypedCredentials } from "@/lib/credentials";
-import { prisma } from "@/lib/db";
-import { encrypt, decrypt } from "@/lib/encryption";
-import { createConnectionTestErrorDetails } from "@/lib/error-utils";
+import { ok, fail, failWithDetails } from "@/lib/api/api-response";
+import { auth } from "@/lib/auth/auth";
+import { prisma } from "@/lib/db/db";
+import { buildTypedCredentials } from "@/lib/encryption/credentials";
+import { encrypt, decrypt } from "@/lib/encryption/encryption";
+import { createConnectionTestErrorDetails } from "@/lib/sync/error-utils";
 import { createAdapter, getProviderIconUrl } from "@/services/issue-provider/factory";
 import { getProviderMetadata } from "@/services/issue-provider/registry";
 

@@ -16,9 +16,9 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
 import { NextRequest } from "next/server";
 
-jest.mock("@/lib/auth", () => ({ auth: jest.fn() }));
+jest.mock("@/lib/auth/auth", () => ({ auth: jest.fn() }));
 
-import { auth } from "@/lib/auth";
+import { auth } from "@/lib/auth/auth";
 const mockAuth = auth as jest.Mock;
 
 const ADMIN_SESSION = { user: { id: "int-admin-smtp-1", email: "admin@smtp.test", role: "ADMIN" } };
@@ -29,15 +29,15 @@ let dbAvailable = false;
 
 async function importSettingsRoute(p: unknown) {
   jest.resetModules();
-  jest.doMock("@/lib/db", () => ({ prisma: p }));
-  jest.doMock("@/lib/auth", () => ({ auth: mockAuth }));
+  jest.doMock("@/lib/db/db", () => ({ prisma: p }));
+  jest.doMock("@/lib/auth/auth", () => ({ auth: mockAuth }));
   return await import("@/app/api/admin/smtp-settings/route");
 }
 
 async function importTestRoute(p: unknown) {
   jest.resetModules();
-  jest.doMock("@/lib/db", () => ({ prisma: p }));
-  jest.doMock("@/lib/auth", () => ({ auth: mockAuth }));
+  jest.doMock("@/lib/db/db", () => ({ prisma: p }));
+  jest.doMock("@/lib/auth/auth", () => ({ auth: mockAuth }));
   return await import("@/app/api/admin/smtp-settings/test/route");
 }
 
@@ -256,7 +256,7 @@ describe("PUT /api/admin/smtp-settings (integration)", () => {
     mockAuth.mockResolvedValue(ADMIN_SESSION);
     const { PUT } = await importSettingsRoute(prismaClient);
 
-    const { SMTP_DUMMY_PASSWORD } = await import("@/lib/smtp-mailer");
+    const { SMTP_DUMMY_PASSWORD } = await import("@/lib/email/smtp-mailer");
     const res = await PUT(makePutRequest({ ...VALID_PAYLOAD, requireAuth: true, username: "user@example.com", password: SMTP_DUMMY_PASSWORD }));
     const json = await res.json();
 
@@ -330,7 +330,7 @@ describe("POST /api/admin/smtp-settings/test (integration)", () => {
   it("returns 422 with SMTP error message when transport fails", async () => {
     if (!dbAvailable) return;
 
-    jest.doMock("@/lib/smtp-mailer", () => ({
+    jest.doMock("@/lib/email/smtp-mailer", () => ({
       SMTP_DUMMY_PASSWORD: "__SEALION_DUMMY_SMTP_PASSWORD__",
       sendMail: jest.fn().mockRejectedValue(new Error("Connection refused")),
     }));
@@ -350,7 +350,7 @@ describe("POST /api/admin/smtp-settings/test (integration)", () => {
 
     // Create a record with a known encrypted password
     const plainPassword = "secretpassword";
-    const { encrypt } = await import("@/lib/encryption");
+    const { encrypt } = await import("@/lib/encryption/encryption");
     const encryptedPw = encrypt(plainPassword);
 
     await prismaClient.smtpSettings.create({
@@ -368,7 +368,7 @@ describe("POST /api/admin/smtp-settings/test (integration)", () => {
     });
 
     const capturedConfig: Record<string, unknown>[] = [];
-    jest.doMock("@/lib/smtp-mailer", () => ({
+    jest.doMock("@/lib/email/smtp-mailer", () => ({
       SMTP_DUMMY_PASSWORD: "__SEALION_DUMMY_SMTP_PASSWORD__",
       sendMail: jest.fn().mockImplementation((cfg: Record<string, unknown>) => {
         capturedConfig.push(cfg);
@@ -379,7 +379,7 @@ describe("POST /api/admin/smtp-settings/test (integration)", () => {
     mockAuth.mockResolvedValue(ADMIN_SESSION);
     const { POST } = await importTestRoute(prismaClient);
 
-    const { SMTP_DUMMY_PASSWORD } = await import("@/lib/smtp-mailer");
+    const { SMTP_DUMMY_PASSWORD } = await import("@/lib/email/smtp-mailer");
     const res = await POST(makePostTestRequest({ ...VALID_PAYLOAD, requireAuth: true, username: "user@example.com", password: SMTP_DUMMY_PASSWORD }));
     const json = await res.json();
 
@@ -392,7 +392,7 @@ describe("POST /api/admin/smtp-settings/test (integration)", () => {
     if (!dbAvailable) return;
 
     const capturedConfig: Record<string, unknown>[] = [];
-    jest.doMock("@/lib/smtp-mailer", () => ({
+    jest.doMock("@/lib/email/smtp-mailer", () => ({
       SMTP_DUMMY_PASSWORD: "__SEALION_DUMMY_SMTP_PASSWORD__",
       sendMail: jest.fn().mockImplementation((cfg: Record<string, unknown>) => {
         capturedConfig.push(cfg);
@@ -415,7 +415,7 @@ describe("POST /api/admin/smtp-settings/test (integration)", () => {
     if (!dbAvailable) return;
 
     const capturedConfig: Record<string, unknown>[] = [];
-    jest.doMock("@/lib/smtp-mailer", () => ({
+    jest.doMock("@/lib/email/smtp-mailer", () => ({
       SMTP_DUMMY_PASSWORD: "__SEALION_DUMMY_SMTP_PASSWORD__",
       sendMail: jest.fn().mockImplementation((cfg: Record<string, unknown>) => {
         capturedConfig.push(cfg);

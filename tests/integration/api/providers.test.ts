@@ -16,7 +16,7 @@ import { NextRequest } from "next/server";
 // Helper to import the providers route with a mocked Prisma client.
 async function importProvidersRouteWithPrisma(prisma: unknown) {
   jest.resetModules();
-  jest.doMock("@/lib/db", () => ({ prisma }));
+  jest.doMock("@/lib/db/db", () => ({ prisma }));
   // Import the route handler after setting up the mock.
   return await import("@/app/api/providers/route");
 }
@@ -24,7 +24,7 @@ async function importProvidersRouteWithPrisma(prisma: unknown) {
 // Helper to import the [id] route with a mocked Prisma client.
 async function importProviderIdRouteWithPrisma(prisma: unknown) {
   jest.resetModules();
-  jest.doMock("@/lib/db", () => ({ prisma }));
+  jest.doMock("@/lib/db/db", () => ({ prisma }));
   return await import("@/app/api/providers/[id]/route");
 }
 
@@ -35,14 +35,14 @@ const VALID_KEY = "a".repeat(64);
 process.env.CREDENTIALS_ENCRYPTION_KEY = VALID_KEY;
 
 // Mock the session - use real Prisma but mock auth
-jest.mock("@/lib/auth", () => ({
+jest.mock("@/lib/auth/auth", () => ({
   auth: jest.fn().mockResolvedValue({
     user: { id: TEST_USER_ID, email: "test@integration.com", role: "USER" },
   }),
 }));
 
 // Mock adapters to avoid real network calls (include static iconUrl)
-jest.mock("@/services/issue-provider/github", () => ({
+jest.mock("@/services/issue-provider/github/github", () => ({
   GitHubAdapter: Object.assign(
     jest.fn().mockImplementation(() => ({
       testConnection: jest.fn().mockResolvedValue(undefined),
@@ -51,7 +51,7 @@ jest.mock("@/services/issue-provider/github", () => ({
   ),
 }));
 
-jest.mock("@/services/issue-provider/jira", () => ({
+jest.mock("@/services/issue-provider/jira/jira", () => ({
   JiraAdapter: Object.assign(
     jest.fn().mockImplementation(() => ({
       testConnection: jest.fn().mockResolvedValue(undefined),
@@ -60,7 +60,7 @@ jest.mock("@/services/issue-provider/jira", () => ({
   ),
 }));
 
-jest.mock("@/services/issue-provider/redmine", () => ({
+jest.mock("@/services/issue-provider/redmine/redmine", () => ({
   RedmineAdapter: Object.assign(
     jest.fn().mockImplementation(() => ({
       testConnection: jest.fn().mockResolvedValue(undefined),
@@ -191,7 +191,7 @@ describe("Provider registration cycle (Integration)", () => {
     expect(dbProvider?.baseUrl).toBe("https://integration-test.atlassian.net");
 
     // encryptedCredentials must not contain baseUrl
-    const { decrypt } = await import("@/lib/encryption");
+    const { decrypt } = await import("@/lib/encryption/encryption");
     const decrypted = JSON.parse(decrypt(dbProvider!.encryptedCredentials));
     expect(decrypted).not.toHaveProperty("baseUrl");
     expect(decrypted).toHaveProperty("email", "user@example.com");

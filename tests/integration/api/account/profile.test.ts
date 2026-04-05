@@ -15,13 +15,13 @@ import { NextRequest } from "next/server";
 const TEST_USER_ID = "profile-integration-test-user";
 const TEST_USER_EMAIL = "profile-test@integration.com";
 
-jest.mock("@/lib/auth", () => ({
+jest.mock("@/lib/auth/auth", () => ({
   auth: jest.fn().mockResolvedValue({
     user: { id: TEST_USER_ID, email: TEST_USER_EMAIL, role: "USER" },
   }),
 }));
 
-jest.mock("@/lib/db", () => ({
+jest.mock("@/lib/db/db", () => ({
   prisma: {
     user: {
       findUnique: jest.fn(),
@@ -32,12 +32,12 @@ jest.mock("@/lib/db", () => ({
 
 async function importRoute() {
   jest.resetModules();
-  jest.doMock("@/lib/auth", () => ({
+  jest.doMock("@/lib/auth/auth", () => ({
     auth: jest.fn().mockResolvedValue({
       user: { id: TEST_USER_ID, email: TEST_USER_EMAIL, role: "USER" },
     }),
   }));
-  jest.doMock("@/lib/db", () => ({ prisma }));
+  jest.doMock("@/lib/db/db", () => ({ prisma }));
   return await import("@/app/api/account/profile/route");
 }
 
@@ -95,10 +95,10 @@ function makePatchRequest(body: unknown): NextRequest {
 describe("PATCH /api/account/profile — unauthenticated (no DB required)", () => {
   test("returns 401 when no session exists", async () => {
     jest.resetModules();
-    jest.doMock("@/lib/auth", () => ({
+    jest.doMock("@/lib/auth/auth", () => ({
       auth: jest.fn().mockResolvedValue(null),
     }));
-    jest.doMock("@/lib/db", () => ({
+    jest.doMock("@/lib/db/db", () => ({
       prisma: {
         user: { findUnique: jest.fn(), update: jest.fn() },
       },
@@ -115,12 +115,12 @@ describe("PATCH /api/account/profile — unauthenticated (no DB required)", () =
 describe("PATCH /api/account/profile — input validation (no DB required)", () => {
   test("returns 400 when username exceeds 50 characters", async () => {
     jest.resetModules();
-    jest.doMock("@/lib/auth", () => ({
+    jest.doMock("@/lib/auth/auth", () => ({
       auth: jest.fn().mockResolvedValue({
         user: { id: TEST_USER_ID, email: TEST_USER_EMAIL, role: "USER" },
       }),
     }));
-    jest.doMock("@/lib/db", () => ({
+    jest.doMock("@/lib/db/db", () => ({
       prisma: {
         user: {
           findUnique: jest.fn().mockResolvedValue({
@@ -141,12 +141,12 @@ describe("PATCH /api/account/profile — input validation (no DB required)", () 
 
   test("normalizes whitespace-only username to null (clears username)", async () => {
     jest.resetModules();
-    jest.doMock("@/lib/auth", () => ({
+    jest.doMock("@/lib/auth/auth", () => ({
       auth: jest.fn().mockResolvedValue({
         user: { id: TEST_USER_ID, email: TEST_USER_EMAIL, role: "USER" },
       }),
     }));
-    jest.doMock("@/lib/db", () => ({
+    jest.doMock("@/lib/db/db", () => ({
       prisma: {
         user: {
           findUnique: jest.fn().mockResolvedValue({
@@ -171,12 +171,12 @@ describe("PATCH /api/account/profile — input validation (no DB required)", () 
 
   test("returns 400 when request body is invalid JSON shape", async () => {
     jest.resetModules();
-    jest.doMock("@/lib/auth", () => ({
+    jest.doMock("@/lib/auth/auth", () => ({
       auth: jest.fn().mockResolvedValue({
         user: { id: TEST_USER_ID, email: TEST_USER_EMAIL, role: "USER" },
       }),
     }));
-    jest.doMock("@/lib/db", () => ({
+    jest.doMock("@/lib/db/db", () => ({
       prisma: {
         user: {
           findUnique: jest.fn().mockResolvedValue({
@@ -197,12 +197,12 @@ describe("PATCH /api/account/profile — input validation (no DB required)", () 
 
   test("returns 200 when username is set to null (clear)", async () => {
     jest.resetModules();
-    jest.doMock("@/lib/auth", () => ({
+    jest.doMock("@/lib/auth/auth", () => ({
       auth: jest.fn().mockResolvedValue({
         user: { id: TEST_USER_ID, email: TEST_USER_EMAIL, role: "USER" },
       }),
     }));
-    jest.doMock("@/lib/db", () => ({
+    jest.doMock("@/lib/db/db", () => ({
       prisma: {
         user: {
           findUnique: jest.fn().mockResolvedValue({
@@ -229,12 +229,12 @@ describe("PATCH /api/account/profile — input validation (no DB required)", () 
 describe("PATCH /api/account/profile — user not found (no DB required)", () => {
   test("returns 401 when authenticated but user record does not exist (null username)", async () => {
     jest.resetModules();
-    jest.doMock("@/lib/auth", () => ({
+    jest.doMock("@/lib/auth/auth", () => ({
       auth: jest.fn().mockResolvedValue({
         user: { id: TEST_USER_ID, email: TEST_USER_EMAIL, role: "USER" },
       }),
     }));
-    jest.doMock("@/lib/db", () => ({
+    jest.doMock("@/lib/db/db", () => ({
       prisma: {
         user: {
           findUnique: jest.fn().mockResolvedValue(null),
@@ -251,12 +251,12 @@ describe("PATCH /api/account/profile — user not found (no DB required)", () =>
 
   test("returns 401 when authenticated but user record does not exist (string username)", async () => {
     jest.resetModules();
-    jest.doMock("@/lib/auth", () => ({
+    jest.doMock("@/lib/auth/auth", () => ({
       auth: jest.fn().mockResolvedValue({
         user: { id: TEST_USER_ID, email: TEST_USER_EMAIL, role: "USER" },
       }),
     }));
-    jest.doMock("@/lib/db", () => ({
+    jest.doMock("@/lib/db/db", () => ({
       prisma: {
         user: {
           findUnique: jest.fn().mockResolvedValue(null),
@@ -275,10 +275,10 @@ describe("PATCH /api/account/profile — user not found (no DB required)", () =>
 describe("GET /api/account/profile — unauthenticated (no DB required)", () => {
   test("returns 401 when no session exists", async () => {
     jest.resetModules();
-    jest.doMock("@/lib/auth", () => ({
+    jest.doMock("@/lib/auth/auth", () => ({
       auth: jest.fn().mockResolvedValue(null),
     }));
-    jest.doMock("@/lib/db", () => ({
+    jest.doMock("@/lib/db/db", () => ({
       prisma: { user: { findUnique: jest.fn() } },
     }));
     const { GET } = await import("@/app/api/account/profile/route");
@@ -293,12 +293,12 @@ describe("GET /api/account/profile — unauthenticated (no DB required)", () => 
 describe("GET /api/account/profile — with mocked DB (no DB required)", () => {
   test("returns username and email when user has a username set", async () => {
     jest.resetModules();
-    jest.doMock("@/lib/auth", () => ({
+    jest.doMock("@/lib/auth/auth", () => ({
       auth: jest.fn().mockResolvedValue({
         user: { id: TEST_USER_ID, email: TEST_USER_EMAIL, role: "USER" },
       }),
     }));
-    jest.doMock("@/lib/db", () => ({
+    jest.doMock("@/lib/db/db", () => ({
       prisma: {
         user: {
           findUnique: jest.fn().mockResolvedValue({
@@ -322,12 +322,12 @@ describe("GET /api/account/profile — with mocked DB (no DB required)", () => {
 
   test("returns null username when user has no username set", async () => {
     jest.resetModules();
-    jest.doMock("@/lib/auth", () => ({
+    jest.doMock("@/lib/auth/auth", () => ({
       auth: jest.fn().mockResolvedValue({
         user: { id: TEST_USER_ID, email: TEST_USER_EMAIL, role: "USER" },
       }),
     }));
-    jest.doMock("@/lib/db", () => ({
+    jest.doMock("@/lib/db/db", () => ({
       prisma: {
         user: {
           findUnique: jest.fn().mockResolvedValue({
@@ -351,12 +351,12 @@ describe("GET /api/account/profile — with mocked DB (no DB required)", () => {
 
   test("returns 401 when user record not found in DB", async () => {
     jest.resetModules();
-    jest.doMock("@/lib/auth", () => ({
+    jest.doMock("@/lib/auth/auth", () => ({
       auth: jest.fn().mockResolvedValue({
         user: { id: TEST_USER_ID, email: TEST_USER_EMAIL, role: "USER" },
       }),
     }));
-    jest.doMock("@/lib/db", () => ({
+    jest.doMock("@/lib/db/db", () => ({
       prisma: {
         user: {
           findUnique: jest.fn().mockResolvedValue(null),
@@ -372,12 +372,12 @@ describe("GET /api/account/profile — with mocked DB (no DB required)", () => {
 
   test("returns isLastAdmin: true when sole ADMIN requests profile", async () => {
     jest.resetModules();
-    jest.doMock("@/lib/auth", () => ({
+    jest.doMock("@/lib/auth/auth", () => ({
       auth: jest.fn().mockResolvedValue({
         user: { id: TEST_USER_ID, email: TEST_USER_EMAIL, role: "ADMIN" },
       }),
     }));
-    jest.doMock("@/lib/db", () => ({
+    jest.doMock("@/lib/db/db", () => ({
       prisma: {
         user: {
           findUnique: jest.fn().mockResolvedValue({
@@ -401,12 +401,12 @@ describe("GET /api/account/profile — with mocked DB (no DB required)", () => {
 
   test("returns isLastAdmin: false when multiple ADMINs exist", async () => {
     jest.resetModules();
-    jest.doMock("@/lib/auth", () => ({
+    jest.doMock("@/lib/auth/auth", () => ({
       auth: jest.fn().mockResolvedValue({
         user: { id: TEST_USER_ID, email: TEST_USER_EMAIL, role: "ADMIN" },
       }),
     }));
-    jest.doMock("@/lib/db", () => ({
+    jest.doMock("@/lib/db/db", () => ({
       prisma: {
         user: {
           findUnique: jest.fn().mockResolvedValue({
@@ -429,12 +429,12 @@ describe("GET /api/account/profile — with mocked DB (no DB required)", () => {
 
   test("returns isLastAdmin: false for regular USER regardless of admin count", async () => {
     jest.resetModules();
-    jest.doMock("@/lib/auth", () => ({
+    jest.doMock("@/lib/auth/auth", () => ({
       auth: jest.fn().mockResolvedValue({
         user: { id: TEST_USER_ID, email: TEST_USER_EMAIL, role: "USER" },
       }),
     }));
-    jest.doMock("@/lib/db", () => ({
+    jest.doMock("@/lib/db/db", () => ({
       prisma: {
         user: {
           findUnique: jest.fn().mockResolvedValue({
@@ -459,12 +459,12 @@ describe("GET /api/account/profile — with mocked DB (no DB required)", () => {
   test("isLastAdmin count query filters by ACTIVE status to exclude suspended admins", async () => {
     jest.resetModules();
     const mockCount = jest.fn().mockResolvedValue(1);
-    jest.doMock("@/lib/auth", () => ({
+    jest.doMock("@/lib/auth/auth", () => ({
       auth: jest.fn().mockResolvedValue({
         user: { id: TEST_USER_ID, email: TEST_USER_EMAIL, role: "ADMIN" },
       }),
     }));
-    jest.doMock("@/lib/db", () => ({
+    jest.doMock("@/lib/db/db", () => ({
       prisma: {
         user: {
           findUnique: jest.fn().mockResolvedValue({

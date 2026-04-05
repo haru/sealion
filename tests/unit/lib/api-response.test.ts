@@ -10,7 +10,7 @@ jest.mock('next/server', () => ({
 }));
 
 import { describe, it, expect } from '@jest/globals';
-import { ok, fail, failWithDetails } from '@/lib/api-response';
+import { ok, fail, failWithDetails } from '@/lib/api/api-response';
 
 describe('ok', () => {
   it('returns 200 with data and null error', async () => {

@@ -2,9 +2,9 @@ import { UserRole } from "@prisma/client";
 import { hash } from "bcryptjs";
 import type { NextRequest } from "next/server";
 
-import { ok, fail } from "@/lib/api-response";
-import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/db";
+import { ok, fail } from "@/lib/api/api-response";
+import { auth } from "@/lib/auth/auth";
+import { prisma } from "@/lib/db/db";
 
 /** Verifies the current session belongs to an admin user. */
 async function requireAdmin() {

@@ -2,7 +2,7 @@
 import { POST } from "@/app/api/auth/signup/route";
 import { NextRequest } from "next/server";
 
-jest.mock("@/lib/auth-settings", () => ({
+jest.mock("@/lib/auth/auth-settings", () => ({
   getAuthSettings: jest.fn().mockResolvedValue({
     id: "singleton",
     allowUserSignup: true,
@@ -12,7 +12,7 @@ jest.mock("@/lib/auth-settings", () => ({
   }),
 }));
 
-jest.mock("@/lib/db", () => ({
+jest.mock("@/lib/db/db", () => ({
   prisma: {
     user: {
       findUnique: jest.fn(),
@@ -26,14 +26,14 @@ jest.mock("bcryptjs", () => ({
   hash: jest.fn().mockResolvedValue("hashed_password"),
 }));
 
-jest.mock("@/lib/email-verification", () => ({
+jest.mock("@/lib/email/email-verification", () => ({
   generateToken: jest.fn().mockReturnValue("mock-token-64charhex000000000000000000000000000000000"),
   sendVerificationEmail: jest.fn().mockResolvedValue(undefined),
 }));
 
-import { getAuthSettings } from "@/lib/auth-settings";
-import { prisma } from "@/lib/db";
-import { generateToken, sendVerificationEmail } from "@/lib/email-verification";
+import { getAuthSettings } from "@/lib/auth/auth-settings";
+import { prisma } from "@/lib/db/db";
+import { generateToken, sendVerificationEmail } from "@/lib/email/email-verification";
 
 const mockGetAuthSettings = getAuthSettings as jest.Mock;
 const mockFindUnique = prisma.user.findUnique as jest.Mock;

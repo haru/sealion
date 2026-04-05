@@ -1,10 +1,10 @@
 import type { NextRequest } from "next/server";
 
-import { ok, fail } from "@/lib/api-response";
-import { auth } from "@/lib/auth";
-import { buildDateWhere } from "@/lib/date-where";
-import { prisma } from "@/lib/db";
-import { parseSearchQuery } from "@/lib/search-parser";
+import { ok, fail } from "@/lib/api/api-response";
+import { auth } from "@/lib/auth/auth";
+import { prisma } from "@/lib/db/db";
+import { buildDateWhere } from "@/lib/search/date-where";
+import { parseSearchQuery } from "@/lib/search/search-parser";
 import { VALID_SORT_CRITERIA, MAX_SORT_CRITERIA, type SortCriterion } from "@/lib/types";
 import { getProviderIconUrl } from "@/services/issue-provider/factory";
 

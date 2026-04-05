@@ -2,15 +2,15 @@
 import { PATCH } from "@/app/api/issues/[id]/route";
 import { NextRequest } from "next/server";
 
-jest.mock("@/lib/auth", () => ({ auth: jest.fn() }));
-jest.mock("@/lib/db", () => ({
+jest.mock("@/lib/auth/auth", () => ({ auth: jest.fn() }));
+jest.mock("@/lib/db/db", () => ({
   prisma: {
     issue: { findFirst: jest.fn(), update: jest.fn(), deleteMany: jest.fn(), count: jest.fn() },
     project: { findFirst: jest.fn() },
     $transaction: jest.fn().mockImplementation((fn) => fn(prisma)),
   },
 }));
-jest.mock("@/lib/encryption", () => ({ decrypt: jest.fn().mockReturnValue(JSON.stringify({ token: "test" })) }));
+jest.mock("@/lib/encryption/encryption", () => ({ decrypt: jest.fn().mockReturnValue(JSON.stringify({ token: "test" })) }));
 jest.mock("@/services/issue-provider/factory", () => ({
   createAdapter: jest.fn().mockReturnValue({
     closeIssue: jest.fn().mockResolvedValue(undefined),
@@ -18,8 +18,8 @@ jest.mock("@/services/issue-provider/factory", () => ({
   }),
 }));
 
-import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/db";
+import { auth } from "@/lib/auth/auth";
+import { prisma } from "@/lib/db/db";
 
 const mockAuth = auth as jest.Mock;
 const mockFindFirst = prisma.issue.findFirst as jest.Mock;

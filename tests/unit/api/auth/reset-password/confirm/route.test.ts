@@ -2,7 +2,7 @@
 import { POST } from "@/app/api/auth/reset-password/confirm/route";
 import { NextRequest } from "next/server";
 
-jest.mock("@/lib/password-reset", () => ({
+jest.mock("@/lib/email/password-reset", () => ({
   verifyPasswordResetToken: jest.fn().mockResolvedValue("user@example.com"),
   normalizeEmail: jest.fn((email: string) => email.trim().toLowerCase()),
   TokenExpiredError: class TokenExpiredError extends Error {
@@ -10,7 +10,7 @@ jest.mock("@/lib/password-reset", () => ({
   },
 }));
 
-jest.mock("@/lib/db", () => ({
+jest.mock("@/lib/db/db", () => ({
   prisma: {
     user: {
       findUnique: jest.fn(),
@@ -27,8 +27,8 @@ jest.mock("bcryptjs", () => ({
   hash: jest.fn().mockResolvedValue("$2a$12$newhash"),
 }));
 
-import { verifyPasswordResetToken, normalizeEmail, TokenExpiredError } from "@/lib/password-reset";
-import { prisma } from "@/lib/db";
+import { verifyPasswordResetToken, normalizeEmail, TokenExpiredError } from "@/lib/email/password-reset";
+import { prisma } from "@/lib/db/db";
 import bcrypt from "bcryptjs";
 
 const mockVerify = verifyPasswordResetToken as jest.Mock;

@@ -9,11 +9,11 @@
 
 // Mock the proxy module so we can assert on logProxyConfig calls without
 // executing the real hpagent-dependent implementation.
-jest.mock("@/lib/proxy", () => ({
+jest.mock("@/lib/proxy/proxy", () => ({
   logProxyConfig: jest.fn(),
 }));
 
-import { logProxyConfig } from "@/lib/proxy";
+import { logProxyConfig } from "@/lib/proxy/proxy";
 
 const mockLogProxyConfig = logProxyConfig as jest.Mock;
 
@@ -49,7 +49,7 @@ describe("register() — instrumentation hook", () => {
     "calls logProxyConfig when NEXT_RUNTIME is 'nodejs'",
     withNextRuntime("nodejs", async () => {
       jest.resetModules();
-      jest.mock("@/lib/proxy", () => ({ logProxyConfig: mockLogProxyConfig }));
+      jest.mock("@/lib/proxy/proxy", () => ({ logProxyConfig: mockLogProxyConfig }));
       const { register } = await import("@/instrumentation");
       await register();
       expect(mockLogProxyConfig).toHaveBeenCalledTimes(1);
@@ -60,7 +60,7 @@ describe("register() — instrumentation hook", () => {
     "calls logProxyConfig when NEXT_RUNTIME is undefined (plain Node.js process)",
     withNextRuntime(undefined, async () => {
       jest.resetModules();
-      jest.mock("@/lib/proxy", () => ({ logProxyConfig: mockLogProxyConfig }));
+      jest.mock("@/lib/proxy/proxy", () => ({ logProxyConfig: mockLogProxyConfig }));
       const { register } = await import("@/instrumentation");
       await register();
       expect(mockLogProxyConfig).toHaveBeenCalledTimes(1);
@@ -71,7 +71,7 @@ describe("register() — instrumentation hook", () => {
     "does NOT call logProxyConfig when NEXT_RUNTIME is 'edge'",
     withNextRuntime("edge", async () => {
       jest.resetModules();
-      jest.mock("@/lib/proxy", () => ({ logProxyConfig: mockLogProxyConfig }));
+      jest.mock("@/lib/proxy/proxy", () => ({ logProxyConfig: mockLogProxyConfig }));
       const { register } = await import("@/instrumentation");
       await register();
       expect(mockLogProxyConfig).not.toHaveBeenCalled();

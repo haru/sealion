@@ -3,8 +3,8 @@ import { PATCH } from "@/app/api/issues/[id]/route";
 import { NextRequest } from "next/server";
 import { Prisma } from "@prisma/client";
 
-jest.mock("@/lib/auth", () => ({ auth: jest.fn() }));
-jest.mock("@/lib/db", () => ({
+jest.mock("@/lib/auth/auth", () => ({ auth: jest.fn() }));
+jest.mock("@/lib/db/db", () => ({
   prisma: {
     issue: {
       findFirst: jest.fn(),
@@ -14,7 +14,7 @@ jest.mock("@/lib/db", () => ({
     $transaction: jest.fn(),
   },
 }));
-jest.mock("@/lib/encryption", () => ({
+jest.mock("@/lib/encryption/encryption", () => ({
   decrypt: jest.fn().mockReturnValue(JSON.stringify({ token: "test" })),
 }));
 jest.mock("@/services/issue-provider/factory", () => ({
@@ -23,8 +23,8 @@ jest.mock("@/services/issue-provider/factory", () => ({
   }),
 }));
 
-import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/db";
+import { auth } from "@/lib/auth/auth";
+import { prisma } from "@/lib/db/db";
 
 const mockAuth = auth as jest.Mock;
 const mockFindFirst = prisma.issue.findFirst as jest.Mock;

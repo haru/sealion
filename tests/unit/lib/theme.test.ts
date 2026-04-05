@@ -1,5 +1,5 @@
 import { describe, it, expect } from "@jest/globals";
-import { theme } from "@/lib/theme";
+import { theme } from "@/lib/ui/theme";
 
 describe("theme", () => {
   describe("palette", () => {

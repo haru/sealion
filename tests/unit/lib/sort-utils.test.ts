@@ -1,4 +1,4 @@
-import { sortIssues } from "@/lib/sort-utils";
+import { sortIssues } from "@/lib/search/sort-utils";
 import type { SortCriterion } from "@/lib/types";
 
 interface TestIssue {

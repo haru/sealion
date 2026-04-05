@@ -3,7 +3,7 @@
  * Unit tests for getSmtpSettings in src/lib/smtp-settings.ts.
  */
 
-jest.mock("@/lib/db", () => ({
+jest.mock("@/lib/db/db", () => ({
   prisma: {
     smtpSettings: {
       findUnique: jest.fn(),
@@ -11,7 +11,7 @@ jest.mock("@/lib/db", () => ({
   },
 }));
 
-import { prisma } from "@/lib/db";
+import { prisma } from "@/lib/db/db";
 
 const mockFindUnique = prisma.smtpSettings.findUnique as jest.Mock;
 
@@ -36,7 +36,7 @@ describe("getSmtpSettings", () => {
   it("returns null when no record exists", async () => {
     mockFindUnique.mockResolvedValue(null);
 
-    const { getSmtpSettings } = await import("@/lib/smtp-settings");
+    const { getSmtpSettings } = await import("@/lib/email/smtp-settings");
     const result = await getSmtpSettings();
 
     expect(result).toBeNull();
@@ -47,7 +47,7 @@ describe("getSmtpSettings", () => {
     const recordWithPassword = { ...SINGLETON, encryptedPassword: "encrypted:abc:def" };
     mockFindUnique.mockResolvedValue(recordWithPassword);
 
-    const { getSmtpSettings } = await import("@/lib/smtp-settings");
+    const { getSmtpSettings } = await import("@/lib/email/smtp-settings");
     const result = await getSmtpSettings();
 
     expect(result).not.toBeNull();
@@ -58,7 +58,7 @@ describe("getSmtpSettings", () => {
   it("returns record without password set when no encryptedPassword", async () => {
     mockFindUnique.mockResolvedValue(SINGLETON);
 
-    const { getSmtpSettings } = await import("@/lib/smtp-settings");
+    const { getSmtpSettings } = await import("@/lib/email/smtp-settings");
     const result = await getSmtpSettings();
 
     expect(result).toEqual(SINGLETON);

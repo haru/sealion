@@ -2,8 +2,8 @@
 import { PATCH } from "@/app/api/issues/[id]/route";
 import { NextRequest } from "next/server";
 
-jest.mock("@/lib/auth", () => ({ auth: jest.fn() }));
-jest.mock("@/lib/db", () => ({
+jest.mock("@/lib/auth/auth", () => ({ auth: jest.fn() }));
+jest.mock("@/lib/db/db", () => ({
   prisma: {
     issue: {
       findFirst: jest.fn(),
@@ -11,7 +11,7 @@ jest.mock("@/lib/db", () => ({
     },
   },
 }));
-jest.mock("@/lib/encryption", () => ({
+jest.mock("@/lib/encryption/encryption", () => ({
   decrypt: jest.fn().mockReturnValue(JSON.stringify({ token: "test" })),
 }));
 jest.mock("@/services/issue-provider/factory", () => ({
@@ -20,8 +20,8 @@ jest.mock("@/services/issue-provider/factory", () => ({
   }),
 }));
 
-import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/db";
+import { auth } from "@/lib/auth/auth";
+import { prisma } from "@/lib/db/db";
 
 const mockAuth = auth as jest.Mock;
 const mockFindFirst = prisma.issue.findFirst as jest.Mock;
@@ -178,7 +178,7 @@ describe("PATCH /api/issues/[id]", () => {
     mockDeleteMany.mockResolvedValue({ count: 1 });
 
     // Override decrypt to return valid Jira credentials for this test
-    const { decrypt } = jest.requireMock("@/lib/encryption");
+    const { decrypt } = jest.requireMock("@/lib/encryption/encryption");
     decrypt.mockReturnValueOnce(JSON.stringify({ email: "user@example.com", apiToken: "jira-token" }));
 
     const { createAdapter } = jest.requireMock("@/services/issue-provider/factory");
@@ -194,7 +194,7 @@ describe("PATCH /api/issues/[id]", () => {
 
   it("returns 400 when credential decryption fails", async () => {
     mockFindFirst.mockResolvedValue(MOCK_ISSUE);
-    const { decrypt } = jest.requireMock("@/lib/encryption");
+    const { decrypt } = jest.requireMock("@/lib/encryption/encryption");
     decrypt.mockImplementationOnce(() => { throw new Error("Decryption failed"); });
 
     const req = makeRequest("issue-1", { closed: true });

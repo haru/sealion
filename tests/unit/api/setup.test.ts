@@ -4,7 +4,7 @@ import { NextRequest } from "next/server";
 import { Prisma } from "@prisma/client";
 
 // Mock Prisma — includes $transaction for atomic setup guard
-jest.mock("@/lib/db", () => ({
+jest.mock("@/lib/db/db", () => ({
   prisma: {
     user: {
       count: jest.fn(),
@@ -19,7 +19,7 @@ jest.mock("bcryptjs", () => ({
   hash: jest.fn().mockResolvedValue("hashed_password"),
 }));
 
-import { prisma } from "@/lib/db";
+import { prisma } from "@/lib/db/db";
 
 const mockTransaction = prisma.$transaction as jest.Mock;
 

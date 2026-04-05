@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import type { ProviderMetadata } from "./metadata";
+import type { ProviderMetadata } from "@/services/issue-provider/metadata";
 
 /** Zod schema for GitLab credentials. */
 export const gitlabCredentialSchema = z.object({

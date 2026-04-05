@@ -1,7 +1,7 @@
-import { prisma } from "@/lib/db";
-import { generateToken, getAppBaseUrl } from "@/lib/email-verification";
-import { sendMail } from "@/lib/smtp-mailer";
-import { getSmtpSettings } from "@/lib/smtp-settings";
+import { prisma } from "@/lib/db/db";
+import { generateToken, getAppBaseUrl } from "@/lib/email/email-verification";
+import { sendMail } from "@/lib/email/smtp-mailer";
+import { getSmtpSettings } from "@/lib/email/smtp-settings";
 
 const RATE_LIMIT_MS = 60_000;
 const TOKEN_EXPIRY_HOURS = 24;
@@ -148,7 +148,7 @@ export async function sendPasswordResetEmail(email: string): Promise<void> {
  * @returns The decrypted plaintext password.
  */
 async function decryptSmtpPassword(encrypted: string): Promise<string> {
-  const { decrypt } = await import("@/lib/encryption");
+  const { decrypt } = await import("@/lib/encryption/encryption");
   return decrypt(encrypted);
 }
 

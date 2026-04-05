@@ -2,10 +2,10 @@ import { ProviderType } from "@prisma/client";
 
 import type { IssueProviderAdapter } from "@/lib/types";
 
-import { GitHubAdapter } from "./github";
-import { GitLabAdapter } from "./gitlab";
-import { JiraAdapter } from "./jira";
-import { RedmineAdapter } from "./redmine";
+import { GitHubAdapter } from "./github/github";
+import { GitLabAdapter } from "./gitlab/gitlab";
+import { JiraAdapter } from "./jira/jira";
+import { RedmineAdapter } from "./redmine/redmine";
 import { getProviderMetadata } from "./registry";
 
 export interface GitHubCredentials {

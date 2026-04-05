@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 
-import { prisma } from "@/lib/db";
-import { verifyToken, TokenExpiredError, getAppBaseUrl } from "@/lib/email-verification";
+import { prisma } from "@/lib/db/db";
+import { verifyToken, TokenExpiredError, getAppBaseUrl } from "@/lib/email/email-verification";
 
 /**
  * GET /api/auth/confirm — Verifies an email confirmation token.

@@ -8,7 +8,7 @@ import { useState, useCallback, useRef } from "react";
 import type { KeyboardEvent } from "react";
 
 import type { TaskFilterState } from "@/hooks/useTaskSearch";
-import { parseSearchQuery } from "@/lib/search-parser";
+import { parseSearchQuery } from "@/lib/search/search-parser";
 
 import SearchFilterDropdown from "./SearchFilterDropdown";
 
