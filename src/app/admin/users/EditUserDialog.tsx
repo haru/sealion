@@ -3,11 +3,13 @@
 import {
   Alert,
   Button,
+  Checkbox,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
   FormControl,
+  FormControlLabel,
   InputLabel,
   MenuItem,
   Select,
@@ -45,7 +47,7 @@ interface EditUserDialogProps {
  * Modal dialog for editing an existing user's details.
  *
  * - Pre-populates all editable fields from the provided `user` object.
- * - Password field is intentionally left blank; if left empty, the password is not updated.
+ * - Password field is hidden by default; a "Change password" checkbox toggles its visibility.
  * - When `isSelf` is `true`, the Role select and Status select are disabled.
  * - Shows an inline `<Alert>` on API or validation errors; error codes are translated via the
  *   `errors` message namespace.
@@ -64,6 +66,7 @@ export default function EditUserDialog({ user, isSelf, onClose, onSaved }: EditU
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [changePassword, setChangePassword] = useState(false);
   const [role, setRole] = useState<"USER" | "ADMIN">("USER");
   const [status, setStatus] = useState<"PENDING" | "ACTIVE" | "SUSPENDED">("ACTIVE");
   const [error, setError] = useState<string | null>(null);
@@ -78,6 +81,7 @@ export default function EditUserDialog({ user, isSelf, onClose, onSaved }: EditU
       setEmail(user.email);
       setUsername(user.username ?? "");
       setPassword("");
+      setChangePassword(false);
       setRole(user.role);
       setStatus(user.status);
       setError(null);
@@ -110,7 +114,8 @@ export default function EditUserDialog({ user, isSelf, onClose, onSaved }: EditU
       body.status = status;
     }
 
-    if (password) {
+    if (changePassword) {
+      body.changePassword = true;
       body.password = password;
     }
 
@@ -160,14 +165,28 @@ export default function EditUserDialog({ user, isSelf, onClose, onSaved }: EditU
             onChange={(e) => setUsername(e.target.value)}
             fullWidth
           />
-          <TextField
-            label={t("fields.password")}
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            fullWidth
-            helperText={t("fields.passwordHint")}
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={changePassword}
+                onChange={(e) => {
+                  setChangePassword(e.target.checked);
+                  if (!e.target.checked) { setPassword(""); }
+                }}
+              />
+            }
+            label={t("fields.changePassword")}
           />
+          {changePassword && (
+            <TextField
+              label={t("fields.password")}
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              fullWidth
+              required
+            />
+          )}
           <FormControl fullWidth>
             <InputLabel>{t("fields.role")}</InputLabel>
             <Select

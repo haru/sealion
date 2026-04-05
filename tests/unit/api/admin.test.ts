@@ -307,6 +307,71 @@ describe("PATCH /api/admin/users/[id]", () => {
     expect(res.status).toBe(500);
     expect(json.error).toBe("INTERNAL_ERROR");
   });
+
+  it("ignores password when changePassword is absent even if password has a value", async () => {
+    mockAuth.mockResolvedValue(ADMIN_SESSION);
+    mockFindUnique.mockResolvedValue({ id: "user-2", email: "u@ex.com", role: "USER" });
+    mockUpdate.mockResolvedValue({ id: "user-2", email: "u@ex.com", role: "USER", status: "ACTIVE" });
+
+    const req = makeRequest("PATCH", { username: "New Name", password: "newpassword123" }, "http://localhost/api/admin/users/user-2");
+    const res = await PATCH(req, { params: Promise.resolve({ id: "user-2" }) });
+
+    expect(res.status).toBe(200);
+    const updateArgs = mockUpdate.mock.calls[0][0] as { data: Record<string, unknown> };
+    expect(updateArgs.data).not.toHaveProperty("passwordHash");
+  });
+
+  it("ignores password when changePassword is false even if password has a value", async () => {
+    mockAuth.mockResolvedValue(ADMIN_SESSION);
+    mockFindUnique.mockResolvedValue({ id: "user-2", email: "u@ex.com", role: "USER" });
+    mockUpdate.mockResolvedValue({ id: "user-2", email: "u@ex.com", role: "USER", status: "ACTIVE" });
+
+    const req = makeRequest("PATCH", { changePassword: false, password: "newpassword123" }, "http://localhost/api/admin/users/user-2");
+    const res = await PATCH(req, { params: Promise.resolve({ id: "user-2" }) });
+
+    expect(res.status).toBe(200);
+    const updateArgs = mockUpdate.mock.calls[0][0] as { data: Record<string, unknown> };
+    expect(updateArgs.data).not.toHaveProperty("passwordHash");
+  });
+
+  it("updates password when changePassword is true and password is valid", async () => {
+    mockAuth.mockResolvedValue(ADMIN_SESSION);
+    mockFindUnique.mockResolvedValue({ id: "user-2", email: "u@ex.com", role: "USER" });
+    mockUpdate.mockResolvedValue({ id: "user-2", email: "u@ex.com", role: "USER", status: "ACTIVE" });
+
+    const req = makeRequest("PATCH", { changePassword: true, password: "newpassword123" }, "http://localhost/api/admin/users/user-2");
+    const res = await PATCH(req, { params: Promise.resolve({ id: "user-2" }) });
+
+    expect(res.status).toBe(200);
+    const updateArgs = mockUpdate.mock.calls[0][0] as { data: Record<string, unknown> };
+    expect(updateArgs.data).toHaveProperty("passwordHash", "hashed");
+  });
+
+  it("returns 400 PASSWORD_REQUIRED when changePassword is true but password is missing", async () => {
+    mockAuth.mockResolvedValue(ADMIN_SESSION);
+    mockFindUnique.mockResolvedValue({ id: "user-2", email: "u@ex.com", role: "USER" });
+
+    const req = makeRequest("PATCH", { changePassword: true }, "http://localhost/api/admin/users/user-2");
+    const res = await PATCH(req, { params: Promise.resolve({ id: "user-2" }) });
+    const json = await res.json();
+
+    expect(res.status).toBe(400);
+    expect(json.error).toBe("PASSWORD_REQUIRED");
+    expect(mockUpdate).not.toHaveBeenCalled();
+  });
+
+  it("returns 400 PASSWORD_TOO_SHORT when changePassword is true and password is less than 8 chars", async () => {
+    mockAuth.mockResolvedValue(ADMIN_SESSION);
+    mockFindUnique.mockResolvedValue({ id: "user-2", email: "u@ex.com", role: "USER" });
+
+    const req = makeRequest("PATCH", { changePassword: true, password: "short" }, "http://localhost/api/admin/users/user-2");
+    const res = await PATCH(req, { params: Promise.resolve({ id: "user-2" }) });
+    const json = await res.json();
+
+    expect(res.status).toBe(400);
+    expect(json.error).toBe("PASSWORD_TOO_SHORT");
+    expect(mockUpdate).not.toHaveBeenCalled();
+  });
 });
 
 describe("DELETE /api/admin/users/[id]", () => {
