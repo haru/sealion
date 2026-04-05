@@ -11,6 +11,8 @@
 
 # Sealion
 
+[日本語](README.ja.md)
+
 **All Your TODOs, One Place.**
 
 **A self-hosted app that brings GitHub, Jira, and Redmine issues into a single TODO list.**
