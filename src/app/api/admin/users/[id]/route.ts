@@ -66,19 +66,23 @@ function validatePasswordChange(changePassword: unknown, password: unknown): Ret
 }
 
 /**
- * Validate the status and password-length fields from the PATCH body.
+ * Validate the status field and password-length constraints for explicit password changes.
  *
  * @param body - The parsed patch request body.
  * @returns An error response if validation fails, or `null` if validation passes.
  */
 function validatePatchFields(body: PatchBody): ReturnType<typeof fail> | null {
-  const { status, password } = body;
+  const { status, password, changePassword } = body;
 
   if (status !== undefined && !VALID_STATUSES.has(status as UserStatus)) {
     return fail("INVALID_INPUT", 400);
   }
 
-  if (typeof password === "string" && password.length > MAX_PASSWORD_LENGTH) {
+  if (
+    changePassword === true &&
+    typeof password === "string" &&
+    password.length > MAX_PASSWORD_LENGTH
+  ) {
     return fail("PASSWORD_TOO_LONG", 400);
   }
 
