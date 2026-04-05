@@ -1,0 +1,90 @@
+name: Auto Tag and Backmerge on Release Merge
+
+on:
+  pull_request:
+    branches:
+      - main
+    types: [closed]
+
+jobs:
+  tag-and-backmerge:
+    # Run only when the PR was merged and the source branch starts with "release/"
+    if: github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'release/')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract version from package.json
+        id: get_version
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          if [ -z "$VERSION" ]; then
+            echo "Error: Could not extract version from package.json"
+            exit 1
+          fi
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+
+      - name: Create and push tag
+        run: |
+          git checkout main
+          if git rev-parse --verify "refs/tags/v${{ env.VERSION }}" >/dev/null 2>&1; then
+            echo "Tag v${{ env.VERSION }} already exists, skipping"
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git tag "v${{ env.VERSION }}"
+            git push origin "v${{ env.VERSION }}" || echo "Tag push failed, possibly already exists"
+          fi
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if gh release view "v${{ env.VERSION }}" >/dev/null 2>&1; then
+            echo "Release v${{ env.VERSION }} already exists, skipping"
+          else
+            gh release create "v${{ env.VERSION }}" \
+              --title "v${{ env.VERSION }}" \
+              --generate-notes
+          fi
+
+      - name: Create backmerge PR to develop
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Fetch develop to ensure it is available for comparison
+          git fetch origin develop
+
+          # Check if main is already merged into develop
+          if git merge-base --is-ancestor origin/main origin/develop; then
+            echo "main is already merged into develop, skipping PR creation"
+            exit 0
+          fi
+
+          # Check if a backmerge PR already exists
+          EXISTING_PR=$(gh pr list --base develop --head main --state open --json number --jq '.[0].number')
+          if [ -n "$EXISTING_PR" ]; then
+            echo "Backmerge PR #$EXISTING_PR already exists, skipping"
+            exit 0
+          fi
+
+          # Create a new backmerge PR
+          BODY="Automated backmerge of main to develop after release v${{ env.VERSION }}.
+
+This PR was created automatically by GitHub Actions."
+
+          PR_URL=$(gh pr create \
+            --base develop \
+            --head main \
+            --title "Backmerge main to develop (v${{ env.VERSION }})" \
+            --body "$BODY")
+
+          # Add ignore-for-release label to the backmerge PR
+          gh pr edit "$PR_URL" --add-label "ignore-for-release"
