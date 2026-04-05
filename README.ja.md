@@ -4,22 +4,28 @@
 [![codecov](https://codecov.io/gh/haru/sealion/graph/badge.svg?token=6bvf18kWxq)](https://codecov.io/gh/haru/sealion)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/haru/sealion)
 
+# Sealion
+
 <p align="center">
-  <img src="public/sealion.svg" alt="Sealion" width="120" />
+  <img src="public/sealion.svg" alt="Sealion" width="120" /><br/>
+  <b>All Your TODOs, One Place.</b>
 </p>
 
 
-# Sealion
-
-**All Your TODOs, One Place.**
-
-**Sealionは複数のIssue Tracker のIssueをひとつの TODO リストに集約するセルフホスト型アプリです。**
+**Sealionは複数のIssue Tracker のIssueをひとつの TODO リストに集約するセルフホスト型Webアプリです。**
 
 あなたにアサインされたすべてのIssueをひとつの統合ビューに集め、作業に集中できる環境を提供します。
 
-<!-- TODO: スクリーンショットを追加
-![ダッシュボードのスクリーンショット](docs/images/screenshot.png)
--->
+![image](https://github.com/user-attachments/assets/557aae6d-8703-40fd-bda6-98ef5aa9fbb0)
+
+## 対応するIssue Tracker
+
+現在対応しているIssue Trackerは以下です。
+
+- GitHub
+- Jira
+- Redmine
+- GitLab
 
 ---
 
@@ -27,45 +33,93 @@
 
 | 機能 | 説明 |
 |------|------|
-| **統合 TODO リスト** | GitHub・Jira・Redmine のイシューを自動取得して一か所に表示 |
-| **今日のタスク** | イシューをドラッグ＆ドロップして日次計画に追加 |
+| **統合 TODO リスト** | 各Issueトラッカーのイシューを自動取得して一か所に表示 |
+| **今日のタスク** | Issueをドラッグ＆ドロップして今日のタスクに追加 |
 | **重要タスクのピン留め** | タスクをリストの最上部に固定 |
 | **タスクの完了** | 完了としてマークするとソーストラッカーのイシューもクローズ（コメント入力も可） |
 | **複数接続** | 同じサービスの複数インスタンスに接続可能（例：会社の Redmine ＋ クライアントの Redmine） |
-| **プロジェクト選択** | 接続ごとに同期するプロジェクト／リポジトリを選択 |
+| **プロジェクト選択** | 同期するプロジェクト／リポジトリを選択 |
 | **ボードのカスタマイズ** | 表示するフィールドやリストの並び順を設定 |
 | **マルチユーザー** | 各ユーザーが自分の接続・プロジェクト・TODO リストを個別に管理 |
-| **管理パネル** | ユーザーの作成・有効化／無効化・ロール割り当て |
 | **多言語対応** | 英語・日本語 UI |
 | **認証情報の暗号化** | API トークンを AES-256-GCM で暗号化して保存 |
-| **プロキシ対応** | HTTP/HTTPS プロキシ経由で外部 API にアクセス |
 
 ---
 
 ## 動作要件
 
-- **Docker Desktop**（または Docker Engine + Docker Compose プラグイン）
-
-> Node.js や PostgreSQL をインストールする必要はありません。すべて Docker コンテナ内で動作します。
+docker compose を利用可能な環境
 
 ---
 
 ## インストール
 
-### 1. リポジトリをクローン
+### docker-compose.ymlを作成
 
-```bash
-git clone https://github.com/haru/sealion.git
-cd sealion
+適当なディレクトリ（例：`~/sealion`）を作成し、docker-compose.yml を以下の内容で保存します。
+
+```yaml:docker-compose.yml
+name: sealion
+
+services:
+  sealion:
+    image: haru/sealion
+    environment:
+      DATABASE_URL: "postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-password}@db:5432/${POSTGRES_DB:-sealion_dev}"
+      AUTH_SECRET: "${AUTH_SECRET}"
+      AUTH_URL: "${AUTH_URL:-http://localhost:3000}"
+      CREDENTIALS_ENCRYPTION_KEY: "${CREDENTIALS_ENCRYPTION_KEY}"
+      DB_HOST: db
+      AUTH_TRUST_HOST: "true"
+    ports:
+      - "${HOST_PORT:-3000}:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      POSTGRES_DB: ${POSTGRES_DB:-sealion_dev}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+volumes:
+  postgres_data:
 ```
 
 ### 2. 環境変数を設定
 
-```bash
-cp docker/.env.example docker/.env
+docker-compose.ymlと同じディレクトリに.env ファイルを作成し、必要な環境変数を設定します。
+
+```dotenv:.env
+# Auth.js (generate with: openssl rand -base64 32)
+AUTH_SECRET=""
+
+# Credential encryption key — exactly 32 bytes hex = 64 hex chars
+# Generate with: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+CREDENTIALS_ENCRYPTION_KEY=""
+
+# Server URL 
+AUTH_URL="http://localhost:3000" # Change to your public URL in production
+
+# Optional: DB variables 
+# DB_HOST=db
+# DB_PORT=5432
+# DB_USER=postgres
+# POSTGRES_PASSWORD=password
+# DB_MAX_RETRIES=30
+# DB_RETRY_INTERVAL=2
+
 ```
 
-`docker/.env` を開き、必要な 2 つのシークレットを生成します。
+次に、認証と暗号化用のキーを生成して.env に貼り付けます。
 
 ```bash
 # AUTH_SECRET を生成
@@ -75,80 +129,34 @@ openssl rand -base64 32
 openssl rand -hex 32
 ```
 
-生成した値を `docker/.env` に貼り付けます。
+生成した値を `.env` に貼り付けます。
 
 ```dotenv
 AUTH_SECRET="<ここに貼り付け>"
-AUTH_URL="http://localhost:3000"
 CREDENTIALS_ENCRYPTION_KEY="<ここに貼り付け>"
 ```
 
-> サーバーにデプロイする場合は、`AUTH_URL` をアプリの公開 URL（例：`https://todo.example.com`）に変更してください。
-> その他の設定（`POSTGRES_USER` など）はデフォルト値のままで問題ありません。
-
-### 3. アプリを起動
+### アプリを起動
 
 ```bash
-docker compose -f docker/docker-compose.yml up --build -d
+docker compose up -d
 ```
 
 ブラウザで [http://localhost:3000](http://localhost:3000) を開きます。
 
 > ポートを変更したい場合は `docker/.env` で `HOST_PORT=8080` のように設定してください。
 
-### 4. 最初のユーザーを作成
+### 最初のユーザーを作成
 
-サインアップページ（`/signup`）にアクセスしてアカウントを作成してください。
+初めてアクセスしたときに管理者ユーザーの作成を求められます。メールアドレスとパスワードを入力してアカウントを作成してください。
 
-コマンドラインから管理者ユーザーをシードすることも可能です。
-
-```bash
-docker compose -f docker/docker-compose.yml exec app npx prisma db seed
-```
-
-### 5. アプリを停止
+### アプリを停止
 
 ```bash
-docker compose -f docker/docker-compose.yml down
+docker compose stop
 ```
 
-データは Docker ボリューム（`postgres_data`）に保持されます。データを含めてすべて削除するには：
 
-```bash
-docker compose -f docker/docker-compose.yml down -v
-```
-
----
-
-## 使い方
-
-### イシュートラッカーを接続する
-
-1. ログイン後、サイドバーから **設定** → **イシュートラッカー設定** を開く
-2. **イシュートラッカーを追加** をクリックし、GitHub・Jira・Redmine のいずれかを選択
-3. サーバー URL と API トークン（Jira の場合はメールアドレス＋ API キー）を入力
-4. **接続テスト** で動作確認後、保存
-
-### 同期するプロジェクトを選択する
-
-1. サイドバーから **プロジェクト管理** を開く
-2. 接続を選択し、同期したいプロジェクト／リポジトリにチェックを入れる
-3. **今すぐ同期** をクリックしてイシューを取得
-
-### TODO リストを操作する
-
-- **ピン留め**: 重要なタスクを最上部に固定
-- **今日のタスク**: タスクをドラッグ＆ドロップで日次リストに追加し、並び替え
-- **完了**: タスクを完了としてマーク — ソースイシューもクローズされます（コメント入力も可）
-- **外部リンク**: ワンクリックで元のイシューページへジャンプ
-
-### ボード設定をカスタマイズする
-
-1. サイドバーから **ボード設定** を開く
-2. 表示フィールド（作成日・更新日など）のオン/オフを切り替え
-3. ドラッグ＆ドロップで並び順を変更
-
----
 
 ## アップデート
 
@@ -162,29 +170,6 @@ docker compose -f docker/docker-compose.yml up --build -d
 
 ---
 
-## 環境変数
-
-| 変数名 | 必須 | 説明 | デフォルト |
-|--------|------|------|-----------|
-| `POSTGRES_USER` | | PostgreSQL ユーザー名 | `postgres` |
-| `POSTGRES_PASSWORD` | | PostgreSQL パスワード | `password` |
-| `POSTGRES_DB` | | データベース名 | `sealion_dev` |
-| `AUTH_SECRET` | ✅ | セッション暗号化キー | — |
-| `AUTH_URL` | ✅ | Auth.js のリダイレクト解決に使用するアプリの公開 URL | `http://localhost:3000` |
-| `CREDENTIALS_ENCRYPTION_KEY` | ✅ | 認証情報暗号化キー（64 文字の hex 文字列） | — |
-| `HOST_PORT` | | ホスト側のポートマッピング | `3000` |
-
----
-
-## セキュリティ
-
-- 外部サービスの認証情報は **AES-256-GCM** で保存時に暗号化
-- パスワードは **bcrypt** でハッシュ化
-- API レベルの認可により、ユーザーは自分のデータにのみアクセス可能
-- 管理者ルートはミドルウェアとルートハンドラーの両方で保護
-
----
-
 ## 技術スタック
 
 | カテゴリ | 技術 |
@@ -194,16 +179,12 @@ docker compose -f docker/docker-compose.yml up --build -d
 | 認証 | Auth.js v5 |
 | データベース | PostgreSQL 16 + Prisma 7 |
 | 多言語対応 | next-intl v4 |
-| テスト | Jest + Playwright |
 
 ---
 
 ## コントリビュート
 
-1. リポジトリをフォークし、フィーチャーブランチを作成
-2. TDD に従ってください：先にテストを書く（RED → GREEN → REFACTOR）
-3. `npm run lint` と `npm test` が通ることを確認
-4. 変更内容を明確に説明したプルリクエストを開く
+git-flow を使用しています。プルリクエストは `develop` ブランチに対して行ってください。
 
 ---
 
