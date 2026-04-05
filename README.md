@@ -16,6 +16,8 @@
 
 It collects all issues assigned to you into one unified view so you can focus on getting things done.
 
+[日本語](README.ja.md)
+
 ![image](https://github.com/user-attachments/assets/557aae6d-8703-40fd-bda6-98ef5aa9fbb0)
 
 ## Supported Issue Trackers
@@ -106,8 +108,9 @@ AUTH_SECRET=""
 # Generate with: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 CREDENTIALS_ENCRYPTION_KEY=""
 
-# Server URL 
-AUTH_URL="http://localhost:3000" # Change to your public URL in production
+# Server URL
+# Change to your public URL in production
+AUTH_URL="http://localhost:3000"
 
 # Optional: DB variables 
 # DB_HOST=db
@@ -160,9 +163,8 @@ docker compose stop
 ## Updating
 
 ```bash
-cd sealion
-git pull
-docker compose -f docker/docker-compose.yml up --build -d
+docker compose pull
+docker compose up -d
 ```
 
 Database migrations run automatically on container startup.

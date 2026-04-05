@@ -106,8 +106,9 @@ AUTH_SECRET=""
 # Generate with: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 CREDENTIALS_ENCRYPTION_KEY=""
 
-# Server URL 
-AUTH_URL="http://localhost:3000" # Change to your public URL in production
+# Server URL
+# Change to your public URL in production
+AUTH_URL="http://localhost:3000"
 
 # Optional: DB variables 
 # DB_HOST=db
@@ -144,7 +145,7 @@ docker compose up -d
 
 ブラウザで [http://localhost:3000](http://localhost:3000) を開きます。
 
-> ポートを変更したい場合は `docker/.env` で `HOST_PORT=8080` のように設定してください。
+> ポートを変更したい場合は `.env` で `HOST_PORT=8080` のように設定してください。
 
 ### 最初のユーザーを作成
 
@@ -161,9 +162,8 @@ docker compose stop
 ## アップデート
 
 ```bash
-cd sealion
-git pull
-docker compose -f docker/docker-compose.yml up --build -d
+docker compose pull
+docker compose up -d
 ```
 
 データベースのマイグレーションはコンテナ起動時に自動実行されます。
