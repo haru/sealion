@@ -55,6 +55,7 @@ describe("usePageHeader", () => {
             title: "",
             actions: null,
             icon: null,
+            titleAddon: null,
             setPageHeader: mockSetPageHeader,
           },
         },
@@ -66,7 +67,7 @@ describe("usePageHeader", () => {
     });
 
     // On mount, setPageHeader should have been called with the title
-    expect(mockSetPageHeader).toHaveBeenCalledWith("Temp", undefined, undefined);
+    expect(mockSetPageHeader).toHaveBeenCalledWith("Temp", undefined, undefined, undefined);
 
     act(() => {
       unmount();
@@ -144,6 +145,7 @@ describe("usePageHeader", () => {
             title: "",
             actions: null,
             icon: null,
+            titleAddon: null,
             setPageHeader: mockSetPageHeader,
           },
         },
@@ -155,7 +157,7 @@ describe("usePageHeader", () => {
       { wrapper: mockWrapper }
     );
 
-    expect(mockSetPageHeader).toHaveBeenCalledWith("Providers", undefined, StableMockIcon);
+    expect(mockSetPageHeader).toHaveBeenCalledWith("Providers", undefined, StableMockIcon, undefined);
 
     act(() => {
       unmount();
@@ -186,5 +188,48 @@ describe("usePageHeader", () => {
     rerender();
 
     expect(result.current.icon).toBe(IconB);
+  });
+
+  it("sets titleAddon in context when mounted with a titleAddon node", () => {
+    const badge = React.createElement("span", { "data-testid": "sync-chip" }, "synced");
+
+    const { result } = renderHook(
+      () => {
+        const { usePageHeaderContext } = jest.requireActual(
+          "@/contexts/PageHeaderContext"
+        ) as typeof import("@/contexts/PageHeaderContext");
+        usePageHeader("Dashboard", undefined, undefined, badge);
+        return usePageHeaderContext();
+      },
+      { wrapper }
+    );
+
+    expect(result.current.titleAddon).toBe(badge);
+  });
+
+  it("passes titleAddon to setPageHeader on mount", () => {
+    const mockSetPageHeader = jest.fn();
+    const badge = React.createElement("span", null, "synced");
+    const mockWrapper = ({ children }: { children: React.ReactNode }) =>
+      React.createElement(
+        PageHeaderContext.Provider,
+        {
+          value: {
+            title: "",
+            actions: null,
+            icon: null,
+            titleAddon: null,
+            setPageHeader: mockSetPageHeader,
+          },
+        },
+        children
+      );
+
+    renderHook(
+      () => usePageHeader("Todo", undefined, undefined, badge),
+      { wrapper: mockWrapper }
+    );
+
+    expect(mockSetPageHeader).toHaveBeenCalledWith("Todo", undefined, undefined, badge);
   });
 });
