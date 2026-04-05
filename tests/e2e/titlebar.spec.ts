@@ -19,6 +19,13 @@ const DEFAULT_BOARD_SETTINGS = JSON.stringify({
   data: { showCreatedAt: true, showUpdatedAt: false, sortOrder: ["dueDate_asc"] },
   error: null,
 });
+const SYNCED_PROVIDERS = JSON.stringify({
+  data: [{
+    id: "p1", displayName: "GitHub", type: "GITHUB",
+    projects: [{ id: "proj1", displayName: "my-repo", lastSyncedAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(), syncError: null }],
+  }],
+  error: null,
+});
 
 test.describe("Global Titlebar — US1: All pages show a unified titlebar", () => {
   test.beforeEach(async ({ page }) => {
@@ -155,5 +162,35 @@ test.describe("Global Titlebar — US3: Extension point renders custom content",
     await expect(header).toBeVisible();
     const rightSlot = header.getByTestId("page-header-actions");
     await expect(rightSlot).not.toBeVisible();
+  });
+});
+
+test.describe("Global Titlebar — US4: Sync status chip appears next to title", () => {
+  test.beforeEach(async ({ page }) => {
+    await page.route("**/api/issues**", (route) =>
+      route.fulfill({ contentType: "application/json", body: EMPTY_ISSUES })
+    );
+    await page.route("**/api/sync**", (route) =>
+      route.fulfill({ contentType: "application/json", body: SYNCED_PROVIDERS })
+    );
+    await page.route("**/api/board-settings**", (route) =>
+      route.fulfill({ contentType: "application/json", body: DEFAULT_BOARD_SETTINGS })
+    );
+    await login(page);
+  });
+
+  test("sync status chip appears in the title area (left side) of the header", async ({ page }) => {
+    await page.goto("/");
+    const header = page.getByTestId("page-header");
+    const titleArea = header.getByTestId("page-header-title");
+    await expect(titleArea).toBeVisible();
+    await expect(titleArea.getByTestId("sync-status-chip")).toBeVisible();
+  });
+
+  test("sync status chip is NOT in the right-slot actions area", async ({ page }) => {
+    await page.goto("/");
+    const header = page.getByTestId("page-header");
+    const rightSlot = header.getByTestId("page-header-actions");
+    await expect(rightSlot.getByTestId("sync-status-chip")).not.toBeVisible();
   });
 });

@@ -1,33 +1,17 @@
 "use client";
 
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import ErrorIcon from "@mui/icons-material/Error";
 import SyncIcon from "@mui/icons-material/Sync";
-import WarningIcon from "@mui/icons-material/Warning";
-import { Box, Button, Chip } from "@mui/material";
+import { Button } from "@mui/material";
 import { useTranslations } from "next-intl";
 import React, { useEffect, useMemo, useRef } from "react";
 
 import { useMessageQueue } from "@/hooks/useMessageQueue";
+import { type SyncProvider } from "@/hooks/useSyncPolling";
 import { formatSyncErrorMessage, parseSyncErrorInfo } from "@/lib/sync/error-utils";
 import { type SyncErrorInfo, SyncErrorCause } from "@/lib/types";
 
-interface Project {
-  id: string;
-  displayName: string;
-  lastSyncedAt: string | null;
-  syncError: string | null;
-}
-
-interface ProviderStatus {
-  id: string;
-  displayName: string;
-  type: string;
-  projects: Project[];
-}
-
 interface SyncStatusProps {
-  providers: ProviderStatus[];
+  providers: SyncProvider[];
   isSyncing: boolean;
   /** Callback invoked when the user clicks the "Sync Now" button. */
   onSyncNow: () => void;
@@ -79,70 +63,29 @@ export default function SyncStatus({ providers, isSyncing, onSyncNow }: SyncStat
 
   if (providers.length === 0) { return null; }
 
-  const lastSynced = allProjects
-    .map((p) => p.lastSyncedAt)
-    .filter(Boolean)
-    .sort()
-    .at(-1);
-
-  const hasError = allSyncErrors.length > 0;
-
-  let icon: React.ReactNode;
-  if (isSyncing) {
-    icon = (
-      <SyncIcon
-        sx={{
-          animation: "spin 1s linear infinite",
-          "@keyframes spin": {
-            "0%": { transform: "rotate(0deg)" },
-            "100%": { transform: "rotate(360deg)" },
-          },
-        }}
-      />
-    );
-  } else if (hasError) {
-    icon = <ErrorIcon color="error" />;
-  } else if (lastSynced) {
-    icon = <CheckCircleIcon color="success" />;
-  } else {
-    icon = <WarningIcon color="warning" />;
-  }
-
-  let label: string;
-  if (isSyncing) {
-    label = t("syncInProgress");
-  } else if (lastSynced) {
-    label = t("lastSynced", { time: new Date(lastSynced).toLocaleTimeString() });
-  } else {
-    label = t("notSyncedYet");
-  }
-
   return (
-    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-      <Chip icon={icon} label={label} size="small" variant="outlined" />
-      <Button
-        variant="outlined"
-        size="small"
-        disabled={isSyncing || providers.length === 0}
-        onClick={onSyncNow}
-        startIcon={
-          <SyncIcon
-            sx={
-              isSyncing
-                ? {
-                    animation: "spin 1s linear infinite",
-                    "@keyframes spin": {
-                      "0%": { transform: "rotate(0deg)" },
-                      "100%": { transform: "rotate(360deg)" },
-                    },
-                  }
-                : undefined
-            }
-          />
-        }
-      >
-        {t("syncNow")}
-      </Button>
-    </Box>
+    <Button
+      variant="outlined"
+      size="small"
+      disabled={isSyncing || providers.length === 0}
+      onClick={onSyncNow}
+      startIcon={
+        <SyncIcon
+          sx={
+            isSyncing
+              ? {
+                  animation: "spin 1s linear infinite",
+                  "@keyframes spin": {
+                    "0%": { transform: "rotate(0deg)" },
+                    "100%": { transform: "rotate(360deg)" },
+                  },
+                }
+              : undefined
+          }
+        />
+      }
+    >
+      {t("syncNow")}
+    </Button>
   );
 }

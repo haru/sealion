@@ -15,6 +15,7 @@ describe("PageHeaderContext — default value", () => {
     const { result } = renderHook(() => usePageHeaderContext());
     expect(result.current.title).toBe("");
     expect(result.current.actions).toBeNull();
+    expect(result.current.titleAddon).toBeNull();
   });
 
   it("setPageHeader is a no-op in the default context", () => {
@@ -35,6 +36,7 @@ describe("PageHeaderProvider", () => {
     const { result } = renderHook(() => usePageHeaderContext(), { wrapper });
     expect(result.current.title).toBe("");
     expect(result.current.actions).toBeNull();
+    expect(result.current.titleAddon).toBeNull();
   });
 
   it("updates title when setPageHeader is called", () => {
@@ -87,6 +89,31 @@ describe("PageHeaderProvider", () => {
 
     expect(result.current.title).toBe("Second");
   });
+
+  it("updates titleAddon when setPageHeader is called with a titleAddon node", () => {
+    const { result } = renderHook(() => usePageHeaderContext(), { wrapper });
+    const badge = React.createElement("span", { "data-testid": "badge" }, "synced");
+
+    act(() => {
+      result.current.setPageHeader("Dashboard", undefined, undefined, badge);
+    });
+
+    expect(result.current.titleAddon).toBe(badge);
+  });
+
+  it("clears titleAddon when setPageHeader is called without titleAddon", () => {
+    const { result } = renderHook(() => usePageHeaderContext(), { wrapper });
+    const badge = React.createElement("span", null, "synced");
+
+    act(() => {
+      result.current.setPageHeader("Dashboard", undefined, undefined, badge);
+    });
+    act(() => {
+      result.current.setPageHeader("Settings");
+    });
+
+    expect(result.current.titleAddon).toBeNull();
+  });
 });
 
 describe("PageHeaderContext — direct createContext shape", () => {
@@ -100,5 +127,6 @@ describe("PageHeaderContext — direct createContext shape", () => {
     expect(typeof result.current.setPageHeader).toBe("function");
     expect(result.current.title).toBe("");
     expect(result.current.actions).toBeNull();
+    expect(result.current.titleAddon).toBeNull();
   });
 });

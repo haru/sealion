@@ -10,20 +10,24 @@ export interface PageHeaderContextValue {
   actions: React.ReactNode | null;
   /** Icon component displayed to the left of the page title. Defaults to null. */
   icon: React.ElementType | null;
+  /** Optional node rendered immediately after the title text. Defaults to null. */
+  titleAddon: React.ReactNode | null;
   /**
-   * Registers the current page's title, optional right-slot actions, and optional icon in the titlebar.
+   * Registers the current page's title, optional right-slot actions, optional icon, and optional title-area addon in the titlebar.
    * @param title - The page title to display.
    * @param actions - Optional React node rendered in the right slot.
    * @param icon - Optional icon component rendered to the left of the title.
+   * @param titleAddon - Optional React node rendered immediately after the title text.
    */
-  setPageHeader: (title: string, actions?: React.ReactNode, icon?: React.ElementType) => void;
+  setPageHeader: (title: string, actions?: React.ReactNode, icon?: React.ElementType, titleAddon?: React.ReactNode) => void;
 }
 
-/** Context carrying the current page title, optional leading icon, and optional right-slot actions for the global titlebar. */
+/** Context carrying the current page title, optional leading icon, optional right-slot actions, and optional title-area addon for the global titlebar. */
 export const PageHeaderContext = createContext<PageHeaderContextValue>({
   title: "",
   actions: null,
   icon: null,
+  titleAddon: null,
   setPageHeader: () => undefined,
 });
 
@@ -44,17 +48,19 @@ export function PageHeaderProvider({ children }: PageHeaderProviderProps) {
   const [title, setTitle] = useState("");
   const [actions, setActions] = useState<React.ReactNode | null>(null);
   const [icon, setIcon] = useState<React.ElementType | null>(null);
+  const [titleAddon, setTitleAddon] = useState<React.ReactNode | null>(null);
 
-  const setPageHeader = useCallback((newTitle: string, newActions?: React.ReactNode, newIcon?: React.ElementType) => {
+  const setPageHeader = useCallback((newTitle: string, newActions?: React.ReactNode, newIcon?: React.ElementType, newTitleAddon?: React.ReactNode) => {
     setTitle(newTitle);
     setActions(newActions ?? null);
     // Use the functional updater form to prevent React from treating the icon component
     // as a state updater function (React calls functions passed to setState directly).
     setIcon(() => newIcon ?? null);
+    setTitleAddon(newTitleAddon ?? null);
   }, []);
 
   return (
-    <PageHeaderContext.Provider value={{ title, actions, icon, setPageHeader }}>
+    <PageHeaderContext.Provider value={{ title, actions, icon, titleAddon, setPageHeader }}>
       {children}
     </PageHeaderContext.Provider>
   );

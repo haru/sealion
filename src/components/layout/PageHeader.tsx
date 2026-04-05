@@ -19,16 +19,21 @@ export interface PageHeaderProps {
    * Always visible on every authenticated page.
    */
   accountMenu?: React.ReactNode;
+  /**
+   * Optional React node rendered immediately after the title text in the left area.
+   * Used for compact status chips such as the sync status indicator.
+   */
+  titleAddon?: React.ReactNode;
 }
 
 /**
  * Shared titlebar rendered at the top of every dashboard page on desktop (md+).
  * Hidden on mobile (xs–sm) where the hamburger AppBar is shown instead.
  *
- * @param props - Title, optional leading icon, optional right-slot actions, and optional account menu.
- * @returns A fixed-height header bar with a left title and optional right content.
+ * @param props - Title, optional leading icon, optional right-slot actions, optional title-area addon, and optional account menu.
+ * @returns A fixed-height header bar with a left title area and optional right content.
  */
-export default function PageHeader({ title, icon, actions, accountMenu }: PageHeaderProps) {
+export default function PageHeader({ title, icon, actions, accountMenu, titleAddon }: PageHeaderProps) {
   return (
     <Box
       data-testid="page-header"
@@ -43,13 +48,14 @@ export default function PageHeader({ title, icon, actions, accountMenu }: PageHe
         flexShrink: 0,
       }}
     >
-      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+      <Box data-testid="page-header-title" sx={{ display: "flex", alignItems: "center", gap: 1 }}>
         {icon != null && (
           <Box component={icon} sx={{ fontSize: 18, color: "text.secondary", display: "flex" }} />
         )}
         <Typography component="h1" sx={{ fontWeight: 600, fontSize: "0.9rem", color: "text.primary" }}>
           {title}
         </Typography>
+        {titleAddon}
       </Box>
       <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
         {actions != null && (

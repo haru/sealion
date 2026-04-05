@@ -22,6 +22,7 @@ import TaskSearchBar from "@/components/search/TaskSearchBar";
 import TodayTasksArea, { TODAY_DROP_ZONE_ID } from "@/components/today-tasks/TodayTasksArea";
 import CompleteIssueModal from "@/components/todo/CompleteIssueModal";
 import SyncStatus from "@/components/todo/SyncStatus";
+import SyncStatusChip from "@/components/todo/SyncStatusChip";
 import TodoList from "@/components/todo/TodoList";
 import { useMessageQueue } from "@/hooks/useMessageQueue";
 import { usePageHeader } from "@/hooks/usePageHeader";
@@ -215,7 +216,14 @@ export default function DashboardPage() {
     [syncProviders, isSyncing, handleSyncNow]
   );
 
-  usePageHeader(t("title"), syncStatusActions, FormatListBulletedIcon);
+  const syncTitleAddon = useMemo(
+    () => (
+      <SyncStatusChip providers={syncProviders} isSyncing={isSyncing} />
+    ),
+    [syncProviders, isSyncing]
+  );
+
+  usePageHeader(t("title"), syncStatusActions, FormatListBulletedIcon, syncTitleAddon);
 
   useEffect(() => {
     /** Loads initial issue data and triggers a background sync unless throttled. */

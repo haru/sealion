@@ -58,7 +58,8 @@ export default function Sidebar({ open, onClose, variant, isAdmin }: SidebarProp
         display: "flex",
         flexDirection: "column",
         height: "100%",
-        py: 2,
+        pt: 2,
+        pb: 0,
         px: 1.5,
         overflow: "hidden",
       }}
