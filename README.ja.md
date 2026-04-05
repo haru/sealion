@@ -16,7 +16,7 @@
 
 あなたにアサインされたすべてのIssueをひとつの統合ビューに集め、作業に集中できる環境を提供します。
 
-![image](https://github.com/user-attachments/assets/557aae6d-8703-40fd-bda6-98ef5aa9fbb0)
+![image](https://github.com/user-attachments/assets/1cb1c7e8-98fc-4ec6-87f7-c8c88f3aa59f)
 
 ## 対応するIssue Tracker
 
