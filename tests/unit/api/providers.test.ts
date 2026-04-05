@@ -32,41 +32,43 @@ jest.mock("@/lib/encryption", () => ({
   decrypt: jest.fn().mockReturnValue("{}"),
 }));
 
-// Mock adapters (include static iconUrl so getProviderIconUrl() works)
+// Mock adapters for adapter instantiation
 jest.mock("@/services/issue-provider/github", () => ({
-  GitHubAdapter: Object.assign(
-    jest.fn().mockImplementation(() => ({
-      testConnection: jest.fn().mockResolvedValue(undefined),
-    })),
-    { iconUrl: "/github.svg" }
-  ),
+  GitHubAdapter: jest.fn().mockImplementation(() => ({
+    testConnection: jest.fn().mockResolvedValue(undefined),
+  })),
 }));
 
 jest.mock("@/services/issue-provider/jira", () => ({
-  JiraAdapter: Object.assign(
-    jest.fn().mockImplementation(() => ({
-      testConnection: jest.fn().mockResolvedValue(undefined),
-    })),
-    { iconUrl: "/jira.svg" }
-  ),
+  JiraAdapter: jest.fn().mockImplementation(() => ({
+    testConnection: jest.fn().mockResolvedValue(undefined),
+  })),
 }));
 
 jest.mock("@/services/issue-provider/redmine", () => ({
-  RedmineAdapter: Object.assign(
-    jest.fn().mockImplementation(() => ({
-      testConnection: jest.fn().mockResolvedValue(undefined),
-    })),
-    { iconUrl: "/redmine.svg" }
-  ),
+  RedmineAdapter: jest.fn().mockImplementation(() => ({
+    testConnection: jest.fn().mockResolvedValue(undefined),
+  })),
 }));
 
 jest.mock("@/services/issue-provider/gitlab", () => ({
-  GitLabAdapter: Object.assign(
-    jest.fn().mockImplementation(() => ({
-      testConnection: jest.fn().mockResolvedValue(undefined),
-    })),
-    { iconUrl: "/gitlab.svg" }
-  ),
+  GitLabAdapter: jest.fn().mockImplementation(() => ({
+    testConnection: jest.fn().mockResolvedValue(undefined),
+  })),
+}));
+
+// Mock registry — getProviderMetadata returns iconUrl, baseUrlMode, and credentialFields
+type MockMeta = { type: string; iconUrl: string; baseUrlMode: string; credentialFields: { key: string; required: boolean }[]; credentialSchema: { parse: (x: unknown) => unknown } };
+const MOCK_REGISTRY: Record<string, MockMeta> = {
+  GITHUB: { type: "GITHUB", iconUrl: "/github.svg", baseUrlMode: "none", credentialFields: [{ key: "token", required: true }], credentialSchema: { parse: (x) => x } },
+  JIRA: { type: "JIRA", iconUrl: "/jira.svg", baseUrlMode: "required", credentialFields: [{ key: "email", required: true }, { key: "apiToken", required: true }], credentialSchema: { parse: (x) => x } },
+  REDMINE: { type: "REDMINE", iconUrl: "/redmine.svg", baseUrlMode: "required", credentialFields: [{ key: "apiKey", required: true }], credentialSchema: { parse: (x) => x } },
+  GITLAB: { type: "GITLAB", iconUrl: "/gitlab.svg", baseUrlMode: "optional", credentialFields: [{ key: "token", required: true }], credentialSchema: { parse: (x) => x } },
+};
+
+jest.mock("@/services/issue-provider/registry", () => ({
+  getProviderMetadata: jest.fn((type: string) => MOCK_REGISTRY[type]),
+  getAllProviders: jest.fn(() => Object.values(MOCK_REGISTRY)),
 }));
 
 import { auth } from "@/lib/auth";
@@ -677,5 +679,54 @@ describe("PATCH /api/providers/[id]", () => {
 
     expect(res.status).toBe(200);
     expect(mockEncrypt).toHaveBeenCalled();
+  });
+});
+
+// --- baseUrlMode tests for PATCH ---
+
+describe("PATCH /api/providers/[id] — baseUrlMode validation", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockAuth.mockResolvedValue(SESSION);
+  });
+
+  it("returns 400 when baseUrlMode=required provider (JIRA) is missing baseUrl", async () => {
+    mockFindFirst.mockResolvedValue({ id: "p1", userId: "user-1", type: "JIRA", encryptedCredentials: "enc", baseUrl: "https://old.atlassian.net" });
+    mockDecrypt.mockReturnValue(JSON.stringify({ email: "u@example.com", apiToken: "tok" }));
+
+    const req = makeRequest("PATCH", { displayName: "X", changeCredentials: false }, "http://localhost/api/providers/p1");
+    const res = await PATCH(req, { params: Promise.resolve({ id: "p1" }) });
+
+    expect(res.status).toBe(400);
+  });
+
+  it("returns 400 when baseUrlMode=required provider (REDMINE) is missing baseUrl", async () => {
+    mockFindFirst.mockResolvedValue({ id: "p1", userId: "user-1", type: "REDMINE", encryptedCredentials: "enc", baseUrl: "https://old.redmine.org" });
+    mockDecrypt.mockReturnValue(JSON.stringify({ apiKey: "key123" }));
+
+    const req = makeRequest("PATCH", { displayName: "X", changeCredentials: false }, "http://localhost/api/providers/p1");
+    const res = await PATCH(req, { params: Promise.resolve({ id: "p1" }) });
+
+    expect(res.status).toBe(400);
+  });
+
+  it("normalizes empty baseUrl to undefined for baseUrlMode=optional provider (GITLAB)", async () => {
+    const { GitLabAdapter } = jest.requireMock("@/services/issue-provider/gitlab");
+    GitLabAdapter.mockImplementationOnce(() => ({
+      testConnection: jest.fn().mockResolvedValue(undefined),
+    }));
+
+    mockFindFirst.mockResolvedValue({ id: "p1", userId: "user-1", type: "GITLAB", encryptedCredentials: "enc", baseUrl: null });
+    mockDecrypt.mockReturnValue(JSON.stringify({ token: "glpat-token" }));
+    mockUpdate.mockResolvedValue({ id: "p1", type: "GITLAB", displayName: "My GitLab", baseUrl: null, createdAt: new Date() });
+
+    const req = makeRequest("PATCH", {
+      displayName: "My GitLab",
+      baseUrl: "",
+      changeCredentials: false,
+    }, "http://localhost/api/providers/p1");
+    const res = await PATCH(req, { params: Promise.resolve({ id: "p1" }) });
+
+    expect(res.status).toBe(200);
   });
 });

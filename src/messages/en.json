@@ -54,12 +54,6 @@
       "OPEN": "Open",
       "CLOSED": "Closed"
     },
-    "source": {
-      "GITHUB": "GitHub",
-      "JIRA": "Jira",
-      "REDMINE": "Redmine",
-      "GITLAB": "GitLab"
-    },
     "dueDate": "Due: {date}",
     "dueDateLabel": "Due",
     "createdAtLabel": "Created",
@@ -80,12 +74,6 @@
     "addProvider": "Add Issue Tracker",
     "addProviderTitle": "Add Issue Tracker",
     "noProviders": "No issue trackers connected yet.",
-    "type": {
-      "GITHUB": "GitHub",
-      "JIRA": "Jira",
-      "REDMINE": "Redmine",
-      "GITLAB": "GitLab"
-    },
     "fields": {
       "type": "Type",
       "displayName": "Display Name",

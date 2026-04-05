@@ -6,6 +6,7 @@ import { GitHubAdapter } from "./github";
 import { GitLabAdapter } from "./gitlab";
 import { JiraAdapter } from "./jira";
 import { RedmineAdapter } from "./redmine";
+import { getProviderMetadata } from "./registry";
 
 export interface GitHubCredentials {
   token: string;
@@ -35,21 +36,16 @@ export type ProviderCredentials =
 
 /**
  * Returns the icon URL for the given provider type, or null if unknown.
- * @param type - The issue provider type.
+ * @param type - The provider type string.
+ * @returns The icon URL, or `null` if the type is not registered.
  */
-export function getProviderIconUrl(type: ProviderType): string | null {
-  switch (type) {
-    case ProviderType.GITHUB: return GitHubAdapter.iconUrl;
-    case ProviderType.JIRA: return JiraAdapter.iconUrl;
-    case ProviderType.REDMINE: return RedmineAdapter.iconUrl;
-    case ProviderType.GITLAB: return GitLabAdapter.iconUrl;
-    default: return null;
-  }
+export function getProviderIconUrl(type: string): string | null {
+  return getProviderMetadata(type)?.iconUrl ?? null;
 }
 
 /**
  * Creates an {@link IssueProviderAdapter} for the given provider type and credentials.
- * @param type - The issue provider type.
+ * @param type - The provider type string (e.g. `"GITHUB"`).
  * @param credentials - Decrypted credentials for the provider.
  * @param baseUrl - Optional base URL for providers that use a separate base URL
  *   (e.g. GitLab self-hosted instances). Ignored by GitHub/Jira/Redmine whose
@@ -57,7 +53,7 @@ export function getProviderIconUrl(type: ProviderType): string | null {
  * @throws If the provider type is not supported.
  */
 export function createAdapter(
-  type: ProviderType,
+  type: string,
   credentials: ProviderCredentials,
   baseUrl?: string | null,
 ): IssueProviderAdapter {

@@ -3,6 +3,8 @@ import axios from "axios";
 import { buildAxiosProxyConfig } from "@/lib/proxy";
 import type { ExternalProject, IssueProviderAdapter, NormalizedIssue } from "@/lib/types";
 
+export { jiraMetadata } from "./jira.metadata";
+
 interface JiraIssue {
   id: string;
   key: string;
@@ -158,3 +160,4 @@ export class JiraAdapter implements IssueProviderAdapter {
     });
   }
 }
+

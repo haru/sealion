@@ -3,6 +3,8 @@ import axios from "axios";
 import { buildAxiosProxyConfig } from "@/lib/proxy";
 import type { ExternalProject, IssueProviderAdapter, NormalizedIssue } from "@/lib/types";
 
+export { redmineMetadata } from "./redmine.metadata";
+
 /* eslint-disable @typescript-eslint/naming-convention */
 interface RedmineIssue {
   id: number;
@@ -175,3 +177,4 @@ export class RedmineAdapter implements IssueProviderAdapter {
     });
   }
 }
+

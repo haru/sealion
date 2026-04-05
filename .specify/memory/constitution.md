@@ -1,7 +1,24 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version change: 1.2.2 → 1.2.3
+Version change: 1.2.3 → 1.3.0
+Modified principles:
+  - III. Multi-Provider Adapter Abstraction: materially expanded with the
+    Provider Type Encapsulation rules introduced by spec 030-provider-type-abstraction.
+    Concrete prohibitions added (switch on type string, union literals, i18n keys keyed
+    by provider type outside the service layer). Registry pattern (ProviderMetadata /
+    getAllProviders / getProviderMetadata) documented as the mandatory boundary API.
+Added sections: None
+Removed sections: None
+Templates checked:
+  - .specify/templates/plan-template.md ✅ no impact (no Principle III references)
+  - .specify/templates/spec-template.md ✅ no impact
+  - .specify/templates/tasks-template.md ✅ no impact
+Follow-up TODOs: None.
+
+---
+
+Previous entry (1.2.2 → 1.2.3)
 Modified principles: None
 Added rules:
   - Development Workflow › Database Migrations: migration files merged to develop
@@ -93,7 +110,10 @@ A breach of one user's data must not cascade to others.
 
 ### III. Multi-Provider Adapter Abstraction
 
-Issue provider integrations MUST be implemented behind a shared `IssueProviderAdapter` interface.
+Issue provider integrations MUST be implemented behind a shared `IssueProviderAdapter` interface,
+and provider-type identity MUST be fully encapsulated within `src/services/issue-provider/`.
+
+#### Adapter interface
 
 - New providers (GitHub, GitLab, Jira, Redmine, future) MUST implement the adapter interface
   defined in `src/lib/types.ts`.
@@ -101,11 +121,41 @@ Issue provider integrations MUST be implemented behind a shared `IssueProviderAd
   instantiate adapters directly.
 - The domain model (`User → IssueProvider → Project → Issue`) is canonical; adapters MUST
   normalise remote data into this model.
-- Provider-specific logic MUST remain inside the adapter and MUST NOT leak into shared services
-  or API routes.
 
-**Rationale**: Keeps the core domain clean and allows new issue trackers to be added without
-changing business logic or the sync flow.
+#### Provider type encapsulation (NON-NEGOTIABLE)
+
+All provider-type-specific logic MUST live exclusively inside `src/services/issue-provider/`.
+Code outside that directory MUST NOT branch on a specific provider type string.
+
+Each adapter MUST export a `ProviderMetadata` constant and register it via `registerProvider()`
+in `src/services/issue-provider/registry.ts`. The registry functions `getAllProviders()` and
+`getProviderMetadata(type)` are the sole approved boundary API for the rest of the codebase.
+
+**Prohibited outside `src/services/issue-provider/`:**
+
+- Conditional logic on a provider type string: `if (type === "JIRA")`, `switch (type) { case "GITHUB": … }`
+- Prisma enum comparisons: `type === ProviderType.GITHUB`
+- Provider type union literals: `"GITHUB" | "JIRA" | "REDMINE" | "GITLAB"`
+- Hardcoded provider type arrays: `const TYPES = ["GITHUB", "JIRA", …]`
+- i18n keys keyed by provider type: `t("providers.type.GITHUB")`, `t("todo.source.JIRA")`
+
+**Required outside `src/services/issue-provider/`:**
+
+- `getProviderMetadata(type)` — to obtain display name, icon URL, baseUrl mode, credential fields
+- `metadata.baseUrlMode` — to determine URL handling behaviour (`"required"` / `"optional"` / `"none"`)
+- `metadata.credentialFields` — to render or validate credential inputs generically
+- `metadata.displayName` — to show the provider name in the UI (never `t("type.${type}")`)
+- `getAllProviders()` — to enumerate registered providers for select lists or validation
+
+**Adding a new provider** MUST require changes only inside `src/services/issue-provider/`:
+1. Create the adapter class implementing `IssueProviderAdapter`.
+2. Export a `ProviderMetadata` constant and call `registerProvider()`.
+3. No changes to API routes, UI components, credential utils, or i18n files MUST be needed.
+
+**Rationale**: Keeps the core domain clean and allows new issue trackers to be added in a single
+location without rippling changes across routes, components, or translation files. Prior to
+spec 030, adding a provider required changes in 10+ files; this rule holds that count to the
+adapter file and its registry registration only.
 
 ### IV. Internationalisation First
 
@@ -241,4 +291,4 @@ arises between this document and any other guideline, this constitution takes pr
 - Complexity violations MUST be justified in the plan's Complexity Tracking table.
 - Security and TDD compliance MUST be verified during code review on every PR.
 
-**Version**: 1.2.3 | **Ratified**: 2026-03-20 | **Last Amended**: 2026-04-04
+**Version**: 1.3.0 | **Ratified**: 2026-03-20 | **Last Amended**: 2026-04-05

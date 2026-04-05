@@ -70,7 +70,28 @@ src/app/
 
 ### Issue Provider Adapters (`src/services/issue-provider/`)
 
-`IssueProviderAdapter` interface (in `src/lib/types.ts`) is implemented by `GitHubAdapter`, `JiraAdapter`, and `RedmineAdapter`. `factory.ts` creates the right adapter from a `ProviderType` + decrypted credentials. The sync flow calls the adapter to fetch remote issues and upserts them into the database.
+`IssueProviderAdapter` interface (in `src/lib/types.ts`) is implemented by `GitHubAdapter`, `JiraAdapter`, `RedmineAdapter`, and `GitLabAdapter`. `factory.ts` creates the right adapter from a type string + decrypted credentials. The sync flow calls the adapter to fetch remote issues and upserts them into the database.
+
+Each adapter exports a `ProviderMetadata` constant (e.g. `githubMetadata`) and registers it in `registry.ts` at module load time. `registry.ts` exposes `getAllProviders()` and `getProviderMetadata(type)` as the sole source of provider-type knowledge for the rest of the codebase.
+
+#### Provider type encapsulation — MANDATORY
+
+**All provider-type-specific logic must live inside `src/services/issue-provider/`.** Code outside that directory must never branch on a specific provider type string.
+
+| Allowed | Forbidden outside `src/services/issue-provider/` |
+|---------|--------------------------------------------------|
+| `getProviderMetadata(type)` | `if (type === "JIRA")` |
+| `metadata.baseUrlMode === "required"` | `type === ProviderType.GITHUB` |
+| `metadata.credentialFields` | `"GITHUB" \| "JIRA" \| "REDMINE" \| "GITLAB"` union literals |
+| `getAllProviders()` | hardcoded provider type arrays |
+| `metadata.displayName` | `t("providers.type.GITHUB")` i18n keys keyed by type |
+
+**Adding a new provider** requires changes only inside `src/services/issue-provider/`:
+1. Create the adapter class (implements `IssueProviderAdapter`).
+2. Export a `ProviderMetadata` constant and call `registerProvider()`.
+3. Register it in `registry.ts` (or within the adapter file itself).
+
+No changes to API routes, UI components, credentials, or i18n files should be needed.
 
 ### Key library files (`src/lib/`)
 
@@ -221,6 +242,8 @@ Use `http://app:3000` instead — `app` is the hostname of the Next.js dev conta
 - TypeScript 5 / Node.js 20 LTS + Next.js 16 (App Router), MUI v7, Prisma 7, next-intl 4, nodemailer (new), existing `src/lib/encryption.ts` (026-smtp-settings)
 - PostgreSQL 16 via Prisma 7 — new `SmtpSettings` singleton table (026-smtp-settings)
 - PostgreSQL 16 via Prisma 7 — no schema changes (028-delete-own-account)
+- TypeScript 5 / Node.js 20 LTS + Next.js 16 (App Router), Prisma 7, Zod, MUI v7, next-intl 4 (030-provider-type-abstraction)
+- PostgreSQL 16 via Prisma — **no schema changes** (030-provider-type-abstraction)
 
 ## Recent Changes
 - 009-task-display-cleanup: Removed `priority` field from Issue model; added `providerCreatedAt` / `providerUpdatedAt` fields; added Today tasks area with drag-and-drop reorder (dnd-kit)

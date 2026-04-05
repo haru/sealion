@@ -1,4 +1,3 @@
-import { ProviderType } from "@prisma/client";
 import type { NextRequest } from "next/server";
 
 import { ok, fail, failWithDetails } from "@/lib/api-response";
@@ -8,24 +7,23 @@ import { prisma } from "@/lib/db";
 import { encrypt, decrypt } from "@/lib/encryption";
 import { createConnectionTestErrorDetails } from "@/lib/error-utils";
 import { createAdapter, getProviderIconUrl } from "@/services/issue-provider/factory";
+import { getProviderMetadata } from "@/services/issue-provider/registry";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
 /**
- * Validates provider-specific required credential fields.
- * @param type - The provider type to validate credentials for.
+ * Validates that all required credential fields (from registry metadata) are present.
+ * @param type - The provider type string.
  * @param credentials - Credential fields from the request body.
  * @returns `true` if all required fields are present, `false` otherwise.
  */
 function hasRequiredCredentialFields(
-  type: ProviderType,
+  type: string,
   credentials: Record<string, string>,
 ): boolean {
-  if (type === ProviderType.GITHUB && !credentials.token) { return false; }
-  if (type === ProviderType.JIRA && (!credentials.email || !credentials.apiToken)) { return false; }
-  if (type === ProviderType.REDMINE && !credentials.apiKey) { return false; }
-  if (type === ProviderType.GITLAB && !credentials.token) { return false; }
-  return true;
+  const meta = getProviderMetadata(type);
+  if (!meta) { return false; }
+  return meta.credentialFields.every((field) => !field.required || Boolean(credentials[field.key]));
 }
 
 /** Result of resolving effective credentials for a provider update. */
@@ -46,7 +44,7 @@ type CredentialResult = {
  * @returns A {@link CredentialResult} on success, or a `Response` error to return immediately.
  */
 function resolveCredentials(
-  provider: { type: ProviderType; encryptedCredentials: string; baseUrl: string | null; id: string },
+  provider: { type: string; encryptedCredentials: string; baseUrl: string | null; id: string },
   changeCredentials: boolean,
   credentials: Record<string, string> | undefined,
   baseUrl: string | undefined,
@@ -126,16 +124,16 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
     credentials?: Record<string, string>;
   };
 
-  const baseUrl = (provider.type === ProviderType.GITLAB && rawBaseUrl?.trim() === "")
+  const metadata = getProviderMetadata(provider.type);
+  const baseUrl = (metadata?.baseUrlMode === "optional" && rawBaseUrl?.trim() === "")
     ? undefined
     : rawBaseUrl;
 
   // Validate displayName
   if (!displayName) { return fail("MISSING_FIELDS", 400); }
 
-  // Validate baseUrl for Jira/Redmine
-  const requiresBaseUrl = provider.type === ProviderType.JIRA || provider.type === ProviderType.REDMINE;
-  if (requiresBaseUrl && !baseUrl) { return fail("MISSING_FIELDS", 400); }
+  // Validate baseUrl for providers that require it
+  if (metadata?.baseUrlMode === "required" && !baseUrl) { return fail("MISSING_FIELDS", 400); }
 
   // Determine the effective credentials for connection test
   const credResult = resolveCredentials(provider, changeCredentials, credentials, baseUrl);

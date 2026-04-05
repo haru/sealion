@@ -3,6 +3,8 @@ import axios from "axios";
 import { buildAxiosProxyConfig } from "@/lib/proxy";
 import type { ExternalProject, IssueProviderAdapter, NormalizedIssue } from "@/lib/types";
 
+export { githubMetadata } from "./github.metadata";
+
 /* eslint-disable @typescript-eslint/naming-convention */
 interface GitHubIssue {
   number: number;
@@ -149,3 +151,4 @@ export class GitHubAdapter implements IssueProviderAdapter {
     });
   }
 }
+

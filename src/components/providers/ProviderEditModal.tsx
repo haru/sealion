@@ -18,12 +18,11 @@ import { useTranslations } from "next-intl";
 import { type FormEvent, useState } from "react";
 
 import { formatProviderApiError, type ProviderApiErrorResponse } from "@/lib/error-utils";
-
-type ProviderType = "GITHUB" | "JIRA" | "REDMINE" | "GITLAB";
+import { getProviderMetadata } from "@/services/issue-provider/registry";
 
 interface Provider {
   id: string;
-  type: ProviderType;
+  type: string;
   displayName: string;
   baseUrl: string | null;
   iconUrl: string | null;
@@ -36,70 +35,6 @@ interface ProviderEditModalProps {
   onUpdated: (updated: Provider) => void;
 }
 
-/**
- * Returns the credential input fields for the given provider type.
- *
- * @param providerType - The type of issue provider.
- * @param credentials - Current credential field values.
- * @param onChange - Callback to update a single credential field.
- * @param t - Translation function for the "providers" namespace.
- * @returns JSX for the credential fields, or null if the type is unrecognized.
- */
-function renderCredentialFields(
-  providerType: ProviderType,
-  credentials: Record<string, string>,
-  onChange: (key: string, value: string) => void,
-  t: ReturnType<typeof useTranslations<"providers">>,
-) {
-  if (providerType === "GITHUB" || providerType === "GITLAB") {
-    return (
-      <TextField
-        label={t("fields.token")}
-        type="password"
-        value={credentials.token ?? ""}
-        onChange={(e) => onChange("token", e.target.value)}
-        required
-        fullWidth
-      />
-    );
-  }
-  if (providerType === "JIRA") {
-    return (
-      <>
-        <TextField
-          label={t("fields.email")}
-          type="email"
-          value={credentials.email ?? ""}
-          onChange={(e) => onChange("email", e.target.value)}
-          required
-          fullWidth
-        />
-        <TextField
-          label={t("fields.apiToken")}
-          type="password"
-          value={credentials.apiToken ?? ""}
-          onChange={(e) => onChange("apiToken", e.target.value)}
-          required
-          fullWidth
-        />
-      </>
-    );
-  }
-  if (providerType === "REDMINE") {
-    return (
-      <TextField
-        label={t("fields.apiKey")}
-        type="password"
-        value={credentials.apiKey ?? ""}
-        onChange={(e) => onChange("apiKey", e.target.value)}
-        required
-        fullWidth
-      />
-    );
-  }
-  return null;
-}
-
 /** Modal dialog for editing an existing issue provider's display name, base URL, or credentials. */
 export default function ProviderEditModal({
   provider,
@@ -110,6 +45,8 @@ export default function ProviderEditModal({
   const t = useTranslations("providers");
   const tCommon = useTranslations("common");
   const tSync = useTranslations("sync");
+
+  const metadata = getProviderMetadata(provider.type);
 
   const [displayName, setDisplayName] = useState(provider.displayName);
   const [baseUrl, setBaseUrl] = useState(provider.baseUrl ?? "");
@@ -131,9 +68,9 @@ export default function ProviderEditModal({
 
     try {
       const body: Record<string, unknown> = { displayName, changeCredentials };
-      if (provider.type === "JIRA" || provider.type === "REDMINE") {
+      if (metadata?.baseUrlMode === "required") {
         body.baseUrl = baseUrl;
-      } else if (provider.type === "GITLAB" && baseUrl.trim() !== "") {
+      } else if (metadata?.baseUrlMode === "optional" && baseUrl.trim() !== "") {
         body.baseUrl = baseUrl;
       }
       if (changeCredentials) {
@@ -187,12 +124,12 @@ export default function ProviderEditModal({
               fullWidth
             />
 
-            {(provider.type === "JIRA" || provider.type === "REDMINE" || provider.type === "GITLAB") && (
+            {metadata && metadata.baseUrlMode !== "none" && (
               <TextField
                 label={t("fields.baseUrl")}
                 value={baseUrl}
                 onChange={(e) => setBaseUrl(e.target.value)}
-                required
+                required={metadata.baseUrlMode === "required"}
                 fullWidth
               />
             )}
@@ -210,7 +147,17 @@ export default function ProviderEditModal({
               label={t("changeCredentials")}
             />
 
-            {changeCredentials && renderCredentialFields(provider.type, credentials, handleCredentialChange, t)}
+            {changeCredentials && metadata?.credentialFields.map((field) => (
+              <TextField
+                key={field.key}
+                label={t(`fields.${field.labelKey}`)}
+                type={field.inputType}
+                value={credentials[field.key] ?? ""}
+                onChange={(e) => handleCredentialChange(field.key, e.target.value)}
+                required={field.required}
+                fullWidth
+              />
+            ))}
           </Stack>
         </Box>
       </DialogContent>
@@ -231,4 +178,3 @@ export default function ProviderEditModal({
     </Dialog>
   );
 }
-
