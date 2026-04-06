@@ -38,7 +38,7 @@ export default function DashboardShellInner({ email, role, children }: Dashboard
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [drawerOpen, setDrawerOpen] = useState(false);
   const tA11y = useTranslations("a11y");
-  const { title, actions, icon, titleAddon } = usePageHeaderContext();
+  const { title, actions, icon, titleAddon, breadcrumbParent, breadcrumbParentIcon } = usePageHeaderContext();
 
   return (
     <Box sx={{ display: "flex", height: "100vh", overflow: "hidden" }}>
@@ -100,7 +100,7 @@ export default function DashboardShellInner({ email, role, children }: Dashboard
           ...(isMobile && { mt: `${APP_BAR_HEIGHT}px` }),
         }}
       >
-        <PageHeader title={title} icon={icon} actions={actions} titleAddon={titleAddon} accountMenu={<AccountMenu email={email} />} />
+        <PageHeader title={title} icon={icon} actions={actions} titleAddon={titleAddon} breadcrumbParent={breadcrumbParent} breadcrumbParentIcon={breadcrumbParentIcon} accountMenu={<AccountMenu email={email} />} />
         {children}
       </Box>
     </Box>

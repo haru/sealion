@@ -1,6 +1,7 @@
 "use client";
 
 import Box from "@mui/material/Box";
+import Breadcrumbs from "@mui/material/Breadcrumbs";
 import Typography from "@mui/material/Typography";
 
 /** Props for the {@link PageHeader} component. */
@@ -24,16 +25,26 @@ export interface PageHeaderProps {
    * Used for compact status chips such as the sync status indicator.
    */
   titleAddon?: React.ReactNode;
+  /**
+   * Optional parent label rendered as the first segment of a breadcrumb path.
+   * When provided, the titlebar renders "parent / title" using MUI Breadcrumbs.
+   */
+  breadcrumbParent?: string | null;
+  /**
+   * Optional icon component rendered to the left of the breadcrumb parent label.
+   * Only used when `breadcrumbParent` is set.
+   */
+  breadcrumbParentIcon?: React.ElementType | null;
 }
 
 /**
  * Shared titlebar rendered at the top of every dashboard page on desktop (md+).
  * Hidden on mobile (xs–sm) where the hamburger AppBar is shown instead.
  *
- * @param props - Title, optional leading icon, optional right-slot actions, optional title-area addon, and optional account menu.
+ * @param props - Title, optional leading icon, optional right-slot actions, optional title-area addon, optional account menu, and optional breadcrumb parent.
  * @returns A fixed-height header bar with a left title area and optional right content.
  */
-export default function PageHeader({ title, icon, actions, accountMenu, titleAddon }: PageHeaderProps) {
+export default function PageHeader({ title, icon, actions, accountMenu, titleAddon, breadcrumbParent, breadcrumbParentIcon }: PageHeaderProps) {
   return (
     <Box
       data-testid="page-header"
@@ -49,12 +60,39 @@ export default function PageHeader({ title, icon, actions, accountMenu, titleAdd
       }}
     >
       <Box data-testid="page-header-title" sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-        {icon != null && (
-          <Box component={icon} sx={{ fontSize: 18, color: "text.secondary", display: "flex" }} />
+        {breadcrumbParent != null ? (
+          <Breadcrumbs
+            aria-label="breadcrumb"
+            separator="/"
+            sx={{ "& .MuiBreadcrumbs-separator": { mx: 0.5 } }}
+          >
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+              {breadcrumbParentIcon != null && (
+                <Box component={breadcrumbParentIcon} sx={{ fontSize: 18, color: "text.secondary", display: "flex" }} />
+              )}
+              <Typography sx={{ fontSize: "0.9rem", color: "text.secondary" }}>
+                {breadcrumbParent}
+              </Typography>
+            </Box>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+              {icon != null && (
+                <Box component={icon} sx={{ fontSize: 18, color: "text.primary", display: "flex" }} />
+              )}
+              <Typography component="h1" sx={{ fontWeight: 600, fontSize: "0.9rem", color: "text.primary" }}>
+                {title}
+              </Typography>
+            </Box>
+          </Breadcrumbs>
+        ) : (
+          <>
+            {icon != null && (
+              <Box component={icon} sx={{ fontSize: 18, color: "text.secondary", display: "flex" }} />
+            )}
+            <Typography component="h1" sx={{ fontWeight: 600, fontSize: "0.9rem", color: "text.primary" }}>
+              {title}
+            </Typography>
+          </>
         )}
-        <Typography component="h1" sx={{ fontWeight: 600, fontSize: "0.9rem", color: "text.primary" }}>
-          {title}
-        </Typography>
         {titleAddon}
       </Box>
       <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>

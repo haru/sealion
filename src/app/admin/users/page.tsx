@@ -1,6 +1,7 @@
 "use client";
 
 import AddIcon from "@mui/icons-material/Add";
+import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import PeopleIcon from "@mui/icons-material/People";
@@ -61,6 +62,7 @@ export default function AdminUsersPage() {
   const t = useTranslations("admin");
   const tCommon = useTranslations("common");
   const tErrors = useTranslations("errors");
+  const tSidebar = useTranslations("sidebar");
   const currentUserId = useAdminUserId();
   const { addMessage } = useMessageQueue();
 
@@ -70,7 +72,7 @@ export default function AdminUsersPage() {
   // --- Create dialog state ---
   const [createOpen, setCreateOpen] = useState(false);
 
-  usePageHeader(t("userManagement"), undefined, PeopleIcon);
+  usePageHeader(t("userManagement"), undefined, PeopleIcon, undefined, tSidebar("systemAdmin"), AdminPanelSettingsIcon);
 
   const [newEmail, setNewEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
