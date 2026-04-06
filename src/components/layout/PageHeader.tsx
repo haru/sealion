@@ -78,7 +78,7 @@ export default function PageHeader({ title, icon, actions, accountMenu, titleAdd
               {icon != null && (
                 <Box component={icon} sx={{ fontSize: 18, color: "text.primary", display: "flex" }} />
               )}
-              <Typography component="h1" sx={{ fontWeight: 600, fontSize: "0.9rem", color: "text.primary" }}>
+              <Typography component="h1" aria-current="page" sx={{ fontWeight: 600, fontSize: "0.9rem", color: "text.primary" }}>
                 {title}
               </Typography>
             </Box>
