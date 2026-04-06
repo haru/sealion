@@ -1,5 +1,6 @@
 "use client";
 
+import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 import SecurityIcon from "@mui/icons-material/Security";
 import {
   Container,
@@ -46,9 +47,10 @@ interface AuthSettingsData {
 /** Auth settings admin page — allows ADMIN to configure signup and session timeout. */
 export default function AuthSettingsPage() {
   const t = useTranslations("authSettings");
+  const tSidebar = useTranslations("sidebar");
   const { addMessage } = useMessageQueue();
 
-  usePageHeader(t("title"), undefined, SecurityIcon);
+  usePageHeader(t("title"), undefined, SecurityIcon, undefined, tSidebar("systemAdmin"), AdminPanelSettingsIcon);
 
   const [saved, setSaved] = useState<AuthSettingsData | null>(null);
   const [allowUserSignup, setAllowUserSignup] = useState(true);
