@@ -56,6 +56,8 @@ describe("usePageHeader", () => {
             actions: null,
             icon: null,
             titleAddon: null,
+            breadcrumbParent: null,
+            breadcrumbParentIcon: null,
             setPageHeader: mockSetPageHeader,
           },
         },
@@ -67,7 +69,7 @@ describe("usePageHeader", () => {
     });
 
     // On mount, setPageHeader should have been called with the title
-    expect(mockSetPageHeader).toHaveBeenCalledWith("Temp", undefined, undefined, undefined);
+    expect(mockSetPageHeader).toHaveBeenCalledWith("Temp", undefined, undefined, undefined, undefined, undefined);
 
     act(() => {
       unmount();
@@ -146,6 +148,8 @@ describe("usePageHeader", () => {
             actions: null,
             icon: null,
             titleAddon: null,
+            breadcrumbParent: null,
+            breadcrumbParentIcon: null,
             setPageHeader: mockSetPageHeader,
           },
         },
@@ -157,7 +161,7 @@ describe("usePageHeader", () => {
       { wrapper: mockWrapper }
     );
 
-    expect(mockSetPageHeader).toHaveBeenCalledWith("Providers", undefined, StableMockIcon, undefined);
+    expect(mockSetPageHeader).toHaveBeenCalledWith("Providers", undefined, StableMockIcon, undefined, undefined, undefined);
 
     act(() => {
       unmount();
@@ -219,6 +223,8 @@ describe("usePageHeader", () => {
             actions: null,
             icon: null,
             titleAddon: null,
+            breadcrumbParent: null,
+            breadcrumbParentIcon: null,
             setPageHeader: mockSetPageHeader,
           },
         },
@@ -230,6 +236,6 @@ describe("usePageHeader", () => {
       { wrapper: mockWrapper }
     );
 
-    expect(mockSetPageHeader).toHaveBeenCalledWith("Todo", undefined, undefined, badge);
+    expect(mockSetPageHeader).toHaveBeenCalledWith("Todo", undefined, undefined, badge, undefined, undefined);
   });
 });
