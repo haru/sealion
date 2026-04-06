@@ -35,8 +35,8 @@ const baseItemSx = (pathname: string, href: string) => ({
   ...(href.startsWith("/admin") ? { pl: 3.5, pr: 1.5 } : { px: 1.5 }),
   py: 0.875,
   color: "text.secondary",
-  ...(pathname === href ? selectedSx : {}),
   "&:hover": { bgcolor: "#f1f5f9" },
+  ...(pathname === href ? selectedSx : {}),
 });
 
 /**

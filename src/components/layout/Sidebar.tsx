@@ -42,8 +42,8 @@ const mainItemSx = (isSelected: boolean) => ({
   mb: 0.5,
   px: 1.5,
   py: 0.875,
+  ...(!isSelected ? { "&:hover": { bgcolor: "#f1f5f9" } } : {}),
   ...(isSelected ? selectedMainSx : {}),
-  "&:hover": { bgcolor: "#f1f5f9" },
 });
 
 /**
