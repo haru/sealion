@@ -588,7 +588,7 @@ export default function DashboardPage() {
   return (
     <DndContext sensors={sensors} onDragStart={handleDragStart} onDragMove={handleDragMove} onDragEnd={handleDragEnd} onDragCancel={handleDragCancel}>
       {/* Content area — max-width centered, generous vertical padding */}
-      <Box sx={{ maxWidth: 896, mx: "auto", py: 5, px: 3 }}>
+      <Box sx={{ maxWidth: 896, mx: "auto", py: 5, px: 3, width: "100%" }}>
         <TodayTasksArea items={todayIssuesSorted} showCreatedAt={boardSettings.showCreatedAt} showUpdatedAt={boardSettings.showUpdatedAt} onRemove={handleRemoveFromToday} onComplete={handleComplete} />
 
         {/* Backlog section header */}
