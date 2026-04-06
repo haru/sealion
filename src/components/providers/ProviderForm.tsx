@@ -79,7 +79,7 @@ export default function ProviderForm({ onSubmit }: ProviderFormProps) {
       {/* Honeypot fields to prevent browser from autofilling real fields */}
       <input type="text" name="username" style={{ display: "none" }} autoComplete="username" readOnly />
       <input type="password" name="password" style={{ display: "none" }} autoComplete="current-password" readOnly />
-      <Stack spacing={2}>
+      <Stack spacing={2} sx={{ pt: 2 }}>
         {error && (
           <Alert severity="error">
             <Box component="span" sx={{ display: "block", whiteSpace: "pre-line" }}>{error}</Box>
