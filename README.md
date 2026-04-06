@@ -124,18 +124,28 @@ AUTH_URL="http://localhost:3000"
 Next, generate the keys for authentication and encryption and paste them into `.env`:
 
 ```bash
+docker compose run --rm sealion generate-keys
+```
+
+Example output:
+
+```
+Please add the following values to your .env file:
+
+AUTH_SECRET="<base64-encoded value>"
+CREDENTIALS_ENCRYPTION_KEY="<64-char hex value>"
+```
+
+Copy the two lines and paste them into `.env`.
+
+#### Alternative (if openssl is available on the host)
+
+```bash
 # Generate AUTH_SECRET
 openssl rand -base64 32
 
 # Generate CREDENTIALS_ENCRYPTION_KEY (64 hex characters)
 openssl rand -hex 32
-```
-
-Paste the generated values into `.env`:
-
-```dotenv
-AUTH_SECRET="<paste value here>"
-CREDENTIALS_ENCRYPTION_KEY="<paste value here>"
 ```
 
 ### Start the app

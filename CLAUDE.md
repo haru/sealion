@@ -244,6 +244,7 @@ Use `http://app:3000` instead — `app` is the hostname of the Next.js dev conta
 - PostgreSQL 16 via Prisma 7 — no schema changes (028-delete-own-account)
 - TypeScript 5 / Node.js 20 LTS + Next.js 16 (App Router), Prisma 7, Zod, MUI v7, next-intl 4 (030-provider-type-abstraction)
 - PostgreSQL 16 via Prisma — **no schema changes** (030-provider-type-abstraction)
+- Node.js 20 LTS (container runtime), TypeScript 5 (test tooling) + Node.js built-in `crypto` module (no new npm packages) (032-container-key-gen)
 
 ## Recent Changes
 - 009-task-display-cleanup: Removed `priority` field from Issue model; added `providerCreatedAt` / `providerUpdatedAt` fields; added Today tasks area with drag-and-drop reorder (dnd-kit)
