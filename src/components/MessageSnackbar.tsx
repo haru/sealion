@@ -62,6 +62,7 @@ export default function MessageSnackbar({ message, onClose }: MessageSnackbarPro
     >
       <Alert
         severity={getSeverity(message.type)}
+        sx={{ minWidth: 480, maxWidth: 640 }}
         action={
           <IconButton
             size="small"
