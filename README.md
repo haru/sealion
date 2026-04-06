@@ -124,7 +124,7 @@ AUTH_URL="http://localhost:3000"
 Next, generate the keys for authentication and encryption and paste them into `.env`:
 
 ```bash
-docker compose run --rm sealion generate-keys
+docker compose run --rm --no-deps sealion generate-keys
 ```
 
 Example output:

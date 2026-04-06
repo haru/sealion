@@ -123,7 +123,7 @@ AUTH_URL="http://localhost:3000"
 次に、認証と暗号化用のキーを生成して`.env`に貼り付けます。
 
 ```bash
-docker compose run --rm sealion generate-keys
+docker compose run --rm --no-deps sealion generate-keys
 ```
 
 出力例：
