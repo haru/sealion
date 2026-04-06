@@ -177,6 +177,7 @@ const eslintConfig = defineConfig([
       // ── Complexity Control ────────────────────────────────────────────────
       complexity: ["error", { max: 20 }],
       "max-depth": ["error", { max: 3 }],
+      "max-lines": ["error", { max: 300, skipBlankLines: true, skipComments: true }],
       "no-nested-ternary": "error",
 
       // ── Type Safety ───────────────────────────────────────────────────────

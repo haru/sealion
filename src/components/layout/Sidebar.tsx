@@ -1,31 +1,17 @@
 "use client";
 
-import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
-import EmailOutlinedIcon from "@mui/icons-material/EmailOutlined";
-import ExpandLessIcon from "@mui/icons-material/ExpandLess";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import FolderOpenIcon from "@mui/icons-material/FolderOpen";
 import FormatListBulletedIcon from "@mui/icons-material/FormatListBulleted";
-import PeopleIcon from "@mui/icons-material/People";
-import SecurityOutlinedIcon from "@mui/icons-material/SecurityOutlined";
 import TuneIcon from "@mui/icons-material/Tune";
-import {
-  Box,
-  Collapse,
-  Drawer,
-  List,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
-  Typography,
-} from "@mui/material";
+import { Box, Drawer, List, ListItemButton, ListItemIcon, ListItemText, Typography } from "@mui/material";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useState } from "react";
 
 import { version } from "@/../package.json";
+
+import AdminNavSection from "./AdminNavSection";
 
 const DRAWER_WIDTH = 240;
 const RELEASE_URL = `https://github.com/haru/sealion/`;
@@ -42,6 +28,24 @@ interface SidebarProps {
   isAdmin: boolean;
 }
 
+/** sx prop applied to a selected main nav item. */
+const selectedMainSx = {
+  bgcolor: "#eef2ff",
+  color: "primary.main",
+  "& .MuiListItemIcon-root": { color: "primary.main" },
+  "&:hover": { bgcolor: "#e0e7ff" },
+};
+
+/** sx prop for a main nav item, conditionally applying selected styles. */
+const mainItemSx = (isSelected: boolean) => ({
+  borderRadius: "8px",
+  mb: 0.5,
+  px: 1.5,
+  py: 0.875,
+  ...(!isSelected ? { "&:hover": { bgcolor: "#f1f5f9" } } : {}),
+  ...(isSelected ? selectedMainSx : {}),
+});
+
 /**
  * Navigation drawer with logo and links to main sections.
  * @param props - Sidebar props controlling open state, close callback, drawer variant, and admin flag.
@@ -50,7 +54,6 @@ interface SidebarProps {
 export default function Sidebar({ open, onClose, variant, isAdmin }: SidebarProps) {
   const t = useTranslations("sidebar");
   const pathname = usePathname();
-  const [adminOpen, setAdminOpen] = useState(pathname.startsWith("/admin"));
 
   const content = (
     <Box
@@ -64,7 +67,6 @@ export default function Sidebar({ open, onClose, variant, isAdmin }: SidebarProp
         overflow: "hidden",
       }}
     >
-      {/* Logo */}
       <Box
         component={Link}
         href="/"
@@ -108,26 +110,13 @@ export default function Sidebar({ open, onClose, variant, isAdmin }: SidebarProp
         </Box>
       </Box>
 
-      {/* Nav items — plain list, no flex layout on the List itself */}
       <List disablePadding sx={{ flexGrow: 1 }}>
         <ListItemButton
           component={Link}
           href="/"
           selected={pathname === "/"}
           onClick={variant === "temporary" ? onClose : undefined}
-          sx={{
-            borderRadius: "8px",
-            mb: 0.5,
-            px: 1.5,
-            py: 0.875,
-            "&.Mui-selected": {
-              bgcolor: "#eef2ff",
-              color: "primary.main",
-              "& .MuiListItemIcon-root": { color: "primary.main" },
-              "&:hover": { bgcolor: "#e0e7ff" },
-            },
-            "&:hover": { bgcolor: "#f1f5f9" },
-          }}
+          sx={mainItemSx(pathname === "/")}
         >
           <ListItemIcon sx={{ minWidth: 32, color: "inherit" }}>
             <FormatListBulletedIcon sx={{ fontSize: 18 }} />
@@ -143,20 +132,7 @@ export default function Sidebar({ open, onClose, variant, isAdmin }: SidebarProp
           href="/projects"
           selected={pathname === "/projects"}
           onClick={variant === "temporary" ? onClose : undefined}
-          sx={{
-            borderRadius: "8px",
-            mb: 0.5,
-            px: 1.5,
-            py: 0.875,
-            color: "text.secondary",
-            "&.Mui-selected": {
-              bgcolor: "#eef2ff",
-              color: "primary.main",
-              "& .MuiListItemIcon-root": { color: "primary.main" },
-              "&:hover": { bgcolor: "#e0e7ff" },
-            },
-            "&:hover": { bgcolor: "#f1f5f9" },
-          }}
+          sx={mainItemSx(pathname === "/projects")}
         >
           <ListItemIcon sx={{ minWidth: 32, color: "inherit" }}>
             <FolderOpenIcon sx={{ fontSize: 18 }} />
@@ -172,20 +148,7 @@ export default function Sidebar({ open, onClose, variant, isAdmin }: SidebarProp
           href="/settings/board"
           selected={pathname === "/settings/board"}
           onClick={variant === "temporary" ? onClose : undefined}
-          sx={{
-            borderRadius: "8px",
-            mb: 0.5,
-            px: 1.5,
-            py: 0.875,
-            color: "text.secondary",
-            "&.Mui-selected": {
-              bgcolor: "#eef2ff",
-              color: "primary.main",
-              "& .MuiListItemIcon-root": { color: "primary.main" },
-              "&:hover": { bgcolor: "#e0e7ff" },
-            },
-            "&:hover": { bgcolor: "#f1f5f9" },
-          }}
+          sx={mainItemSx(pathname === "/settings/board")}
         >
           <ListItemIcon sx={{ minWidth: 32, color: "inherit" }}>
             <TuneIcon sx={{ fontSize: 18 }} />
@@ -196,125 +159,7 @@ export default function Sidebar({ open, onClose, variant, isAdmin }: SidebarProp
           />
         </ListItemButton>
 
-        {/* Admin-only: System Administration submenu */}
-        {isAdmin && (
-          <>
-            <ListItemButton
-              onClick={() => setAdminOpen((prev) => !prev)}
-              sx={{
-                borderRadius: "8px",
-                mb: 0.5,
-                px: 1.5,
-                py: 0.875,
-                color: "text.secondary",
-                "&:hover": { bgcolor: "#f1f5f9" },
-              }}
-            >
-              <ListItemIcon sx={{ minWidth: 32, color: "inherit" }}>
-                <AdminPanelSettingsIcon sx={{ fontSize: 18 }} />
-              </ListItemIcon>
-              <ListItemText
-                primary={t("systemAdmin")}
-                primaryTypographyProps={{ fontSize: "0.85rem", fontWeight: 500 }}
-              />
-              {adminOpen ? <ExpandLessIcon sx={{ fontSize: 16 }} /> : <ExpandMoreIcon sx={{ fontSize: 16 }} />}
-            </ListItemButton>
-
-            <Collapse in={adminOpen} timeout="auto" unmountOnExit>
-              <List disablePadding>
-                <ListItemButton
-                  component={Link}
-                  href="/admin/users"
-                  selected={pathname === "/admin/users"}
-                  onClick={variant === "temporary" ? onClose : undefined}
-                  sx={{
-                    borderRadius: "8px",
-                    mb: 0.5,
-                    pl: 3.5,
-                    pr: 1.5,
-                    py: 0.875,
-                    color: "text.secondary",
-                    "&.Mui-selected": {
-                      bgcolor: "#eef2ff",
-                      color: "primary.main",
-                      "& .MuiListItemIcon-root": { color: "primary.main" },
-                      "&:hover": { bgcolor: "#e0e7ff" },
-                    },
-                    "&:hover": { bgcolor: "#f1f5f9" },
-                  }}
-                >
-                  <ListItemIcon sx={{ minWidth: 32, color: "inherit" }}>
-                    <PeopleIcon sx={{ fontSize: 18 }} />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary={t("userManagement")}
-                    primaryTypographyProps={{ fontSize: "0.85rem", fontWeight: pathname === "/admin/users" ? 600 : 500 }}
-                  />
-                </ListItemButton>
-
-                <ListItemButton
-                  component={Link}
-                  href="/admin/auth-settings"
-                  selected={pathname === "/admin/auth-settings"}
-                  onClick={variant === "temporary" ? onClose : undefined}
-                  sx={{
-                    borderRadius: "8px",
-                    mb: 0.5,
-                    pl: 3.5,
-                    pr: 1.5,
-                    py: 0.875,
-                    color: "text.secondary",
-                    "&.Mui-selected": {
-                      bgcolor: "#eef2ff",
-                      color: "primary.main",
-                      "& .MuiListItemIcon-root": { color: "primary.main" },
-                      "&:hover": { bgcolor: "#e0e7ff" },
-                    },
-                    "&:hover": { bgcolor: "#f1f5f9" },
-                  }}
-                >
-                  <ListItemIcon sx={{ minWidth: 32, color: "inherit" }}>
-                    <SecurityOutlinedIcon sx={{ fontSize: 18 }} />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary={t("authSettings")}
-                    primaryTypographyProps={{ fontSize: "0.85rem", fontWeight: pathname === "/admin/auth-settings" ? 600 : 500 }}
-                  />
-                </ListItemButton>
-
-                <ListItemButton
-                  component={Link}
-                  href="/admin/smtp-settings"
-                  selected={pathname === "/admin/smtp-settings"}
-                  onClick={variant === "temporary" ? onClose : undefined}
-                  sx={{
-                    borderRadius: "8px",
-                    mb: 0.5,
-                    pl: 3.5,
-                    pr: 1.5,
-                    py: 0.875,
-                    color: "text.secondary",
-                    "&.Mui-selected": {
-                      bgcolor: "#eef2ff",
-                      color: "primary.main",
-                      "& .MuiListItemIcon-root": { color: "primary.main" },
-                      "&:hover": { bgcolor: "#e0e7ff" },
-                    },
-                    "&:hover": { bgcolor: "#f1f5f9" },
-                  }}
-                >
-                  <ListItemIcon sx={{ minWidth: 32, color: "inherit" }}>
-                    <EmailOutlinedIcon sx={{ fontSize: 18 }} />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary={t("smtpSettings")}
-                    primaryTypographyProps={{ fontSize: "0.85rem", fontWeight: pathname === "/admin/smtp-settings" ? 600 : 500 }}
-                  />
-                </ListItemButton>
-              </List>
-            </Collapse>
-          </>
-        )}
+        {isAdmin && <AdminNavSection variant={variant} onClose={onClose} />}
       </List>
 
       <Box
