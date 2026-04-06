@@ -120,7 +120,24 @@ AUTH_URL="http://localhost:3000"
 
 ```
 
-次に、認証と暗号化用のキーを生成して.env に貼り付けます。
+次に、認証と暗号化用のキーを生成して`.env`に貼り付けます。
+
+```bash
+docker compose run --rm --no-deps sealion generate-keys
+```
+
+出力例：
+
+```
+Please add the following values to your .env file:
+
+AUTH_SECRET="<base64エンコードされた値>"
+CREDENTIALS_ENCRYPTION_KEY="<64文字のhex値>"
+```
+
+表示された2行をコピーして`.env`に貼り付けます。
+
+#### 代替方法（ホスト上でopensslが使える場合）
 
 ```bash
 # AUTH_SECRET を生成
@@ -128,13 +145,6 @@ openssl rand -base64 32
 
 # CREDENTIALS_ENCRYPTION_KEY を生成（64 文字の hex 文字列）
 openssl rand -hex 32
-```
-
-生成した値を `.env` に貼り付けます。
-
-```dotenv
-AUTH_SECRET="<ここに貼り付け>"
-CREDENTIALS_ENCRYPTION_KEY="<ここに貼り付け>"
 ```
 
 ### アプリを起動
