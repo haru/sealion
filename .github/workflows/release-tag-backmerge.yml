@@ -14,6 +14,7 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+      issues: write
 
     steps:
       - name: Checkout
@@ -79,7 +80,9 @@ jobs:
           fi
 
           # Ensure the ignore-for-release label exists
-          gh label create "ignore-for-release" --color "ededed" --description "Excluded from release notes" 2>/dev/null || true
+          if ! gh label list --json name --jq '.[].name' | grep -qx "ignore-for-release"; then
+            gh label create "ignore-for-release" --color "ededed" --description "Excluded from release notes"
+          fi
 
           # Create a new backmerge PR
           BODY=$(printf 'Automated backmerge of main to develop after release v%s.\n\nThis PR was created automatically by GitHub Actions.' "$VERSION")
