@@ -108,3 +108,106 @@ describe("PATCH /api/admin/users/[id] — status field", () => {
     expect(json.error).toBe("INVALID_INPUT");
   });
 });
+
+describe("PATCH /api/admin/users/[id] — changePassword", () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it("ignores password when changePassword is absent even if password has a value", async () => {
+    mockAuth.mockResolvedValue(ADMIN_SESSION);
+    mockUserFindUnique.mockResolvedValue(TARGET_USER);
+    mockUserUpdate.mockResolvedValue({ ...TARGET_USER });
+
+    const res = await callPatch("user-1", { username: "New Name", password: "newpassword123" });
+
+    expect(res.status).toBe(200);
+    const updateArgs = mockUserUpdate.mock.calls[0][0] as { data: Record<string, unknown> };
+    expect(updateArgs.data).not.toHaveProperty("passwordHash");
+  });
+
+  it("ignores password when changePassword is false even if password has a value", async () => {
+    mockAuth.mockResolvedValue(ADMIN_SESSION);
+    mockUserFindUnique.mockResolvedValue(TARGET_USER);
+    mockUserUpdate.mockResolvedValue({ ...TARGET_USER });
+
+    const res = await callPatch("user-1", { changePassword: false, password: "newpassword123" });
+
+    expect(res.status).toBe(200);
+    const updateArgs = mockUserUpdate.mock.calls[0][0] as { data: Record<string, unknown> };
+    expect(updateArgs.data).not.toHaveProperty("passwordHash");
+  });
+
+  it("updates password when changePassword is true and password is valid", async () => {
+    mockAuth.mockResolvedValue(ADMIN_SESSION);
+    mockUserFindUnique.mockResolvedValue(TARGET_USER);
+    mockUserUpdate.mockResolvedValue({ ...TARGET_USER });
+
+    const res = await callPatch("user-1", { changePassword: true, password: "newpassword123" });
+
+    expect(res.status).toBe(200);
+    const updateArgs = mockUserUpdate.mock.calls[0][0] as { data: Record<string, unknown> };
+    expect(updateArgs.data).toHaveProperty("passwordHash", "hashed");
+  });
+
+  it("returns 400 PASSWORD_REQUIRED when changePassword is true but password is missing", async () => {
+    mockAuth.mockResolvedValue(ADMIN_SESSION);
+    mockUserFindUnique.mockResolvedValue(TARGET_USER);
+
+    const res = await callPatch("user-1", { changePassword: true });
+    const json = await res.json();
+
+    expect(res.status).toBe(400);
+    expect(json.error).toBe("PASSWORD_REQUIRED");
+    expect(mockUserUpdate).not.toHaveBeenCalled();
+  });
+
+  it("returns 400 PASSWORD_TOO_SHORT when changePassword is true and password is less than 8 chars", async () => {
+    mockAuth.mockResolvedValue(ADMIN_SESSION);
+    mockUserFindUnique.mockResolvedValue(TARGET_USER);
+
+    const res = await callPatch("user-1", { changePassword: true, password: "short" });
+    const json = await res.json();
+
+    expect(res.status).toBe(400);
+    expect(json.error).toBe("PASSWORD_TOO_SHORT");
+    expect(mockUserUpdate).not.toHaveBeenCalled();
+  });
+
+  it("returns 400 PASSWORD_TOO_LONG when changePassword is true and password exceeds 72 chars", async () => {
+    mockAuth.mockResolvedValue(ADMIN_SESSION);
+    mockUserFindUnique.mockResolvedValue(TARGET_USER);
+
+    const longPassword = "a".repeat(73);
+    const res = await callPatch("user-1", { changePassword: true, password: longPassword });
+    const json = await res.json();
+
+    expect(res.status).toBe(400);
+    expect(json.error).toBe("PASSWORD_TOO_LONG");
+    expect(mockUserUpdate).not.toHaveBeenCalled();
+  });
+
+  it("does not return PASSWORD_TOO_LONG when changePassword is false and password exceeds 72 chars", async () => {
+    mockAuth.mockResolvedValue(ADMIN_SESSION);
+    mockUserFindUnique.mockResolvedValue(TARGET_USER);
+    mockUserUpdate.mockResolvedValue({ ...TARGET_USER });
+
+    const longPassword = "a".repeat(73);
+    const res = await callPatch("user-1", { changePassword: false, password: longPassword });
+
+    expect(res.status).toBe(200);
+    const updateArgs = mockUserUpdate.mock.calls[0][0] as { data: Record<string, unknown> };
+    expect(updateArgs.data).not.toHaveProperty("passwordHash");
+  });
+
+  it("does not return PASSWORD_TOO_LONG when changePassword is absent and password exceeds 72 chars", async () => {
+    mockAuth.mockResolvedValue(ADMIN_SESSION);
+    mockUserFindUnique.mockResolvedValue(TARGET_USER);
+    mockUserUpdate.mockResolvedValue({ ...TARGET_USER });
+
+    const longPassword = "a".repeat(73);
+    const res = await callPatch("user-1", { password: longPassword });
+
+    expect(res.status).toBe(200);
+    const updateArgs = mockUserUpdate.mock.calls[0][0] as { data: Record<string, unknown> };
+    expect(updateArgs.data).not.toHaveProperty("passwordHash");
+  });
+});

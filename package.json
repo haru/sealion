@@ -1,6 +1,6 @@
 {
   "name": "sealion",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -27,9 +27,9 @@
     "axios": "^1.14.0",
     "bcryptjs": "^3.0.3",
     "hpagent": "^1.2.0",
-    "next": "16.2.1",
+    "next": "16.2.2",
     "next-auth": "^5.0.0-beta.30",
-    "next-intl": "^4.8.3",
+    "next-intl": "^4.9.0",
     "nodemailer": "^7.0.13",
     "pg": "^8.20.0",
     "react": "19.2.4",
@@ -41,7 +41,7 @@
     "lodash": ">=4.17.23"
   },
   "devDependencies": {
-    "@playwright/test": "^1.58.2",
+    "@playwright/test": "^1.59.1",
     "@stylistic/eslint-plugin": "^5.10.0",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",

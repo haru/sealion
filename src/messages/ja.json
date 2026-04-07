@@ -177,7 +177,7 @@
     "usernameErrorTooLong": "ユーザー名は50文字以内で入力してください。",
     "usernameErrorUnexpected": "予期しないエラーが発生しました。もう一度お試しください。",
     "dangerZone": {
-      "title": "危険な操作",
+      "title": "Danger Zone",
       "deleteAccount": "アカウントを削除",
       "deleteAccountDescription": "アカウントとすべての関連データを完全に削除します。この操作は取り消せません。",
       "modal": {
@@ -276,7 +276,7 @@
     "fields": {
       "email": "メールアドレス",
       "password": "パスワード",
-      "passwordHint": "空欄のままにすると現在のパスワードが維持されます",
+      "changePassword": "パスワードを変更する",
       "username": "表示名",
       "role": "ロール",
       "status": "ステータス"
@@ -316,6 +316,7 @@
     "EMAIL_ALREADY_EXISTS": "このメールアドレスはすでに登録されています",
     "INVALID_EMAIL": "有効なメールアドレスを入力してください",
     "PASSWORD_TOO_SHORT": "パスワードは8文字以上で入力してください",
+    "PASSWORD_REQUIRED": "パスワード変更時にパスワードは必須です",
     "MISSING_USERNAME": "表示名は必須です",
     "INVALID_INPUT": "入力値が正しくありません",
     "PASSWORD_TOO_LONG": "パスワードは72文字以内で入力してください",

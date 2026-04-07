@@ -1,6 +1,14 @@
 #!/bin/sh
 set -e
 
+if [ "$1" = "generate-keys" ]; then
+  echo "========================================================="
+  printf 'Please add the following values to your .env file:\n\nAUTH_SECRET="%s"\nCREDENTIALS_ENCRYPTION_KEY="%s"\n' \
+    "$(node -e "process.stdout.write(require('crypto').randomBytes(32).toString('base64'))")" \
+    "$(node -e "process.stdout.write(require('crypto').randomBytes(32).toString('hex'))")"
+  exit 0
+fi
+
 DB_HOST="${DB_HOST:-db}"
 DB_PORT="${DB_PORT:-5432}"
 DB_USER="${DB_USER:-postgres}"

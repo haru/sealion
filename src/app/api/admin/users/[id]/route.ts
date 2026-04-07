@@ -15,6 +15,9 @@ const VALID_STATUSES = new Set(Object.values(UserStatus));
 
 type Params = { params: Promise<{ id: string }> };
 
+/** Minimum password length. */
+const MIN_PASSWORD_LENGTH = 8;
+
 /** Fields accepted by the PATCH body. */
 type PatchBody = {
   status?: string;
@@ -22,6 +25,7 @@ type PatchBody = {
   email?: string;
   username?: string;
   password?: string;
+  changePassword?: boolean;
 };
 
 /**
@@ -31,16 +35,58 @@ type PatchBody = {
  * @returns Promise resolving to the update data record.
  */
 async function buildUpdateData(body: PatchBody): Promise<Record<string, unknown>> {
-  const { status, role, email, username, password } = body;
+  const { status, role, email, username, password, changePassword } = body;
   const data: Record<string, unknown> = {};
   if (status && VALID_STATUSES.has(status as UserStatus)) { data.status = status; }
   if (role && Object.values(UserRole).includes(role as UserRole)) { data.role = role; }
   if (typeof email === "string" && email.trim()) { data.email = email.trim().toLowerCase(); }
   if (typeof username === "string") { data.username = username.trim(); }
-  if (typeof password === "string" && password.length >= 8) {
+  if (changePassword === true && typeof password === "string" && password.length >= MIN_PASSWORD_LENGTH) {
     data.passwordHash = await hash(password, 12);
   }
   return data;
+}
+
+/**
+ * Validate password-related fields when `changePassword` is requested.
+ *
+ * @param changePassword - The boolean flag from the request body.
+ * @param password - The password value from the request body.
+ * @returns An error response if validation fails, or `null` if validation passes.
+ */
+function validatePasswordChange(changePassword: unknown, password: unknown): ReturnType<typeof fail> | null {
+  if (changePassword !== true) { return null; }
+  if (typeof password !== "string" || password.length === 0) {
+    return fail("PASSWORD_REQUIRED", 400);
+  }
+  if (password.length < MIN_PASSWORD_LENGTH) {
+    return fail("PASSWORD_TOO_SHORT", 400);
+  }
+  return null;
+}
+
+/**
+ * Validate the status field and password-length constraints for explicit password changes.
+ *
+ * @param body - The parsed patch request body.
+ * @returns An error response if validation fails, or `null` if validation passes.
+ */
+function validatePatchFields(body: PatchBody): ReturnType<typeof fail> | null {
+  const { status, password, changePassword } = body;
+
+  if (status !== undefined && !VALID_STATUSES.has(status as UserStatus)) {
+    return fail("INVALID_INPUT", 400);
+  }
+
+  if (
+    changePassword === true &&
+    typeof password === "string" &&
+    password.length > MAX_PASSWORD_LENGTH
+  ) {
+    return fail("PASSWORD_TOO_LONG", 400);
+  }
+
+  return null;
 }
 
 /**
@@ -51,7 +97,7 @@ async function buildUpdateData(body: PatchBody): Promise<Record<string, unknown>
  * - Admin cannot change their own `status` (403 CANNOT_CHANGE_OWN_STATUS).
  * - All other self-edits (email, username, password, or setting role to same value) are permitted.
  *
- * @param req - Incoming request with optional body fields: status, role, email, username, password.
+ * @param req - Incoming request with optional body fields: status, role, email, username, password, changePassword.
  * @param params - Route params containing the target user id.
  * @returns Updated user data on success, or an error response.
  */
@@ -66,27 +112,21 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   if (!body) { return fail("INVALID_BODY", 400); }
 
   const patchBody = body as PatchBody;
-  const { status, role, password } = patchBody;
+  const { status, role, changePassword, password } = patchBody;
 
-  // Self-protection: cannot change own status
+  const passwordError = validatePasswordChange(changePassword, password);
+  if (passwordError) { return passwordError; }
+
   if (id === session.user.id && status !== undefined) {
     return fail("CANNOT_CHANGE_OWN_STATUS", 403);
   }
 
-  // Validate status value
-  if (status !== undefined && !VALID_STATUSES.has(status as UserStatus)) {
-    return fail("INVALID_INPUT", 400);
-  }
-
-  // Password length check
-  if (typeof password === "string" && password.length > MAX_PASSWORD_LENGTH) {
-    return fail("PASSWORD_TOO_LONG", 400);
-  }
+  const fieldError = validatePatchFields(patchBody);
+  if (fieldError) { return fieldError; }
 
   const target = await prisma.user.findUnique({ where: { id } });
   if (!target) { return fail("NOT_FOUND", 404); }
 
-  // Self-protection: cannot change own role to a *different* value
   if (id === session.user.id && role !== undefined && role !== target.role) {
     return fail("CANNOT_CHANGE_OWN_ROLE", 403);
   }

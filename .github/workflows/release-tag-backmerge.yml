@@ -40,7 +40,9 @@ jobs:
             git config user.name "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
             git tag "v${{ env.VERSION }}"
-            git push origin "v${{ env.VERSION }}" || echo "Tag push failed, possibly already exists"
+            git push origin "v${{ env.VERSION }}" || {
+              git ls-remote --tags origin "refs/tags/v${{ env.VERSION }}" | grep -q . || exit 1
+            }
           fi
 
       - name: Create GitHub Release
@@ -52,7 +54,8 @@ jobs:
           else
             gh release create "v${{ env.VERSION }}" \
               --title "v${{ env.VERSION }}" \
-              --generate-notes
+              --generate-notes \
+              --prerelease
           fi
 
       - name: Create backmerge PR to develop

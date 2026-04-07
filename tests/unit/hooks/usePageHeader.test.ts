@@ -56,6 +56,8 @@ describe("usePageHeader", () => {
             actions: null,
             icon: null,
             titleAddon: null,
+            breadcrumbParent: null,
+            breadcrumbParentIcon: null,
             setPageHeader: mockSetPageHeader,
           },
         },
@@ -67,7 +69,7 @@ describe("usePageHeader", () => {
     });
 
     // On mount, setPageHeader should have been called with the title
-    expect(mockSetPageHeader).toHaveBeenCalledWith("Temp", undefined, undefined, undefined);
+    expect(mockSetPageHeader).toHaveBeenCalledWith("Temp", undefined, undefined, undefined, undefined, undefined);
 
     act(() => {
       unmount();
@@ -146,6 +148,8 @@ describe("usePageHeader", () => {
             actions: null,
             icon: null,
             titleAddon: null,
+            breadcrumbParent: null,
+            breadcrumbParentIcon: null,
             setPageHeader: mockSetPageHeader,
           },
         },
@@ -157,7 +161,7 @@ describe("usePageHeader", () => {
       { wrapper: mockWrapper }
     );
 
-    expect(mockSetPageHeader).toHaveBeenCalledWith("Providers", undefined, StableMockIcon, undefined);
+    expect(mockSetPageHeader).toHaveBeenCalledWith("Providers", undefined, StableMockIcon, undefined, undefined, undefined);
 
     act(() => {
       unmount();
@@ -219,6 +223,8 @@ describe("usePageHeader", () => {
             actions: null,
             icon: null,
             titleAddon: null,
+            breadcrumbParent: null,
+            breadcrumbParentIcon: null,
             setPageHeader: mockSetPageHeader,
           },
         },
@@ -230,6 +236,116 @@ describe("usePageHeader", () => {
       { wrapper: mockWrapper }
     );
 
-    expect(mockSetPageHeader).toHaveBeenCalledWith("Todo", undefined, undefined, badge);
+    expect(mockSetPageHeader).toHaveBeenCalledWith("Todo", undefined, undefined, badge, undefined, undefined);
+  });
+
+  it("sets breadcrumbParent in context when mounted with a breadcrumbParent string", () => {
+    const { result } = renderHook(
+      () => {
+        const { usePageHeaderContext } = jest.requireActual(
+          "@/contexts/PageHeaderContext"
+        ) as typeof import("@/contexts/PageHeaderContext");
+        usePageHeader("Users", undefined, undefined, undefined, "System Settings");
+        return usePageHeaderContext();
+      },
+      { wrapper }
+    );
+
+    expect(result.current.breadcrumbParent).toBe("System Settings");
+  });
+
+  it("sets breadcrumbParent to null in context when no breadcrumbParent is provided", () => {
+    const { result } = renderHook(
+      () => {
+        const { usePageHeaderContext } = jest.requireActual(
+          "@/contexts/PageHeaderContext"
+        ) as typeof import("@/contexts/PageHeaderContext");
+        usePageHeader("Dashboard");
+        return usePageHeaderContext();
+      },
+      { wrapper }
+    );
+
+    expect(result.current.breadcrumbParent).toBeNull();
+  });
+
+  it("sets breadcrumbParentIcon in context when mounted with an icon component", () => {
+    function StableParentIcon() { return null; }
+
+    const { result } = renderHook(
+      () => {
+        const { usePageHeaderContext } = jest.requireActual(
+          "@/contexts/PageHeaderContext"
+        ) as typeof import("@/contexts/PageHeaderContext");
+        usePageHeader("Users", undefined, undefined, undefined, "System Settings", StableParentIcon);
+        return usePageHeaderContext();
+      },
+      { wrapper }
+    );
+
+    expect(result.current.breadcrumbParentIcon).toBe(StableParentIcon);
+  });
+
+  it("passes breadcrumbParent and breadcrumbParentIcon to setPageHeader on mount", () => {
+    function StableParentIcon() { return null; }
+    const mockSetPageHeader = jest.fn();
+    const mockWrapper = ({ children }: { children: React.ReactNode }) =>
+      React.createElement(
+        PageHeaderContext.Provider,
+        {
+          value: {
+            title: "",
+            actions: null,
+            icon: null,
+            titleAddon: null,
+            breadcrumbParent: null,
+            breadcrumbParentIcon: null,
+            setPageHeader: mockSetPageHeader,
+          },
+        },
+        children
+      );
+
+    renderHook(
+      () => usePageHeader("Auth Settings", undefined, undefined, undefined, "System Settings", StableParentIcon),
+      { wrapper: mockWrapper }
+    );
+
+    expect(mockSetPageHeader).toHaveBeenCalledWith("Auth Settings", undefined, undefined, undefined, "System Settings", StableParentIcon);
+  });
+
+  it("clears breadcrumbParent and breadcrumbParentIcon on unmount", () => {
+    function StableParentIcon() { return null; }
+    const mockSetPageHeader = jest.fn();
+    const mockWrapper = ({ children }: { children: React.ReactNode }) =>
+      React.createElement(
+        PageHeaderContext.Provider,
+        {
+          value: {
+            title: "",
+            actions: null,
+            icon: null,
+            titleAddon: null,
+            breadcrumbParent: null,
+            breadcrumbParentIcon: null,
+            setPageHeader: mockSetPageHeader,
+          },
+        },
+        children
+      );
+
+    const { unmount } = renderHook(
+      () => usePageHeader("Users", undefined, undefined, undefined, "System Settings", StableParentIcon),
+      { wrapper: mockWrapper }
+    );
+
+    expect(mockSetPageHeader).toHaveBeenCalledWith("Users", undefined, undefined, undefined, "System Settings", StableParentIcon);
+
+    act(() => {
+      unmount();
+    });
+
+    // Cleanup should reset the header with empty values
+    expect(mockSetPageHeader).toHaveBeenLastCalledWith("", null);
   });
 });

@@ -254,12 +254,12 @@ describe("PATCH /api/admin/users/[id]", () => {
     expect(res.status).toBe(404);
   });
 
-  it("returns 400 PASSWORD_TOO_LONG when password exceeds 72 characters", async () => {
+  it("returns 400 PASSWORD_TOO_LONG when changePassword is true and password exceeds 72 characters", async () => {
     mockAuth.mockResolvedValue(ADMIN_SESSION);
     mockFindUnique.mockResolvedValue({ id: "user-2", email: "u@ex.com", role: "USER" });
 
     const longPassword = "a".repeat(73);
-    const req = makeRequest("PATCH", { password: longPassword }, "http://localhost/api/admin/users/user-2");
+    const req = makeRequest("PATCH", { changePassword: true, password: longPassword }, "http://localhost/api/admin/users/user-2");
     const res = await PATCH(req, { params: Promise.resolve({ id: "user-2" }) });
     const json = await res.json();
 
