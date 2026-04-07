@@ -19,10 +19,10 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       <Box sx={{ mb: 4, display: "flex", flexDirection: "column", alignItems: "center" }}>
         <Box
           sx={{
-            width: 80,
-            height: 80,
+            width: 140,
+            height: 140,
             bgcolor: "white",
-            borderRadius: "24px",
+            borderRadius: "32px",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -30,7 +30,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
             mb: 2,
           }}
         >
-          <Image src="/sealion.svg" alt="" aria-hidden width={56} height={56} priority />
+          <Image src="/sealion.svg" alt="" aria-hidden width={100} height={100} priority />
         </Box>
         <Typography
           variant="h3"
@@ -43,6 +43,17 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           }}
         >
           Sealion
+        </Typography>
+        <Typography
+          variant="subtitle1"
+          sx={{
+            color: "primary.main",
+            mt: 0.5,
+            fontWeight: 500,
+            letterSpacing: "0.01em",
+          }}
+        >
+          All Your TODOs, One Place.
         </Typography>
       </Box>
 
