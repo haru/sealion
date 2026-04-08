@@ -115,6 +115,13 @@ describe("LinearAdapter", () => {
       const projects = await adapter.listProjects();
       expect(projects).toEqual([]);
     });
+
+    it("throws when hasNextPage is true but endCursor is null", async () => {
+      // makeTeamNodes with hasNextPage=true and no endCursor => endCursor: null
+      mockTeams.mockResolvedValue(makeTeamNodes([{ id: "team-1", name: "Eng" }], true));
+      const adapter = new LinearAdapter("lin_api_test");
+      await expect(adapter.listProjects()).rejects.toThrow();
+    });
   });
 
   // ─── fetchAssignedIssues ───────────────────────────────────────────────────
@@ -198,6 +205,29 @@ describe("LinearAdapter", () => {
       expect(mockIssues).toHaveBeenCalledTimes(2);
     });
 
+    it("passes first:100 to the issues query", async () => {
+      mockViewer.mockResolvedValue({ id: "viewer-1" });
+      mockIssues.mockResolvedValue(makeIssueNodes([]));
+
+      const adapter = new LinearAdapter("lin_api_test");
+      await adapter.fetchAssignedIssues("team-1");
+
+      expect(mockIssues).toHaveBeenCalledWith(
+        expect.objectContaining({ first: 100 }),
+      );
+    });
+
+    it("throws when hasNextPage is true but endCursor is null", async () => {
+      mockViewer.mockResolvedValue({ id: "viewer-1" });
+      mockIssues.mockResolvedValue(makeIssueNodes(
+        [{ id: "issue-1", title: "A", url: "https://x", dueDate: null, createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z" }],
+        true, // hasNextPage=true, no endCursor => null
+      ));
+
+      const adapter = new LinearAdapter("lin_api_test");
+      await expect(adapter.fetchAssignedIssues("team-1")).rejects.toThrow();
+    });
+
     it("caches viewer ID across multiple calls", async () => {
       mockViewer.mockResolvedValue({ id: "viewer-1" });
       mockIssues.mockResolvedValue(makeIssueNodes([]));
@@ -274,6 +304,27 @@ describe("LinearAdapter", () => {
       const adapter = new LinearAdapter("lin_api_test");
       await adapter.fetchUnassignedIssues("team-1");
       expect(mockViewer).not.toHaveBeenCalled();
+    });
+
+    it("passes first:100 to the issues query", async () => {
+      mockIssues.mockResolvedValue(makeIssueNodes([]));
+
+      const adapter = new LinearAdapter("lin_api_test");
+      await adapter.fetchUnassignedIssues("team-1");
+
+      expect(mockIssues).toHaveBeenCalledWith(
+        expect.objectContaining({ first: 100 }),
+      );
+    });
+
+    it("throws when hasNextPage is true but endCursor is null", async () => {
+      mockIssues.mockResolvedValue(makeIssueNodes(
+        [{ id: "u-1", title: "A", url: "https://x", dueDate: null, createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z" }],
+        true, // hasNextPage=true, no endCursor => null
+      ));
+
+      const adapter = new LinearAdapter("lin_api_test");
+      await expect(adapter.fetchUnassignedIssues("team-1")).rejects.toThrow();
     });
   });
 

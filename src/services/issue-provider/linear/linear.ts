@@ -12,7 +12,13 @@ export class LinearAdapter implements IssueProviderAdapter {
 
   /**
    * Creates a new Linear adapter.
+   *
    * @param apiKey - Linear Personal API Key.
+   * @remarks Proxy support: `@linear/sdk` uses its own HTTP transport and does not
+   *   honour the `HTTP_PROXY` / `HTTPS_PROXY` environment variables that the other
+   *   adapters (axios-based) respect. If Linear connectivity requires a proxy in your
+   *   environment, configure a system-level transparent proxy or use `--env-file` /
+   *   OS-level proxy settings that intercept all outbound TLS traffic.
    */
   constructor(apiKey: string) {
     this.client = new LinearClient({ apiKey });
@@ -52,7 +58,11 @@ export class LinearAdapter implements IssueProviderAdapter {
         projects.push({ externalId: team.id, displayName: team.name });
       }
       if (!result.pageInfo.hasNextPage) { break; }
-      cursor = result.pageInfo.endCursor ?? undefined;
+      const nextCursor = result.pageInfo.endCursor;
+      if (!nextCursor) {
+        throw new Error("Linear teams pagination returned hasNextPage=true without an endCursor.");
+      }
+      cursor = nextCursor;
     }
 
     return projects;
@@ -101,6 +111,7 @@ export class LinearAdapter implements IssueProviderAdapter {
 
     while (true) {
       const result = await this.client.issues({
+        first: 100,
         filter: {
           team: { id: { eq: teamId } },
           ...assigneeFilter,
@@ -122,7 +133,11 @@ export class LinearAdapter implements IssueProviderAdapter {
       }
 
       if (!result.pageInfo.hasNextPage) { break; }
-      cursor = result.pageInfo.endCursor ?? undefined;
+      const nextCursor = result.pageInfo.endCursor;
+      if (!nextCursor) {
+        throw new Error("Linear issues pagination returned hasNextPage=true without an endCursor.");
+      }
+      cursor = nextCursor;
     }
 
     return issues;
