@@ -1,6 +1,7 @@
 import { githubMetadata } from "./github/github.metadata";
 import { gitlabMetadata } from "./gitlab/gitlab.metadata";
 import { jiraMetadata } from "./jira/jira.metadata";
+import { linearMetadata } from "./linear/linear.metadata";
 import type { ProviderMetadata } from "./metadata";
 import { redmineMetadata } from "./redmine/redmine.metadata";
 
@@ -12,6 +13,7 @@ registerProvider(githubMetadata);
 registerProvider(jiraMetadata);
 registerProvider(redmineMetadata);
 registerProvider(gitlabMetadata);
+registerProvider(linearMetadata);
 
 /**
  * Registers a provider's metadata in the registry.

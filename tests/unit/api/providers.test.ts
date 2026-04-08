@@ -57,6 +57,12 @@ jest.mock("@/services/issue-provider/gitlab/gitlab", () => ({
   })),
 }));
 
+jest.mock("@/services/issue-provider/linear/linear", () => ({
+  LinearAdapter: jest.fn().mockImplementation(() => ({
+    testConnection: jest.fn().mockResolvedValue(undefined),
+  })),
+}));
+
 // Mock registry — getProviderMetadata returns iconUrl, baseUrlMode, and credentialFields
 type MockMeta = { type: string; iconUrl: string; baseUrlMode: string; credentialFields: { key: string; required: boolean }[]; credentialSchema: { parse: (x: unknown) => unknown } };
 const MOCK_REGISTRY: Record<string, MockMeta> = {
@@ -64,6 +70,7 @@ const MOCK_REGISTRY: Record<string, MockMeta> = {
   JIRA: { type: "JIRA", iconUrl: "/providers/jira.svg", baseUrlMode: "required", credentialFields: [{ key: "email", required: true }, { key: "apiToken", required: true }], credentialSchema: { parse: (x) => x } },
   REDMINE: { type: "REDMINE", iconUrl: "/providers/redmine.svg", baseUrlMode: "required", credentialFields: [{ key: "apiKey", required: true }], credentialSchema: { parse: (x) => x } },
   GITLAB: { type: "GITLAB", iconUrl: "/providers/gitlab.svg", baseUrlMode: "optional", credentialFields: [{ key: "token", required: true }], credentialSchema: { parse: (x) => x } },
+  LINEAR: { type: "LINEAR", iconUrl: "/providers/linear.svg", baseUrlMode: "none", credentialFields: [{ key: "apiKey", required: true }], credentialSchema: { parse: (x) => x } },
 };
 
 jest.mock("@/services/issue-provider/registry", () => ({
