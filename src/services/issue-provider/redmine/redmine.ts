@@ -40,7 +40,7 @@ interface RedmineIssueStatusResponse {
 
 /** Adapter for the Redmine issue provider. */
 export class RedmineAdapter implements IssueProviderAdapter {
-  static readonly iconUrl: string | null = "/redmine.svg";
+  static readonly iconUrl: string | null = "/providers/redmine.svg";
 
   private readonly client;
   private readonly baseUrl: string;

@@ -47,7 +47,7 @@ jest.mock("@/services/issue-provider/github/github", () => ({
     jest.fn().mockImplementation(() => ({
       testConnection: jest.fn().mockResolvedValue(undefined),
     })),
-    { iconUrl: "/github.svg" }
+    { iconUrl: "/providers/github.svg" }
   ),
 }));
 
@@ -56,7 +56,7 @@ jest.mock("@/services/issue-provider/jira/jira", () => ({
     jest.fn().mockImplementation(() => ({
       testConnection: jest.fn().mockResolvedValue(undefined),
     })),
-    { iconUrl: "/jira.svg" }
+    { iconUrl: "/providers/jira.svg" }
   ),
 }));
 
@@ -65,7 +65,7 @@ jest.mock("@/services/issue-provider/redmine/redmine", () => ({
     jest.fn().mockImplementation(() => ({
       testConnection: jest.fn().mockResolvedValue(undefined),
     })),
-    { iconUrl: "/redmine.svg" }
+    { iconUrl: "/providers/redmine.svg" }
   ),
 }));
 

@@ -60,10 +60,10 @@ jest.mock("@/services/issue-provider/gitlab/gitlab", () => ({
 // Mock registry — getProviderMetadata returns iconUrl, baseUrlMode, and credentialFields
 type MockMeta = { type: string; iconUrl: string; baseUrlMode: string; credentialFields: { key: string; required: boolean }[]; credentialSchema: { parse: (x: unknown) => unknown } };
 const MOCK_REGISTRY: Record<string, MockMeta> = {
-  GITHUB: { type: "GITHUB", iconUrl: "/github.svg", baseUrlMode: "none", credentialFields: [{ key: "token", required: true }], credentialSchema: { parse: (x) => x } },
-  JIRA: { type: "JIRA", iconUrl: "/jira.svg", baseUrlMode: "required", credentialFields: [{ key: "email", required: true }, { key: "apiToken", required: true }], credentialSchema: { parse: (x) => x } },
-  REDMINE: { type: "REDMINE", iconUrl: "/redmine.svg", baseUrlMode: "required", credentialFields: [{ key: "apiKey", required: true }], credentialSchema: { parse: (x) => x } },
-  GITLAB: { type: "GITLAB", iconUrl: "/gitlab.svg", baseUrlMode: "optional", credentialFields: [{ key: "token", required: true }], credentialSchema: { parse: (x) => x } },
+  GITHUB: { type: "GITHUB", iconUrl: "/providers/github.svg", baseUrlMode: "none", credentialFields: [{ key: "token", required: true }], credentialSchema: { parse: (x) => x } },
+  JIRA: { type: "JIRA", iconUrl: "/providers/jira.svg", baseUrlMode: "required", credentialFields: [{ key: "email", required: true }, { key: "apiToken", required: true }], credentialSchema: { parse: (x) => x } },
+  REDMINE: { type: "REDMINE", iconUrl: "/providers/redmine.svg", baseUrlMode: "required", credentialFields: [{ key: "apiKey", required: true }], credentialSchema: { parse: (x) => x } },
+  GITLAB: { type: "GITLAB", iconUrl: "/providers/gitlab.svg", baseUrlMode: "optional", credentialFields: [{ key: "token", required: true }], credentialSchema: { parse: (x) => x } },
 };
 
 jest.mock("@/services/issue-provider/registry", () => ({
@@ -112,7 +112,7 @@ describe("GET /api/providers", () => {
     expect(res.status).toBe(200);
     expect(json.data).toHaveLength(1);
     expect(json.data[0].type).toBe("GITHUB");
-    expect(json.data[0].iconUrl).toBe("/github.svg");
+    expect(json.data[0].iconUrl).toBe("/providers/github.svg");
   });
 
   it("returns 401 when not authenticated", async () => {
@@ -189,7 +189,7 @@ describe("POST /api/providers", () => {
 
     expect(res.status).toBe(201);
     expect(json.data.type).toBe("GITHUB");
-    expect(json.data.iconUrl).toBe("/github.svg");
+    expect(json.data.iconUrl).toBe("/providers/github.svg");
   });
 
   it("returns 422 when credentials are invalid (connection fails)", async () => {
@@ -484,7 +484,7 @@ describe("PATCH /api/providers/[id]", () => {
 
     expect(res.status).toBe(200);
     expect(json.data.displayName).toBe("Updated");
-    expect(json.data.iconUrl).toBe("/github.svg");
+    expect(json.data.iconUrl).toBe("/providers/github.svg");
   });
 
   it("returns 200 updating credentials when changeCredentials=true", async () => {

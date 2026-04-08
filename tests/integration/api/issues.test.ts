@@ -34,7 +34,7 @@ jest.mock("@/services/issue-provider/github/github", () => ({
       closeIssue: mockCloseIssue,
       addComment: mockAddComment,
     })),
-    { iconUrl: "/github.svg" }
+    { iconUrl: "/providers/github.svg" }
   ),
 }));
 
@@ -44,7 +44,7 @@ jest.mock("@/services/issue-provider/jira/jira", () => ({
       closeIssue: mockCloseIssue,
       addComment: mockAddComment,
     })),
-    { iconUrl: "/jira.svg" }
+    { iconUrl: "/providers/jira.svg" }
   ),
 }));
 
@@ -54,7 +54,7 @@ jest.mock("@/services/issue-provider/redmine/redmine", () => ({
       closeIssue: mockCloseIssue,
       addComment: mockAddComment,
     })),
-    { iconUrl: "/redmine.svg" }
+    { iconUrl: "/providers/redmine.svg" }
   ),
 }));
 
@@ -118,7 +118,7 @@ async function importIssueIdRoute(p: unknown) {
         closeIssue: mockCloseIssue,
         addComment: mockAddComment,
       })),
-      { iconUrl: "/github.svg" }
+      { iconUrl: "/providers/github.svg" }
     ),
   }));
   jest.doMock("@/services/issue-provider/jira/jira", () => ({
@@ -127,7 +127,7 @@ async function importIssueIdRoute(p: unknown) {
         closeIssue: mockCloseIssue,
         addComment: mockAddComment,
       })),
-      { iconUrl: "/jira.svg" }
+      { iconUrl: "/providers/jira.svg" }
     ),
   }));
   jest.doMock("@/services/issue-provider/redmine/redmine", () => ({
@@ -136,7 +136,7 @@ async function importIssueIdRoute(p: unknown) {
         closeIssue: mockCloseIssue,
         addComment: mockAddComment,
       })),
-      { iconUrl: "/redmine.svg" }
+      { iconUrl: "/providers/redmine.svg" }
     ),
   }));
   return await import("@/app/api/issues/[id]/route");
@@ -259,13 +259,13 @@ describe("PATCH /api/issues/[id] — pinned toggle", () => {
       }),
     }));
     jest.doMock("@/services/issue-provider/github/github", () => ({
-      GitHubAdapter: Object.assign(jest.fn().mockImplementation(() => ({})), { iconUrl: "/github.svg" }),
+      GitHubAdapter: Object.assign(jest.fn().mockImplementation(() => ({})), { iconUrl: "/providers/github.svg" }),
     }));
     jest.doMock("@/services/issue-provider/jira/jira", () => ({
-      JiraAdapter: Object.assign(jest.fn().mockImplementation(() => ({})), { iconUrl: "/jira.svg" }),
+      JiraAdapter: Object.assign(jest.fn().mockImplementation(() => ({})), { iconUrl: "/providers/jira.svg" }),
     }));
     jest.doMock("@/services/issue-provider/redmine/redmine", () => ({
-      RedmineAdapter: Object.assign(jest.fn().mockImplementation(() => ({})), { iconUrl: "/redmine.svg" }),
+      RedmineAdapter: Object.assign(jest.fn().mockImplementation(() => ({})), { iconUrl: "/providers/redmine.svg" }),
     }));
     const { PATCH } = await import("@/app/api/issues/[id]/route");
 

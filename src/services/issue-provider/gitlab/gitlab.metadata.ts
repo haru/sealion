@@ -15,7 +15,7 @@ export const gitlabCredentialSchema = z.object({
 export const gitlabMetadata: ProviderMetadata = {
   type: "GITLAB",
   displayName: "GitLab",
-  iconUrl: "/gitlab.svg",
+  iconUrl: "/providers/gitlab.svg",
   baseUrlMode: "optional",
   credentialFields: [
     { key: "token", labelKey: "token", inputType: "password", required: true },

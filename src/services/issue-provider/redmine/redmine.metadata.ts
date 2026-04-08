@@ -16,7 +16,7 @@ export const redmineCredentialSchema = z.object({
 export const redmineMetadata: ProviderMetadata = {
   type: "REDMINE",
   displayName: "Redmine",
-  iconUrl: "/redmine.svg",
+  iconUrl: "/providers/redmine.svg",
   baseUrlMode: "required",
   credentialFields: [
     { key: "apiKey", labelKey: "apiKey", inputType: "password", required: true },
