@@ -51,7 +51,7 @@ function assertSafeProjectKey(key: string): void {
 
 /** Adapter for the Jira issue provider. */
 export class JiraAdapter implements IssueProviderAdapter {
-  static readonly iconUrl: string | null = "/jira.svg";
+  static readonly iconUrl: string | null = "/providers/jira.svg";
 
   private readonly client;
   private readonly baseUrl: string;

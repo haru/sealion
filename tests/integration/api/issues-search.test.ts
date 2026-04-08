@@ -207,15 +207,15 @@ async function importIssuesRoute(p: unknown) {
   }));
   jest.doMock("@/services/issue-provider/github/github", () => ({
     GitHubAdapter: Object.assign(jest.fn().mockImplementation(() => ({})), {
-      iconUrl: "/github.svg",
+      iconUrl: "/providers/github.svg",
     }),
   }));
   jest.doMock("@/services/issue-provider/jira/jira", () => ({
-    JiraAdapter: Object.assign(jest.fn().mockImplementation(() => ({})), { iconUrl: "/jira.svg" }),
+    JiraAdapter: Object.assign(jest.fn().mockImplementation(() => ({})), { iconUrl: "/providers/jira.svg" }),
   }));
   jest.doMock("@/services/issue-provider/redmine/redmine", () => ({
     RedmineAdapter: Object.assign(jest.fn().mockImplementation(() => ({})), {
-      iconUrl: "/redmine.svg",
+      iconUrl: "/providers/redmine.svg",
     }),
   }));
   return await import("@/app/api/issues/route");

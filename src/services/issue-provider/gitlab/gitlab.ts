@@ -29,7 +29,7 @@ interface GitLabUser {
 
 /** Adapter for the GitLab issue provider. */
 export class GitLabAdapter implements IssueProviderAdapter {
-  static readonly iconUrl: string | null = "/gitlab.svg";
+  static readonly iconUrl: string | null = "/providers/gitlab.svg";
 
   private readonly client;
   private readonly baseUrl: string;
