@@ -871,6 +871,12 @@ describe("createAdapter factory", () => {
     expect(adapter).toBeDefined();
   });
 
+  it("creates LinearAdapter for LINEAR type", async () => {
+    const { createAdapter } = await import("@/services/issue-provider/factory");
+    const adapter = createAdapter("LINEAR" as never, { apiKey: "lin_api_test" });
+    expect(adapter).toBeDefined();
+  });
+
   it("throws for unknown provider type", async () => {
     const { createAdapter } = await import("@/services/issue-provider/factory");
     expect(() => createAdapter("UNKNOWN" as never, {})).toThrow();

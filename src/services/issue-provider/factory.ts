@@ -5,6 +5,7 @@ import type { IssueProviderAdapter } from "@/lib/types";
 import { GitHubAdapter } from "./github/github";
 import { GitLabAdapter } from "./gitlab/gitlab";
 import { JiraAdapter } from "./jira/jira";
+import { LinearAdapter } from "./linear/linear";
 import { RedmineAdapter } from "./redmine/redmine";
 import { getProviderMetadata } from "./registry";
 
@@ -28,11 +29,17 @@ export interface GitLabCredentials {
   token: string;
 }
 
+/** Credentials for a Linear provider. */
+export interface LinearCredentials {
+  apiKey: string;
+}
+
 export type ProviderCredentials =
   | GitHubCredentials
   | JiraCredentials
   | RedmineCredentials
-  | GitLabCredentials;
+  | GitLabCredentials
+  | LinearCredentials;
 
 /**
  * Returns the icon URL for the given provider type, or null if unknown.
@@ -74,6 +81,10 @@ export function createAdapter(
       const creds = credentials as GitLabCredentials;
       const normalized = baseUrl?.trim();
       return new GitLabAdapter(creds.token, normalized || undefined);
+    }
+    case ProviderType.LINEAR: {
+      const creds = credentials as LinearCredentials;
+      return new LinearAdapter(creds.apiKey);
     }
     default:
       throw new Error(`Unsupported provider type: ${type}`);

@@ -24,6 +24,7 @@ enum ProviderType {
   JIRA
   REDMINE
   GITLAB
+  LINEAR
 }
 
 // ─── Models ─────────────────────────────────────────────────────────────────

@@ -69,6 +69,15 @@ jest.mock("@/services/issue-provider/redmine/redmine", () => ({
   ),
 }));
 
+jest.mock("@/services/issue-provider/linear/linear", () => ({
+  LinearAdapter: Object.assign(
+    jest.fn().mockImplementation(() => ({
+      testConnection: jest.fn().mockResolvedValue(undefined),
+    })),
+    { iconUrl: "/providers/linear.svg" }
+  ),
+}));
+
 let prisma: PrismaClient;
 let dbAvailable = false;
 

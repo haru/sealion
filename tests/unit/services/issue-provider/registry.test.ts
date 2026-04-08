@@ -2,16 +2,17 @@
 import { getAllProviders, getProviderMetadata } from "@/services/issue-provider/registry";
 
 describe("getAllProviders()", () => {
-  it("returns exactly 4 providers", () => {
-    expect(getAllProviders()).toHaveLength(4);
+  it("returns exactly 5 providers", () => {
+    expect(getAllProviders()).toHaveLength(5);
   });
 
-  it("includes GITHUB, JIRA, REDMINE, and GITLAB", () => {
+  it("includes GITHUB, JIRA, REDMINE, GITLAB, and LINEAR", () => {
     const types = getAllProviders().map((p) => p.type);
     expect(types).toContain("GITHUB");
     expect(types).toContain("JIRA");
     expect(types).toContain("REDMINE");
     expect(types).toContain("GITLAB");
+    expect(types).toContain("LINEAR");
   });
 
   it("returns providers with correct baseUrlMode", () => {
@@ -20,6 +21,7 @@ describe("getAllProviders()", () => {
     expect(byType["JIRA"].baseUrlMode).toBe("required");
     expect(byType["REDMINE"].baseUrlMode).toBe("required");
     expect(byType["GITLAB"].baseUrlMode).toBe("optional");
+    expect(byType["LINEAR"].baseUrlMode).toBe("none");
   });
 
   it("returns providers with correct displayName", () => {
@@ -28,6 +30,7 @@ describe("getAllProviders()", () => {
     expect(byType["JIRA"].displayName).toBe("Jira");
     expect(byType["REDMINE"].displayName).toBe("Redmine");
     expect(byType["GITLAB"].displayName).toBe("GitLab");
+    expect(byType["LINEAR"].displayName).toBe("Linear");
   });
 
   it("returns providers with non-null iconUrl", () => {
@@ -54,6 +57,13 @@ describe("getAllProviders()", () => {
     const gitlab = getProviderMetadata("GITLAB")!;
     expect(gitlab.credentialFields).toEqual([
       { key: "token", labelKey: "token", inputType: "password", required: true },
+    ]);
+  });
+
+  it("Linear has apiKey credential field (password, required)", () => {
+    const linear = getProviderMetadata("LINEAR")!;
+    expect(linear.credentialFields).toEqual([
+      { key: "apiKey", labelKey: "apiKey", inputType: "password", required: true },
     ]);
   });
 
@@ -96,6 +106,14 @@ describe("getProviderMetadata()", () => {
     const meta = getProviderMetadata("GITLAB");
     expect(meta).toBeDefined();
     expect(meta!.type).toBe("GITLAB");
+  });
+
+  it("returns Linear metadata for LINEAR", () => {
+    const meta = getProviderMetadata("LINEAR");
+    expect(meta).toBeDefined();
+    expect(meta!.type).toBe("LINEAR");
+    expect(meta!.iconUrl).toBe("/providers/linear.svg");
+    expect(meta!.baseUrlMode).toBe("none");
   });
 
   it("returns undefined for an unknown type", () => {
