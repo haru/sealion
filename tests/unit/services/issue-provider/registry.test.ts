@@ -17,7 +17,7 @@ describe("getAllProviders()", () => {
 
   it("returns providers sorted by displayName ascending", () => {
     const names = getAllProviders().map((p) => p.displayName);
-    expect(names).toEqual([...names].sort((a, b) => a.localeCompare(b)));
+    expect(names).toEqual(["GitHub", "GitLab", "Jira", "Linear", "Redmine"]);
   });
 
   it("returns providers with correct baseUrlMode", () => {

@@ -32,7 +32,7 @@ export function registerProvider(metadata: ProviderMetadata): void {
  */
 export function getAllProviders(): ProviderMetadata[] {
   return Array.from(registry.values()).sort((a, b) =>
-    a.displayName.localeCompare(b.displayName)
+    a.displayName.localeCompare(b.displayName, "en", { sensitivity: "base" })
   );
 }
 

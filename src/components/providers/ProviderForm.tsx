@@ -100,7 +100,8 @@ export default function ProviderForm({ onSubmit }: ProviderFormProps) {
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={meta.iconUrl}
-                      alt={meta.displayName}
+                      alt=""
+                      aria-hidden="true"
                       style={{ width: 20, height: 20, objectFit: "contain" }}
                     />
                   )}
