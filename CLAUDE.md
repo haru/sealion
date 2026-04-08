@@ -245,6 +245,8 @@ Use `http://app:3000` instead — `app` is the hostname of the Next.js dev conta
 - Node.js 24 (container runtime), TypeScript 5 (test tooling) + Node.js built-in `crypto` module (no new npm packages) (032-container-key-gen)
 - TypeScript 5 / Node.js 20 LTS + Next.js 16 (App Router), Prisma 7, `@linear/sdk` (new), Zod, Jest, Playwright (033-add-linear-provider)
 - PostgreSQL 16 via Prisma 7 — `IssueProvider.type` is a `text` column; `LINEAR` added as a string value (033-add-linear-provider)
+- TypeScript 5 / Node.js 20 LTS + axios ^1.14.0（既存）、buildAxiosProxyConfig（既存ユーティリティ） (035-add-asana-provider)
+- PostgreSQL 16 via Prisma 7（DBスキーマ変更なし） (035-add-asana-provider)
 
 ## Recent Changes
 - 009-task-display-cleanup: Removed `priority` field from Issue model; added `providerCreatedAt` / `providerUpdatedAt` fields; added Today tasks area with drag-and-drop reorder (dnd-kit)

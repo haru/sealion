@@ -78,6 +78,15 @@ jest.mock("@/services/issue-provider/linear/linear", () => ({
   ),
 }));
 
+jest.mock("@/services/issue-provider/asana/asana", () => ({
+  AsanaAdapter: Object.assign(
+    jest.fn().mockImplementation(() => ({
+      testConnection: jest.fn().mockResolvedValue(undefined),
+    })),
+    { iconUrl: "/providers/asana.svg" }
+  ),
+}));
+
 let prisma: PrismaClient;
 let dbAvailable = false;
 
@@ -327,7 +336,7 @@ describe("Provider registration cycle (Integration)", () => {
     const { GET, POST } = await importProvidersRouteWithPrisma(prisma);
 
     // Create multiple providers with different types
-    for (const type of ["GITHUB", "JIRA", "REDMINE", "GITLAB", "LINEAR"]) {
+    for (const type of ["GITHUB", "JIRA", "REDMINE", "GITLAB", "LINEAR", "ASANA"]) {
       const postReq = new NextRequest("http://localhost/api/providers", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -335,7 +344,7 @@ describe("Provider registration cycle (Integration)", () => {
           type,
           displayName: `Type Test ${type}`,
           credentials:
-        type === "GITHUB" || type === "GITLAB"
+        type === "GITHUB" || type === "GITLAB" || type === "ASANA"
           ? { token: `tok_${type.toLowerCase()}` }
           : type === "LINEAR"
             ? { apiKey: `lin_${type.toLowerCase()}` }
@@ -363,7 +372,7 @@ describe("Provider registration cycle (Integration)", () => {
     const testProviders = getJson.data.filter(
       (p: { displayName: string }) => p.displayName.startsWith("Type Test "),
     );
-    expect(testProviders.length).toBe(5);
+    expect(testProviders.length).toBe(6);
 
     for (const provider of testProviders) {
       const typeFromName = provider.displayName.replace("Type Test ", "");

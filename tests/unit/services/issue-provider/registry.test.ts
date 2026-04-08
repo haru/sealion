@@ -2,22 +2,23 @@
 import { getAllProviders, getProviderMetadata } from "@/services/issue-provider/registry";
 
 describe("getAllProviders()", () => {
-  it("returns exactly 5 providers", () => {
-    expect(getAllProviders()).toHaveLength(5);
+  it("returns exactly 6 providers", () => {
+    expect(getAllProviders()).toHaveLength(6);
   });
 
-  it("includes GITHUB, JIRA, REDMINE, GITLAB, and LINEAR", () => {
+  it("includes GITHUB, JIRA, REDMINE, GITLAB, LINEAR, and ASANA", () => {
     const types = getAllProviders().map((p) => p.type);
     expect(types).toContain("GITHUB");
     expect(types).toContain("JIRA");
     expect(types).toContain("REDMINE");
     expect(types).toContain("GITLAB");
     expect(types).toContain("LINEAR");
+    expect(types).toContain("ASANA");
   });
 
   it("returns providers sorted by displayName ascending", () => {
     const names = getAllProviders().map((p) => p.displayName);
-    expect(names).toEqual(["GitHub", "GitLab", "Jira", "Linear", "Redmine"]);
+    expect(names).toEqual(["Asana", "GitHub", "GitLab", "Jira", "Linear", "Redmine"]);
   });
 
   it("returns providers with correct baseUrlMode", () => {
@@ -27,6 +28,7 @@ describe("getAllProviders()", () => {
     expect(byType["REDMINE"].baseUrlMode).toBe("required");
     expect(byType["GITLAB"].baseUrlMode).toBe("optional");
     expect(byType["LINEAR"].baseUrlMode).toBe("none");
+    expect(byType["ASANA"].baseUrlMode).toBe("none");
   });
 
   it("returns providers with correct displayName", () => {
@@ -36,6 +38,7 @@ describe("getAllProviders()", () => {
     expect(byType["REDMINE"].displayName).toBe("Redmine");
     expect(byType["GITLAB"].displayName).toBe("GitLab");
     expect(byType["LINEAR"].displayName).toBe("Linear");
+    expect(byType["ASANA"].displayName).toBe("Asana");
   });
 
   it("returns providers with non-null iconUrl", () => {
@@ -86,6 +89,13 @@ describe("getAllProviders()", () => {
       { key: "apiKey", labelKey: "apiKey", inputType: "password", required: true },
     ]);
   });
+
+  it("Asana has token credential field (password, required)", () => {
+    const asana = getProviderMetadata("ASANA")!;
+    expect(asana.credentialFields).toEqual([
+      { key: "token", labelKey: "token", inputType: "password", required: true },
+    ]);
+  });
 });
 
 describe("getProviderMetadata()", () => {
@@ -118,6 +128,15 @@ describe("getProviderMetadata()", () => {
     expect(meta).toBeDefined();
     expect(meta!.type).toBe("LINEAR");
     expect(meta!.iconUrl).toBe("/providers/linear.svg");
+    expect(meta!.baseUrlMode).toBe("none");
+  });
+
+  it("returns Asana metadata for ASANA", () => {
+    const meta = getProviderMetadata("ASANA");
+    expect(meta).toBeDefined();
+    expect(meta!.type).toBe("ASANA");
+    expect(meta!.displayName).toBe("Asana");
+    expect(meta!.iconUrl).toBe("/providers/asana.svg");
     expect(meta!.baseUrlMode).toBe("none");
   });
 

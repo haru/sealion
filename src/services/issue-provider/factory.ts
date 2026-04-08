@@ -1,5 +1,6 @@
 import type { IssueProviderAdapter } from "@/lib/types";
 
+import { AsanaAdapter } from "./asana/asana";
 import { GitHubAdapter } from "./github/github";
 import { GitLabAdapter } from "./gitlab/gitlab";
 import { JiraAdapter } from "./jira/jira";
@@ -32,12 +33,18 @@ export interface LinearCredentials {
   apiKey: string;
 }
 
+/** Credentials for an Asana provider. */
+export interface AsanaCredentials {
+  token: string;
+}
+
 export type ProviderCredentials =
   | GitHubCredentials
   | JiraCredentials
   | RedmineCredentials
   | GitLabCredentials
-  | LinearCredentials;
+  | LinearCredentials
+  | AsanaCredentials;
 
 /**
  * Returns the icon URL for the given provider type, or null if unknown.
@@ -83,6 +90,10 @@ export function createAdapter(
     case "LINEAR": {
       const creds = credentials as LinearCredentials;
       return new LinearAdapter(creds.apiKey);
+    }
+    case "ASANA": {
+      const creds = credentials as AsanaCredentials;
+      return new AsanaAdapter(creds.token);
     }
     default:
       throw new Error(`Unsupported provider type: ${type}`);
