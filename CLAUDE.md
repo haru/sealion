@@ -70,7 +70,7 @@ src/app/
 
 ### Issue Provider Adapters (`src/services/issue-provider/`)
 
-`IssueProviderAdapter` interface (in `src/lib/types.ts`) is implemented by `GitHubAdapter`, `JiraAdapter`, `RedmineAdapter`, and `GitLabAdapter`. `factory.ts` creates the right adapter from a type string + decrypted credentials. The sync flow calls the adapter to fetch remote issues and upserts them into the database.
+`IssueProviderAdapter` interface (in `src/lib/types.ts`) is implemented by `GitHubAdapter`, `JiraAdapter`, `RedmineAdapter`, `GitLabAdapter`, and `LinearAdapter`. `factory.ts` creates the right adapter from a provider type string + decrypted credentials. The sync flow calls the adapter to fetch remote issues and upserts them into the database.
 
 Each adapter exports a `ProviderMetadata` constant (e.g. `githubMetadata`) and registers it in `registry.ts` at module load time. `registry.ts` exposes `getAllProviders()` and `getProviderMetadata(type)` as the sole source of provider-type knowledge for the rest of the codebase.
 
@@ -81,9 +81,7 @@ Each adapter exports a `ProviderMetadata` constant (e.g. `githubMetadata`) and r
 | Allowed | Forbidden outside `src/services/issue-provider/` |
 |---------|--------------------------------------------------|
 | `getProviderMetadata(type)` | `if (type === "JIRA")` |
-| `metadata.baseUrlMode === "required"` | `type === ProviderType.GITHUB` |
-| `metadata.credentialFields` | `"GITHUB" \| "JIRA" \| "REDMINE" \| "GITLAB"` union literals |
-| `getAllProviders()` | hardcoded provider type arrays |
+| `metadata.credentialFields` | hardcoded provider type arrays |
 | `metadata.displayName` | `t("providers.type.GITHUB")` i18n keys keyed by type |
 
 **Adding a new provider** — see **[ADDING_A_PROVIDER.md](./ADDING_A_PROVIDER.md)** for the full step-by-step guide. In summary, changes are required only inside `src/services/issue-provider/`:
@@ -238,7 +236,7 @@ Use `http://app:3000` instead — `app` is the hostname of the Next.js dev conta
 - TypeScript 5 / Node.js 20 LTS + Next.js 16 (App Router), MUI v7, Auth.js v5, Prisma 7, next-intl 4 (024-auth-settings)
 - PostgreSQL 16 via Prisma 7 — added `AuthSettings` table (024-auth-settings)
 - TypeScript 5 / Node.js 20 LTS + Next.js 16 (App Router), axios, Prisma 7, Zod, next-intl 4 (025-add-gitlab-provider)
-- PostgreSQL 16 via Prisma 7 — `ProviderType` enum updated to add `GITLAB` value only (025-add-gitlab-provider)
+- PostgreSQL 16 via Prisma 7 — `IssueProvider.type` is a `text` column; no enum for provider types (025-add-gitlab-provider)
 - TypeScript 5 / Node.js 20 LTS + Next.js 16 (App Router), MUI v7, Prisma 7, next-intl 4, nodemailer (new), existing `src/lib/encryption.ts` (026-smtp-settings)
 - PostgreSQL 16 via Prisma 7 — new `SmtpSettings` singleton table (026-smtp-settings)
 - PostgreSQL 16 via Prisma 7 — no schema changes (028-delete-own-account)
@@ -246,7 +244,7 @@ Use `http://app:3000` instead — `app` is the hostname of the Next.js dev conta
 - PostgreSQL 16 via Prisma — **no schema changes** (030-provider-type-abstraction)
 - Node.js 24 (container runtime), TypeScript 5 (test tooling) + Node.js built-in `crypto` module (no new npm packages) (032-container-key-gen)
 - TypeScript 5 / Node.js 20 LTS + Next.js 16 (App Router), Prisma 7, `@linear/sdk` (new), Zod, Jest, Playwright (033-add-linear-provider)
-- PostgreSQL 16 via Prisma 7 — `ProviderType` enum extended with `LINEAR` (033-add-linear-provider)
+- PostgreSQL 16 via Prisma 7 — `IssueProvider.type` is a `text` column; `LINEAR` added as a string value (033-add-linear-provider)
 
 ## Recent Changes
 - 009-task-display-cleanup: Removed `priority` field from Issue model; added `providerCreatedAt` / `providerUpdatedAt` fields; added Today tasks area with drag-and-drop reorder (dnd-kit)

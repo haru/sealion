@@ -81,7 +81,7 @@ User  (role: USER | ADMIN; isActive)
 
 ### Issue Provider Adapter Pattern (`src/services/issue-provider/`)
 
-Interface `IssueProviderAdapter` (defined in `src/lib/types.ts`) is implemented by `GitHubAdapter`, `JiraAdapter`, `RedmineAdapter`. `factory.ts` creates the right adapter from `ProviderType` + decrypted credentials. Methods: `testConnection()`, `listProjects()`, `fetchAssignedIssues()`, `closeIssue()`, `addComment()`.
+Interface `IssueProviderAdapter` (defined in `src/lib/types.ts`) is implemented by `GitHubAdapter`, `JiraAdapter`, `RedmineAdapter`, `GitLabAdapter`, and `LinearAdapter`. `factory.ts` creates the right adapter from a provider type string + decrypted credentials. Methods: `testConnection()`, `listProjects()`, `fetchAssignedIssues()`, `closeIssue()`, `addComment()`.
 
 ### Sync Service (`src/services/sync.ts`)
 
