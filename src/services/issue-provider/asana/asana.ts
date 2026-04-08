@@ -43,6 +43,7 @@ const TASK_OPT_FIELDS =
 /** Adapter for the Asana issue provider. */
 export class AsanaAdapter implements IssueProviderAdapter {
   private readonly client;
+  private myGid: string | undefined;
 
   /**
    * Creates a new Asana adapter.
@@ -85,6 +86,22 @@ export class AsanaAdapter implements IssueProviderAdapter {
     }
 
     return items;
+  }
+
+  /**
+   * Fetches and caches the authenticated user's GID from `/users/me`.
+   * Subsequent calls return the cached value without an additional API request.
+   *
+   * @returns The GID of the currently authenticated user.
+   * @throws If the request to `/users/me` fails.
+   */
+  private async fetchMyGid(): Promise<string> {
+    if (this.myGid !== undefined) {
+      return this.myGid;
+    }
+    const { data } = await this.client.get<{ data: { gid: string } }>("/users/me");
+    this.myGid = data.data.gid;
+    return this.myGid;
   }
 
   /**
@@ -139,12 +156,20 @@ export class AsanaAdapter implements IssueProviderAdapter {
       opt_fields: TASK_OPT_FIELDS,
     };
 
+    // Fetch the authenticated user's GID upfront so subtask filtering is accurate.
+    // The /tasks endpoint supports assignee=me server-side, but /subtasks does not,
+    // so we must filter subtasks client-side using the exact GID.
+    let myGid: string | undefined;
     if (assigneeMode === "me") {
       topLevelParams.assignee = "me";
+      myGid = await this.fetchMyGid();
     }
 
     const topLevelTasks = await this.fetchAllPages<AsanaTask>("/tasks", topLevelParams);
 
+    // For "none" mode, filter unassigned tasks client-side — Asana does not expose
+    // a server-side "assignee is null" filter on the /tasks endpoint. This may increase
+    // data transfer on large projects but is the only available approach.
     const filteredTopLevel =
       assigneeMode === "none"
         ? topLevelTasks.filter((t) => t.assignee === null)
@@ -154,7 +179,7 @@ export class AsanaAdapter implements IssueProviderAdapter {
 
     for (const task of filteredTopLevel) {
       results.push(this.mapTask(task, assigneeMode === "none"));
-      const subtasks = await this.fetchSubtasksRecursive(task.gid, assigneeMode);
+      const subtasks = await this.fetchSubtasksRecursive(task.gid, assigneeMode, myGid);
       results.push(...subtasks);
     }
 
@@ -163,14 +188,19 @@ export class AsanaAdapter implements IssueProviderAdapter {
 
   /**
    * Recursively fetches subtasks of a given Asana task, applying the assignee filter.
+   * The `/tasks/{gid}/subtasks` endpoint does not support server-side assignee filtering,
+   * so all filtering is done client-side.
    *
    * @param taskGid - The parent task GID.
    * @param assigneeMode - Assignee filter mode (same as in {@link fetchTasksRecursive}).
+   * @param myGid - The authenticated user's GID; required when `assigneeMode === "me"` to
+   *   exclude subtasks assigned to other users.
    * @returns Matching subtasks (and their sub-subtasks) as {@link NormalizedIssue} records.
    */
   private async fetchSubtasksRecursive(
     taskGid: string,
     assigneeMode: "me" | "none",
+    myGid?: string,
   ): Promise<NormalizedIssue[]> {
     const subtaskParams: Record<string, string | number> = {
       completed_since: "now",
@@ -185,13 +215,13 @@ export class AsanaAdapter implements IssueProviderAdapter {
     const filtered =
       assigneeMode === "none"
         ? subtasks.filter((t) => t.assignee === null)
-        : subtasks.filter((t) => t.assignee !== null);
+        : subtasks.filter((t) => t.assignee?.gid === myGid);
 
     const results: NormalizedIssue[] = [];
 
     for (const subtask of filtered) {
       results.push(this.mapTask(subtask, assigneeMode === "none"));
-      const nestedSubtasks = await this.fetchSubtasksRecursive(subtask.gid, assigneeMode);
+      const nestedSubtasks = await this.fetchSubtasksRecursive(subtask.gid, assigneeMode, myGid);
       results.push(...nestedSubtasks);
     }
 

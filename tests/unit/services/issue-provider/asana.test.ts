@@ -228,6 +228,7 @@ describe("AsanaAdapter", () => {
     it("fetches assigned tasks and maps NormalizedIssue fields correctly", async () => {
       // tasks (no subtasks since second call returns empty)
       mockGet
+        .mockResolvedValueOnce({ data: { data: { gid: "user-1" } } })  // /users/me
         .mockResolvedValueOnce(makeTaskListResponse([SAMPLE_TASK]))
         .mockResolvedValueOnce(makeTaskListResponse([])); // subtasks of task-1
 
@@ -248,6 +249,7 @@ describe("AsanaAdapter", () => {
 
     it("includes assignee=me in the API request params", async () => {
       mockGet
+        .mockResolvedValueOnce({ data: { data: { gid: "user-1" } } })  // /users/me
         .mockResolvedValueOnce(makeTaskListResponse([]))
 
       const adapter = new AsanaAdapter("valid-token");
@@ -263,6 +265,7 @@ describe("AsanaAdapter", () => {
 
     it("sets isUnassigned to false for all assigned issues", async () => {
       mockGet
+        .mockResolvedValueOnce({ data: { data: { gid: "user-1" } } })  // /users/me
         .mockResolvedValueOnce(makeTaskListResponse([SAMPLE_TASK]))
         .mockResolvedValueOnce(makeTaskListResponse([]));
 
@@ -274,6 +277,7 @@ describe("AsanaAdapter", () => {
     it("handles null due_on", async () => {
       const taskNoDue = { ...SAMPLE_TASK, due_on: null };
       mockGet
+        .mockResolvedValueOnce({ data: { data: { gid: "user-1" } } })  // /users/me
         .mockResolvedValueOnce(makeTaskListResponse([taskNoDue]))
         .mockResolvedValueOnce(makeTaskListResponse([]));
 
@@ -284,6 +288,7 @@ describe("AsanaAdapter", () => {
 
     it("maps gid to externalId", async () => {
       mockGet
+        .mockResolvedValueOnce({ data: { data: { gid: "user-1" } } })  // /users/me
         .mockResolvedValueOnce(makeTaskListResponse([SAMPLE_TASK]))
         .mockResolvedValueOnce(makeTaskListResponse([]));
 
@@ -294,6 +299,7 @@ describe("AsanaAdapter", () => {
 
     it("maps created_at and modified_at to Date objects", async () => {
       mockGet
+        .mockResolvedValueOnce({ data: { data: { gid: "user-1" } } })  // /users/me
         .mockResolvedValueOnce(makeTaskListResponse([SAMPLE_TASK]))
         .mockResolvedValueOnce(makeTaskListResponse([]));
 
@@ -315,7 +321,8 @@ describe("AsanaAdapter", () => {
       };
 
       mockGet
-        .mockResolvedValueOnce(makeTaskListResponse([SAMPLE_TASK]))     // top-level tasks
+        .mockResolvedValueOnce({ data: { data: { gid: "user-1" } } })   // /users/me
+        .mockResolvedValueOnce(makeTaskListResponse([SAMPLE_TASK]))       // top-level tasks
         .mockResolvedValueOnce(makeTaskListResponse([subtask]))           // subtasks of task-1
         .mockResolvedValueOnce(makeTaskListResponse([]));                 // subtasks of subtask-1
 
@@ -330,7 +337,8 @@ describe("AsanaAdapter", () => {
     it("paginates top-level tasks using offset", async () => {
       const task2 = { ...SAMPLE_TASK, gid: "task-2", name: "Task Two" };
       mockGet
-        .mockResolvedValueOnce(makeTaskListResponse([SAMPLE_TASK], "offset-1"))  // page 1
+        .mockResolvedValueOnce({ data: { data: { gid: "user-1" } } })            // /users/me
+        .mockResolvedValueOnce(makeTaskListResponse([SAMPLE_TASK], "offset-1"))   // page 1
         .mockResolvedValueOnce(makeTaskListResponse([task2]))                      // page 2
         .mockResolvedValueOnce(makeTaskListResponse([]))                           // subtasks of task-1
         .mockResolvedValueOnce(makeTaskListResponse([]));                          // subtasks of task-2
@@ -341,11 +349,72 @@ describe("AsanaAdapter", () => {
     });
 
     it("returns empty array when there are no assigned tasks", async () => {
-      mockGet.mockResolvedValueOnce(makeTaskListResponse([]));
+      mockGet
+        .mockResolvedValueOnce({ data: { data: { gid: "user-1" } } })  // /users/me
+        .mockResolvedValueOnce(makeTaskListResponse([]));
 
       const adapter = new AsanaAdapter("valid-token");
       const issues = await adapter.fetchAssignedIssues("proj-1");
       expect(issues).toEqual([]);
+    });
+
+    it("excludes subtasks assigned to other users (not the authenticated user)", async () => {
+      const otherUserSubtask = {
+        gid: "sub-other",
+        name: "Other User Subtask",
+        due_on: null,
+        permalink_url: "https://app.asana.com/0/p/sub-other",
+        assignee: { gid: "user-other" },
+        created_at: "2026-04-01T00:00:00.000Z",
+        modified_at: "2026-04-01T00:00:00.000Z",
+      };
+      const mySubtask = {
+        gid: "sub-me",
+        name: "My Subtask",
+        due_on: null,
+        permalink_url: "https://app.asana.com/0/p/sub-me",
+        assignee: { gid: "user-1" },
+        created_at: "2026-04-01T00:00:00.000Z",
+        modified_at: "2026-04-01T00:00:00.000Z",
+      };
+
+      mockGet
+        .mockResolvedValueOnce({ data: { data: { gid: "user-1" } } })           // /users/me
+        .mockResolvedValueOnce(makeTaskListResponse([SAMPLE_TASK]))               // top-level tasks
+        .mockResolvedValueOnce(makeTaskListResponse([otherUserSubtask, mySubtask])) // subtasks of task-1
+        .mockResolvedValueOnce(makeTaskListResponse([]));                          // subtasks of sub-me
+
+      const adapter = new AsanaAdapter("valid-token");
+      const issues = await adapter.fetchAssignedIssues("proj-1");
+
+      expect(issues).toHaveLength(2);
+      expect(issues.map((i) => i.externalId)).toEqual(["task-1", "sub-me"]);
+    });
+
+    it("caches /users/me and only calls it once across multiple subtask levels", async () => {
+      const subtask = {
+        gid: "sub-1",
+        name: "Subtask",
+        due_on: null,
+        permalink_url: "https://app.asana.com/0/p/sub-1",
+        assignee: { gid: "user-1" },
+        created_at: "2026-04-01T00:00:00.000Z",
+        modified_at: "2026-04-01T00:00:00.000Z",
+      };
+
+      mockGet
+        .mockResolvedValueOnce({ data: { data: { gid: "user-1" } } })  // /users/me (only once)
+        .mockResolvedValueOnce(makeTaskListResponse([SAMPLE_TASK]))      // top-level tasks
+        .mockResolvedValueOnce(makeTaskListResponse([subtask]))           // subtasks of task-1
+        .mockResolvedValueOnce(makeTaskListResponse([]));                 // subtasks of sub-1
+
+      const adapter = new AsanaAdapter("valid-token");
+      await adapter.fetchAssignedIssues("proj-1");
+
+      const meCalls = (mockGet.mock.calls as unknown[][]).filter(
+        (call) => call[0] === "/users/me",
+      );
+      expect(meCalls).toHaveLength(1);
     });
   });
 
