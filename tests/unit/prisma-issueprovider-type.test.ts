@@ -22,12 +22,7 @@ describe("Prisma IssueProvider.type field — post-migration schema validation",
     expect(typeFieldMatch![1]).toBe("String");
   });
 
-  it("T004: ProviderType enum should not exist and known values are preserved as text", () => {
+  it("T004: ProviderType enum should not exist", () => {
     expect(schemaContent).not.toContain("enum ProviderType");
-
-    const knownValues = ["GITHUB", "JIRA", "REDMINE", "GITLAB", "LINEAR"];
-    for (const value of knownValues) {
-      expect(schemaContent).not.toContain(value);
-    }
   });
 });

@@ -334,9 +334,21 @@ describe("Provider registration cycle (Integration)", () => {
         body: JSON.stringify({
           type,
           displayName: `Type Test ${type}`,
-          credentials: type === "GITHUB" || type === "GITLAB" || type === "LINEAR"
-            ? { token: `tok_${type.toLowerCase()}`, apiKey: type === "LINEAR" ? `lin_${type.toLowerCase()}` : undefined }
-            : { baseUrl: `https://${type.toLowerCase()}.example.com`, email: "u@example.com", apiToken: "tok" },
+          credentials:
+        type === "GITHUB" || type === "GITLAB"
+          ? { token: `tok_${type.toLowerCase()}` }
+          : type === "LINEAR"
+            ? { apiKey: `lin_${type.toLowerCase()}` }
+            : type === "REDMINE"
+              ? {
+                  baseUrl: `https://${type.toLowerCase()}.example.com`,
+                  apiKey: `key_${type.toLowerCase()}`,
+                }
+              : {
+                  baseUrl: `https://${type.toLowerCase()}.example.com`,
+                  email: "u@example.com",
+                  apiToken: "tok",
+                },
         }),
       });
       const res = await POST(postReq);
