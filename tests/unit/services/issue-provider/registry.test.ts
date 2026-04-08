@@ -15,6 +15,11 @@ describe("getAllProviders()", () => {
     expect(types).toContain("LINEAR");
   });
 
+  it("returns providers sorted by displayName ascending", () => {
+    const names = getAllProviders().map((p) => p.displayName);
+    expect(names).toEqual([...names].sort((a, b) => a.localeCompare(b)));
+  });
+
   it("returns providers with correct baseUrlMode", () => {
     const byType = Object.fromEntries(getAllProviders().map((p) => [p.type, p]));
     expect(byType["GITHUB"].baseUrlMode).toBe("none");
