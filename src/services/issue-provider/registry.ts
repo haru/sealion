@@ -26,12 +26,14 @@ export function registerProvider(metadata: ProviderMetadata): void {
 }
 
 /**
- * Returns all registered providers in insertion order.
+ * Returns all registered providers sorted by displayName ascending.
  *
- * @returns Array of all registered {@link ProviderMetadata}.
+ * @returns Array of all registered {@link ProviderMetadata}, sorted alphabetically by displayName.
  */
 export function getAllProviders(): ProviderMetadata[] {
-  return Array.from(registry.values());
+  return Array.from(registry.values()).sort((a, b) =>
+    a.displayName.localeCompare(b.displayName, "en", { sensitivity: "base" })
+  );
 }
 
 /**

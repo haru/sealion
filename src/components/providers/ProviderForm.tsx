@@ -95,7 +95,18 @@ export default function ProviderForm({ onSubmit }: ProviderFormProps) {
           >
             {providers.map((meta) => (
               <MenuItem key={meta.type} value={meta.type}>
-                {meta.displayName}
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  {meta.iconUrl && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={meta.iconUrl}
+                      alt=""
+                      aria-hidden="true"
+                      style={{ width: 20, height: 20, objectFit: "contain" }}
+                    />
+                  )}
+                  {meta.displayName}
+                </Box>
               </MenuItem>
             ))}
           </Select>
