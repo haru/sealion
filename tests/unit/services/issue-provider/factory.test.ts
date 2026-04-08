@@ -30,10 +30,17 @@ jest.mock("@/services/issue-provider/linear/linear", () => ({
   })),
 }));
 
+jest.mock("@/services/issue-provider/asana/asana", () => ({
+  AsanaAdapter: jest.fn().mockImplementation(() => ({
+    testConnection: jest.fn().mockResolvedValue(undefined),
+  })),
+}));
+
 jest.mock("@/services/issue-provider/registry", () => ({
   getProviderMetadata: jest.fn(() => ({ type: "GITHUB", iconUrl: "/providers/github.svg" })),
 }));
 
+import { AsanaAdapter } from "@/services/issue-provider/asana/asana";
 import { createAdapter } from "@/services/issue-provider/factory";
 
 describe("createAdapter — post-enum removal (T010/T011)", () => {
@@ -47,5 +54,11 @@ describe("createAdapter — post-enum removal (T010/T011)", () => {
     expect(() => createAdapter("BITBUCKET", { token: "test" })).toThrow(
       "Unsupported provider type: BITBUCKET",
     );
+  });
+
+  it("creates an AsanaAdapter for type ASANA", () => {
+    const adapter = createAdapter("ASANA", { token: "asana-token" });
+    expect(adapter).toBeDefined();
+    expect(AsanaAdapter).toHaveBeenCalledWith("asana-token");
   });
 });

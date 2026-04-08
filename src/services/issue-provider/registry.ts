@@ -1,3 +1,4 @@
+import { asanaMetadata } from "./asana/asana.metadata";
 import { githubMetadata } from "./github/github.metadata";
 import { gitlabMetadata } from "./gitlab/gitlab.metadata";
 import { jiraMetadata } from "./jira/jira.metadata";
@@ -14,6 +15,7 @@ registerProvider(jiraMetadata);
 registerProvider(redmineMetadata);
 registerProvider(gitlabMetadata);
 registerProvider(linearMetadata);
+registerProvider(asanaMetadata);
 
 /**
  * Registers a provider's metadata in the registry.
