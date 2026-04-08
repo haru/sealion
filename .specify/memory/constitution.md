@@ -134,8 +134,7 @@ in `src/services/issue-provider/registry.ts`. The registry functions `getAllProv
 **Prohibited outside `src/services/issue-provider/`:**
 
 - Conditional logic on a provider type string: `if (type === "JIRA")`, `switch (type) { case "GITHUB": … }`
-- Prisma enum comparisons: `type === ProviderType.GITHUB`
-- Provider type union literals: `"GITHUB" | "JIRA" | "REDMINE" | "GITLAB"`
+- Provider type union literals: `"GITHUB" | "JIRA" | "REDMINE" | "GITLAB" | "LINEAR"`
 - Hardcoded provider type arrays: `const TYPES = ["GITHUB", "JIRA", …]`
 - i18n keys keyed by provider type: `t("providers.type.GITHUB")`, `t("todo.source.JIRA")`
 

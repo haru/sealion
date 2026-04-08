@@ -1,5 +1,3 @@
-import { ProviderType } from "@prisma/client";
-
 import type { IssueProviderAdapter } from "@/lib/types";
 
 import { GitHubAdapter } from "./github/github";
@@ -65,24 +63,24 @@ export function createAdapter(
   baseUrl?: string | null,
 ): IssueProviderAdapter {
   switch (type) {
-    case ProviderType.GITHUB: {
+    case "GITHUB": {
       const creds = credentials as GitHubCredentials;
       return new GitHubAdapter(creds.token);
     }
-    case ProviderType.JIRA: {
+    case "JIRA": {
       const creds = credentials as JiraCredentials;
       return new JiraAdapter(creds.baseUrl, creds.email, creds.apiToken);
     }
-    case ProviderType.REDMINE: {
+    case "REDMINE": {
       const creds = credentials as RedmineCredentials;
       return new RedmineAdapter(creds.baseUrl, creds.apiKey);
     }
-    case ProviderType.GITLAB: {
+    case "GITLAB": {
       const creds = credentials as GitLabCredentials;
       const normalized = baseUrl?.trim();
       return new GitLabAdapter(creds.token, normalized || undefined);
     }
-    case ProviderType.LINEAR: {
+    case "LINEAR": {
       const creds = credentials as LinearCredentials;
       return new LinearAdapter(creds.apiKey);
     }

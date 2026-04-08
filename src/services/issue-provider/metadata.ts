@@ -28,7 +28,7 @@ export interface CredentialFieldDefinition {
  * without hardcoded `switch` statements.
  */
 export interface ProviderMetadata {
-  /** Matches the Prisma `ProviderType` enum value (e.g. `"GITHUB"`). */
+  /** Provider type identifier string (e.g. `"GITHUB"`). */
   type: string;
   /** Human-readable provider name. Not translated — proper noun. */
   displayName: string;

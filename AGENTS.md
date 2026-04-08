@@ -39,7 +39,7 @@ Coverage threshold is **95% lines** (enforced by Jest). Pages, layouts, React co
 ```
 User  (role: USER | ADMIN; isActive)
 ├── BoardSettings   (showCreatedAt, showUpdatedAt, sortOrder)
-└── IssueProvider   (type: GITHUB | JIRA | REDMINE; encryptedCredentials)
+└── IssueProvider   (type: text — e.g. GITHUB, JIRA, REDMINE, GITLAB, LINEAR; encryptedCredentials)
     └── Project     (externalId maps to repo/project in the provider; includeUnassigned, syncError)
         └── Issue   (title, dueDate?, externalUrl; todayFlag, todayOrder?, todayAddedAt?,
                      providerCreatedAt?, providerUpdatedAt?, pinned)
@@ -70,7 +70,7 @@ src/app/
 
 ### Issue Provider Adapters (`src/services/issue-provider/`)
 
-`IssueProviderAdapter` interface (in `src/lib/types.ts`) is implemented by `GitHubAdapter`, `JiraAdapter`, and `RedmineAdapter`. `factory.ts` creates the right adapter from a `ProviderType` + decrypted credentials. The sync flow calls the adapter to fetch remote issues and upserts them into the database.
+`IssueProviderAdapter` interface (in `src/lib/types.ts`) is implemented by `GitHubAdapter`, `JiraAdapter`, `RedmineAdapter`, `GitLabAdapter`, and `LinearAdapter`. `factory.ts` creates the right adapter from a provider type string + decrypted credentials. The sync flow calls the adapter to fetch remote issues and upserts them into the database.
 
 ### Key library files (`src/lib/`)
 
@@ -210,6 +210,8 @@ Use `http://app:3000` instead — `app` is the hostname of the Next.js dev conta
 - PostgreSQL 16 via Prisma 7 (027-email-verification)
 - TypeScript 5 / Node.js 20 LTS + Next.js 16 (App Router), MUI v7, next-intl 4, bcryptjs (031-admin-password-change-safety)
 - PostgreSQL 16 via Prisma 7 (no schema changes) (031-admin-password-change-safety)
+- TypeScript 5 / Node.js 20 LTS + Next.js 16, Prisma 7, PostgreSQL 16 (034-remove-providertype-enum)
+- PostgreSQL 16 (enum `ProviderType` → `text` column) (034-remove-providertype-enum)
 
 ## Recent Changes
 - 009-task-display-cleanup: Removed `priority` field from Issue model; added `providerCreatedAt` / `providerUpdatedAt` fields; added Today tasks area with drag-and-drop reorder (dnd-kit)

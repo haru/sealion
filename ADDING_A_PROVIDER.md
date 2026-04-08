@@ -31,32 +31,26 @@ If no SDK exists, use `axios` directly (see the Jira/Redmine adapters for refere
 
 ---
 
-### 2. Extend the Prisma enum
+### 2. Register the provider metadata
 
-**`prisma/schema.prisma`** — add the new value to `ProviderType`:
+**`src/services/issue-provider/<name>/<name>.metadata.ts`** — ProviderMetadata:
 
-```prisma
-enum ProviderType {
-  GITHUB
-  JIRA
-  REDMINE
-  GITLAB
-  LINEAR
-  YOURPROVIDER   // ← add this
+```typescript
+{
+  type: "YOURPROVIDER",           // provider type identifier string
+  displayName: "Your Provider",   // proper noun, not translated
+  iconUrl: "/providers/yourprovider.svg",  // or null if no icon
+  baseUrlMode: "none",            // "required" | "optional" | "none"
+  credentialFields: [
+    {
+      key: "token",               // must match a key in the Zod schema
+      labelKey: "token",          // key under providers.fields in i18n files
+      inputType: "password",      // "text" | "password"
+      required: true,
+    },
+  ],
+  credentialSchema: myProviderCredentialSchema,
 }
-```
-
-Create the migration file manually (do **not** run `prisma migrate dev` without checking for drift first — see the project CLAUDE.md):
-
-```sql
--- prisma/migrations/<timestamp>_add_<name>_provider_type/migration.sql
-ALTER TYPE "ProviderType" ADD VALUE 'YOURPROVIDER';
-```
-
-Then regenerate the Prisma client:
-
-```bash
-npx prisma generate
 ```
 
 ---
@@ -189,7 +183,7 @@ export type ProviderCredentials =
   | MyProviderCredentials;  // ← add here
 
 // Inside createAdapter():
-case ProviderType.YOURPROVIDER: {
+case "YOURPROVIDER": {
   const creds = credentials as MyProviderCredentials;
   return new MyProviderAdapter(creds.token);
 }
@@ -239,7 +233,6 @@ Add labels for each credential field key under `providers.fields` in both locale
 
 - `tests/unit/api/providers.test.ts` — add `"YOURPROVIDER"` to the expected provider type list.
 - `tests/integration/api/providers.test.ts` — same.
-- Any test that enumerates all `ProviderType` values needs updating.
 
 ---
 
@@ -248,7 +241,6 @@ Add labels for each credential field key under `providers.fields` in both locale
 Run these in order before considering the feature complete:
 
 ```bash
-npx prisma generate          # regenerate Prisma client after schema change
 npm test                     # must be GREEN, ≥ 95% line coverage
 npm run lint                 # zero ESLint errors
 npm run build                # zero TypeScript errors
@@ -265,7 +257,7 @@ npx playwright test          # E2E: provider appears in the Add Provider dialog
 | Hardcoded provider type arrays in UI or API code | Use `getAllProviders()` |
 | i18n keys keyed on the provider type string | Use `metadata.displayName` (proper noun, untranslated) |
 | Storing credentials in plaintext | Use `encrypt()` / `decrypt()` from `src/lib/encryption.ts` — this is handled automatically by the existing sync and provider API routes |
-| Running `prisma migrate dev` without checking for drift | Run `npx prisma migrate status` first |
+| Running `prisma migrate dev` without checking for drift | Run `npx prisma migrate status` first (only needed when schema changes) |
 
 ---
 
@@ -279,9 +271,7 @@ src/services/issue-provider/<name>/
 public/providers/
 └── <name>.svg                NEW — Provider icon
 
-prisma/schema.prisma          EDIT — add value to ProviderType enum
-prisma/migrations/<ts>_add_<name>_provider_type/
-└── migration.sql             NEW — ALTER TYPE ... ADD VALUE '...'
+prisma/schema.prisma          NO CHANGE — provider type is a text column, no enum
 
 src/services/issue-provider/
 ├── registry.ts               EDIT — registerProvider(myProviderMetadata)
