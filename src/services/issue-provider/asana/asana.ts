@@ -138,8 +138,10 @@ export class AsanaAdapter implements IssueProviderAdapter {
 
   /**
    * Recursively fetches tasks (and their subtasks) from an Asana project.
-   * For top-level tasks the `assignee` filter is applied; for subtasks a client-side filter
-   * is applied to match the same assignee mode.
+   * Uses the project-scoped `/projects/{gid}/tasks` endpoint to avoid requiring
+   * a `workspace` parameter, which can cause 400 errors when the workspace
+   * GID does not match the project's workspace.
+   * Assignee filtering is done client-side for both top-level tasks and subtasks.
    *
    * @param projectGid - The Asana project GID.
    * @param assigneeMode - `"me"` to fetch only tasks assigned to the authenticated user;
@@ -151,29 +153,28 @@ export class AsanaAdapter implements IssueProviderAdapter {
     assigneeMode: "me" | "none",
   ): Promise<NormalizedIssue[]> {
     const topLevelParams: Record<string, string | number> = {
-      project: projectGid,
       completed_since: "now",
       opt_fields: TASK_OPT_FIELDS,
     };
 
-    // Fetch the authenticated user's GID upfront so subtask filtering is accurate.
-    // The /tasks endpoint supports assignee=me server-side, but /subtasks does not,
-    // so we must filter subtasks client-side using the exact GID.
+    // Fetch the authenticated user's GID upfront so client-side assignee
+    // filtering is accurate for both top-level tasks and subtasks.
     let myGid: string | undefined;
     if (assigneeMode === "me") {
-      topLevelParams.assignee = "me";
       myGid = await this.fetchMyGid();
     }
 
-    const topLevelTasks = await this.fetchAllPages<AsanaTask>("/tasks", topLevelParams);
+    const topLevelTasks = await this.fetchAllPages<AsanaTask>(
+      `/projects/${projectGid}/tasks`,
+      topLevelParams,
+    );
 
-    // For "none" mode, filter unassigned tasks client-side — Asana does not expose
-    // a server-side "assignee is null" filter on the /tasks endpoint. This may increase
-    // data transfer on large projects but is the only available approach.
+    // Client-side assignee filtering for both modes.
+    // Asana does not support server-side "assignee is null" filtering.
     const filteredTopLevel =
       assigneeMode === "none"
         ? topLevelTasks.filter((t) => t.assignee === null)
-        : topLevelTasks;
+        : topLevelTasks.filter((t) => t.assignee?.gid === myGid);
 
     const results: NormalizedIssue[] = [];
 

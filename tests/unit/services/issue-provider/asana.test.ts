@@ -62,6 +62,10 @@ function makeProjectListResponse(projects: { gid: string; name: string }[], next
   };
 }
 
+function makeProjectDetailResponse(workspaceGid: string) {
+  return { data: { data: { workspace: { gid: workspaceGid } } } };
+}
+
 const SAMPLE_TASK = {
   gid: "task-1",
   name: "Fix the bug",
@@ -226,9 +230,8 @@ describe("AsanaAdapter", () => {
 
   describe("fetchAssignedIssues", () => {
     it("fetches assigned tasks and maps NormalizedIssue fields correctly", async () => {
-      // tasks (no subtasks since second call returns empty)
       mockGet
-        .mockResolvedValueOnce({ data: { data: { gid: "user-1" } } })  // /users/me
+        .mockResolvedValueOnce({ data: { data: { gid: "user-1" } } })   // /users/me
         .mockResolvedValueOnce(makeTaskListResponse([SAMPLE_TASK]))
         .mockResolvedValueOnce(makeTaskListResponse([])); // subtasks of task-1
 
@@ -247,20 +250,36 @@ describe("AsanaAdapter", () => {
       });
     });
 
-    it("includes assignee=me in the API request params", async () => {
+    it("includes assignee=me and workspace in the API request params", async () => {
       mockGet
         .mockResolvedValueOnce({ data: { data: { gid: "user-1" } } })  // /users/me
-        .mockResolvedValueOnce(makeTaskListResponse([]))
+        .mockResolvedValueOnce(makeTaskListResponse([]));
 
       const adapter = new AsanaAdapter("valid-token");
       await adapter.fetchAssignedIssues("proj-1");
 
       expect(mockGet).toHaveBeenCalledWith(
-        "/tasks",
+        "/projects/proj-1/tasks",
         expect.objectContaining({
-          params: expect.objectContaining({ assignee: "me" }),
+          params: expect.objectContaining({}),
         }),
       );
+    });
+
+    it("does NOT include assignee or workspace params in project-tasks request", async () => {
+      mockGet
+        .mockResolvedValueOnce({ data: { data: { gid: "user-1" } } })  // /users/me
+        .mockResolvedValueOnce(makeTaskListResponse([]));
+
+      const adapter = new AsanaAdapter("valid-token");
+      await adapter.fetchAssignedIssues("proj-1");
+
+      const taskCall = (mockGet.mock.calls as unknown[][]).find(
+        (call) => (call[0] as string).includes("/tasks"),
+      );
+      const callParams = (taskCall![1] as { params: Record<string, unknown> }).params;
+      expect(callParams).not.toHaveProperty("assignee");
+      expect(callParams).not.toHaveProperty("workspace");
     });
 
     it("sets isUnassigned to false for all assigned issues", async () => {
@@ -379,10 +398,10 @@ describe("AsanaAdapter", () => {
       };
 
       mockGet
-        .mockResolvedValueOnce({ data: { data: { gid: "user-1" } } })           // /users/me
-        .mockResolvedValueOnce(makeTaskListResponse([SAMPLE_TASK]))               // top-level tasks
+        .mockResolvedValueOnce({ data: { data: { gid: "user-1" } } })              // /users/me
+        .mockResolvedValueOnce(makeTaskListResponse([SAMPLE_TASK]))                 // top-level tasks
         .mockResolvedValueOnce(makeTaskListResponse([otherUserSubtask, mySubtask])) // subtasks of task-1
-        .mockResolvedValueOnce(makeTaskListResponse([]));                          // subtasks of sub-me
+        .mockResolvedValueOnce(makeTaskListResponse([]));                            // subtasks of sub-me
 
       const adapter = new AsanaAdapter("valid-token");
       const issues = await adapter.fetchAssignedIssues("proj-1");
@@ -416,6 +435,24 @@ describe("AsanaAdapter", () => {
       );
       expect(meCalls).toHaveLength(1);
     });
+
+    it("caches /users/me and only calls it once across repeated fetchAssignedIssues calls", async () => {
+      // First call: /users/me, /projects/proj-1/tasks
+      // Second call: only /projects/proj-1/tasks (cache hit)
+      mockGet
+        .mockResolvedValueOnce({ data: { data: { gid: "user-1" } } })  // /users/me (only once)
+        .mockResolvedValueOnce(makeTaskListResponse([]))                  // /projects/proj-1/tasks (first call)
+        .mockResolvedValueOnce(makeTaskListResponse([]));                 // /projects/proj-1/tasks (second call)
+
+      const adapter = new AsanaAdapter("valid-token");
+      await adapter.fetchAssignedIssues("proj-1");
+      await adapter.fetchAssignedIssues("proj-1");
+
+      const meCalls = (mockGet.mock.calls as unknown[][]).filter(
+        (call) => call[0] === "/users/me",
+      );
+      expect(meCalls).toHaveLength(1);
+    });
   });
 
   // ─── fetchUnassignedIssues ─────────────────────────────────────────────────
@@ -434,14 +471,19 @@ describe("AsanaAdapter", () => {
       expect(issues[0].isUnassigned).toBe(true);
     });
 
-    it("does NOT include assignee=me in the API request", async () => {
+    it("does NOT include assignee or workspace params in the API request", async () => {
       mockGet.mockResolvedValueOnce(makeTaskListResponse([]));
 
       const adapter = new AsanaAdapter("valid-token");
       await adapter.fetchUnassignedIssues("proj-1");
 
+      expect(mockGet).toHaveBeenCalledWith(
+        "/projects/proj-1/tasks",
+        expect.any(Object),
+      );
       const callParams = (mockGet.mock.calls[0] as unknown[])[1] as { params: Record<string, unknown> };
       expect(callParams.params).not.toHaveProperty("assignee");
+      expect(callParams.params).not.toHaveProperty("workspace");
     });
 
     it("fetches subtasks recursively and only includes unassigned ones", async () => {
