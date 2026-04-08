@@ -86,7 +86,7 @@ Each adapter exports a `ProviderMetadata` constant (e.g. `githubMetadata`) and r
 | `getAllProviders()` | hardcoded provider type arrays |
 | `metadata.displayName` | `t("providers.type.GITHUB")` i18n keys keyed by type |
 
-**Adding a new provider** requires changes only inside `src/services/issue-provider/`:
+**Adding a new provider** — see **[ADDING_A_PROVIDER.md](./ADDING_A_PROVIDER.md)** for the full step-by-step guide. In summary, changes are required only inside `src/services/issue-provider/`:
 1. Create the adapter class (implements `IssueProviderAdapter`).
 2. Export a `ProviderMetadata` constant and call `registerProvider()`.
 3. Register it in `registry.ts` (or within the adapter file itself).
