@@ -3,12 +3,60 @@ import pLimit from "p-limit";
 import { prisma } from "@/lib/db/db";
 import { decryptProviderCredentials } from "@/lib/encryption/credentials";
 import { createSyncErrorInfo } from "@/lib/sync/error-utils";
-import type { SyncErrorInfo } from "@/lib/types";
+import type { IssueProviderAdapter, SyncErrorInfo } from "@/lib/types";
 import { createAdapter } from "@/services/issue-provider/factory";
 import type { ProviderCredentials } from "@/services/issue-provider/factory";
 
 const PROVIDER_CONCURRENCY = 3;
 const PROJECT_CONCURRENCY = 5;
+
+/**
+ * Enriches `providerCreatedAt` for issues that lack it, for providers that support
+ * the optional {@link IssueProviderAdapter.enrichCreationDates} method.
+ * Silently skips on rate limit or other errors — the next sync cycle will retry.
+ *
+ * @param adapter - The provider adapter.
+ * @param projectId - The local project ID.
+ * @param externalIds - External IDs of issues returned in this sync cycle.
+ */
+async function enrichMissingCreationDates(
+  adapter: IssueProviderAdapter,
+  projectId: string,
+  externalIds: string[],
+): Promise<void> {
+  if (!adapter.enrichCreationDates) {
+    return;
+  }
+
+  const missingDates = await prisma.issue.findMany({
+    where: {
+      projectId,
+      externalId: { in: externalIds },
+      providerCreatedAt: null,
+    },
+    select: { externalId: true },
+  });
+
+  if (missingDates.length === 0) {
+    return;
+  }
+
+  const cardIds = missingDates.map((i) => i.externalId);
+  const dates = await adapter.enrichCreationDates(cardIds);
+
+  if (dates.size === 0) {
+    return;
+  }
+
+  await Promise.all(
+    dates.entries().map(([cardId, createdAt]) =>
+      prisma.issue.updateMany({
+        where: { projectId, externalId: cardId },
+        data: { providerCreatedAt: createdAt },
+      })
+    ),
+  );
+}
 
 /**
  * Syncs issues for all enabled projects belonging to given user.
@@ -136,6 +184,8 @@ export async function syncProviders(userId: string): Promise<SyncErrorInfo[]> {
                     data: { lastSyncedAt: now, syncError: null },
                   });
                 });
+
+                await enrichMissingCreationDates(adapter, project.id, returnedExternalIds);
 
                 return [];
               } catch (err) {

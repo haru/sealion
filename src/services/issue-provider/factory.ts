@@ -7,6 +7,7 @@ import { JiraAdapter } from "./jira/jira";
 import { LinearAdapter } from "./linear/linear";
 import { RedmineAdapter } from "./redmine/redmine";
 import { getProviderMetadata } from "./registry";
+import { TrelloAdapter } from "./trello/trello";
 
 export interface GitHubCredentials {
   token: string;
@@ -38,13 +39,20 @@ export interface AsanaCredentials {
   token: string;
 }
 
+/** Credentials for a Trello provider. */
+export interface TrelloCredentials {
+  apiKey: string;
+  apiToken: string;
+}
+
 export type ProviderCredentials =
   | GitHubCredentials
   | JiraCredentials
   | RedmineCredentials
   | GitLabCredentials
   | LinearCredentials
-  | AsanaCredentials;
+  | AsanaCredentials
+  | TrelloCredentials;
 
 /**
  * Returns the icon URL for the given provider type, or null if unknown.
@@ -94,6 +102,10 @@ export function createAdapter(
     case "ASANA": {
       const creds = credentials as AsanaCredentials;
       return new AsanaAdapter(creds.token);
+    }
+    case "TRELLO": {
+      const creds = credentials as TrelloCredentials;
+      return new TrelloAdapter(creds.apiKey, creds.apiToken);
     }
     default:
       throw new Error(`Unsupported provider type: ${type}`);

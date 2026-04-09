@@ -2,11 +2,11 @@
 import { getAllProviders, getProviderMetadata } from "@/services/issue-provider/registry";
 
 describe("getAllProviders()", () => {
-  it("returns exactly 6 providers", () => {
-    expect(getAllProviders()).toHaveLength(6);
+  it("returns exactly 7 providers", () => {
+    expect(getAllProviders()).toHaveLength(7);
   });
 
-  it("includes GITHUB, JIRA, REDMINE, GITLAB, LINEAR, and ASANA", () => {
+  it("includes GITHUB, JIRA, REDMINE, GITLAB, LINEAR, ASANA, and TRELLO", () => {
     const types = getAllProviders().map((p) => p.type);
     expect(types).toContain("GITHUB");
     expect(types).toContain("JIRA");
@@ -14,11 +14,12 @@ describe("getAllProviders()", () => {
     expect(types).toContain("GITLAB");
     expect(types).toContain("LINEAR");
     expect(types).toContain("ASANA");
+    expect(types).toContain("TRELLO");
   });
 
   it("returns providers sorted by displayName ascending", () => {
     const names = getAllProviders().map((p) => p.displayName);
-    expect(names).toEqual(["Asana", "GitHub", "GitLab", "Jira", "Linear", "Redmine"]);
+    expect(names).toEqual(["Asana", "GitHub", "GitLab", "Jira", "Linear", "Redmine", "Trello"]);
   });
 
   it("returns providers with correct baseUrlMode", () => {
@@ -29,6 +30,7 @@ describe("getAllProviders()", () => {
     expect(byType["GITLAB"].baseUrlMode).toBe("optional");
     expect(byType["LINEAR"].baseUrlMode).toBe("none");
     expect(byType["ASANA"].baseUrlMode).toBe("none");
+    expect(byType["TRELLO"].baseUrlMode).toBe("none");
   });
 
   it("returns providers with correct displayName", () => {
@@ -39,6 +41,7 @@ describe("getAllProviders()", () => {
     expect(byType["GITLAB"].displayName).toBe("GitLab");
     expect(byType["LINEAR"].displayName).toBe("Linear");
     expect(byType["ASANA"].displayName).toBe("Asana");
+    expect(byType["TRELLO"].displayName).toBe("Trello");
   });
 
   it("returns providers with non-null iconUrl", () => {
@@ -96,6 +99,14 @@ describe("getAllProviders()", () => {
       { key: "token", labelKey: "token", inputType: "password", required: true },
     ]);
   });
+
+  it("Trello has apiKey and apiToken credential fields (password, required)", () => {
+    const trello = getProviderMetadata("TRELLO")!;
+    expect(trello.credentialFields).toEqual([
+      { key: "apiKey", labelKey: "apiKey", inputType: "password", required: true },
+      { key: "apiToken", labelKey: "apiToken", inputType: "password", required: true },
+    ]);
+  });
 });
 
 describe("getProviderMetadata()", () => {
@@ -137,6 +148,15 @@ describe("getProviderMetadata()", () => {
     expect(meta!.type).toBe("ASANA");
     expect(meta!.displayName).toBe("Asana");
     expect(meta!.iconUrl).toBe("/providers/asana.svg");
+    expect(meta!.baseUrlMode).toBe("none");
+  });
+
+  it("returns Trello metadata for TRELLO", () => {
+    const meta = getProviderMetadata("TRELLO");
+    expect(meta).toBeDefined();
+    expect(meta!.type).toBe("TRELLO");
+    expect(meta!.displayName).toBe("Trello");
+    expect(meta!.iconUrl).toBe("/providers/trello.svg");
     expect(meta!.baseUrlMode).toBe("none");
   });
 

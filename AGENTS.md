@@ -212,6 +212,8 @@ Use `http://app:3000` instead — `app` is the hostname of the Next.js dev conta
 - PostgreSQL 16 via Prisma 7 (no schema changes) (031-admin-password-change-safety)
 - TypeScript 5 / Node.js 20 LTS + Next.js 16, Prisma 7, PostgreSQL 16 (034-remove-providertype-enum)
 - PostgreSQL 16 (enum `ProviderType` → `text` column) (034-remove-providertype-enum)
+- TypeScript 5 / Node.js 20 LTS + Next.js 16 (App Router), axios, zod, dnd-kit, Prisma 7, MUI v7 (036-add-trello-provider)
+- PostgreSQL 16 via Prisma 7 (no schema changes — reuse the existing IssueProvider/Project/Issue models) (036-add-trello-provider)
 
 ## Recent Changes
 - 009-task-display-cleanup: Removed `priority` field from Issue model; added `providerCreatedAt` / `providerUpdatedAt` fields; added Today tasks area with drag-and-drop reorder (dnd-kit)

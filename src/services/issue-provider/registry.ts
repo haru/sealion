@@ -5,6 +5,7 @@ import { jiraMetadata } from "./jira/jira.metadata";
 import { linearMetadata } from "./linear/linear.metadata";
 import type { ProviderMetadata } from "./metadata";
 import { redmineMetadata } from "./redmine/redmine.metadata";
+import { trelloMetadata } from "./trello/trello.metadata";
 
 /** Module-level singleton registry mapping provider type string to metadata. */
 const registry = new Map<string, ProviderMetadata>();
@@ -16,6 +17,7 @@ registerProvider(redmineMetadata);
 registerProvider(gitlabMetadata);
 registerProvider(linearMetadata);
 registerProvider(asanaMetadata);
+registerProvider(trelloMetadata);
 
 /**
  * Registers a provider's metadata in the registry.
