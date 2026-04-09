@@ -36,12 +36,19 @@ jest.mock("@/services/issue-provider/asana/asana", () => ({
   })),
 }));
 
+jest.mock("@/services/issue-provider/trello/trello", () => ({
+  TrelloAdapter: jest.fn().mockImplementation(() => ({
+    testConnection: jest.fn().mockResolvedValue(undefined),
+  })),
+}));
+
 jest.mock("@/services/issue-provider/registry", () => ({
   getProviderMetadata: jest.fn(() => ({ type: "GITHUB", iconUrl: "/providers/github.svg" })),
 }));
 
 import { AsanaAdapter } from "@/services/issue-provider/asana/asana";
 import { createAdapter } from "@/services/issue-provider/factory";
+import { TrelloAdapter } from "@/services/issue-provider/trello/trello";
 
 describe("createAdapter — post-enum removal (T010/T011)", () => {
   it("T010: creates adapter for any registered provider type string without enum dependency", () => {
@@ -60,5 +67,11 @@ describe("createAdapter — post-enum removal (T010/T011)", () => {
     const adapter = createAdapter("ASANA", { token: "asana-token" });
     expect(adapter).toBeDefined();
     expect(AsanaAdapter).toHaveBeenCalledWith("asana-token");
+  });
+
+  it("creates a TrelloAdapter for type TRELLO", () => {
+    const adapter = createAdapter("TRELLO", { apiKey: "trello-key", apiToken: "trello-token" });
+    expect(adapter).toBeDefined();
+    expect(TrelloAdapter).toHaveBeenCalledWith("trello-key", "trello-token");
   });
 });
