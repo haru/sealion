@@ -6,17 +6,16 @@ import { createSyncErrorInfo } from "@/lib/sync/error-utils";
 import type { IssueProviderAdapter, SyncErrorInfo } from "@/lib/types";
 import { createAdapter } from "@/services/issue-provider/factory";
 import type { ProviderCredentials } from "@/services/issue-provider/factory";
-import { TrelloAdapter } from "@/services/issue-provider/trello/trello";
 
 const PROVIDER_CONCURRENCY = 3;
 const PROJECT_CONCURRENCY = 5;
 
 /**
- * Enriches `providerCreatedAt` for issues that lack it, using a Trello-specific
- * enrichment API. Silently skips on rate limit or other errors — the next sync
- * cycle will retry unresolved cards.
+ * Enriches `providerCreatedAt` for issues that lack it, for providers that support
+ * the optional {@link IssueProviderAdapter.enrichCreationDates} method.
+ * Silently skips on rate limit or other errors — the next sync cycle will retry.
  *
- * @param adapter - The provider adapter (only acts on TrelloAdapter instances).
+ * @param adapter - The provider adapter.
  * @param projectId - The local project ID.
  * @param externalIds - External IDs of issues returned in this sync cycle.
  */
@@ -25,7 +24,7 @@ async function enrichMissingCreationDates(
   projectId: string,
   externalIds: string[],
 ): Promise<void> {
-  if (!(adapter instanceof TrelloAdapter)) {
+  if (!adapter.enrichCreationDates) {
     return;
   }
 
