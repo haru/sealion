@@ -78,6 +78,69 @@ export function extractAxiosStatus(error: unknown): number | undefined {
 }
 
 /**
+ * Extracts the message string from the first element of an Asana-style errors array.
+ * Guards against null/non-object first elements.
+ *
+ * @param errors - The raw value of the `errors` field from the response body.
+ * @returns The message string, or null if not present or invalid.
+ */
+function extractAsanaErrorsMessage(errors: unknown): string | null {
+  if (!Array.isArray(errors) || errors.length === 0) { return null; }
+  const first = errors[0];
+  if (typeof first !== 'object' || first === null) { return null; }
+  const message = (first as Record<string, unknown>).message;
+  if (typeof message !== 'string' || message.trim().length === 0) { return null; }
+  return message;
+}
+
+/**
+ * Extracts a user-friendly error message from a known object response body.
+ * Tries each provider-specific format in priority order.
+ *
+ * @param data - The parsed response body (guaranteed to be a non-null object).
+ * @returns The extracted message string, or null if no format matched.
+ */
+function extractFromObject(data: Record<string, unknown>): string | null {
+  // GitHub API: { message: "Not Found", errors: [...] }
+  if ('message' in data) {
+    const message = data.message;
+    if (typeof message === 'string' && message.trim().length > 0) {
+      return message;
+    }
+  }
+
+  // Asana API BadRequest: { data: { error: "message" } }
+  if ('data' in data) {
+    const inner = data.data;
+    if (typeof inner === 'object' && inner !== null && 'error' in (inner as Record<string, unknown>)) {
+      const msg = (inner as Record<string, unknown>).error;
+      if (typeof msg === 'string' && msg.trim().length > 0) {
+        return msg;
+      }
+    }
+  }
+
+  // Asana API (alt): { errors: [{ message: "..." }] }
+  if ('errors' in data) {
+    const msg = extractAsanaErrorsMessage(data.errors);
+    if (msg !== null) { return msg; }
+  }
+
+  // Jira API: { errorMessages: ["..."], errors: {...} }
+  if ('errorMessages' in data) {
+    const messages = data.errorMessages;
+    if (Array.isArray(messages) && messages.length > 0) {
+      const firstMessage = messages[0];
+      if (typeof firstMessage === 'string' && firstMessage.trim().length > 0) {
+        return firstMessage;
+      }
+    }
+  }
+
+  return null;
+}
+
+/**
  * Extracts a user-friendly error message from an axios error response.
  *
  * @param error - The axios error to extract from.
@@ -101,25 +164,17 @@ export function extractProviderMessage(error: unknown): string | undefined {
 
   const data = error.response.data;
 
-  // GitHub API: { message: "Not Found", errors: [...] }
-  if (typeof data === 'object' && data !== null && 'message' in data) {
-    const message = (data as { message: string }).message;
-    if (typeof message === 'string' && message.trim().length > 0) {
-      return message;
-    }
-  }
-
-  // Jira API: { errorMessages: ["..."], errors: {...} }
-  if (typeof data === 'object' && data !== null && 'errorMessages' in data) {
-    const messages = (data as { errorMessages: string[] }).errorMessages;
-    if (Array.isArray(messages) && messages.length > 0) {
-      return messages[0];
-    }
-  }
-
   // Redmine API: Plain text in response.data
   if (typeof data === 'string' && data.trim().length > 0) {
     return data.length > 200 ? data.slice(0, 200) + '...' : data;
+  }
+
+  // Provider-specific JSON formats (GitHub, Asana, Jira, etc.)
+  if (typeof data === 'object' && data !== null) {
+    const extracted = extractFromObject(data as Record<string, unknown>);
+    if (extracted !== null) {
+      return extracted;
+    }
   }
 
   // Fallback to statusText if available
