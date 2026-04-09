@@ -285,6 +285,23 @@ describe("TrelloAdapter", () => {
       expect(callParams.idBoards).toBe("board-1");
     });
 
+    it("filters out cards belonging to other boards", async () => {
+      const otherBoardCard = {
+        ...SAMPLE_CARD,
+        id: "card-other-board",
+        name: "Other board task",
+        idBoard: "board-2",
+      };
+      mockGet
+        .mockResolvedValueOnce({ data: MEMBER_ME })
+        .mockResolvedValueOnce({ data: [SAMPLE_CARD, otherBoardCard] });
+
+      const adapter = new TrelloAdapter("valid-key", "valid-token");
+      const issues = await adapter.fetchAssignedIssues("board-1");
+      expect(issues).toHaveLength(1);
+      expect(issues[0].externalId).toBe("card-1");
+    });
+
     it("returns empty array when no assigned cards exist", async () => {
       mockGet
         .mockResolvedValueOnce({ data: MEMBER_ME })
@@ -458,6 +475,120 @@ describe("TrelloAdapter", () => {
 
       const adapter = new TrelloAdapter("valid-key", "valid-token");
       await expect(adapter.addComment("board-1", "card-1", "hi")).rejects.toThrow("Server Error");
+    });
+  });
+
+  // ─── enrichCreationDates ───────────────────────────────────────────────────
+
+  describe("enrichCreationDates", () => {
+    it("returns map of cardId -> Date for cards with createCard actions", async () => {
+      mockGet
+        .mockResolvedValueOnce({
+          data: [{ id: "card-1", date: "2026-03-01T09:00:00.000Z" }],
+        })
+        .mockResolvedValueOnce({
+          data: [{ id: "card-2", date: "2026-03-15T14:00:00.000Z" }],
+        });
+
+      const adapter = new TrelloAdapter("valid-key", "valid-token");
+      const result = await adapter.enrichCreationDates(["card-1", "card-2"]);
+
+      expect(result).toEqual(new Map([
+        ["card-1", new Date("2026-03-01T09:00:00.000Z")],
+        ["card-2", new Date("2026-03-15T14:00:00.000Z")],
+      ]));
+    });
+
+    it("calls GET /cards/{cardId}/actions with filter=createCard for each card", async () => {
+      mockGet
+        .mockResolvedValueOnce({ data: [{ id: "card-1", date: "2026-03-01T09:00:00.000Z" }] })
+        .mockResolvedValueOnce({ data: [] });
+
+      const adapter = new TrelloAdapter("valid-key", "valid-token");
+      await adapter.enrichCreationDates(["card-1", "card-2"]);
+
+      expect(mockGet).toHaveBeenCalledWith(
+        "/cards/card-1/actions",
+        expect.objectContaining({
+          params: expect.objectContaining({ filter: "createCard" }),
+        }),
+      );
+      expect(mockGet).toHaveBeenCalledWith(
+        "/cards/card-2/actions",
+        expect.objectContaining({
+          params: expect.objectContaining({ filter: "createCard" }),
+        }),
+      );
+    });
+
+    it("omits card from result when no createCard action exists", async () => {
+      mockGet.mockResolvedValueOnce({ data: [] });
+
+      const adapter = new TrelloAdapter("valid-key", "valid-token");
+      const result = await adapter.enrichCreationDates(["card-1"]);
+
+      expect(result).toEqual(new Map());
+    });
+
+    it("returns empty map for empty cardIds array", async () => {
+      const adapter = new TrelloAdapter("valid-key", "valid-token");
+      const result = await adapter.enrichCreationDates([]);
+      expect(result).toEqual(new Map());
+    });
+
+    it("skips cards that return 429 rate limit and continues with remaining cards", async () => {
+      const rateLimitError = Object.assign(new Error("Rate limited"), { response: { status: 429 } });
+      mockGet
+        .mockRejectedValueOnce(rateLimitError)
+        .mockResolvedValueOnce({ data: [{ id: "card-2", date: "2026-03-15T14:00:00.000Z" }] });
+
+      const adapter = new TrelloAdapter("valid-key", "valid-token");
+      const result = await adapter.enrichCreationDates(["card-1", "card-2"]);
+
+      expect(result).toEqual(new Map([
+        ["card-2", new Date("2026-03-15T14:00:00.000Z")],
+      ]));
+    });
+
+    it("skips cards that return other errors and continues with remaining cards", async () => {
+      mockGet
+        .mockRejectedValueOnce(new Error("Server Error"))
+        .mockResolvedValueOnce({ data: [{ id: "card-2", date: "2026-03-15T14:00:00.000Z" }] });
+
+      const adapter = new TrelloAdapter("valid-key", "valid-token");
+      const result = await adapter.enrichCreationDates(["card-1", "card-2"]);
+
+      expect(result).toEqual(new Map([
+        ["card-2", new Date("2026-03-15T14:00:00.000Z")],
+      ]));
+    });
+
+    it("uses the first action's date when multiple actions exist", async () => {
+      mockGet.mockResolvedValueOnce({
+        data: [
+          { id: "action-2", date: "2026-03-01T09:00:00.000Z" },
+          { id: "action-1", date: "2026-02-28T10:00:00.000Z" },
+        ],
+      });
+
+      const adapter = new TrelloAdapter("valid-key", "valid-token");
+      const result = await adapter.enrichCreationDates(["card-1"]);
+
+      expect(result.get("card-1")).toEqual(new Date("2026-03-01T09:00:00.000Z"));
+    });
+
+    it("requests only id and date fields", async () => {
+      mockGet.mockResolvedValueOnce({ data: [{ id: "card-1", date: "2026-03-01T09:00:00.000Z" }] });
+
+      const adapter = new TrelloAdapter("valid-key", "valid-token");
+      await adapter.enrichCreationDates(["card-1"]);
+
+      expect(mockGet).toHaveBeenCalledWith(
+        "/cards/card-1/actions",
+        expect.objectContaining({
+          params: expect.objectContaining({ fields: "id,date" }),
+        }),
+      );
     });
   });
 });

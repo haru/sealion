@@ -129,6 +129,7 @@ export class TrelloAdapter implements IssueProviderAdapter {
       },
     });
     return data
+      .filter((card) => card.idBoard === boardId)
       .filter((card) => card.idMembers.includes(myId))
       .map((card) => this.mapCard(card, false));
   }
@@ -173,5 +174,43 @@ export class TrelloAdapter implements IssueProviderAdapter {
    */
   async addComment(_boardId: string, cardId: string, comment: string): Promise<void> {
     await this.client.post(`/cards/${cardId}/actions/comments`, { text: comment });
+  }
+
+  /**
+   * Fetches creation dates for the given card IDs via the Actions API.
+   * For each card, calls `GET /1/cards/{id}/actions?filter=createCard` and
+   * returns the date of the first (most recent) createCard action.
+   * Cards that fail (rate limit, network error, etc.) are silently skipped
+   * so they can be retried on the next sync cycle.
+   *
+   * @param cardIds - Card IDs to fetch creation dates for.
+   * @returns Map of card ID to creation {@link Date}. Cards without a creation
+   *   date (no action found or API error) are omitted from the map.
+   */
+  async enrichCreationDates(cardIds: string[]): Promise<Map<string, Date>> {
+    const result = new Map<string, Date>();
+
+    await Promise.all(
+      cardIds.map(async (cardId) => {
+        try {
+          const { data } = await this.client.get<{ id: string; date: string }[]>(
+            `/cards/${cardId}/actions`,
+            {
+              params: {
+                filter: "createCard",
+                fields: "id,date",
+              },
+            },
+          );
+          if (data.length > 0) {
+            result.set(cardId, new Date(data[0].date));
+          }
+        } catch {
+          // Silently skip on error (rate limit, network, etc.) — will retry on next sync
+        }
+      }),
+    );
+
+    return result;
   }
 }
