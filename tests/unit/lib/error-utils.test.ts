@@ -373,6 +373,24 @@ describe('extractProviderMessage', () => {
     expect(extractProviderMessage(error)).toBe('First error');
   });
 
+  it('does not throw when Asana errors array has a null first element', () => {
+    const error = createAxiosError({
+      data: { errors: [null] },
+      statusText: 'Bad Request',
+    });
+    // Should fall through to statusText rather than throw on null.message
+    expect(extractProviderMessage(error)).toBe('Bad Request');
+  });
+
+  it('falls back when errorMessages first entry is a non-string', () => {
+    const error = createAxiosError({
+      data: { errorMessages: [42] },
+      statusText: 'Unprocessable Entity',
+    });
+    // Should fall through to statusText rather than return a number
+    expect(extractProviderMessage(error)).toBe('Unprocessable Entity');
+  });
+
   it('prefers GitHub message format over Asana format when both are present', () => {
     const error = createAxiosError({
       data: { message: 'GitHub message', data: { error: 'Asana message' } },

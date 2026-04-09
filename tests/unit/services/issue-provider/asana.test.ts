@@ -62,9 +62,6 @@ function makeProjectListResponse(projects: { gid: string; name: string }[], next
   };
 }
 
-function makeProjectDetailResponse(workspaceGid: string) {
-  return { data: { data: { workspace: { gid: workspaceGid } } } };
-}
 
 const SAMPLE_TASK = {
   gid: "task-1",
@@ -250,7 +247,7 @@ describe("AsanaAdapter", () => {
       });
     });
 
-    it("includes assignee=me and workspace in the API request params", async () => {
+    it("sends request to the project tasks endpoint with completed_since and opt_fields params", async () => {
       mockGet
         .mockResolvedValueOnce({ data: { data: { gid: "user-1" } } })  // /users/me
         .mockResolvedValueOnce(makeTaskListResponse([]));
@@ -261,7 +258,10 @@ describe("AsanaAdapter", () => {
       expect(mockGet).toHaveBeenCalledWith(
         "/projects/proj-1/tasks",
         expect.objectContaining({
-          params: expect.objectContaining({}),
+          params: expect.objectContaining({
+            completed_since: "now",
+            opt_fields: "gid,name,due_on,permalink_url,assignee,created_at,modified_at",
+          }),
         }),
       );
     });
