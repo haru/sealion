@@ -1,17 +1,91 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
 
 const ADMIN_EMAIL = process.env.E2E_ADMIN_EMAIL ?? "admin@example.com";
 const ADMIN_PASSWORD = process.env.E2E_ADMIN_PASSWORD ?? "password123";
 
+/** Logs in and navigates to the admin users page. */
+async function loginAndGoToAdminUsers(page: Page): Promise<void> {
+  await page.goto("/login");
+  await page.fill('[name="email"]', ADMIN_EMAIL);
+  await page.fill('[name="password"]', ADMIN_PASSWORD);
+  await page.click('button[type="submit"]');
+  await page.waitForURL("/");
+  await page.goto("/admin/users");
+  await page.waitForURL(/admin\/users/);
+}
+
+test.describe("Admin Users — DataTable: sort and filter (US2)", () => {
+  test.beforeEach(async ({ page }) => {
+    await loginAndGoToAdminUsers(page);
+  });
+
+  test("admin users page renders the DataGrid table", async ({ page }) => {
+    const grid = page.locator(".MuiDataGrid-root");
+    await expect(grid).toBeVisible({ timeout: 10000 });
+  });
+
+  test("quick filter input is visible", async ({ page }) => {
+    const grid = page.locator(".MuiDataGrid-root");
+    await expect(grid).toBeVisible({ timeout: 10000 });
+
+    const filterInput = page.locator(".MuiDataGrid-toolbarContainer input");
+    await expect(filterInput).toBeVisible();
+  });
+
+  test("typing in the filter narrows visible rows", async ({ page }) => {
+    const grid = page.locator(".MuiDataGrid-root");
+    await expect(grid).toBeVisible({ timeout: 10000 });
+
+    const rows = page.locator(".MuiDataGrid-row");
+    const initialCount = await rows.count();
+
+    if (initialCount === 0) {
+      test.skip(true, "No user rows to filter");
+      return;
+    }
+
+    const filterInput = page.locator(".MuiDataGrid-toolbarContainer input");
+    await filterInput.fill("zzz_no_match_xyz");
+    await page.waitForTimeout(500);
+
+    const noRowsOverlay = page.locator(".MuiDataGrid-overlay");
+    const filteredCount = await rows.count();
+    const overlayVisible = await noRowsOverlay.isVisible();
+    expect(filteredCount < initialCount || overlayVisible).toBeTruthy();
+
+    await filterInput.clear();
+    await page.waitForTimeout(500);
+    const restoredCount = await rows.count();
+    expect(restoredCount).toBeGreaterThanOrEqual(initialCount);
+  });
+
+  test("email column header is present", async ({ page }) => {
+    const grid = page.locator(".MuiDataGrid-root");
+    await expect(grid).toBeVisible({ timeout: 10000 });
+
+    // Email column header text should be visible
+    const emailHeader = page.locator(".MuiDataGrid-columnHeader").filter({ hasText: /email|メール/i });
+    await expect(emailHeader).toBeVisible();
+  });
+});
+
+test.describe("Admin Users — DataTable: pagination (US3)", () => {
+  test.beforeEach(async ({ page }) => {
+    await loginAndGoToAdminUsers(page);
+  });
+
+  test("pagination footer is visible", async ({ page }) => {
+    const grid = page.locator(".MuiDataGrid-root");
+    await expect(grid).toBeVisible({ timeout: 10000 });
+
+    const footer = page.locator(".MuiDataGrid-footerContainer");
+    await expect(footer).toBeVisible();
+  });
+});
+
 test.describe("Admin Users — US3: User Status Management", () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto("/login");
-    await page.fill('[name="email"]', ADMIN_EMAIL);
-    await page.fill('[name="password"]', ADMIN_PASSWORD);
-    await page.click('button[type="submit"]');
-    await page.waitForURL("/");
-    await page.goto("/admin/users");
-    await page.waitForURL(/admin\/users/);
+    await loginAndGoToAdminUsers(page);
   });
 
   test("user list shows status chips for each user", async ({ page }) => {

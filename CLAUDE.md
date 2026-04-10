@@ -249,6 +249,8 @@ Use `http://app:3000` instead — `app` is the hostname of the Next.js dev conta
 - PostgreSQL 16 via Prisma 7 (no database schema changes) (035-add-asana-provider)
 - TypeScript 5 / Node.js 20 LTS + axios (existing), buildAxiosProxyConfig (existing), zod (existing) (037-add-backlog-provider)
 - PostgreSQL 16 via Prisma 7 — no schema changes (`provider type` is a `text` column) (037-add-backlog-provider)
+- TypeScript 5 / Node.js 20 LTS + Next.js 16 (App Router), MUI v7, `@mui/x-data-grid@^7.x` (新規追加), next-intl 4 (038-common-table-component)
+- N/A（スキーマ変更なし） (038-common-table-component)
 
 ## Recent Changes
 - 009-task-display-cleanup: Removed `priority` field from Issue model; added `providerCreatedAt` / `providerUpdatedAt` fields; added Today tasks area with drag-and-drop reorder (dnd-kit)

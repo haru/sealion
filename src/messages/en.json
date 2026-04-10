@@ -8,7 +8,11 @@
     "error": "An error occurred",
     "success": "Success",
     "next": "Next",
-    "retry": "Try again"
+    "retry": "Try again",
+    "table": {
+      "noRows": "No data",
+      "loading": "Loading..."
+    }
   },
   "auth": {
     "login": "Log In",

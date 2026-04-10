@@ -7,13 +7,6 @@ import EditIcon from "@mui/icons-material/Edit";
 import PeopleIcon from "@mui/icons-material/People";
 import {
   Container,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Chip,
   Button,
   Dialog,
@@ -21,23 +14,20 @@ import {
   DialogContent,
   DialogActions,
   DialogContentText,
-  Alert,
   Stack,
   IconButton,
   Tooltip,
 } from "@mui/material";
-import FormControl from "@mui/material/FormControl";
-import InputLabel from "@mui/material/InputLabel";
-import MenuItem from "@mui/material/MenuItem";
-import Select from "@mui/material/Select";
-import TextField from "@mui/material/TextField";
+import type { GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
 import { useTranslations } from "next-intl";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 
 import { useAdminUserId } from "@/app/admin/AdminSessionProvider";
 import { useMessageQueue } from "@/components/MessageQueue";
+import DataTable from "@/components/ui/DataTable";
 import { usePageHeader } from "@/hooks/usePageHeader";
 
+import CreateUserDialog from "./CreateUserDialog";
 import EditUserDialog from "./EditUserDialog";
 
 /** A user record as returned by GET /api/admin/users. */
@@ -67,32 +57,22 @@ export default function AdminUsersPage() {
   const { addMessage } = useMessageQueue();
 
   const [users, setUsers] = useState<User[]>([]);
-  const [formError, setFormError] = useState<string | null>(null);
-
-  // --- Create dialog state ---
+  const [loading, setLoading] = useState(true);
   const [createOpen, setCreateOpen] = useState(false);
-
-  usePageHeader(t("userManagement"), undefined, PeopleIcon, undefined, tSidebar("systemAdmin"), AdminPanelSettingsIcon);
-
-  const [newEmail, setNewEmail] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [newUsername, setNewUsername] = useState("");
-  const [newRole, setNewRole] = useState<"USER" | "ADMIN">("USER");
-  const [creating, setCreating] = useState(false);
-
-  // --- Edit dialog state ---
   const [editTarget, setEditTarget] = useState<User | null>(null);
-
-  // --- Delete dialog state ---
   const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
   const [deleting, setDeleting] = useState(false);
 
+  usePageHeader(t("userManagement"), undefined, PeopleIcon, undefined, tSidebar("systemAdmin"), AdminPanelSettingsIcon);
+
   const fetchUsers = useCallback(async () => {
+    setLoading(true);
     const res = await fetch("/api/admin/users");
     if (res.ok) {
       const json = await res.json();
       setUsers(json.data);
     }
+    setLoading(false);
   }, []);
 
   useEffect(() => {
@@ -107,7 +87,9 @@ export default function AdminUsersPage() {
    * @returns A localised error message.
    */
   function translateError(code: string | undefined): string {
-    if (!code) { return tCommon("error"); }
+    if (!code) {
+      return tCommon("error");
+    }
     try {
       return tErrors(code as Parameters<typeof tErrors>[0]);
     } catch {
@@ -115,35 +97,11 @@ export default function AdminUsersPage() {
     }
   }
 
-  /** Submits the create-user form and refreshes the user list on success. */
-  async function handleCreateUser() {
-    setCreating(true);
-    setFormError(null);
-
-    const res = await fetch("/api/admin/users", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: newEmail, password: newPassword, role: newRole, username: newUsername.trim() }),
-    });
-
-    const json = await res.json();
-    if (res.ok) {
-      setCreateOpen(false);
-      setNewEmail("");
-      setNewPassword("");
-      setNewUsername("");
-      setNewRole("USER");
-      addMessage("information", t("createSuccess"));
-      await fetchUsers();
-    } else {
-      setFormError(translateError(json?.error as string | undefined));
-    }
-    setCreating(false);
-  }
-
   /** Executes the cascade delete for the current deleteTarget. */
   async function handleDeleteConfirm() {
-    if (!deleteTarget) { return; }
+    if (!deleteTarget) {
+      return;
+    }
     setDeleting(true);
 
     try {
@@ -177,142 +135,118 @@ export default function AdminUsersPage() {
     }
   }
 
+  const columns = useMemo<GridColDef[]>(
+    () => [
+      {
+        field: "email",
+        headerName: t("columns.email"),
+        flex: 2,
+        minWidth: 200,
+      },
+      {
+        field: "username",
+        headerName: t("columns.username"),
+        flex: 1,
+        minWidth: 150,
+        renderCell: (params: GridRenderCellParams<User>) => params.row.username ?? "—",
+      },
+      {
+        field: "role",
+        headerName: t("columns.role"),
+        width: 130,
+        renderCell: (params: GridRenderCellParams<User>) => (
+          <Chip
+            label={t(`role.${params.row.role}`)}
+            color={params.row.role === "ADMIN" ? "primary" : "default"}
+            size="small"
+          />
+        ),
+      },
+      {
+        field: "status",
+        headerName: t("columns.status"),
+        width: 130,
+        renderCell: (params: GridRenderCellParams<User>) => {
+          const chipProps = STATUS_CHIP_PROPS[params.row.status] ?? { color: "default" as const };
+          return (
+            <Chip
+              label={t(`status.${params.row.status}`)}
+              color={chipProps.color}
+              size="small"
+            />
+          );
+        },
+      },
+      {
+        field: "createdAt",
+        headerName: t("columns.createdAt"),
+        flex: 1,
+        minWidth: 130,
+        renderCell: (params: GridRenderCellParams<User>) =>
+          new Date(params.row.createdAt).toLocaleDateString(),
+      },
+      {
+        field: "actions",
+        headerName: "",
+        width: 100,
+        sortable: false,
+        filterable: false,
+        align: "right",
+        headerAlign: "right",
+        renderCell: (params: GridRenderCellParams<User>) => {
+          const user = params.row;
+          const isSelf = user.id === currentUserId;
+          return (
+            <Stack direction="row" spacing={0.5}>
+              <Tooltip title={t("editUser")}>
+                <IconButton
+                  size="small"
+                  aria-label={t("editUser")}
+                  onClick={() => setEditTarget(user)}
+                >
+                  <EditIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title={isSelf ? t("cannotDeleteSelf") : t("deleteUser")}>
+                <span>
+                  <IconButton
+                    size="small"
+                    aria-label={t("deleteUser")}
+                    onClick={() => setDeleteTarget(user)}
+                    disabled={isSelf}
+                    color="error"
+                  >
+                    <DeleteIcon fontSize="small" />
+                  </IconButton>
+                </span>
+              </Tooltip>
+            </Stack>
+          );
+        },
+      },
+    ],
+    [t, currentUserId],
+  );
+
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Stack direction="row" justifyContent="flex-end" mb={3}>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => setCreateOpen(true)}
-        >
+        <Button variant="contained" startIcon={<AddIcon />} onClick={() => setCreateOpen(true)}>
           {t("createUser")}
         </Button>
       </Stack>
 
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>{t("columns.email")}</TableCell>
-              <TableCell>{t("columns.username")}</TableCell>
-              <TableCell>{t("columns.role")}</TableCell>
-              <TableCell>{t("columns.status")}</TableCell>
-              <TableCell>{t("columns.createdAt")}</TableCell>
-              <TableCell>{t("columns.actions")}</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {users.map((user) => {
-              const isSelf = user.id === currentUserId;
-              const chipProps = STATUS_CHIP_PROPS[user.status] ?? { color: "default" as const };
-              return (
-                <TableRow key={user.id}>
-                  <TableCell>{user.email}</TableCell>
-                  <TableCell>{user.username ?? "—"}</TableCell>
-                  <TableCell>
-                    <Chip
-                      label={t(`role.${user.role}`)}
-                      color={user.role === "ADMIN" ? "primary" : "default"}
-                      size="small"
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      label={t(`status.${user.status}`)}
-                      color={chipProps.color}
-                      size="small"
-                    />
-                  </TableCell>
-                  <TableCell>{new Date(user.createdAt).toLocaleDateString()}</TableCell>
-                  <TableCell>
-                    <Stack direction="row" spacing={0.5}>
-                      <Tooltip title={t("editUser")}>
-                        <IconButton
-                          size="small"
-                          aria-label={t("editUser")}
-                          onClick={() => setEditTarget(user)}
-                        >
-                          <EditIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title={isSelf ? t("cannotDeleteSelf") : t("deleteUser")}>
-                        <span>
-                          <IconButton
-                            size="small"
-                            aria-label={t("deleteUser")}
-                            onClick={() => setDeleteTarget(user)}
-                            disabled={isSelf}
-                            color="error"
-                          >
-                            <DeleteIcon fontSize="small" />
-                          </IconButton>
-                        </span>
-                      </Tooltip>
-                    </Stack>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
-      </TableContainer>
+      <DataTable columns={columns} rows={users} loading={loading} />
 
-      {/* Create User Dialog */}
-      <Dialog open={createOpen} onClose={() => setCreateOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>{t("createUser")}</DialogTitle>
-        <DialogContent>
-          <Stack spacing={2} sx={{ mt: 1 }}>
-            {formError && (
-              <Alert severity="error" onClose={() => setFormError(null)}>
-                {formError}
-              </Alert>
-            )}
-            <TextField
-              label={t("fields.email")}
-              type="email"
-              value={newEmail}
-              onChange={(e) => setNewEmail(e.target.value)}
-              fullWidth
-              required
-            />
-            <TextField
-              label={t("fields.username")}
-              type="text"
-              value={newUsername}
-              onChange={(e) => setNewUsername(e.target.value)}
-              fullWidth
-              required
-            />
-            <TextField
-              label={t("fields.password")}
-              type="password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              fullWidth
-              required
-            />
-            <FormControl fullWidth>
-              <InputLabel>{t("fields.role")}</InputLabel>
-              <Select
-                value={newRole}
-                label={t("fields.role")}
-                onChange={(e) => setNewRole(e.target.value as "USER" | "ADMIN")}
-              >
-                <MenuItem value="USER">{t("role.USER")}</MenuItem>
-                <MenuItem value="ADMIN">{t("role.ADMIN")}</MenuItem>
-              </Select>
-            </FormControl>
-          </Stack>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setCreateOpen(false)}>{tCommon("cancel")}</Button>
-          <Button onClick={handleCreateUser} variant="contained" disabled={creating}>
-            {t("createUser")}
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <CreateUserDialog
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        onCreated={async () => {
+          addMessage("information", t("createSuccess"));
+          await fetchUsers();
+        }}
+      />
 
-      {/* Edit User Dialog */}
       <EditUserDialog
         user={editTarget}
         isSelf={editTarget?.id === currentUserId}
@@ -320,8 +254,12 @@ export default function AdminUsersPage() {
         onSaved={fetchUsers}
       />
 
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteTarget !== null} onClose={() => setDeleteTarget(null)} maxWidth="sm" fullWidth>
+      <Dialog
+        open={deleteTarget !== null}
+        onClose={() => setDeleteTarget(null)}
+        maxWidth="sm"
+        fullWidth
+      >
         <DialogTitle>{t("deleteUser")}</DialogTitle>
         <DialogContent>
           <DialogContentText>{t("confirmDelete")}</DialogContentText>
