@@ -5,10 +5,10 @@ import type { ExternalProject, IssueProviderAdapter, NormalizedIssue } from "@/l
 
 export { backlogMetadata } from "./backlog.metadata";
 
-/** Backlog Issue status IDs treated as open (未対応, 処理中, 処理済み). */
+/** Backlog issue status IDs treated as open (Open, In Progress, Resolved). */
 const OPEN_STATUS_IDS = [1, 2, 3];
 
-/** Backlog Issue status ID to set when closing an issue (完了). */
+/** Backlog issue status ID to set when closing an issue (Completed). */
 const CLOSE_STATUS_ID = 4;
 
 /** Number of issues to fetch per page (Backlog API maximum). */
@@ -142,7 +142,7 @@ export class BacklogAdapter implements IssueProviderAdapter {
    * Fetches open Backlog issues assigned to the authenticated user in the given project.
    * Uses server-side `assigneeId[]` filtering and paginates until all issues are retrieved.
    *
-   * Open statuses: 未対応 (1), 処理中 (2), 処理済み (3).
+   * Open statuses: Open (1), In Progress (2), Resolved (3).
    *
    * @param projectId - The Backlog project numeric ID (stored as `Project.externalId`).
    * @returns Array of {@link NormalizedIssue} with `isUnassigned: false`.
@@ -222,7 +222,7 @@ export class BacklogAdapter implements IssueProviderAdapter {
   }
 
   /**
-   * Updates a Backlog issue status to 完了 (Closed, ID=4), effectively closing it.
+   * Updates a Backlog issue status to Closed (ID=4), effectively closing it.
    * After the next sync the issue will no longer be fetched (status 4 is not in OPEN_STATUS_IDS).
    *
    * @param _projectId - Accepted for interface compatibility but not used by Backlog.
