@@ -2,11 +2,11 @@
 import { getAllProviders, getProviderMetadata } from "@/services/issue-provider/registry";
 
 describe("getAllProviders()", () => {
-  it("returns exactly 7 providers", () => {
-    expect(getAllProviders()).toHaveLength(7);
+  it("returns exactly 8 providers", () => {
+    expect(getAllProviders()).toHaveLength(8);
   });
 
-  it("includes GITHUB, JIRA, REDMINE, GITLAB, LINEAR, ASANA, and TRELLO", () => {
+  it("includes GITHUB, JIRA, REDMINE, GITLAB, LINEAR, ASANA, TRELLO, and BACKLOG", () => {
     const types = getAllProviders().map((p) => p.type);
     expect(types).toContain("GITHUB");
     expect(types).toContain("JIRA");
@@ -15,11 +15,12 @@ describe("getAllProviders()", () => {
     expect(types).toContain("LINEAR");
     expect(types).toContain("ASANA");
     expect(types).toContain("TRELLO");
+    expect(types).toContain("BACKLOG");
   });
 
   it("returns providers sorted by displayName ascending", () => {
     const names = getAllProviders().map((p) => p.displayName);
-    expect(names).toEqual(["Asana", "GitHub", "GitLab", "Jira", "Linear", "Redmine", "Trello"]);
+    expect(names).toEqual(["Asana", "Backlog", "GitHub", "GitLab", "Jira", "Linear", "Redmine", "Trello"]);
   });
 
   it("returns providers with correct baseUrlMode", () => {
@@ -31,6 +32,7 @@ describe("getAllProviders()", () => {
     expect(byType["LINEAR"].baseUrlMode).toBe("none");
     expect(byType["ASANA"].baseUrlMode).toBe("none");
     expect(byType["TRELLO"].baseUrlMode).toBe("none");
+    expect(byType["BACKLOG"].baseUrlMode).toBe("required");
   });
 
   it("returns providers with correct displayName", () => {
@@ -42,6 +44,7 @@ describe("getAllProviders()", () => {
     expect(byType["LINEAR"].displayName).toBe("Linear");
     expect(byType["ASANA"].displayName).toBe("Asana");
     expect(byType["TRELLO"].displayName).toBe("Trello");
+    expect(byType["BACKLOG"].displayName).toBe("Backlog");
   });
 
   it("returns providers with non-null iconUrl", () => {
@@ -107,6 +110,13 @@ describe("getAllProviders()", () => {
       { key: "apiToken", labelKey: "apiToken", inputType: "password", required: true },
     ]);
   });
+
+  it("Backlog has apiKey credential field (password, required)", () => {
+    const backlog = getProviderMetadata("BACKLOG")!;
+    expect(backlog.credentialFields).toEqual([
+      { key: "apiKey", labelKey: "apiKey", inputType: "password", required: true },
+    ]);
+  });
 });
 
 describe("getProviderMetadata()", () => {
@@ -158,6 +168,15 @@ describe("getProviderMetadata()", () => {
     expect(meta!.displayName).toBe("Trello");
     expect(meta!.iconUrl).toBe("/providers/trello.svg");
     expect(meta!.baseUrlMode).toBe("none");
+  });
+
+  it("returns Backlog metadata for BACKLOG", () => {
+    const meta = getProviderMetadata("BACKLOG");
+    expect(meta).toBeDefined();
+    expect(meta!.type).toBe("BACKLOG");
+    expect(meta!.displayName).toBe("Backlog");
+    expect(meta!.iconUrl).toBe("/providers/backlog.svg");
+    expect(meta!.baseUrlMode).toBe("required");
   });
 
   it("returns undefined for an unknown type", () => {

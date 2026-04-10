@@ -1,4 +1,5 @@
 import { asanaMetadata } from "./asana/asana.metadata";
+import { backlogMetadata } from "./backlog/backlog.metadata";
 import { githubMetadata } from "./github/github.metadata";
 import { gitlabMetadata } from "./gitlab/gitlab.metadata";
 import { jiraMetadata } from "./jira/jira.metadata";
@@ -18,6 +19,7 @@ registerProvider(gitlabMetadata);
 registerProvider(linearMetadata);
 registerProvider(asanaMetadata);
 registerProvider(trelloMetadata);
+registerProvider(backlogMetadata);
 
 /**
  * Registers a provider's metadata in the registry.

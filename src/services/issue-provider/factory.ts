@@ -1,6 +1,7 @@
 import type { IssueProviderAdapter } from "@/lib/types";
 
 import { AsanaAdapter } from "./asana/asana";
+import { BacklogAdapter } from "./backlog/backlog";
 import { GitHubAdapter } from "./github/github";
 import { GitLabAdapter } from "./gitlab/gitlab";
 import { JiraAdapter } from "./jira/jira";
@@ -45,6 +46,12 @@ export interface TrelloCredentials {
   apiToken: string;
 }
 
+/** Credentials for a Backlog provider. */
+export interface BacklogCredentials {
+  baseUrl: string;
+  apiKey: string;
+}
+
 export type ProviderCredentials =
   | GitHubCredentials
   | JiraCredentials
@@ -52,7 +59,8 @@ export type ProviderCredentials =
   | GitLabCredentials
   | LinearCredentials
   | AsanaCredentials
-  | TrelloCredentials;
+  | TrelloCredentials
+  | BacklogCredentials;
 
 /**
  * Returns the icon URL for the given provider type, or null if unknown.
@@ -106,6 +114,10 @@ export function createAdapter(
     case "TRELLO": {
       const creds = credentials as TrelloCredentials;
       return new TrelloAdapter(creds.apiKey, creds.apiToken);
+    }
+    case "BACKLOG": {
+      const creds = credentials as BacklogCredentials;
+      return new BacklogAdapter(creds.baseUrl, creds.apiKey);
     }
     default:
       throw new Error(`Unsupported provider type: ${type}`);
