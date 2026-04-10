@@ -67,13 +67,19 @@ export default function AdminUsersPage() {
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
-    const res = await fetch("/api/admin/users");
-    if (res.ok) {
-      const json = await res.json();
-      setUsers(json.data);
+    try {
+      const res = await fetch("/api/admin/users");
+      if (res.ok) {
+        const json = await res.json();
+        setUsers(json.data);
+      } else {
+        addMessage("error", tCommon("error"));
+      }
+    } catch {
+      addMessage("error", tCommon("error"));
     }
     setLoading(false);
-  }, []);
+  }, [addMessage, tCommon]);
 
   useEffect(() => {
     void fetchUsers();

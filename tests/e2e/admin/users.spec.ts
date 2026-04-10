@@ -46,17 +46,20 @@ test.describe("Admin Users — DataTable: sort and filter (US2)", () => {
 
     const filterInput = page.locator(".MuiDataGrid-toolbarContainer input");
     await filterInput.fill("zzz_no_match_xyz");
-    await page.waitForTimeout(500);
 
+    // Wait for the filter to apply deterministically (row count drops or overlay appears)
     const noRowsOverlay = page.locator(".MuiDataGrid-overlay");
-    const filteredCount = await rows.count();
-    const overlayVisible = await noRowsOverlay.isVisible();
-    expect(filteredCount < initialCount || overlayVisible).toBeTruthy();
+    await expect.poll(
+      async () => {
+        const count = await rows.count();
+        const overlayVisible = await noRowsOverlay.isVisible();
+        return count < initialCount || overlayVisible;
+      },
+      { timeout: 3000 },
+    ).toBeTruthy();
 
     await filterInput.clear();
-    await page.waitForTimeout(500);
-    const restoredCount = await rows.count();
-    expect(restoredCount).toBeGreaterThanOrEqual(initialCount);
+    await expect.poll(async () => rows.count(), { timeout: 3000 }).toBeGreaterThanOrEqual(initialCount);
   });
 
   test("email column header is present", async ({ page }) => {

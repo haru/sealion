@@ -48,7 +48,7 @@ export interface DataTableProps<T extends { id: string }> {
    * Each column must specify at minimum `field` and `headerName`.
    * Use `renderCell` for custom cell content (e.g., icons, chips, buttons).
    */
-  columns: GridColDef[];
+  columns: GridColDef<T>[];
 
   /**
    * Array of row data objects to display in the table.
@@ -93,8 +93,8 @@ export default function DataTable<T extends { id: string }>({
   const t = useTranslations("common");
 
   const handleRowClick = useCallback(
-    (params: GridRowParams) => {
-      onRowClick?.(params.row as T);
+    (params: GridRowParams<T>) => {
+      onRowClick?.(params.row);
     },
     [onRowClick],
   );
@@ -117,6 +117,7 @@ export default function DataTable<T extends { id: string }>({
       autoHeight
       disableRowSelectionOnClick
       showToolbar
+      slotProps={{ toolbar: { showQuickFilter: true } }}
       localeText={{
         noRowsLabel: t("table.noRows"),
       }}

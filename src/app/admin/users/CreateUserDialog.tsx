@@ -22,8 +22,8 @@ interface CreateUserDialogProps {
   open: boolean;
   /** Called when the dialog requests to be closed. */
   onClose: () => void;
-  /** Called after a user is successfully created. */
-  onCreated: () => void;
+  /** Called after a user is successfully created. May return a Promise. */
+  onCreated: () => void | Promise<void>;
 }
 
 /**
@@ -85,7 +85,7 @@ export default function CreateUserDialog({ open, onClose, onCreated }: CreateUse
     const json = await res.json();
     if (res.ok) {
       handleClose();
-      onCreated();
+      await Promise.resolve(onCreated());
     } else {
       setFormError(translateError(json?.error as string | undefined));
     }
