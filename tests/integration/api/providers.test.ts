@@ -87,6 +87,15 @@ jest.mock("@/services/issue-provider/asana/asana", () => ({
   ),
 }));
 
+jest.mock("@/services/issue-provider/backlog/backlog", () => ({
+  BacklogAdapter: Object.assign(
+    jest.fn().mockImplementation(() => ({
+      testConnection: jest.fn().mockResolvedValue(undefined),
+    })),
+    { iconUrl: "/providers/backlog.svg" }
+  ),
+}));
+
 let prisma: PrismaClient;
 let dbAvailable = false;
 
@@ -336,7 +345,7 @@ describe("Provider registration cycle (Integration)", () => {
     const { GET, POST } = await importProvidersRouteWithPrisma(prisma);
 
     // Create multiple providers with different types
-    for (const type of ["GITHUB", "JIRA", "REDMINE", "GITLAB", "LINEAR", "ASANA"]) {
+    for (const type of ["GITHUB", "JIRA", "REDMINE", "GITLAB", "LINEAR", "ASANA", "BACKLOG"]) {
       const postReq = new NextRequest("http://localhost/api/providers", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -353,11 +362,16 @@ describe("Provider registration cycle (Integration)", () => {
                   baseUrl: `https://${type.toLowerCase()}.example.com`,
                   apiKey: `key_${type.toLowerCase()}`,
                 }
-              : {
-                  baseUrl: `https://${type.toLowerCase()}.example.com`,
-                  email: "u@example.com",
-                  apiToken: "tok",
-                },
+              : type === "BACKLOG"
+                ? {
+                    baseUrl: `https://${type.toLowerCase()}.backlog.com`,
+                    apiKey: `key_${type.toLowerCase()}`,
+                  }
+                : {
+                    baseUrl: `https://${type.toLowerCase()}.example.com`,
+                    email: "u@example.com",
+                    apiToken: "tok",
+                  },
         }),
       });
       const res = await POST(postReq);
@@ -372,7 +386,7 @@ describe("Provider registration cycle (Integration)", () => {
     const testProviders = getJson.data.filter(
       (p: { displayName: string }) => p.displayName.startsWith("Type Test "),
     );
-    expect(testProviders.length).toBe(6);
+    expect(testProviders.length).toBe(7);
 
     for (const provider of testProviders) {
       const typeFromName = provider.displayName.replace("Type Test ", "");

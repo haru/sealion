@@ -42,11 +42,18 @@ jest.mock("@/services/issue-provider/trello/trello", () => ({
   })),
 }));
 
+jest.mock("@/services/issue-provider/backlog/backlog", () => ({
+  BacklogAdapter: jest.fn().mockImplementation(() => ({
+    testConnection: jest.fn().mockResolvedValue(undefined),
+  })),
+}));
+
 jest.mock("@/services/issue-provider/registry", () => ({
   getProviderMetadata: jest.fn(() => ({ type: "GITHUB", iconUrl: "/providers/github.svg" })),
 }));
 
 import { AsanaAdapter } from "@/services/issue-provider/asana/asana";
+import { BacklogAdapter } from "@/services/issue-provider/backlog/backlog";
 import { createAdapter } from "@/services/issue-provider/factory";
 import { TrelloAdapter } from "@/services/issue-provider/trello/trello";
 
@@ -73,5 +80,11 @@ describe("createAdapter — post-enum removal (T010/T011)", () => {
     const adapter = createAdapter("TRELLO", { apiKey: "trello-key", apiToken: "trello-token" });
     expect(adapter).toBeDefined();
     expect(TrelloAdapter).toHaveBeenCalledWith("trello-key", "trello-token");
+  });
+
+  it("creates a BacklogAdapter for type BACKLOG", () => {
+    const adapter = createAdapter("BACKLOG", { baseUrl: "https://myspace.backlog.com", apiKey: "backlog-key" });
+    expect(adapter).toBeDefined();
+    expect(BacklogAdapter).toHaveBeenCalledWith("https://myspace.backlog.com", "backlog-key");
   });
 });
