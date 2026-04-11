@@ -19,13 +19,6 @@ enum UserStatus {
   SUSPENDED
 }
 
-enum ProviderType {
-  GITHUB
-  JIRA
-  REDMINE
-  GITLAB
-}
-
 // ─── Models ─────────────────────────────────────────────────────────────────
 
 model User {
@@ -62,7 +55,7 @@ model BoardSettings {
 model IssueProvider {
   id                   String       @id @default(cuid())
   userId               String
-  type                 ProviderType
+  type                 String
   displayName          String
   baseUrl              String?
   encryptedCredentials String

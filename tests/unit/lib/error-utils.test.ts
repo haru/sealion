@@ -352,6 +352,52 @@ describe('extractProviderMessage', () => {
     expect(extractProviderMessage(error)).toBeUndefined();
   });
 
+  it('extracts message from Asana API BadRequest response ({ data: { error: "..." } })', () => {
+    const error = createAxiosError({
+      data: { data: { error: 'workspace: The workspace is not valid.' } },
+    });
+    expect(extractProviderMessage(error)).toBe('workspace: The workspace is not valid.');
+  });
+
+  it('extracts message from Asana API errors array response ({ errors: [{ message: "..." }] })', () => {
+    const error = createAxiosError({
+      data: { errors: [{ message: 'project: Not a valid ID' }] },
+    });
+    expect(extractProviderMessage(error)).toBe('project: Not a valid ID');
+  });
+
+  it('extracts first message from Asana errors array with multiple entries', () => {
+    const error = createAxiosError({
+      data: { errors: [{ message: 'First error' }, { message: 'Second error' }] },
+    });
+    expect(extractProviderMessage(error)).toBe('First error');
+  });
+
+  it('does not throw when Asana errors array has a null first element', () => {
+    const error = createAxiosError({
+      data: { errors: [null] },
+      statusText: 'Bad Request',
+    });
+    // Should fall through to statusText rather than throw on null.message
+    expect(extractProviderMessage(error)).toBe('Bad Request');
+  });
+
+  it('falls back when errorMessages first entry is a non-string', () => {
+    const error = createAxiosError({
+      data: { errorMessages: [42] },
+      statusText: 'Unprocessable Entity',
+    });
+    // Should fall through to statusText rather than return a number
+    expect(extractProviderMessage(error)).toBe('Unprocessable Entity');
+  });
+
+  it('prefers GitHub message format over Asana format when both are present', () => {
+    const error = createAxiosError({
+      data: { message: 'GitHub message', data: { error: 'Asana message' } },
+    });
+    expect(extractProviderMessage(error)).toBe('GitHub message');
+  });
+
   it('falls back to statusText if no message found', () => {
     const error = createAxiosError({ data: {}, statusText: 'Not Found' });
     expect(extractProviderMessage(error)).toBe('Not Found');

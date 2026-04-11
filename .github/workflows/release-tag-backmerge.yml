@@ -14,6 +14,7 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+      issues: write
 
     steps:
       - name: Checkout
@@ -78,14 +79,17 @@ jobs:
             exit 0
           fi
 
-          # Create a new backmerge PR
-          BODY=$(printf 'Automated backmerge of main to develop after release v%s.\n\nThis PR was created automatically by GitHub Actions.' "${{ env.VERSION }}")
+          # Ensure the ignore-for-release label exists
+          if ! gh label list --json name --jq '.[].name' | grep -qx "ignore-for-release"; then
+            gh label create "ignore-for-release" --color "ededed" --description "Excluded from release notes"
+          fi
 
-          PR_URL=$(gh pr create \
+          # Create a new backmerge PR
+          BODY=$(printf 'Automated backmerge of main to develop after release v%s.\n\nThis PR was created automatically by GitHub Actions.' "$VERSION")
+
+          gh pr create \
             --base develop \
             --head main \
-            --title "Backmerge main to develop (v${{ env.VERSION }})" \
-            --body "$BODY")
-
-          # Add ignore-for-release label to the backmerge PR
-          gh pr edit "$PR_URL" --add-label "ignore-for-release"
+            --title "Backmerge main to develop (v$VERSION)" \
+            --body "$BODY" \
+            --label "ignore-for-release"

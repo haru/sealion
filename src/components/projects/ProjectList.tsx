@@ -2,18 +2,9 @@
 
 import DeleteIcon from "@mui/icons-material/Delete";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
   IconButton,
   Chip,
-  Typography,
   Box,
-  CircularProgress,
   Alert,
   Dialog,
   DialogTitle,
@@ -23,12 +14,14 @@ import {
   Button,
   Tooltip,
   Switch,
-  FormControlLabel,
+  CircularProgress,
 } from "@mui/material";
+import type { GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
 import { useTranslations } from "next-intl";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 
 import ProviderIcon from "@/components/ProviderIcon";
+import DataTable from "@/components/ui/DataTable";
 
 interface IssueProvider {
   id: string;
@@ -47,8 +40,8 @@ interface Project {
   issueProvider: IssueProvider;
 }
 
-
 interface ProjectListProps {
+  /** Incrementing this value triggers a re-fetch of the project list. */
   refreshSignal?: number;
 }
 
@@ -68,7 +61,9 @@ export default function ProjectList({ refreshSignal }: ProjectListProps) {
     setError(null);
     try {
       const res = await fetch("/api/projects");
-      if (!res.ok) { throw new Error(); }
+      if (!res.ok) {
+        throw new Error();
+      }
       const json = await res.json();
       setProjects(json.data);
     } catch {
@@ -82,38 +77,48 @@ export default function ProjectList({ refreshSignal }: ProjectListProps) {
     void fetchProjects();
   }, [fetchProjects, refreshSignal]);
 
-  const handleToggleUnassigned = useCallback(async (projectId: string, currentValue: boolean) => {
-    setTogglingId(projectId);
-    const next = !currentValue;
-    setProjects((prev) =>
-      prev.map((p) => (p.id === projectId ? { ...p, includeUnassigned: next } : p))
-    );
-    try {
-      const res = await fetch(`/api/projects/${projectId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ includeUnassigned: next }),
-      });
-      if (!res.ok) {
-        // Revert on failure
+  const handleToggleUnassigned = useCallback(
+    async (projectId: string, currentValue: boolean) => {
+      setTogglingId(projectId);
+      const next = !currentValue;
+      setProjects((prev) =>
+        prev.map((p) =>
+          p.id === projectId ? { ...p, includeUnassigned: next } : p,
+        ),
+      );
+      try {
+        const res = await fetch(`/api/projects/${projectId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ includeUnassigned: next }),
+        });
+        if (!res.ok) {
+          setProjects((prev) =>
+            prev.map((p) =>
+              p.id === projectId ? { ...p, includeUnassigned: currentValue } : p,
+            ),
+          );
+          setError(tCommon("error"));
+        }
+      } catch {
         setProjects((prev) =>
-          prev.map((p) => (p.id === projectId ? { ...p, includeUnassigned: currentValue } : p))
+          prev.map((p) =>
+            p.id === projectId ? { ...p, includeUnassigned: currentValue } : p,
+          ),
         );
         setError(tCommon("error"));
+      } finally {
+        setTogglingId(null);
       }
-    } catch {
-      setProjects((prev) =>
-        prev.map((p) => (p.id === projectId ? { ...p, includeUnassigned: currentValue } : p))
-      );
-      setError(tCommon("error"));
-    } finally {
-      setTogglingId(null);
-    }
-  }, [tCommon]);
+    },
+    [tCommon],
+  );
 
   /** Sends the delete request for the currently pending deletion target. */
   async function handleDeleteConfirm() {
-    if (!deleteId) { return; }
+    if (!deleteId) {
+      return;
+    }
     try {
       const res = await fetch(`/api/projects/${deleteId}`, { method: "DELETE" });
       if (res.ok) {
@@ -128,96 +133,95 @@ export default function ProjectList({ refreshSignal }: ProjectListProps) {
     }
   }
 
-  if (loading) {
-    return (
-      <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
-        <CircularProgress />
-      </Box>
-    );
-  }
-
-  if (error) {
-    return (
-      <Alert severity="error" onClose={() => setError(null)}>
-        {error}
-      </Alert>
-    );
-  }
-
-  if (projects.length === 0) {
-    return (
-      <Typography color="text.secondary" sx={{ py: 3, textAlign: "center" }}>
-        {t("noProjects")}
-      </Typography>
-    );
-  }
+  const columns = useMemo<GridColDef[]>(
+    () => [
+      {
+        field: "displayName",
+        headerName: t("projectName"),
+        flex: 2,
+        minWidth: 150,
+      },
+      {
+        field: "issueProvider",
+        headerName: t("provider"),
+        flex: 1,
+        minWidth: 120,
+        sortable: false,
+        renderCell: (params: GridRenderCellParams<Project>) => {
+          const provider = params.row.issueProvider;
+          return (
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+              <ProviderIcon
+                iconUrl={provider.iconUrl}
+                label={provider.type}
+                fontSize="small"
+              />
+              <Chip label={provider.displayName} size="small" variant="outlined" />
+            </Box>
+          );
+        },
+      },
+      {
+        field: "includeUnassigned",
+        headerName: t("includeUnassigned"),
+        flex: 1,
+        minWidth: 260,
+        sortable: false,
+        align: "center",
+        headerAlign: "center",
+        renderCell: (params: GridRenderCellParams<Project>) => {
+          const project = params.row;
+          const isToggling = togglingId === project.id;
+          return (
+            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 0.5 }}>
+              <Switch
+                checked={project.includeUnassigned}
+                onChange={() =>
+                  handleToggleUnassigned(project.id, project.includeUnassigned)
+                }
+                disabled={isToggling}
+                size="small"
+                inputProps={{ "aria-label": t("includeUnassigned") }}
+              />
+              {isToggling && <CircularProgress size={14} />}
+            </Box>
+          );
+        },
+      },
+      {
+        field: "actions",
+        headerName: "",
+        width: 60,
+        sortable: false,
+        filterable: false,
+        align: "right",
+        headerAlign: "right",
+        renderCell: (params: GridRenderCellParams<Project>) => (
+          <Tooltip title={t("deleteProject")}>
+            <IconButton
+              size="small"
+              color="error"
+              aria-label="delete project"
+              onClick={() => setDeleteId(params.row.id)}
+            >
+              <DeleteIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        ),
+      },
+    ],
+    [t, togglingId, handleToggleUnassigned],
+  );
 
   return (
     <>
-      <TableContainer component={Paper} variant="outlined">
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>{t("projectName")}</TableCell>
-              <TableCell>{t("provider")}</TableCell>
-              <TableCell>
-                <Tooltip title={t("includeUnassignedHint")}>
-                  <span>{t("includeUnassigned")}</span>
-                </Tooltip>
-              </TableCell>
-              <TableCell align="right" />
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {projects.map((project) => (
-              <TableRow key={project.id}>
-                <TableCell>{project.displayName}</TableCell>
-                <TableCell>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                    <ProviderIcon iconUrl={project.issueProvider.iconUrl} label={project.issueProvider.type} fontSize="small" />
-                    <Chip
-                      label={project.issueProvider.displayName}
-                      size="small"
-                      variant="outlined"
-                    />
-                  </Box>
-                </TableCell>
-                <TableCell>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={project.includeUnassigned}
-                          onChange={() => handleToggleUnassigned(project.id, project.includeUnassigned)}
-                          disabled={togglingId === project.id}
-                          size="small"
-                          inputProps={{ "aria-label": t("includeUnassigned") }}
-                        />
-                      }
-                      label=""
-                    />
-                    {togglingId === project.id && (
-                      <CircularProgress size={14} />
-                    )}
-                  </Box>
-                </TableCell>
-                <TableCell align="right">
-                  <Tooltip title={t("deleteProject")}>
-                    <IconButton
-                      size="small"
-                      color="error"
-                      aria-label="delete project"
-                      onClick={() => setDeleteId(project.id)}
-                    >
-                      <DeleteIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+      {error && (
+        <Alert severity="error" onClose={() => setError(null)} sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      )}
+
+      <DataTable columns={columns} rows={projects} loading={loading} />
 
       <Dialog open={!!deleteId} onClose={() => setDeleteId(null)}>
         <DialogTitle>{tCommon("delete")}</DialogTitle>

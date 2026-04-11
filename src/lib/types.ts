@@ -128,6 +128,17 @@ export interface IssueProviderAdapter {
     issueExternalId: string,
     comment: string
   ): Promise<void>;
+
+  /**
+   * Optional: Enriches `providerCreatedAt` for the given external IDs.
+   * Implemented only by providers whose creation date requires a separate API call
+   * (e.g. Trello — creation date is not part of the card object).
+   *
+   * @param externalIds - External IDs of issues to fetch creation dates for.
+   * @returns Map of external ID → creation {@link Date}. IDs with no available
+   *   creation date (no matching event or API error) are omitted from the map.
+   */
+  enrichCreationDates?(externalIds: string[]): Promise<Map<string, Date>>;
 }
 
 /**

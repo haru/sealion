@@ -1,8 +1,12 @@
+import { asanaMetadata } from "./asana/asana.metadata";
+import { backlogMetadata } from "./backlog/backlog.metadata";
 import { githubMetadata } from "./github/github.metadata";
 import { gitlabMetadata } from "./gitlab/gitlab.metadata";
 import { jiraMetadata } from "./jira/jira.metadata";
+import { linearMetadata } from "./linear/linear.metadata";
 import type { ProviderMetadata } from "./metadata";
 import { redmineMetadata } from "./redmine/redmine.metadata";
+import { trelloMetadata } from "./trello/trello.metadata";
 
 /** Module-level singleton registry mapping provider type string to metadata. */
 const registry = new Map<string, ProviderMetadata>();
@@ -12,6 +16,10 @@ registerProvider(githubMetadata);
 registerProvider(jiraMetadata);
 registerProvider(redmineMetadata);
 registerProvider(gitlabMetadata);
+registerProvider(linearMetadata);
+registerProvider(asanaMetadata);
+registerProvider(trelloMetadata);
+registerProvider(backlogMetadata);
 
 /**
  * Registers a provider's metadata in the registry.
@@ -24,12 +32,14 @@ export function registerProvider(metadata: ProviderMetadata): void {
 }
 
 /**
- * Returns all registered providers in insertion order.
+ * Returns all registered providers sorted by displayName ascending.
  *
- * @returns Array of all registered {@link ProviderMetadata}.
+ * @returns Array of all registered {@link ProviderMetadata}, sorted alphabetically by displayName.
  */
 export function getAllProviders(): ProviderMetadata[] {
-  return Array.from(registry.values());
+  return Array.from(registry.values()).sort((a, b) =>
+    a.displayName.localeCompare(b.displayName, "en", { sensitivity: "base" })
+  );
 }
 
 /**

@@ -17,7 +17,7 @@ export const jiraCredentialSchema = z.object({
 export const jiraMetadata: ProviderMetadata = {
   type: "JIRA",
   displayName: "Jira",
-  iconUrl: "/jira.svg",
+  iconUrl: "/providers/jira.svg",
   baseUrlMode: "required",
   credentialFields: [
     { key: "email", labelKey: "email", inputType: "text", required: true },

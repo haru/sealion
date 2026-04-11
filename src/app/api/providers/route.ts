@@ -1,4 +1,3 @@
-import { type ProviderType } from "@prisma/client";
 import type { NextRequest } from "next/server";
 
 import { ok, fail, failWithDetails } from "@/lib/api/api-response";
@@ -76,7 +75,7 @@ export async function POST(req: NextRequest) {
   try {
     provider = await prisma.issueProvider.create({
       data: {
-        type: type as ProviderType,
+        type,
         displayName,
         encryptedCredentials,
         ...(baseUrl ? { baseUrl } : {}),

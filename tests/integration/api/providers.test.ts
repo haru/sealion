@@ -47,7 +47,7 @@ jest.mock("@/services/issue-provider/github/github", () => ({
     jest.fn().mockImplementation(() => ({
       testConnection: jest.fn().mockResolvedValue(undefined),
     })),
-    { iconUrl: "/github.svg" }
+    { iconUrl: "/providers/github.svg" }
   ),
 }));
 
@@ -56,7 +56,7 @@ jest.mock("@/services/issue-provider/jira/jira", () => ({
     jest.fn().mockImplementation(() => ({
       testConnection: jest.fn().mockResolvedValue(undefined),
     })),
-    { iconUrl: "/jira.svg" }
+    { iconUrl: "/providers/jira.svg" }
   ),
 }));
 
@@ -65,7 +65,34 @@ jest.mock("@/services/issue-provider/redmine/redmine", () => ({
     jest.fn().mockImplementation(() => ({
       testConnection: jest.fn().mockResolvedValue(undefined),
     })),
-    { iconUrl: "/redmine.svg" }
+    { iconUrl: "/providers/redmine.svg" }
+  ),
+}));
+
+jest.mock("@/services/issue-provider/linear/linear", () => ({
+  LinearAdapter: Object.assign(
+    jest.fn().mockImplementation(() => ({
+      testConnection: jest.fn().mockResolvedValue(undefined),
+    })),
+    { iconUrl: "/providers/linear.svg" }
+  ),
+}));
+
+jest.mock("@/services/issue-provider/asana/asana", () => ({
+  AsanaAdapter: Object.assign(
+    jest.fn().mockImplementation(() => ({
+      testConnection: jest.fn().mockResolvedValue(undefined),
+    })),
+    { iconUrl: "/providers/asana.svg" }
+  ),
+}));
+
+jest.mock("@/services/issue-provider/backlog/backlog", () => ({
+  BacklogAdapter: Object.assign(
+    jest.fn().mockImplementation(() => ({
+      testConnection: jest.fn().mockResolvedValue(undefined),
+    })),
+    { iconUrl: "/providers/backlog.svg" }
   ),
 }));
 
@@ -279,5 +306,96 @@ describe("Provider registration cycle (Integration)", () => {
 
     // Cleanup
     await prisma.issueProvider.delete({ where: { id: providerId } });
+  });
+
+  // T015: POST /api/providers creates provider with type string (not enum) after enum removal
+  it("T015: POST creates provider with arbitrary type string after ProviderType enum removal", async () => {
+    if (skipIfNoDB()) return;
+
+    const { GET, POST } = await importProvidersRouteWithPrisma(prisma);
+
+    const postReq = new NextRequest("http://localhost/api/providers", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type: "GITHUB",
+        displayName: "String Type Test",
+        credentials: { token: "ghp_string_type" },
+      }),
+    });
+
+    const postRes = await POST(postReq);
+    expect(postRes.status).toBe(201);
+    const postJson = await postRes.json();
+    expect(postJson.data.type).toBe("GITHUB");
+    const providerId = postJson.data.id;
+
+    // Verify directly in DB that type is stored as text
+    const dbProvider = await prisma.issueProvider.findUnique({ where: { id: providerId } });
+    expect(dbProvider?.type).toBe("GITHUB");
+
+    // Cleanup
+    await prisma.issueProvider.delete({ where: { id: providerId } });
+  });
+
+  // T016: GET /api/providers returns providers with correct type strings after schema change
+  it("T016: GET returns providers with correct type strings after enum removal", async () => {
+    if (skipIfNoDB()) return;
+
+    const { GET, POST } = await importProvidersRouteWithPrisma(prisma);
+
+    // Create multiple providers with different types
+    for (const type of ["GITHUB", "JIRA", "REDMINE", "GITLAB", "LINEAR", "ASANA", "BACKLOG"]) {
+      const postReq = new NextRequest("http://localhost/api/providers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type,
+          displayName: `Type Test ${type}`,
+          credentials:
+        type === "GITHUB" || type === "GITLAB" || type === "ASANA"
+          ? { token: `tok_${type.toLowerCase()}` }
+          : type === "LINEAR"
+            ? { apiKey: `lin_${type.toLowerCase()}` }
+            : type === "REDMINE"
+              ? {
+                  baseUrl: `https://${type.toLowerCase()}.example.com`,
+                  apiKey: `key_${type.toLowerCase()}`,
+                }
+              : type === "BACKLOG"
+                ? {
+                    baseUrl: `https://${type.toLowerCase()}.backlog.com`,
+                    apiKey: `key_${type.toLowerCase()}`,
+                  }
+                : {
+                    baseUrl: `https://${type.toLowerCase()}.example.com`,
+                    email: "u@example.com",
+                    apiToken: "tok",
+                  },
+        }),
+      });
+      const res = await POST(postReq);
+      expect(res.status).toBe(201);
+    }
+
+    // GET all providers and verify type strings
+    const getRes = await GET(new NextRequest("http://localhost/api/providers"));
+    const getJson = await getRes.json();
+    expect(getRes.status).toBe(200);
+
+    const testProviders = getJson.data.filter(
+      (p: { displayName: string }) => p.displayName.startsWith("Type Test "),
+    );
+    expect(testProviders.length).toBe(7);
+
+    for (const provider of testProviders) {
+      const typeFromName = provider.displayName.replace("Type Test ", "");
+      expect(provider.type).toBe(typeFromName);
+    }
+
+    // Cleanup
+    for (const provider of testProviders) {
+      await prisma.issueProvider.delete({ where: { id: provider.id } });
+    }
   });
 });

@@ -11,6 +11,8 @@ jest.mock("@/lib/db/db", () => ({
     issue: {
       upsert: jest.fn(),
       deleteMany: jest.fn(),
+      findMany: jest.fn().mockResolvedValue([]),
+      updateMany: jest.fn().mockResolvedValue({ count: 1 }),
     },
     project: {
       update: jest.fn(),
@@ -594,6 +596,101 @@ describe("syncProviders", () => {
     expect(errors[0].providerName).toBe("Broken Provider");
     expect(errors[0].projectName).toBe("Repo 1");
     expect(errors[0].cause).toBe(SyncErrorCause.UNKNOWN);
+  });
+
+  it("calls enrichCreationDates and batches updates for issues with missing providerCreatedAt", async () => {
+    mockFindMany.mockResolvedValue([
+      {
+        id: "provider-1",
+        type: "TRELLO",
+        encryptedCredentials: "encrypted",
+        userId: "user-1",
+        projects: [{ id: "project-1", externalId: "board-1", includeUnassigned: false }],
+      },
+    ]);
+
+    const mockEnrichCreationDates = jest.fn().mockResolvedValue(
+      new Map([["card-1", new Date("2026-01-01T00:00:00Z")]])
+    );
+
+    const { createAdapter } = jest.requireMock("@/services/issue-provider/factory");
+    createAdapter.mockReturnValueOnce({
+      fetchAssignedIssues: jest.fn().mockResolvedValue([
+        { externalId: "card-1", title: "Card 1", dueDate: null, externalUrl: "https://trello.com/c/card-1", isUnassigned: false },
+      ]),
+      fetchUnassignedIssues: jest.fn().mockResolvedValue([]),
+      enrichCreationDates: mockEnrichCreationDates,
+    });
+
+    (prisma.issue.upsert as jest.Mock).mockResolvedValue({});
+    (prisma.project.update as jest.Mock).mockResolvedValue({});
+    (prisma.issue.findMany as jest.Mock).mockResolvedValue([{ externalId: "card-1" }]);
+    (prisma.issue.updateMany as jest.Mock).mockResolvedValue({ count: 1 });
+
+    await syncProviders("user-1");
+
+    expect(mockEnrichCreationDates).toHaveBeenCalledWith(["card-1"]);
+    expect(prisma.$transaction).toHaveBeenCalledWith(
+      expect.arrayContaining([expect.anything()])
+    );
+    expect(prisma.issue.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { projectId: "project-1", externalId: "card-1" },
+        data: { providerCreatedAt: new Date("2026-01-01T00:00:00Z") },
+      })
+    );
+  });
+
+  it("swallows enrichCreationDates errors so sync success is not downgraded", async () => {
+    mockFindMany.mockResolvedValue([
+      {
+        id: "provider-1",
+        type: "TRELLO",
+        encryptedCredentials: "encrypted",
+        userId: "user-1",
+        projects: [{ id: "project-1", externalId: "board-1", includeUnassigned: false }],
+      },
+    ]);
+
+    const { createAdapter } = jest.requireMock("@/services/issue-provider/factory");
+    createAdapter.mockReturnValueOnce({
+      fetchAssignedIssues: jest.fn().mockResolvedValue([
+        { externalId: "card-1", title: "Card 1", dueDate: null, externalUrl: "https://trello.com/c/card-1", isUnassigned: false },
+      ]),
+      fetchUnassignedIssues: jest.fn().mockResolvedValue([]),
+      enrichCreationDates: jest.fn().mockRejectedValue(new Error("Rate limit exceeded")),
+    });
+
+    (prisma.issue.upsert as jest.Mock).mockResolvedValue({});
+    (prisma.project.update as jest.Mock).mockResolvedValue({});
+    (prisma.issue.findMany as jest.Mock).mockResolvedValue([{ externalId: "card-1" }]);
+
+    const errors = await syncProviders("user-1");
+
+    // Enrichment failure must not fail the sync
+    expect(errors).toHaveLength(0);
+    // Project must not be marked with syncError due to enrichment failure
+    const updateCall = (prisma.project.update as jest.Mock).mock.calls[0][0];
+    expect(updateCall.data.syncError).toBeNull();
+  });
+
+  it("skips enrichCreationDates when adapter does not implement the method", async () => {
+    mockFindMany.mockResolvedValue([
+      {
+        id: "provider-1",
+        type: "GITHUB",
+        encryptedCredentials: "encrypted",
+        userId: "user-1",
+        projects: [{ id: "project-1", externalId: "owner/repo", includeUnassigned: false }],
+      },
+    ]);
+
+    (prisma.issue.upsert as jest.Mock).mockResolvedValue({});
+    (prisma.project.update as jest.Mock).mockResolvedValue({});
+
+    await syncProviders("user-1");
+
+    expect(prisma.issue.findMany).not.toHaveBeenCalled();
   });
 
   it("persists syncError on project records when credential decryption fails", async () => {

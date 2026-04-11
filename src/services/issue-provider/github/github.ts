@@ -28,7 +28,7 @@ interface GitHubUser {
 
 /** Adapter for the GitHub issue provider. */
 export class GitHubAdapter implements IssueProviderAdapter {
-  static readonly iconUrl: string | null = "/github.svg";
+  static readonly iconUrl: string | null = "/providers/github.svg";
 
   private readonly client;
   private loginPromise: Promise<string> | null = null;
