@@ -76,20 +76,25 @@ export default function CreateUserDialog({ open, onClose, onCreated }: CreateUse
     setCreating(true);
     setFormError(null);
 
-    const res = await fetch("/api/admin/users", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password, role, username: username.trim() }),
-    });
+    try {
+      const res = await fetch("/api/admin/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password, role, username: username.trim() }),
+      });
 
-    const json = await res.json();
-    if (res.ok) {
-      handleClose();
-      await Promise.resolve(onCreated());
-    } else {
-      setFormError(translateError(json?.error as string | undefined));
+      const json = await res.json();
+      if (res.ok) {
+        handleClose();
+        await Promise.resolve(onCreated());
+      } else {
+        setFormError(translateError(json?.error as string | undefined));
+      }
+    } catch {
+      setFormError(tCommon("error"));
+    } finally {
+      setCreating(false);
     }
-    setCreating(false);
   }
 
   return (

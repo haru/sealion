@@ -6,10 +6,10 @@ applyTo: "src/app/api/**"
 
 ## Response Envelope
 
-All API routes **must** return responses using `ok(data)` / `fail(error, status)` from `src/lib/api-response.ts`:
+All API routes **must** return responses using `ok(data)` / `fail(error, status)` from `src/lib/api/api-response.ts`:
 
 ```typescript
-import { ok, fail } from "@/lib/api-response";
+import { ok, fail } from "@/lib/api/api-response";
 
 // Success: { data: T, error: null }
 return ok(result);
