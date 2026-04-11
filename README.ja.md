@@ -23,9 +23,13 @@
 現在対応しているIssue Trackerは以下です。
 
 - GitHub
+- GitLab
 - Jira
 - Redmine
-- GitLab
+- Linear
+- Asana
+- Trello
+- Backlog
 
 ---
 

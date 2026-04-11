@@ -28,34 +28,39 @@ async function enrichMissingCreationDates(
     return;
   }
 
-  const missingDates = await prisma.issue.findMany({
-    where: {
-      projectId,
-      externalId: { in: externalIds },
-      providerCreatedAt: null,
-    },
-    select: { externalId: true },
-  });
+  try {
+    const missingDates = await prisma.issue.findMany({
+      where: {
+        projectId,
+        externalId: { in: externalIds },
+        providerCreatedAt: null,
+      },
+      select: { externalId: true },
+    });
 
-  if (missingDates.length === 0) {
-    return;
+    if (missingDates.length === 0) {
+      return;
+    }
+
+    const issueExternalIds = missingDates.map((i) => i.externalId);
+    const dates = await adapter.enrichCreationDates(issueExternalIds);
+
+    if (dates.size === 0) {
+      return;
+    }
+
+    await prisma.$transaction(
+      Array.from(dates.entries()).map(([issueExternalId, createdAt]) =>
+        prisma.issue.updateMany({
+          where: { projectId, externalId: issueExternalId },
+          data: { providerCreatedAt: createdAt },
+        })
+      ),
+    );
+  } catch (err) {
+    const technicalMessage = err instanceof Error ? err.message : String(err);
+    console.error(`[sync] enrichMissingCreationDates failed for project ${projectId} — ${technicalMessage}`);
   }
-
-  const cardIds = missingDates.map((i) => i.externalId);
-  const dates = await adapter.enrichCreationDates(cardIds);
-
-  if (dates.size === 0) {
-    return;
-  }
-
-  await Promise.all(
-    dates.entries().map(([cardId, createdAt]) =>
-      prisma.issue.updateMany({
-        where: { projectId, externalId: cardId },
-        data: { providerCreatedAt: createdAt },
-      })
-    ),
-  );
 }
 
 /**

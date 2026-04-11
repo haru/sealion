@@ -25,9 +25,13 @@ It collects all issues assigned to you into one unified view so you can focus on
 The following issue trackers are currently supported:
 
 - GitHub
+- GitLab
 - Jira
 - Redmine
-- GitLab
+- Linear
+- Asana
+- Trello
+- Backlog
 
 ---
 
