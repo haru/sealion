@@ -1,6 +1,6 @@
 {
   "name": "sealion",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -19,14 +19,14 @@
     "@linear/sdk": "^81.0.0",
     "@mui/icons-material": "^7.3.9",
     "@mui/material": "^7.3.9",
-    "@mui/material-nextjs": "^7.3.9",
+    "@mui/material-nextjs": "^9.0.0",
     "@mui/x-data-grid": "^9.0.1",
-    "@prisma/adapter-pg": "^7.6.0",
+    "@prisma/adapter-pg": "^7.7.0",
     "@prisma/client": "^7.6.0",
     "@prisma/config": "^7.5.0",
     "@types/nodemailer": "^7.0.11",
     "@types/pg": "^8.20.0",
-    "axios": "^1.14.0",
+    "axios": "^1.15.0",
     "bcryptjs": "^3.0.3",
     "hpagent": "^1.2.0",
     "next": "16.2.2",
@@ -60,7 +60,7 @@
     "jest": "^30.3.0",
     "jest-environment-jsdom": "^30.3.0",
     "prisma": "^7.5.0",
-    "ts-jest": "^29.4.6",
+    "ts-jest": "^29.4.9",
     "typescript": "^5"
   }
 }
