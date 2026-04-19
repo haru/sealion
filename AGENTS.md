@@ -287,3 +287,8 @@ When using Playwright MCP tools, use `http://app:3000` — not `http://localhost
 - [docs/rules.md](docs/rules.md) — Development rules (Japanese)
 - [ADDING_A_PROVIDER.md](ADDING_A_PROVIDER.md) — Step-by-step guide for new provider adapters
 - `specs/` — Feature specs with implementation plans, data models, and contracts
+
+<!-- SPECKIT START -->
+For additional context about technologies to be used, project structure,
+shell commands, and other important information, read the current plan
+<!-- SPECKIT END -->
