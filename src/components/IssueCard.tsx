@@ -111,10 +111,11 @@ export default function IssueCard({
     display: "flex",
     alignItems: "flex-start",
     opacity: cardOpacity,
-    transition: "border-color 0.2s, box-shadow 0.2s",
+    transition: "border-color 0.2s, box-shadow 0.2s, background-color 0.2s",
     "&:hover": {
       borderColor: isToday ? primaryMain : "#cbd5e1",
       boxShadow: "0 4px 12px rgba(0,0,0,0.04)",
+      bgcolor: "action.hover",
     },
   };
 
