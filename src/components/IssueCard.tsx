@@ -4,12 +4,13 @@ import type { DraggableSyntheticListeners, DraggableAttributes } from "@dnd-kit/
 import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import TaskAltIcon from "@mui/icons-material/TaskAlt";
-import { Box, IconButton, Paper, Tooltip, Typography, useTheme } from "@mui/material";
+import { Box, Paper, Tooltip, Typography, useTheme } from "@mui/material";
 import type { SxProps, Theme } from "@mui/material/styles";
 import { useTranslations } from "next-intl";
 import type { CSSProperties, ReactNode, Ref } from "react";
 
 import ProviderIcon from "@/components/ProviderIcon";
+import CardIconButton from "@/components/ui/CardIconButton";
 
 /** Props for {@link IssueCard}. */
 interface IssueCardProps {
@@ -111,10 +112,11 @@ export default function IssueCard({
     display: "flex",
     alignItems: "flex-start",
     opacity: cardOpacity,
-    transition: "border-color 0.2s, box-shadow 0.2s",
+    transition: "border-color 0.2s, box-shadow 0.2s, background-color 0.2s",
     "&:hover": {
       borderColor: isToday ? primaryMain : "#cbd5e1",
       boxShadow: "0 4px 12px rgba(0,0,0,0.04)",
+      bgcolor: "action.hover",
     },
   };
 
@@ -204,36 +206,27 @@ export default function IssueCard({
           <Box sx={{ order: { xs: 2, md: 3 }, display: "flex", alignItems: "center", gap: 0.5, flexShrink: 0, ml: { xs: "auto", md: 0 } }}>
             {onComplete && (
               <Tooltip title={tModal("confirmButton")}>
-                <IconButton
-                  size="small"
+                <CardIconButton
                   onClick={() => onComplete(id)}
                   aria-label={tModal("confirmButton")}
-                  sx={{
-                    color: "text.secondary",
-                    "&:hover": {
-                      color: "primary.main",
-                      bgcolor: "#eef2ff",
-                    },
-                  }}
                 >
                   <TaskAltIcon fontSize="small" />
-                </IconButton>
+                </CardIconButton>
               </Tooltip>
             )}
 
             {actionButton}
 
             <Tooltip title={t("openInTracker")}>
-              <IconButton
-                size="small"
+              <CardIconButton
                 component="a"
                 href={externalUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                sx={{ color: "text.secondary" }}
+                aria-label={t("openInTracker")}
               >
                 <OpenInNewIcon sx={{ fontSize: 16 }} />
-              </IconButton>
+              </CardIconButton>
             </Tooltip>
           </Box>
         </Box>

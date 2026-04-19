@@ -1,6 +1,6 @@
 {
   "name": "sealion",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -22,7 +22,7 @@
     "@mui/material-nextjs": "^9.0.0",
     "@mui/x-data-grid": "^9.0.1",
     "@prisma/adapter-pg": "^7.7.0",
-    "@prisma/client": "^7.6.0",
+    "@prisma/client": "^7.7.0",
     "@prisma/config": "^7.5.0",
     "@types/nodemailer": "^7.0.11",
     "@types/pg": "^8.20.0",
@@ -34,8 +34,8 @@
     "next-intl": "^4.9.0",
     "nodemailer": "^7.0.13",
     "pg": "^8.20.0",
-    "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react": "19.2.5",
+    "react-dom": "19.2.5"
   },
   "overrides": {
     "@hono/node-server": ">=1.19.10",
@@ -54,7 +54,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.1",
-    "eslint-plugin-jsdoc": "^62.8.1",
+    "eslint-plugin-jsdoc": "^62.9.0",
     "eslint-plugin-tsdoc": "^0.5.2",
     "eslint-plugin-unused-imports": "^4.4.1",
     "jest": "^30.3.0",
