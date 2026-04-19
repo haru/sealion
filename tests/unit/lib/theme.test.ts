@@ -8,7 +8,7 @@ describe("theme", () => {
     });
 
     it("sets primary color to indigo", () => {
-      expect(theme.palette.primary.main).toBe("#4f46e5");
+      expect(theme.palette.primary.main).toBe("#3057d5");
     });
 
     it("sets background default", () => {
