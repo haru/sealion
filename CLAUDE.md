@@ -22,3 +22,8 @@ npx playwright test  # E2E tests
 ```
 
 See [AGENTS.md](./AGENTS.md) for full architecture, coding conventions, testing rules, and security guidelines.
+
+<!-- SPECKIT START -->
+For additional context about technologies to be used, project structure,
+shell commands, and other important information, read the current plan
+<!-- SPECKIT END -->

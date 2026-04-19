@@ -4,7 +4,7 @@ import { useDroppable } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import AddIcon from "@mui/icons-material/Add";
 import TodayIcon from "@mui/icons-material/Today";
-import { Box, Typography } from "@mui/material";
+import { Box, Paper, Typography } from "@mui/material";
 import { useTranslations } from "next-intl";
 
 import TodayTaskItem from "./TodayTaskItem";
@@ -180,29 +180,48 @@ export default function TodayTasksArea({ items, showCreatedAt, showUpdatedAt, on
             </Typography>
           </Box>
         ) : (
-          <SortableContext items={ids} strategy={verticalListSortingStrategy}>
-            {items.map((issue) => (
-              <TodayTaskItem
-                key={issue.id}
-                id={issue.id}
-                externalId={issue.externalId}
-                title={issue.title}
-                dueDate={issue.dueDate}
-                externalUrl={issue.externalUrl}
-                isUnassigned={issue.isUnassigned}
-                providerCreatedAt={issue.providerCreatedAt}
-                providerUpdatedAt={issue.providerUpdatedAt}
-                providerIconUrl={issue.project.issueProvider.iconUrl}
-                providerName={issue.project.issueProvider.displayName}
-                projectName={issue.project.displayName}
-                pinned={issue.pinned}
-                showCreatedAt={showCreatedAt}
-                showUpdatedAt={showUpdatedAt}
-                onRemove={onRemove}
-                onComplete={onComplete}
-              />
-            ))}
-          </SortableContext>
+          <Paper
+            elevation={0}
+            sx={{ border: 1, borderColor: "primary.main", borderRadius: "12px", overflow: "hidden" }}
+          >
+            <SortableContext items={ids} strategy={verticalListSortingStrategy}>
+              {items.map((issue, index) => (
+                <Box key={issue.id}>
+                  {index > 0 && (
+                    <Box role="separator" sx={{ display: "flex", height: "1px" }}>
+                      <Box sx={{ width: 4, bgcolor: "primary.main" }} />
+                      <Box sx={{ flex: 1, bgcolor: (theme) => theme.palette.divider }} />
+                    </Box>
+                  )}
+                  <TodayTaskItem
+                    id={issue.id}
+                    externalId={issue.externalId}
+                    title={issue.title}
+                    dueDate={issue.dueDate}
+                    externalUrl={issue.externalUrl}
+                    isUnassigned={issue.isUnassigned}
+                    providerCreatedAt={issue.providerCreatedAt}
+                    providerUpdatedAt={issue.providerUpdatedAt}
+                    providerIconUrl={issue.project.issueProvider.iconUrl}
+                    providerName={issue.project.issueProvider.displayName}
+                    projectName={issue.project.displayName}
+                    pinned={issue.pinned}
+                    showCreatedAt={showCreatedAt}
+                    showUpdatedAt={showUpdatedAt}
+                    onRemove={onRemove}
+                    onComplete={onComplete}
+                    paperSx={{
+                      mb: 0,
+                      border: "none",
+                      borderRadius: 0,
+                      boxShadow: "none",
+                      "&:hover": { borderColor: "transparent", boxShadow: "none" },
+                    }}
+                  />
+                </Box>
+              ))}
+            </SortableContext>
+          </Paper>
         )}
       </Box>
     </Box>

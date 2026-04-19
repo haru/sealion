@@ -8,9 +8,9 @@ export const theme = createTheme({
   palette: {
     mode: "light",
     primary: {
-      main: "#4f46e5",
-      light: "#818cf8",
-      dark: "#3730a3",
+      main: "#3057d5",
+      light: "#6b8ee8",
+      dark: "#1e3fa0",
       contrastText: "#ffffff",
     },
     secondary: {
@@ -37,7 +37,7 @@ export const theme = createTheme({
     },
     action: {
       hover: "rgba(0, 0, 0, 0.04)",
-      selected: "rgba(79, 70, 229, 0.08)",
+      selected: "rgba(48, 87, 213, 0.08)",
     },
   },
   typography: {

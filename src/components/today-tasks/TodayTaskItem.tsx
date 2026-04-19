@@ -4,6 +4,7 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import RemoveCircleOutlineIcon from "@mui/icons-material/RemoveCircleOutline";
 import { IconButton, Tooltip } from "@mui/material";
+import type { SxProps, Theme } from "@mui/material/styles";
 import { useTranslations } from "next-intl";
 
 import IssueCard from "@/components/IssueCard";
@@ -49,6 +50,8 @@ interface TodayTaskItemProps {
    * @param id - Internal issue ID.
    */
   onComplete?: (id: string) => void;
+  /** Optional sx overrides forwarded to the IssueCard root Paper. */
+  paperSx?: SxProps<Theme>;
 }
 
 /** Draggable today-task item with a remove button and complete button, wrapping {@link IssueCard}. */
@@ -68,6 +71,7 @@ export default function TodayTaskItem({
   showUpdatedAt,
   onRemove,
   onComplete,
+  paperSx,
 }: TodayTaskItemProps) {
   const t = useTranslations("todayTasks");
 
@@ -116,6 +120,7 @@ export default function TodayTaskItem({
       isGhost={isDragging}
       isToday
       onComplete={onComplete}
+      paperSx={paperSx}
     />
   );
 }
