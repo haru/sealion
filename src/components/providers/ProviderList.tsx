@@ -48,19 +48,22 @@ export default function ProviderList({ providers, onDelete, onUpdated }: Provide
 
   return (
     <>
-      <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-        {providers.map((provider) => (
+      <Paper variant="outlined" sx={{ borderRadius: 2, overflow: "hidden" }}>
+        {providers.map((provider, index) => (
+          <Box key={provider.id}>
+            {index > 0 && <Box sx={{ height: "1px", bgcolor: "divider" }} />}
           <Paper
-            key={provider.id}
-            variant="outlined"
+            elevation={0}
             sx={{
               p: 2,
               display: "flex",
               alignItems: "center",
-              borderRadius: 2,
-              transition: "box-shadow 0.2s",
+              border: "none",
+              borderRadius: 0,
+              boxShadow: "none",
+              transition: "background-color 0.2s",
               "&:hover": {
-                boxShadow: 2,
+                bgcolor: "action.hover",
               },
             }}
           >
@@ -105,8 +108,9 @@ export default function ProviderList({ providers, onDelete, onUpdated }: Provide
               </Tooltip>
             </Box>
           </Paper>
+          </Box>
         ))}
-      </Box>
+      </Paper>
 
       {editingProvider && (
         <ProviderEditModal
