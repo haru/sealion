@@ -218,14 +218,11 @@ export default function IssueCard({
             {actionButton}
 
             <Tooltip title={t("openInTracker")}>
-              <CardIconButton
-                component="a"
-                href={externalUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <OpenInNewIcon sx={{ fontSize: 16 }} />
-              </CardIconButton>
+              <a href={externalUrl} target="_blank" rel="noopener noreferrer">
+                <CardIconButton aria-label={t("openInTracker")}>
+                  <OpenInNewIcon sx={{ fontSize: 16 }} />
+                </CardIconButton>
+              </a>
             </Tooltip>
           </Box>
         </Box>

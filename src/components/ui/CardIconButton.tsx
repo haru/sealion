@@ -1,11 +1,8 @@
 import { IconButton } from "@mui/material";
 import type { IconButtonProps } from "@mui/material";
-import type { AnchorHTMLAttributes } from "react";
-
-type CardIconButtonProps = IconButtonProps & AnchorHTMLAttributes<HTMLAnchorElement>;
 
 /** IconButton with the standard card-action hover style (primary color + indigo tint). */
-export default function CardIconButton({ sx, ...props }: CardIconButtonProps) {
+export default function CardIconButton({ sx, ...props }: IconButtonProps) {
   return (
     <IconButton
       size="small"
