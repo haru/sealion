@@ -121,7 +121,12 @@ export default function DataTable<T extends { id: string }>({
       localeText={{
         noRowsLabel: t("table.noRows"),
       }}
-      sx={{ border: 0, "& .MuiDataGrid-cell": { display: "flex", alignItems: "center" } }}
+      sx={{
+        border: 0,
+        "& .MuiDataGrid-cell": { display: "flex", alignItems: "center" },
+        "& .MuiDataGrid-row": { borderBottom: "1px solid", borderColor: "divider" },
+        "& .MuiDataGrid-columnHeaders": { borderBottom: "2px solid", borderColor: "divider" },
+      }}
     />
   );
 }
