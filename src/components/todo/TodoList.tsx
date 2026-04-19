@@ -1,6 +1,6 @@
 "use client";
 
-import { Box, Pagination, Typography } from "@mui/material";
+import { Box, Divider, Pagination, Paper, Typography } from "@mui/material";
 import { useTranslations } from "next-intl";
 
 import type { ClientIssue } from "@/types/issue";
@@ -73,30 +73,47 @@ export default function TodoList({
     );
   }
 
+  const listItemSx = {
+    mb: 0,
+    border: "none",
+    borderRadius: 0,
+    boxShadow: "none",
+    "&:hover": { borderColor: "transparent", boxShadow: "none" },
+  };
+
   return (
     <Box>
-      {items.map((issue) => (
-        <TodoItem
-          key={issue.id}
-          id={issue.id}
-          externalId={issue.externalId}
-          title={issue.title}
-          dueDate={issue.dueDate}
-          externalUrl={issue.externalUrl}
-          isUnassigned={issue.isUnassigned}
-          providerCreatedAt={issue.providerCreatedAt}
-          providerUpdatedAt={issue.providerUpdatedAt}
-          providerIconUrl={issue.project.issueProvider.iconUrl}
-          providerName={issue.project.issueProvider.displayName}
-          projectName={issue.project.displayName}
-          showCreatedAt={showCreatedAt}
-          showUpdatedAt={showUpdatedAt}
-          pinned={issue.pinned}
-          onComplete={onComplete}
-          onAddToToday={onAddToToday}
-          onTogglePin={onTogglePin}
-        />
-      ))}
+      <Paper
+        elevation={0}
+        sx={{ border: "1px solid #e2e8f0", borderRadius: "12px", overflow: "hidden" }}
+      >
+        {items.map((issue, index) => (
+          <Box key={issue.id}>
+            {index > 0 && <Divider />}
+            <TodoItem
+              id={issue.id}
+              externalId={issue.externalId}
+              title={issue.title}
+              dueDate={issue.dueDate}
+              externalUrl={issue.externalUrl}
+              isUnassigned={issue.isUnassigned}
+              providerCreatedAt={issue.providerCreatedAt}
+              providerUpdatedAt={issue.providerUpdatedAt}
+              providerIconUrl={issue.project.issueProvider.iconUrl}
+              providerName={issue.project.issueProvider.displayName}
+              projectName={issue.project.displayName}
+              showCreatedAt={showCreatedAt}
+              showUpdatedAt={showUpdatedAt}
+              pinned={issue.pinned}
+              onComplete={onComplete}
+              onAddToToday={onAddToToday}
+              onTogglePin={onTogglePin}
+              paperSx={listItemSx}
+            />
+          </Box>
+        ))}
+
+      </Paper>
 
       {totalPages > 1 && (
         <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>

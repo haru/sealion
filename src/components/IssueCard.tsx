@@ -5,6 +5,7 @@ import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import TaskAltIcon from "@mui/icons-material/TaskAlt";
 import { Box, IconButton, Paper, Tooltip, Typography } from "@mui/material";
+import type { SxProps, Theme } from "@mui/material/styles";
 import { useTranslations } from "next-intl";
 import type { CSSProperties, ReactNode, Ref } from "react";
 
@@ -55,6 +56,8 @@ interface IssueCardProps {
    * @param id - Internal issue ID.
    */
   onComplete?: (id: string) => void;
+  /** Optional sx overrides applied to the root Paper element. */
+  paperSx?: SxProps<Theme>;
 }
 
 /** Displays a single issue as a styled card with metadata, drag handle, and action buttons. */
@@ -81,6 +84,7 @@ export default function IssueCard({
   showCreatedAt = true,
   showUpdatedAt = false,
   onComplete,
+  paperSx,
 }: IssueCardProps) {
   const t = useTranslations("todo");
   const tModal = useTranslations("completeModal");
@@ -115,6 +119,7 @@ export default function IssueCard({
           borderColor: isToday ? "#4f46e5" : "#cbd5e1",
           boxShadow: "0 4px 12px rgba(0,0,0,0.04)",
         },
+        ...paperSx,
       }}
     >
       {/* Left accent bar for today items */}

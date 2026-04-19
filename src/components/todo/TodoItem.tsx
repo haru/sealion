@@ -5,6 +5,7 @@ import PushPinIcon from "@mui/icons-material/PushPin";
 import PushPinOutlinedIcon from "@mui/icons-material/PushPinOutlined";
 import TodayIcon from "@mui/icons-material/Today";
 import { Box, IconButton, Tooltip } from "@mui/material";
+import type { SxProps, Theme } from "@mui/material/styles";
 import { useTranslations } from "next-intl";
 
 import IssueCard from "@/components/IssueCard";
@@ -52,6 +53,8 @@ interface TodoItemProps {
    * @param pinned - The new pinned state to apply.
    */
   onTogglePin?: (id: string, pinned: boolean) => void;
+  /** Optional sx overrides forwarded to the IssueCard root Paper. */
+  paperSx?: SxProps<Theme>;
 }
 
 /** Draggable issue list item with pin, "add to today", and complete buttons, wrapping {@link IssueCard}. */
@@ -73,6 +76,7 @@ export default function TodoItem({
   onComplete,
   onAddToToday,
   onTogglePin,
+  paperSx,
 }: TodoItemProps) {
   const tToday = useTranslations("todayTasks");
   const tTodo = useTranslations("todo");
@@ -135,6 +139,7 @@ export default function TodoItem({
       dragHandleListeners={listeners}
       isDragging={isDragging}
       onComplete={onComplete}
+      paperSx={paperSx}
     />
   );
 }
