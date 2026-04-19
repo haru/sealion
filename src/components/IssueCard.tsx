@@ -5,6 +5,7 @@ import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import TaskAltIcon from "@mui/icons-material/TaskAlt";
 import { Box, IconButton, Paper, Tooltip, Typography } from "@mui/material";
+import type { SxProps, Theme } from "@mui/material/styles";
 import { useTranslations } from "next-intl";
 import type { CSSProperties, ReactNode, Ref } from "react";
 
@@ -55,6 +56,8 @@ interface IssueCardProps {
    * @param id - Internal issue ID.
    */
   onComplete?: (id: string) => void;
+  /** Optional sx overrides applied to the root Paper element. */
+  paperSx?: SxProps<Theme>;
 }
 
 /** Displays a single issue as a styled card with metadata, drag handle, and action buttons. */
@@ -81,6 +84,7 @@ export default function IssueCard({
   showCreatedAt = true,
   showUpdatedAt = false,
   onComplete,
+  paperSx,
 }: IssueCardProps) {
   const t = useTranslations("todo");
   const tModal = useTranslations("completeModal");
@@ -94,28 +98,34 @@ export default function IssueCard({
     cardOpacity = 1;
   }
 
+  const baseSx = {
+    p: "12px 16px 12px 10px",
+    mb: 1.5,
+    border: `1px solid ${isToday ? "#4f46e5" : "#e2e8f0"}`,
+    borderRadius: "12px",
+    bgcolor: "white",
+    position: "relative",
+    overflow: "hidden",
+    display: "flex",
+    alignItems: "flex-start",
+    opacity: cardOpacity,
+    transition: "border-color 0.2s, box-shadow 0.2s",
+    "&:hover": {
+      borderColor: isToday ? "#4f46e5" : "#cbd5e1",
+      boxShadow: "0 4px 12px rgba(0,0,0,0.04)",
+    },
+  };
+
+  const paperSxProp = paperSx
+    ? [baseSx, ...(Array.isArray(paperSx) ? paperSx.flat() : [paperSx])]
+    : baseSx;
+
   return (
     <Paper
       ref={dragContainerRef}
       style={dragStyle}
       elevation={0}
-      sx={{
-        p: "12px 16px 12px 10px",
-        mb: 1.5,
-        border: `1px solid ${isToday ? "#4f46e5" : "#e2e8f0"}`,
-        borderRadius: "12px",
-        bgcolor: "white",
-        position: "relative",
-        overflow: "hidden",
-        display: "flex",
-        alignItems: "flex-start",
-        opacity: cardOpacity,
-        transition: "border-color 0.2s, box-shadow 0.2s",
-        "&:hover": {
-          borderColor: isToday ? "#4f46e5" : "#cbd5e1",
-          boxShadow: "0 4px 12px rgba(0,0,0,0.04)",
-        },
-      }}
+      sx={paperSxProp as SxProps<Theme>}
     >
       {/* Left accent bar for today items */}
       {isToday && (

@@ -8,7 +8,7 @@ describe("theme", () => {
     });
 
     it("sets primary color to indigo", () => {
-      expect(theme.palette.primary.main).toBe("#4f46e5");
+      expect(theme.palette.primary.main).toBe("#3057d5");
     });
 
     it("sets background default", () => {
@@ -41,6 +41,19 @@ describe("theme", () => {
 
     it("has 'none' as the first shadow (elevation 0)", () => {
       expect(theme.shadows[0]).toBe("none");
+    });
+  });
+
+  describe("component overrides", () => {
+    it("uses the current primary color in MuiButton outlinedPrimary", () => {
+      const outlinedPrimary = (theme.components?.MuiButton?.styleOverrides as Record<string, unknown>)?.outlinedPrimary as Record<string, unknown>;
+      expect(outlinedPrimary?.color).toBe(theme.palette.primary.main);
+    });
+
+    it("uses the current primary color in MuiOutlinedInput focus border", () => {
+      const root = (theme.components?.MuiOutlinedInput?.styleOverrides as Record<string, unknown>)?.root as Record<string, unknown>;
+      const focusOutline = (root?.["&.Mui-focused .MuiOutlinedInput-notchedOutline"] as Record<string, unknown>);
+      expect(focusOutline?.borderColor).toBe(theme.palette.primary.main);
     });
   });
 });
