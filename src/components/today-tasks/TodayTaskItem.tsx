@@ -3,11 +3,12 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import RemoveCircleOutlineIcon from "@mui/icons-material/RemoveCircleOutline";
-import { IconButton, Tooltip } from "@mui/material";
+import { Tooltip } from "@mui/material";
 import type { SxProps, Theme } from "@mui/material/styles";
 import { useTranslations } from "next-intl";
 
 import IssueCard from "@/components/IssueCard";
+import CardIconButton from "@/components/ui/CardIconButton";
 
 /** Props for {@link TodayTaskItem}. */
 interface TodayTaskItemProps {
@@ -87,13 +88,12 @@ export default function TodayTaskItem({
 
   const actionButton = (
     <Tooltip title={t("remove")}>
-      <IconButton
-        size="small"
+      <CardIconButton
         onClick={() => onRemove(id)}
         aria-label={t("remove")}
       >
         <RemoveCircleOutlineIcon fontSize="small" />
-      </IconButton>
+      </CardIconButton>
     </Tooltip>
   );
 

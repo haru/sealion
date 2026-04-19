@@ -4,11 +4,12 @@ import { useDraggable } from "@dnd-kit/core";
 import PushPinIcon from "@mui/icons-material/PushPin";
 import PushPinOutlinedIcon from "@mui/icons-material/PushPinOutlined";
 import TodayIcon from "@mui/icons-material/Today";
-import { Box, IconButton, Tooltip } from "@mui/material";
+import { Box, Tooltip } from "@mui/material";
 import type { SxProps, Theme } from "@mui/material/styles";
 import { useTranslations } from "next-intl";
 
 import IssueCard from "@/components/IssueCard";
+import CardIconButton from "@/components/ui/CardIconButton";
 
 /** Props for {@link TodoItem}. */
 interface TodoItemProps {
@@ -88,8 +89,7 @@ export default function TodoItem({
 
   const pinButton = onTogglePin ? (
     <Tooltip title={pinned ? tTodo("unpin") : tTodo("pin")}>
-      <IconButton
-        size="small"
+      <CardIconButton
         onClick={() => onTogglePin(id, !pinned)}
         aria-label={pinned ? tTodo("unpin") : tTodo("pin")}
       >
@@ -98,7 +98,7 @@ export default function TodoItem({
         ) : (
           <PushPinOutlinedIcon fontSize="small" />
         )}
-      </IconButton>
+      </CardIconButton>
     </Tooltip>
   ) : null;
 
@@ -107,13 +107,12 @@ export default function TodoItem({
       <Box sx={{ display: "flex", alignItems: "center" }}>
         {pinButton}
         <Tooltip title={tToday("addToToday")}>
-          <IconButton
-            size="small"
+          <CardIconButton
             onClick={() => onAddToToday(id)}
             aria-label={tToday("addToToday")}
           >
             <TodayIcon fontSize="small" />
-          </IconButton>
+          </CardIconButton>
         </Tooltip>
       </Box>
     ) : pinButton;
