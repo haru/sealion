@@ -164,17 +164,18 @@ export default function IssueCard({
 
       {/* Content */}
       <Box sx={{ flex: 1, minWidth: 0 }}>
-        {/* Title row */}
-        <Box sx={{ display: "flex", alignItems: "flex-start", gap: 2 }}>
+        {/* Title row — mobile: [ID · buttons] / [title]; desktop: [ID · title · buttons] */}
+        <Box sx={{ display: "flex", flexWrap: { xs: "wrap", md: "nowrap" }, alignItems: { xs: "center", md: "flex-start" }, gap: { xs: 0.5, md: 2 } }}>
           {/* ID */}
           <Typography
             variant="body2"
             component="span"
             sx={{
+              order: 1,
               color: "text.secondary",
               fontWeight: 500,
               fontSize: "0.85rem",
-              mt: "2px",
+              mt: { md: "2px" },
               minWidth: 40,
               flexShrink: 0,
             }}
@@ -182,10 +183,11 @@ export default function IssueCard({
             #{externalId}
           </Typography>
 
-          {/* Title */}
+          {/* Title — full-width below ID on mobile; flex:1 inline on desktop */}
           <Typography
             sx={{
-              flex: 1,
+              order: { xs: 3, md: 2 },
+              flex: { xs: "0 0 100%", md: 1 },
               color: "text.primary",
               fontWeight: 600,
               fontSize: "1.0rem",
@@ -196,8 +198,8 @@ export default function IssueCard({
             {title}
           </Typography>
 
-          {/* Action buttons */}
-          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, flexShrink: 0 }}>
+          {/* Action buttons — right of ID on mobile (ml:auto); after title on desktop */}
+          <Box sx={{ order: { xs: 2, md: 3 }, display: "flex", alignItems: "center", gap: 0.5, flexShrink: 0, ml: { xs: "auto", md: 0 } }}>
             {onComplete && (
               <Tooltip title={tModal("confirmButton")}>
                 <IconButton
