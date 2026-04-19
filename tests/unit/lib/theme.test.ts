@@ -43,4 +43,17 @@ describe("theme", () => {
       expect(theme.shadows[0]).toBe("none");
     });
   });
+
+  describe("component overrides", () => {
+    it("uses the current primary color in MuiButton outlinedPrimary", () => {
+      const outlinedPrimary = (theme.components?.MuiButton?.styleOverrides as Record<string, unknown>)?.outlinedPrimary as Record<string, unknown>;
+      expect(outlinedPrimary?.color).toBe(theme.palette.primary.main);
+    });
+
+    it("uses the current primary color in MuiOutlinedInput focus border", () => {
+      const root = (theme.components?.MuiOutlinedInput?.styleOverrides as Record<string, unknown>)?.root as Record<string, unknown>;
+      const focusOutline = (root?.["&.Mui-focused .MuiOutlinedInput-notchedOutline"] as Record<string, unknown>);
+      expect(focusOutline?.borderColor).toBe(theme.palette.primary.main);
+    });
+  });
 });

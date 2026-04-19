@@ -85,7 +85,7 @@ export default function TodoList({
     <Box>
       <Paper
         elevation={0}
-        sx={{ border: "1px solid #e2e8f0", borderRadius: "12px", overflow: "hidden" }}
+        sx={{ border: 1, borderColor: "divider", borderRadius: "12px", overflow: "hidden" }}
       >
         {items.map((issue, index) => (
           <Box key={issue.id}>

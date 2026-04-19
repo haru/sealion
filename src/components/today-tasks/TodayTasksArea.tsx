@@ -182,7 +182,7 @@ export default function TodayTasksArea({ items, showCreatedAt, showUpdatedAt, on
         ) : (
           <Paper
             elevation={0}
-            sx={{ border: "1px solid #4f46e5", borderRadius: "12px", overflow: "hidden" }}
+            sx={{ border: 1, borderColor: "primary.main", borderRadius: "12px", overflow: "hidden" }}
           >
             <SortableContext items={ids} strategy={verticalListSortingStrategy}>
               {items.map((issue, index) => (
