@@ -4,7 +4,7 @@ import type { DraggableSyntheticListeners, DraggableAttributes } from "@dnd-kit/
 import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import TaskAltIcon from "@mui/icons-material/TaskAlt";
-import { Box, IconButton, Paper, Tooltip, Typography } from "@mui/material";
+import { Box, IconButton, Paper, Tooltip, Typography, useTheme } from "@mui/material";
 import type { SxProps, Theme } from "@mui/material/styles";
 import { useTranslations } from "next-intl";
 import type { CSSProperties, ReactNode, Ref } from "react";
@@ -88,6 +88,8 @@ export default function IssueCard({
 }: IssueCardProps) {
   const t = useTranslations("todo");
   const tModal = useTranslations("completeModal");
+  const theme = useTheme();
+  const primaryMain = theme.palette.primary.main;
 
   let cardOpacity: number;
   if (isGhost) {
@@ -101,7 +103,7 @@ export default function IssueCard({
   const baseSx = {
     p: "12px 16px 12px 10px",
     mb: 1.5,
-    border: `1px solid ${isToday ? "#4f46e5" : "#e2e8f0"}`,
+    border: `1px solid ${isToday ? primaryMain : "#e2e8f0"}`,
     borderRadius: "12px",
     bgcolor: "white",
     position: "relative",
@@ -111,7 +113,7 @@ export default function IssueCard({
     opacity: cardOpacity,
     transition: "border-color 0.2s, box-shadow 0.2s",
     "&:hover": {
-      borderColor: isToday ? "#4f46e5" : "#cbd5e1",
+      borderColor: isToday ? primaryMain : "#cbd5e1",
       boxShadow: "0 4px 12px rgba(0,0,0,0.04)",
     },
   };
