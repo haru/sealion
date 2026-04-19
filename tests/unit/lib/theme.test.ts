@@ -1,4 +1,6 @@
-import { describe, it, expect } from "@jest/globals";
+import { describe, expect, it } from "@jest/globals";
+import { alpha } from "@mui/material/styles";
+import type { Theme } from "@mui/material/styles";
 import { theme } from "@/lib/ui/theme";
 
 describe("theme", () => {
@@ -45,13 +47,26 @@ describe("theme", () => {
   });
 
   describe("component overrides", () => {
-    it("uses the current primary color in MuiButton outlinedPrimary", () => {
-      const outlinedPrimary = (theme.components?.MuiButton?.styleOverrides as Record<string, unknown>)?.outlinedPrimary as Record<string, unknown>;
-      expect(outlinedPrimary?.color).toBe(theme.palette.primary.main);
+    it("derives MuiButton outlinedPrimary colors from theme palette dynamically", () => {
+      const buttonStyleOverrides = theme.components?.MuiButton?.styleOverrides;
+      expect(typeof buttonStyleOverrides).toBe("function");
+
+      const resolved = (buttonStyleOverrides as (theme: Theme, ownerState: Record<string, unknown>) => Record<string, unknown>)(theme, {});
+      const outlinedPrimary = resolved.outlinedPrimary as Record<string, unknown>;
+      expect(outlinedPrimary.color).toBe(theme.palette.primary.main);
+      expect(outlinedPrimary.borderColor).toBe(alpha(theme.palette.primary.main, 0.4));
+
+      const hover = (outlinedPrimary["&:hover"] as Record<string, unknown>);
+      expect(hover.borderColor).toBe(theme.palette.primary.main);
+      expect(hover.backgroundColor).toBe(alpha(theme.palette.primary.main, 0.04));
     });
 
-    it("uses the current primary color in MuiOutlinedInput focus border", () => {
-      const root = (theme.components?.MuiOutlinedInput?.styleOverrides as Record<string, unknown>)?.root as Record<string, unknown>;
+    it("derives MuiOutlinedInput focus border from theme palette dynamically", () => {
+      const inputStyleOverrides = theme.components?.MuiOutlinedInput?.styleOverrides;
+      expect(typeof inputStyleOverrides).toBe("function");
+
+      const resolved = (inputStyleOverrides as (theme: Theme, ownerState: Record<string, unknown>) => Record<string, unknown>)(theme, {});
+      const root = resolved.root as Record<string, unknown>;
       const focusOutline = (root?.["&.Mui-focused .MuiOutlinedInput-notchedOutline"] as Record<string, unknown>);
       expect(focusOutline?.borderColor).toBe(theme.palette.primary.main);
     });

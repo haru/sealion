@@ -1,3 +1,4 @@
+import { alpha } from "@mui/material/styles";
 import type { Components, ThemeOptions } from "@mui/material/styles";
 
 /** MUI component style overrides for the Sealion theme. */
@@ -56,29 +57,32 @@ export const components: Components<ThemeOptions> = {
     },
   },
   MuiButton: {
-    styleOverrides: {
-      root: {
-        textTransform: "none",
-        fontWeight: 500,
-        fontSize: "0.8125rem",
-        borderRadius: 6,
-        padding: "4px 12px",
-        lineHeight: 1.5,
-        minHeight: 30,
-      },
-      outlined: {
-        borderColor: "#e5e7eb",
-        color: "#374151",
-        "&:hover": { borderColor: "#d1d5db", backgroundColor: "#f9fafb" },
-      },
-      outlinedPrimary: {
-        borderColor: "rgba(48, 87, 213, 0.4)",
-        color: "#3057d5",
-        "&:hover": { borderColor: "#3057d5", backgroundColor: "rgba(48, 87, 213, 0.04)" },
-      },
-      contained: { boxShadow: "none", "&:hover": { boxShadow: "none" } },
-      sizeSmall: { fontSize: "0.75rem", padding: "3px 10px", minHeight: 26 },
-    },
+    styleOverrides: ((theme: ThemeOptions) => {
+      const primary = (theme.palette as Record<string, Record<string, string>>)?.primary?.main ?? "#3057d5";
+      return {
+        root: {
+          textTransform: "none",
+          fontWeight: 500,
+          fontSize: "0.8125rem",
+          borderRadius: 6,
+          padding: "4px 12px",
+          lineHeight: 1.5,
+          minHeight: 30,
+        },
+        outlined: {
+          borderColor: "#e5e7eb",
+          color: "#374151",
+          "&:hover": { borderColor: "#d1d5db", backgroundColor: "#f9fafb" },
+        },
+        outlinedPrimary: {
+          borderColor: alpha(primary, 0.4),
+          color: primary,
+          "&:hover": { borderColor: primary, backgroundColor: alpha(primary, 0.04) },
+        },
+        contained: { boxShadow: "none", "&:hover": { boxShadow: "none" } },
+        sizeSmall: { fontSize: "0.75rem", padding: "3px 10px", minHeight: 26 },
+      };
+    }) as unknown as NonNullable<Components<ThemeOptions>["MuiButton"]>["styleOverrides"],
   },
   MuiChip: {
     styleOverrides: {
@@ -115,18 +119,21 @@ export const components: Components<ThemeOptions> = {
     },
   },
   MuiOutlinedInput: {
-    styleOverrides: {
-      root: {
-        borderRadius: 8,
-        fontSize: "0.875rem",
-        backgroundColor: "#ffffff",
-        "& .MuiOutlinedInput-notchedOutline": { borderColor: "#e5e7eb" },
-        "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#d1d5db" },
-        "&.Mui-focused .MuiOutlinedInput-notchedOutline": { borderColor: "#3057d5", borderWidth: 1 },
-      },
-      input: { padding: "8px 12px", fontSize: "0.875rem" },
-      inputSizeSmall: { padding: "6px 10px" },
-    },
+    styleOverrides: ((theme: ThemeOptions) => {
+      const primary = (theme.palette as Record<string, Record<string, string>>)?.primary?.main ?? "#3057d5";
+      return {
+        root: {
+          borderRadius: 8,
+          fontSize: "0.875rem",
+          backgroundColor: "#ffffff",
+          "& .MuiOutlinedInput-notchedOutline": { borderColor: "#e5e7eb" },
+          "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#d1d5db" },
+          "&.Mui-focused .MuiOutlinedInput-notchedOutline": { borderColor: primary, borderWidth: 1 },
+        },
+        input: { padding: "8px 12px", fontSize: "0.875rem" },
+        inputSizeSmall: { padding: "6px 10px" },
+      };
+    }) as unknown as NonNullable<Components<ThemeOptions>["MuiOutlinedInput"]>["styleOverrides"],
   },
   MuiInputLabel: { styleOverrides: { root: { fontSize: "0.875rem" } } },
   MuiPaper: {
