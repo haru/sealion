@@ -4,7 +4,6 @@ import AddIcon from "@mui/icons-material/Add";
 import SettingsIcon from "@mui/icons-material/Settings";
 import {
   Container,
-  Paper,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -114,7 +113,7 @@ export default function ProvidersPage() {
           {t("addProvider")}
         </Button>
       </Box>
-      <Paper sx={{ p: 3, mb: 3 }}>
+      <Box sx={{ mb: 3 }}>
         <ProviderList
           providers={providers}
           onDelete={(id) => setDeleteId(id)}
@@ -122,7 +121,7 @@ export default function ProvidersPage() {
             setProviders((prev) => prev.map((p) => (p.id === updated.id ? updated : p)))
           }
         />
-      </Paper>
+      </Box>
 
       <AddProviderDialog
         open={dialogOpen}
