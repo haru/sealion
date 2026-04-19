@@ -1,13 +1,11 @@
 "use client";
 
-import MenuIcon from "@mui/icons-material/Menu";
 import { useMediaQuery, useTheme } from "@mui/material";
 import AppBar from "@mui/material/AppBar";
 import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
 import Toolbar from "@mui/material/Toolbar";
-import Typography from "@mui/material/Typography";
-import Link from "next/link";
+import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 
@@ -45,37 +43,22 @@ export default function DashboardShellInner({ email, role, children }: Dashboard
       {/* Mobile-only AppBar for hamburger menu */}
       {isMobile && (
         <AppBar position="fixed">
-          <Toolbar>
-            <IconButton
-              aria-label={tA11y("openMenu")}
-              edge="start"
-              onClick={() => setDrawerOpen(true)}
-              sx={{ mr: 1, color: "text.secondary" }}
-            >
-              <MenuIcon fontSize="small" />
-            </IconButton>
-            <Link href="/" style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none" }}>
-              <Box
-                sx={{
-                  width: 24,
-                  height: 24,
-                  borderRadius: "6px",
-                  bgcolor: "primary.main",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "white",
-                  fontWeight: 700,
-                  fontSize: "0.8125rem",
-                  flexShrink: 0,
-                }}
+          <Toolbar sx={{ justifyContent: "space-between" }}>
+            <Box sx={{ display: "flex", alignItems: "center" }}>
+              <IconButton
+                aria-label={tA11y("openMenu")}
+                edge="start"
+                onClick={() => setDrawerOpen(true)}
+                sx={{ mr: 1 }}
               >
-                S
-              </Box>
-              <Typography sx={{ color: "text.primary", fontWeight: 700, fontSize: "1rem" }}>
-                Sealion
-              </Typography>
-            </Link>
+                <Image src="/sealion.svg" alt="Sealion" width={24} height={24} />
+              </IconButton>
+              {titleAddon}
+            </Box>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              {actions != null && actions}
+              <AccountMenu email={email} />
+            </Box>
           </Toolbar>
         </AppBar>
       )}
