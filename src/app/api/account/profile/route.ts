@@ -1,11 +1,16 @@
 import { UserRole, UserStatus } from "@prisma/client";
 import type { NextRequest } from "next/server";
+import { z } from "zod";
 
 import { ok, fail } from "@/lib/api/api-response";
 import { auth } from "@/lib/auth/auth";
 import { prisma } from "@/lib/db/db";
 
 const MAX_USERNAME_LENGTH = 50;
+
+const patchGravatarSchema = z.object({ useGravatar: z.boolean() }).strict();
+const patchUsernameSchema = z.object({ username: z.string().nullable() }).strict();
+const patchBodySchema = z.union([patchGravatarSchema, patchUsernameSchema]);
 
 /**
  * Returns the authenticated user's profile.
@@ -58,25 +63,6 @@ export async function GET() {
 }
 
 /**
- * Updates the authenticated user's profile.
- *
- * Accepts `{ username: string | null }` or `{ useGravatar: boolean }`.
- * For username: the value is trimmed; if the trimmed result is empty the field is treated as `null` (cleared).
- * For useGravatar: must be a boolean; non-boolean values are rejected.
- *
- * Error codes returned in `{ error }`:
- * - `UNAUTHORIZED` — no valid session or user record not found
- * - `INVALID_INPUT` — malformed request body, missing required key, or `useGravatar` is not a boolean
- * - `USERNAME_TOO_LONG` — trimmed username exceeds 50 characters
- * - `INTERNAL_ERROR` — unexpected server-side failure
- *
- * @param request - The incoming PATCH request.
- * @returns `200 { data: null, error: null }` on success,
- *          `400` on validation failure,
- *          `401` if unauthenticated or user not found,
- *          `500` on unexpected server error.
- */
-/**
  * Updates the `useGravatar` field for the given user.
  * @param userId - The ID of the user to update.
  * @param value - The new Gravatar preference.
@@ -93,25 +79,11 @@ async function patchUseGravatar(userId: string, value: boolean) {
 /**
  * Updates the `username` field for the given user.
  * @param userId - The ID of the user to update.
- * @param rawUsername - The new username value (string, null, or unknown type).
+ * @param rawUsername - The new username value (string or null).
  */
-async function patchUsername(userId: string, rawUsername: unknown) {
-  if (rawUsername === null) {
-    const user = await prisma.user.findUnique({ where: { id: userId } });
-    if (!user) {
-      return fail("UNAUTHORIZED", 401);
-    }
-    await prisma.user.update({ where: { id: userId }, data: { username: null } });
-    return ok(null);
-  }
-
-  if (typeof rawUsername !== "string") {
-    return fail("INVALID_INPUT", 400);
-  }
-
-  const trimmed = rawUsername.trim();
-  // Normalize whitespace-only strings to null (clear the username)
-  const username = trimmed.length === 0 ? null : trimmed;
+async function patchUsername(userId: string, rawUsername: string | null) {
+  const trimmed = rawUsername === null ? null : rawUsername.trim();
+  const username = trimmed !== null && trimmed.length === 0 ? null : trimmed;
 
   if (username !== null && username.length > MAX_USERNAME_LENGTH) {
     return fail("USERNAME_TOO_LONG", 400);
@@ -126,9 +98,10 @@ async function patchUsername(userId: string, rawUsername: unknown) {
 }
 
 /**
- * Updates the authenticated user's profile (username or useGravatar).
+ * Updates the authenticated user's profile.
  *
- * Accepts `{ username: string | null }` or `{ useGravatar: boolean }`.
+ * Accepts exactly one of `{ username: string | null }` or `{ useGravatar: boolean }`.
+ * Requests containing both keys, unknown keys, or missing required keys are rejected.
  *
  * @param request - The incoming PATCH request.
  * @returns `200 { data: null, error: null }` on success, `400`/`401`/`500` on failure.
@@ -148,24 +121,18 @@ export async function PATCH(request: NextRequest) {
     return fail("INVALID_INPUT", 400);
   }
 
-  if (typeof body !== "object" || body === null) {
+  const parseResult = patchBodySchema.safeParse(body);
+  if (!parseResult.success) {
     return fail("INVALID_INPUT", 400);
   }
 
-  const bodyObj = body as Record<string, unknown>;
+  const parsed = parseResult.data;
 
   try {
-    if ("useGravatar" in bodyObj) {
-      if (typeof bodyObj.useGravatar !== "boolean") {
-        return fail("INVALID_INPUT", 400);
-      }
-      return await patchUseGravatar(userId, bodyObj.useGravatar);
+    if ("useGravatar" in parsed) {
+      return await patchUseGravatar(userId, parsed.useGravatar);
     }
-
-    if (!("username" in bodyObj)) {
-      return fail("INVALID_INPUT", 400);
-    }
-    return await patchUsername(userId, bodyObj.username);
+    return await patchUsername(userId, parsed.username);
   } catch (err: unknown) {
     console.error("[account/profile] PATCH failed", {
       userId,

@@ -1,5 +1,7 @@
 "use client";
 
+import { SessionProvider } from "next-auth/react";
+
 import { MessageQueueProvider } from "@/components/MessageQueue";
 import { PageHeaderProvider } from "@/contexts/PageHeaderContext";
 
@@ -11,23 +13,25 @@ interface DashboardShellProps {
   email: string;
   /** Authenticated user's role, used to conditionally show admin navigation. */
   role: string;
-  /** Whether the user has enabled Gravatar as their avatar. */
-  useGravatar: boolean;
+  /** Pre-computed Gravatar URL. When provided, displays the Gravatar image in the account menu. */
+  gravatarUrl?: string;
   /** Page content rendered inside the main scrollable area. */
   children: React.ReactNode;
 }
 
 /**
  * Top-level authenticated shell with sidebar, global titlebar, and main content area.
- * @param props - Shell props containing the authenticated user's email, role, useGravatar, and page children.
+ * @param props - Shell props containing the authenticated user's email, role, gravatarUrl, and page children.
  * @returns The full dashboard layout wrapped in context providers.
  */
-export default function DashboardShell({ email, role, useGravatar, children }: DashboardShellProps) {
+export default function DashboardShell({ email, role, gravatarUrl, children }: DashboardShellProps) {
   return (
-    <MessageQueueProvider>
-      <PageHeaderProvider>
-        <DashboardShellInner email={email} role={role} useGravatar={useGravatar}>{children}</DashboardShellInner>
-      </PageHeaderProvider>
-    </MessageQueueProvider>
+    <SessionProvider>
+      <MessageQueueProvider>
+        <PageHeaderProvider>
+          <DashboardShellInner email={email} role={role} gravatarUrl={gravatarUrl}>{children}</DashboardShellInner>
+        </PageHeaderProvider>
+      </MessageQueueProvider>
+    </SessionProvider>
   );
 }

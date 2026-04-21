@@ -1,4 +1,4 @@
-import md5 from "md5";
+import { createHash } from "crypto";
 
 /**
  * Returns the Gravatar image URL for the given email address.
@@ -8,6 +8,6 @@ import md5 from "md5";
  * @returns     Full Gravatar URL with `d=404` so missing avatars return HTTP 404.
  */
 export function getGravatarUrl(email: string, size = 32): string {
-  const hash = md5(email.trim().toLowerCase());
+  const hash = createHash("md5").update(email.trim().toLowerCase()).digest("hex");
   return `https://www.gravatar.com/avatar/${hash}?s=${size}&d=404`;
 }

@@ -21,8 +21,8 @@ import UserAvatar from "@/components/ui/UserAvatar";
 export interface AccountMenuProps {
   /** Authenticated user's email address, used to derive initials and display in the dropdown. */
   email: string;
-  /** Whether the user has enabled Gravatar as their avatar. */
-  useGravatar: boolean;
+  /** Pre-computed Gravatar URL. When provided, displays the Gravatar image. */
+  gravatarUrl?: string;
 }
 
 /**
@@ -35,10 +35,10 @@ export interface AccountMenuProps {
  *  - a link to Issue Management Settings (`/settings/providers`)
  *  - a Log Out button
  *
- * @param props - Component props containing the authenticated user's email and Gravatar preference.
+ * @param props - Component props containing the authenticated user's email and optional Gravatar URL.
  * @returns The account icon button and its dropdown menu.
  */
-export default function AccountMenu({ email, useGravatar }: AccountMenuProps) {
+export default function AccountMenu({ email, gravatarUrl }: AccountMenuProps) {
   const t = useTranslations("accountMenu");
   const tAuth = useTranslations("auth");
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -69,7 +69,7 @@ export default function AccountMenu({ email, useGravatar }: AccountMenuProps) {
         size="small"
         sx={{ ml: 1 }}
       >
-        <UserAvatar email={email} useGravatar={useGravatar} size={32} />
+        <UserAvatar email={email} gravatarUrl={gravatarUrl} size={32} />
       </IconButton>
 
       <Menu

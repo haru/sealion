@@ -7,6 +7,7 @@ import FormControlLabel from "@mui/material/FormControlLabel";
 import Switch from "@mui/material/Switch";
 import Typography from "@mui/material/Typography";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { useTranslations } from "next-intl";
 import { useState, useEffect } from "react";
 
@@ -27,6 +28,7 @@ export interface GravatarSectionProps {
 export default function GravatarSection({ initialUseGravatar, isLoading }: GravatarSectionProps) {
   const t = useTranslations("profileSettings");
   const router = useRouter();
+  const { update } = useSession();
 
   const [useGravatar, setUseGravatar] = useState(initialUseGravatar);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -54,6 +56,8 @@ export default function GravatarSection({ initialUseGravatar, isLoading }: Grava
         setError(t("gravatar.saveError"));
       } else {
         setSuccess(t("gravatar.saveSuccess"));
+        // Update JWT session immediately so layouts reflect the new preference without a sign-out cycle
+        await update({ useGravatar });
         router.refresh();
       }
     } catch {
@@ -90,7 +94,7 @@ export default function GravatarSection({ initialUseGravatar, isLoading }: Grava
               data-testid="profile-gravatar-toggle"
               checked={useGravatar}
               onChange={(e) => setUseGravatar(e.target.checked)}
-              disabled={isLoading}
+              disabled={isLoading || isSubmitting}
             />
           }
           label={t("gravatar.toggle")}

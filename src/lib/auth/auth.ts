@@ -43,7 +43,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         if (!isValid) { return null; }
 
-        return { id: user.id, email: user.email, role: user.role };
+        return { id: user.id, email: user.email, role: user.role, useGravatar: user.useGravatar };
       },
     }),
   ],
@@ -59,15 +59,27 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
      * To reduce database load, `passwordChangedAt` is cached in the JWT token and only
      * re-queried from the database every {@link PWD_CHANGE_RECHECK_INTERVAL_S} seconds.
      *
+     * On `update` trigger, refreshes `useGravatar` from the session update payload so that
+     * preference changes are reflected immediately without a full sign-out/sign-in cycle.
+     *
      * @param token - The current JWT payload.
      * @param user - The authenticated user object (present only on signIn).
      * @param trigger - The event that triggered the callback.
+     * @param session - The session update payload (present only on `update` trigger).
      * @returns The updated JWT token, or an empty object to reject the session.
      */
-    async jwt({ token, user, trigger }) {
+    async jwt({ token, user, trigger, session }) {
       if (user) {
         token.id = user.id;
-        token.role = (user as { id: string; email?: string | null; role: string }).role;
+        token.role = (user as { id: string; email?: string | null; role: string; useGravatar: boolean }).role;
+        token.useGravatar = (user as { id: string; email?: string | null; role: string; useGravatar: boolean }).useGravatar ?? false;
+      }
+
+      if (trigger === "update") {
+        const update = session as { useGravatar?: boolean } | undefined;
+        if (update?.useGravatar !== undefined) {
+          token.useGravatar = update.useGravatar;
+        }
       }
 
       if (trigger === "signIn") {
@@ -85,13 +97,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         if (now - lastChecked >= PWD_CHANGE_RECHECK_INTERVAL_S) {
           const dbUser = await prisma.user.findUnique({
             where: { id: userId },
-            select: { passwordChangedAt: true },
+            select: { passwordChangedAt: true, useGravatar: true },
           });
 
           token.pwdChangedAt = dbUser?.passwordChangedAt
             ? Math.floor(dbUser.passwordChangedAt.getTime() / 1000)
             : null;
           token.pwdCheckedAt = now;
+          // Sync useGravatar with DB on periodic re-check (covers cases where update() wasn't called)
+          token.useGravatar = dbUser?.useGravatar ?? false;
         }
 
         if (token.pwdChangedAt != null) {

@@ -4,7 +4,8 @@
       "Bash(gh repo:*)"
     ],
     "additionalDirectories": [
-      "/tmp"
+      "/tmp",
+      "/workspaces/sealion/prisma/migrations"
     ]
   },
   "enabledPlugins": {

@@ -3,14 +3,12 @@
 import Avatar from "@mui/material/Avatar";
 import { useState } from "react";
 
-import { getGravatarUrl } from "@/lib/gravatar/gravatar";
-
 /** Props for the {@link UserAvatar} component. */
 export interface UserAvatarProps {
-  /** User's email address — used for initial derivation and Gravatar URL generation. */
+  /** User's email address — used for initial derivation. */
   email: string;
-  /** Whether to attempt displaying the Gravatar image. */
-  useGravatar: boolean;
+  /** Pre-computed Gravatar URL. When provided, attempts to display the image; falls back to initial on error. */
+  gravatarUrl?: string;
   /** Avatar diameter in pixels. Defaults to 32. */
   size?: number;
 }
@@ -24,13 +22,13 @@ function deriveInitial(email: string): string {
 /**
  * Reusable avatar component that displays a Gravatar image or an email initial.
  *
- * When `useGravatar` is true, attempts to load the Gravatar image; falls back to
+ * When `gravatarUrl` is provided, attempts to load the image; falls back to
  * the email initial on error (e.g., HTTP 404 for unregistered emails).
  *
  * @param props - Component props.
  * @returns MUI Avatar with Gravatar image or email initial.
  */
-export default function UserAvatar({ email, useGravatar, size = 32 }: UserAvatarProps) {
+export default function UserAvatar({ email, gravatarUrl, size = 32 }: UserAvatarProps) {
   const [imgError, setImgError] = useState(false);
 
   const initial = deriveInitial(email);
@@ -43,10 +41,10 @@ export default function UserAvatar({ email, useGravatar, size = 32 }: UserAvatar
     fontWeight: 600,
   };
 
-  if (useGravatar && !imgError) {
+  if (gravatarUrl && !imgError) {
     return (
       <Avatar
-        src={getGravatarUrl(email, size)}
+        src={gravatarUrl}
         sx={avatarSx}
         imgProps={{ onError: () => setImgError(true) }}
       >

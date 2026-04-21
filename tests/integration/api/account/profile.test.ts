@@ -195,6 +195,26 @@ describe("PATCH /api/account/profile — input validation (no DB required)", () 
     expect(json.error).toBe("INVALID_INPUT");
   });
 
+  test("returns 400 when both username and useGravatar are present in the same request", async () => {
+    jest.resetModules();
+    jest.doMock("@/lib/auth/auth", () => ({
+      auth: jest.fn().mockResolvedValue({
+        user: { id: TEST_USER_ID, email: TEST_USER_EMAIL, role: "USER" },
+      }),
+    }));
+    jest.doMock("@/lib/db/db", () => ({
+      prisma: {
+        user: { findUnique: jest.fn(), update: jest.fn() },
+      },
+    }));
+    const { PATCH } = await import("@/app/api/account/profile/route");
+    const req = makePatchRequest({ username: "newname", useGravatar: true });
+    const res = await PATCH(req);
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.error).toBe("INVALID_INPUT");
+  });
+
   test("returns 200 when username is set to null (clear)", async () => {
     jest.resetModules();
     jest.doMock("@/lib/auth/auth", () => ({
