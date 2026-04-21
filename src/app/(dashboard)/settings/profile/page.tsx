@@ -95,16 +95,17 @@ export default function ProfileSettingsPage() {
 
     setIsSubmitting(true);
     try {
+      const normalizedUsername = username.trim() === "" ? null : username.trim();
       const body = changePassword
         ? {
-            username: username.trim() === "" ? null : username.trim(),
+            username: normalizedUsername,
             useGravatar,
             changePassword: true as const,
             currentPassword,
             newPassword,
           }
         : {
-            username: username.trim() === "" ? null : username.trim(),
+            username: normalizedUsername,
             useGravatar,
             changePassword: false as const,
           };
@@ -120,6 +121,9 @@ export default function ProfileSettingsPage() {
         setSaveError(mapApiError(json.error, t, tErrors));
       } else {
         setSaveSuccess(t("settingsSaved"));
+
+        // Sync local state to the normalized value persisted on the server
+        setUsername(normalizedUsername ?? "");
 
         // Clear password fields on success (FR-007)
         if (changePassword) {
@@ -307,6 +311,7 @@ function mapApiError(
   switch (errorCode) {
     case "PASSWORD_CURRENT_REQUIRED": return tErrors("PASSWORD_CURRENT_REQUIRED");
     case "PASSWORD_TOO_SHORT": return tErrors("PASSWORD_TOO_SHORT");
+    case "PASSWORD_TOO_LONG": return tErrors("PASSWORD_TOO_LONG");
     case "PASSWORD_INCORRECT": return tErrors("PASSWORD_INCORRECT");
     case "USERNAME_TOO_LONG": return tErrors("USERNAME_TOO_LONG");
     default: return t("errorUnexpected");

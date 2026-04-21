@@ -22,6 +22,10 @@ const DEFAULT_BOARD_SETTINGS = JSON.stringify({
   data: { showCreatedAt: true, showUpdatedAt: false, sortOrder: ["dueDate_asc"] },
   error: null,
 });
+const DEFAULT_PROFILE = JSON.stringify({
+  data: { username: "testuser", email: "admin@example.com", isLastAdmin: false, useGravatar: false },
+  error: null,
+});
 
 function stubCommonRoutes(page: Page) {
   return Promise.all([
@@ -37,7 +41,14 @@ function stubCommonRoutes(page: Page) {
     page.route("**/api/providers**", (route) =>
       route.fulfill({ contentType: "application/json", body: EMPTY_PROVIDERS })
     ),
+    page.route("**/api/account/profile**", (route) =>
+      route.fulfill({ contentType: "application/json", body: DEFAULT_PROFILE })
+    ),
   ]);
+}
+
+async function waitForFormReady(page: Page) {
+  await expect(page.getByTestId("profile-save-button")).toBeEnabled();
 }
 
 // ---------------------------------------------------------------------------
@@ -89,6 +100,7 @@ test.describe("Profile Settings — Change Password checkbox flow", () => {
   });
 
   test("checking Change Password reveals the three password fields", async ({ page }) => {
+    await waitForFormReady(page);
     await page.click('[data-testid="profile-change-password-checkbox"]');
     await expect(page.getByTestId("profile-current-password")).toBeVisible();
     await expect(page.getByTestId("profile-new-password")).toBeVisible();
@@ -96,6 +108,7 @@ test.describe("Profile Settings — Change Password checkbox flow", () => {
   });
 
   test("unchecking Change Password hides and clears password fields", async ({ page }) => {
+    await waitForFormReady(page);
     // Show fields and type values
     await page.click('[data-testid="profile-change-password-checkbox"]');
     await page.fill('[data-testid="profile-current-password"] input', "somepassword");
@@ -122,6 +135,7 @@ test.describe("Profile Settings — client-side validation", () => {
       route.fulfill({ contentType: "application/json", body: JSON.stringify({ data: null, error: null }) });
     });
 
+    await waitForFormReady(page);
     await page.click('[data-testid="profile-change-password-checkbox"]');
     await page.fill('[data-testid="profile-current-password"] input', "currentpassword");
     await page.fill('[data-testid="profile-new-password"] input', "newpassword123");
@@ -148,6 +162,7 @@ test.describe("Profile Settings — unified save", () => {
       route.fulfill({ contentType: "application/json", body: JSON.stringify({ data: null, error: null }) })
     );
 
+    await waitForFormReady(page);
     await page.fill('[data-testid="profile-username"] input', "newusername");
     await page.click('[data-testid="profile-save-button"]');
 
@@ -160,6 +175,7 @@ test.describe("Profile Settings — unified save", () => {
       route.fulfill({ contentType: "application/json", body: JSON.stringify({ data: null, error: null }) })
     );
 
+    await waitForFormReady(page);
     await page.click('[data-testid="profile-change-password-checkbox"]');
     await page.fill('[data-testid="profile-current-password"] input', "currentpassword");
     await page.fill('[data-testid="profile-new-password"] input', "newpassword123");
@@ -176,6 +192,7 @@ test.describe("Profile Settings — unified save", () => {
       route.fulfill({ contentType: "application/json", body: JSON.stringify({ data: null, error: null }) })
     );
 
+    await waitForFormReady(page);
     await page.click('[data-testid="profile-change-password-checkbox"]');
     await page.fill('[data-testid="profile-current-password"] input', "currentpassword");
     await page.fill('[data-testid="profile-new-password"] input', "newpassword123");
@@ -199,6 +216,7 @@ test.describe("Profile Settings — unified save", () => {
       })
     );
 
+    await waitForFormReady(page);
     await page.click('[data-testid="profile-change-password-checkbox"]');
     await page.fill('[data-testid="profile-current-password"] input', "wrongpassword");
     await page.fill('[data-testid="profile-new-password"] input', "newpassword123");
@@ -217,6 +235,7 @@ test.describe("Profile Settings — unified save", () => {
       })
     );
 
+    await waitForFormReady(page);
     await page.fill('[data-testid="profile-username"] input', "a".repeat(51));
     await page.click('[data-testid="profile-save-button"]');
 

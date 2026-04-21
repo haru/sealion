@@ -4,10 +4,11 @@ import { z } from "zod";
 
 import { ok, fail } from "@/lib/api/api-response";
 import { auth } from "@/lib/auth/auth";
+import { BCRYPT_ROUNDS } from "@/lib/auth/bcrypt-config";
 import { prisma } from "@/lib/db/db";
 
 const MAX_USERNAME_LENGTH = 50;
-const BCRYPT_ROUNDS = 12;
+const MAX_PASSWORD_LENGTH = 72;
 
 const baseSchema = z.object({
   username: z.string().nullable(),
@@ -18,7 +19,7 @@ const baseSchema = z.object({
 const withPasswordSchema = baseSchema.extend({
   changePassword: z.literal(true),
   currentPassword: z.string().min(1),
-  newPassword: z.string().min(8),
+  newPassword: z.string().min(8).max(MAX_PASSWORD_LENGTH),
 });
 
 const withoutPasswordSchema = baseSchema.extend({
@@ -64,6 +65,11 @@ export async function PATCH(request: NextRequest) {
       (i) => i.path.includes("newPassword") && i.code === "too_small"
     );
     if (hasTooShort) { return fail("PASSWORD_TOO_SHORT", 400); }
+
+    const hasTooLong = issues.some(
+      (i) => i.path.includes("newPassword") && i.code === "too_big"
+    );
+    if (hasTooLong) { return fail("PASSWORD_TOO_LONG", 400); }
 
     const hasCurrentRequired = issues.some(
       (i) => i.path.includes("currentPassword") && i.code === "too_small"

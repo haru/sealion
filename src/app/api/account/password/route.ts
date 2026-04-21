@@ -3,7 +3,10 @@ import type { NextRequest } from "next/server";
 
 import { ok, fail } from "@/lib/api/api-response";
 import { auth } from "@/lib/auth/auth";
+import { BCRYPT_ROUNDS } from "@/lib/auth/bcrypt-config";
 import { prisma } from "@/lib/db/db";
+
+const MAX_PASSWORD_LENGTH = 72;
 
 /**
  * Changes the authenticated user's password.
@@ -59,6 +62,10 @@ export async function PATCH(request: NextRequest) {
     return fail("PASSWORD_TOO_SHORT", 400);
   }
 
+  if (newPassword.length > MAX_PASSWORD_LENGTH) {
+    return fail("PASSWORD_TOO_LONG", 400);
+  }
+
   try {
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) {
@@ -70,7 +77,7 @@ export async function PATCH(request: NextRequest) {
       return fail("PASSWORD_INCORRECT", 400);
     }
 
-    const newHash = await bcrypt.hash(newPassword, 10);
+    const newHash = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
     await prisma.user.update({
       where: { id: userId },
       data: { passwordHash: newHash, passwordChangedAt: new Date() },
