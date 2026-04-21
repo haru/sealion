@@ -180,6 +180,13 @@
     "usernameSuccess": "Username updated successfully.",
     "usernameErrorTooLong": "Username must be 50 characters or fewer.",
     "usernameErrorUnexpected": "An unexpected error occurred. Please try again.",
+    "gravatar": {
+      "title": "Gravatar",
+      "description": "Use your Gravatar profile image as your account avatar.",
+      "toggle": "Use Gravatar",
+      "saveSuccess": "Gravatar settings saved.",
+      "saveError": "Failed to save Gravatar settings. Please try again."
+    },
     "dangerZone": {
       "title": "Danger Zone",
       "deleteAccount": "Delete Account",

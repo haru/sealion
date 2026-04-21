@@ -180,6 +180,13 @@
     "usernameSuccess": "ユーザー名を更新しました。",
     "usernameErrorTooLong": "ユーザー名は50文字以内で入力してください。",
     "usernameErrorUnexpected": "予期しないエラーが発生しました。もう一度お試しください。",
+    "gravatar": {
+      "title": "Gravatar",
+      "description": "Gravatarプロフィール画像をアカウントのアバターとして使用します。",
+      "toggle": "Gravatarを使用",
+      "saveSuccess": "Gravatar設定を保存しました。",
+      "saveError": "Gravatar設定の保存に失敗しました。もう一度お試しください。"
+    },
     "dangerZone": {
       "title": "Danger Zone",
       "deleteAccount": "アカウントを削除",

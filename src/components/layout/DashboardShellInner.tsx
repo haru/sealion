@@ -23,6 +23,8 @@ export interface DashboardShellInnerProps {
   email: string;
   /** Authenticated user's role, used to conditionally show admin navigation. */
   role: string;
+  /** Pre-computed Gravatar URL. When provided, displays the Gravatar image in the account menu. */
+  gravatarUrl?: string;
   /** Page content rendered inside the main scrollable area. */
   children: React.ReactNode;
 }
@@ -31,7 +33,7 @@ export interface DashboardShellInnerProps {
  * Inner shell that reads the current page header from context and renders layout.
  * Kept separate so it can consume `PageHeaderContext` provided by the outer wrapper.
  */
-export default function DashboardShellInner({ email, role, children }: DashboardShellInnerProps) {
+export default function DashboardShellInner({ email, role, gravatarUrl, children }: DashboardShellInnerProps) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -57,7 +59,7 @@ export default function DashboardShellInner({ email, role, children }: Dashboard
             </Box>
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
               {actions != null && actions}
-              <AccountMenu email={email} />
+              <AccountMenu email={email} gravatarUrl={gravatarUrl} />
             </Box>
           </Toolbar>
         </AppBar>
@@ -83,7 +85,7 @@ export default function DashboardShellInner({ email, role, children }: Dashboard
           ...(isMobile && { mt: `${APP_BAR_HEIGHT}px` }),
         }}
       >
-        <PageHeader title={title} icon={icon} actions={actions} titleAddon={titleAddon} breadcrumbParent={breadcrumbParent} breadcrumbParentIcon={breadcrumbParentIcon} accountMenu={<AccountMenu email={email} />} />
+        <PageHeader title={title} icon={icon} actions={actions} titleAddon={titleAddon} breadcrumbParent={breadcrumbParent} breadcrumbParentIcon={breadcrumbParentIcon} accountMenu={<AccountMenu email={email} gravatarUrl={gravatarUrl} />} />
         {children}
       </Box>
     </Box>
