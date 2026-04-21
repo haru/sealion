@@ -163,6 +163,8 @@
   },
   "profileSettings": {
     "title": "プロファイル設定",
+    "saveSettings": "設定を保存",
+    "settingsSaved": "設定を保存しました。",
     "changePassword": "パスワードを変更",
     "currentPassword": "現在のパスワード",
     "newPassword": "新しいパスワード",
@@ -328,6 +330,9 @@
     "INVALID_EMAIL": "有効なメールアドレスを入力してください",
     "PASSWORD_TOO_SHORT": "パスワードは8文字以上で入力してください",
     "PASSWORD_REQUIRED": "パスワード変更時にパスワードは必須です",
+    "PASSWORD_CURRENT_REQUIRED": "現在のパスワードを入力してください。",
+    "PASSWORD_INCORRECT": "現在のパスワードが正しくありません。",
+    "USERNAME_TOO_LONG": "ユーザー名は50文字以内で入力してください。",
     "MISSING_USERNAME": "表示名は必須です",
     "INVALID_INPUT": "入力値が正しくありません",
     "PASSWORD_TOO_LONG": "パスワードは72文字以内で入力してください",

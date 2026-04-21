@@ -31,6 +31,8 @@ shell commands, and other important information, read the current plan
 ## Active Technologies
 - TypeScript 5 / Node.js 20 LTS + Next.js 16 (App Router), MUI v7, Auth.js v5 (next-auth), Prisma 7 (039-gravatar-integration)
 - PostgreSQL 16 via Prisma 7 ORM — one new boolean column on `User` (039-gravatar-integration)
+- TypeScript 5 / Node.js 20 LTS + Next.js 16 (App Router), MUI v7, Auth.js v5 (next-auth), Prisma 7, next-intl 4, Zod, bcryptjs (040-unify-profile-save)
+- PostgreSQL 16 via Prisma 7 — no schema changes needed (all required columns already exist: `username`, `useGravatar`, `passwordHash`, `passwordChangedAt`) (040-unify-profile-save)
 
 ## Recent Changes
 - 039-gravatar-integration: Added TypeScript 5 / Node.js 20 LTS + Next.js 16 (App Router), MUI v7, Auth.js v5 (next-auth), Prisma 7
