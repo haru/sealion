@@ -1,6 +1,6 @@
+import bcrypt from "bcryptjs";
 import type { NextRequest } from "next/server";
 import { z } from "zod";
-import bcrypt from "bcryptjs";
 
 import { ok, fail } from "@/lib/api/api-response";
 import { auth } from "@/lib/auth/auth";
@@ -63,12 +63,12 @@ export async function PATCH(request: NextRequest) {
     const hasTooShort = issues.some(
       (i) => i.path.includes("newPassword") && i.code === "too_small"
     );
-    if (hasTooShort) return fail("PASSWORD_TOO_SHORT", 400);
+    if (hasTooShort) { return fail("PASSWORD_TOO_SHORT", 400); }
 
     const hasCurrentRequired = issues.some(
       (i) => i.path.includes("currentPassword") && i.code === "too_small"
     );
-    if (hasCurrentRequired) return fail("PASSWORD_CURRENT_REQUIRED", 400);
+    if (hasCurrentRequired) { return fail("PASSWORD_CURRENT_REQUIRED", 400); }
 
     return fail("INVALID_INPUT", 400);
   }
