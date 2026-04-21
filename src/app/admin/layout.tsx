@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 
 import DashboardShell from "@/components/layout/DashboardShell";
 import { auth } from "@/lib/auth/auth";
+import { prisma } from "@/lib/db/db";
 
 import { AdminSessionProvider } from "./AdminSessionProvider";
 
@@ -33,8 +34,18 @@ export default async function AdminLayout({
     );
   }
 
+  const userId = session.user.id;
+  let useGravatar = false;
+  if (userId) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { useGravatar: true },
+    });
+    useGravatar = user?.useGravatar ?? false;
+  }
+
   return (
-    <DashboardShell email={session.user.email ?? ""} role={session.user.role ?? "USER"}>
+    <DashboardShell email={session.user.email ?? ""} role={session.user.role ?? "USER"} useGravatar={useGravatar}>
       <AdminSessionProvider userId={session.user.id}>{children}</AdminSessionProvider>
     </DashboardShell>
   );

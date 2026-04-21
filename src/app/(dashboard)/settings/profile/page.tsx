@@ -12,15 +12,14 @@ import { useTranslations } from "next-intl";
 import { useState, useEffect } from "react";
 
 import { DeleteAccountModal } from "@/components/settings/DeleteAccountModal";
+import GravatarSection from "@/components/settings/GravatarSection";
 import { usePageHeader } from "@/hooks/usePageHeader";
 
 /**
  * Profile settings page.
  *
- * Renders a username change form and a password change form. The username form
- * submits to `PATCH /api/account/profile`; the password form submits to
- * `PATCH /api/account/password`. On success, each form shows an inline success
- * message without redirecting.
+ * Renders a username change form, Gravatar toggle section, and a password change form.
+ * Each section has its own Save button and submits independently to the profile API.
  */
 export default function ProfileSettingsPage() {
   const t = useTranslations("profileSettings");
@@ -33,30 +32,8 @@ export default function ProfileSettingsPage() {
   const [usernameLoadError, setUsernameLoadError] = useState<string | null>(null);
   const [isUsernameSubmitting, setIsUsernameSubmitting] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [useGravatar, setUseGravatar] = useState(false);
 
-  useEffect(() => {
-    fetch("/api/account/profile")
-      .then(async (res) => {
-        const json = (await res.json()) as {
-          data: { username: string | null; email: string; isLastAdmin: boolean } | null;
-          error: string | null;
-        };
-        if (!res.ok || !json.data) {
-          throw new Error(json.error ?? "load failed");
-        }
-        return json;
-      })
-      .then((json) => {
-        setUsername(json.data?.username ?? "");
-        setUserEmail(json.data?.email ?? "");
-        setIsLastAdmin(json.data?.isLastAdmin ?? false);
-        setIsUsernameLoading(false);
-      })
-      .catch(() => {
-        setUsernameLoadError(t("usernameLoadError"));
-        // Keep isUsernameLoading=true so the form remains disabled
-      });
-  }, [t]);
   const [usernameSuccess, setUsernameSuccess] = useState<string | null>(null);
   const [usernameError, setUsernameError] = useState<string | null>(null);
 
@@ -67,11 +44,33 @@ export default function ProfileSettingsPage() {
   const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
 
+  useEffect(() => {
+    fetch("/api/account/profile")
+      .then(async (res) => {
+        const json = (await res.json()) as {
+          data: { username: string | null; email: string; isLastAdmin: boolean; useGravatar: boolean } | null;
+          error: string | null;
+        };
+        if (!res.ok || !json.data) { throw new Error(json.error ?? "load failed"); }
+        return json;
+      })
+      .then((json) => {
+        setUsername(json.data?.username ?? "");
+        setUserEmail(json.data?.email ?? "");
+        setIsLastAdmin(json.data?.isLastAdmin ?? false);
+        setUseGravatar(json.data?.useGravatar ?? false);
+        setIsUsernameLoading(false);
+      })
+      .catch(() => {
+        setUsernameLoadError(t("usernameLoadError"));
+        // Keep isUsernameLoading=true so the form remains disabled
+      });
+  }, [t]);
+
   const handleUsernameSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setUsernameSuccess(null);
     setUsernameError(null);
-
     setIsUsernameSubmitting(true);
     try {
       const body = username.trim() === "" ? null : username.trim();
@@ -80,15 +79,9 @@ export default function ProfileSettingsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username: body }),
       });
-
       const json = (await response.json()) as { data: null; error: string | null };
-
       if (!response.ok || json.error) {
-        if (json.error === "USERNAME_TOO_LONG") {
-          setUsernameError(t("usernameErrorTooLong"));
-        } else {
-          setUsernameError(t("usernameErrorUnexpected"));
-        }
+        setUsernameError(json.error === "USERNAME_TOO_LONG" ? t("usernameErrorTooLong") : t("usernameErrorUnexpected"));
       } else {
         setUsernameSuccess(t("usernameSuccess"));
         setUsername(body ?? "");
@@ -105,18 +98,9 @@ export default function ProfileSettingsPage() {
     setPasswordSuccess(null);
     setPasswordError(null);
 
-    if (!currentPassword) {
-      setPasswordError(t("errorCurrentRequired"));
-      return;
-    }
-    if (newPassword.length < 8) {
-      setPasswordError(t("errorTooShort"));
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      setPasswordError(t("errorMismatch"));
-      return;
-    }
+    if (!currentPassword) { setPasswordError(t("errorCurrentRequired")); return; }
+    if (newPassword.length < 8) { setPasswordError(t("errorTooShort")); return; }
+    if (newPassword !== confirmPassword) { setPasswordError(t("errorMismatch")); return; }
 
     setIsPasswordSubmitting(true);
     try {
@@ -125,15 +109,9 @@ export default function ProfileSettingsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ currentPassword, newPassword }),
       });
-
       const json = (await response.json()) as { data: null; error: string | null };
-
       if (!response.ok || json.error) {
-        if (json.error === "PASSWORD_INCORRECT") {
-          setPasswordError(t("errorCurrentIncorrect"));
-        } else {
-          setPasswordError(t("errorUnexpected"));
-        }
+        setPasswordError(json.error === "PASSWORD_INCORRECT" ? t("errorCurrentIncorrect") : t("errorUnexpected"));
       } else {
         setPasswordSuccess(t("successMessage"));
         setCurrentPassword("");
@@ -154,21 +132,9 @@ export default function ProfileSettingsPage() {
       </Typography>
 
       <Box component="form" onSubmit={handleUsernameSubmit} noValidate sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-        {usernameLoadError && (
-          <Alert severity="error" data-testid="profile-username-load-error">
-            {usernameLoadError}
-          </Alert>
-        )}
-        {usernameSuccess && (
-          <Alert severity="success" data-testid="profile-username-success-message">
-            {usernameSuccess}
-          </Alert>
-        )}
-        {usernameError && (
-          <Alert severity="error" data-testid="profile-username-error-message">
-            {usernameError}
-          </Alert>
-        )}
+        {usernameLoadError && <Alert severity="error" data-testid="profile-username-load-error">{usernameLoadError}</Alert>}
+        {usernameSuccess && <Alert severity="success" data-testid="profile-username-success-message">{usernameSuccess}</Alert>}
+        {usernameError && <Alert severity="error" data-testid="profile-username-error-message">{usernameError}</Alert>}
 
         <TextField
           data-testid="profile-username"
@@ -176,7 +142,6 @@ export default function ProfileSettingsPage() {
           value={username}
           onChange={(e) => setUsername(e.target.value)}
           fullWidth
-
           inputProps={{ maxLength: 50 }}
           disabled={isUsernameLoading}
         />
@@ -194,21 +159,17 @@ export default function ProfileSettingsPage() {
 
       <Divider sx={{ my: 5 }} />
 
+      <GravatarSection initialUseGravatar={useGravatar} isLoading={isUsernameLoading} />
+
+      <Divider sx={{ my: 5 }} />
+
       <Typography variant="h6" sx={{ fontWeight: 600, mb: 3 }}>
         {t("changePassword")}
       </Typography>
 
       <Box component="form" onSubmit={handlePasswordSubmit} noValidate sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-        {passwordSuccess && (
-          <Alert severity="success" data-testid="profile-success-message">
-            {passwordSuccess}
-          </Alert>
-        )}
-        {passwordError && (
-          <Alert severity="error" data-testid="profile-error-message">
-            {passwordError}
-          </Alert>
-        )}
+        {passwordSuccess && <Alert severity="success" data-testid="profile-success-message">{passwordSuccess}</Alert>}
+        {passwordError && <Alert severity="error" data-testid="profile-error-message">{passwordError}</Alert>}
 
         <TextField
           data-testid="profile-current-password"
@@ -258,15 +219,7 @@ export default function ProfileSettingsPage() {
         <>
           <Divider sx={{ my: 5 }} />
 
-          <Box
-            data-testid="danger-zone-section"
-            sx={{
-              border: "1px solid",
-              borderColor: "error.main",
-              borderRadius: 1,
-              p: 3,
-            }}
-          >
+          <Box data-testid="danger-zone-section" sx={{ border: "1px solid", borderColor: "error.main", borderRadius: 1, p: 3 }}>
             <Typography variant="h6" sx={{ fontWeight: 600, mb: 1, color: "error.main" }}>
               {t("dangerZone.title")}
             </Typography>
