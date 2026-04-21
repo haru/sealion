@@ -6,6 +6,7 @@ import Button from "@mui/material/Button";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Switch from "@mui/material/Switch";
 import Typography from "@mui/material/Typography";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useState, useEffect } from "react";
 
@@ -25,6 +26,7 @@ export interface GravatarSectionProps {
  */
 export default function GravatarSection({ initialUseGravatar, isLoading }: GravatarSectionProps) {
   const t = useTranslations("profileSettings");
+  const router = useRouter();
 
   const [useGravatar, setUseGravatar] = useState(initialUseGravatar);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -52,6 +54,7 @@ export default function GravatarSection({ initialUseGravatar, isLoading }: Grava
         setError(t("gravatar.saveError"));
       } else {
         setSuccess(t("gravatar.saveSuccess"));
+        router.refresh();
       }
     } catch {
       setError(t("gravatar.saveError"));
