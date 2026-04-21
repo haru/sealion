@@ -29,8 +29,9 @@ shell commands, and other important information, read the current plan
 <!-- SPECKIT END -->
 
 ## Active Technologies
-- TypeScript 5 / Node.js 20 LTS + Next.js 16 (App Router), MUI v7, Auth.js v5 (next-auth), Prisma 7 (039-gravatar-integration)
-- PostgreSQL 16 via Prisma 7 ORM — one new boolean column on `User` (039-gravatar-integration)
+- TypeScript 5 / Node.js 20 LTS + Next.js 16 (App Router), MUI v7, Auth.js v5 (next-auth), Prisma 7, next-intl 4, Zod, bcryptjs
+- PostgreSQL 16 via Prisma 7 ORM
 
 ## Recent Changes
-- 039-gravatar-integration: Added TypeScript 5 / Node.js 20 LTS + Next.js 16 (App Router), MUI v7, Auth.js v5 (next-auth), Prisma 7
+- 039-gravatar-integration: Added Gravatar support (`useGravatar` boolean column on `User`)
+- 040-unify-profile-save: Unified profile settings form (username, Gravatar, password in one PATCH request)

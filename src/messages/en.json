@@ -163,6 +163,8 @@
   },
   "profileSettings": {
     "title": "Profile Settings",
+    "saveSettings": "Save Settings",
+    "settingsSaved": "Settings saved successfully.",
     "changePassword": "Change Password",
     "currentPassword": "Current Password",
     "newPassword": "New Password",
@@ -328,6 +330,9 @@
     "INVALID_EMAIL": "Please enter a valid email address",
     "PASSWORD_TOO_SHORT": "Password must be at least 8 characters",
     "PASSWORD_REQUIRED": "Password is required when changing password",
+    "PASSWORD_CURRENT_REQUIRED": "Please enter your current password.",
+    "PASSWORD_INCORRECT": "Current password is incorrect.",
+    "USERNAME_TOO_LONG": "Username must be 50 characters or fewer.",
     "MISSING_USERNAME": "Display name is required",
     "INVALID_INPUT": "Invalid input",
     "PASSWORD_TOO_LONG": "Password must be 72 characters or fewer",
