@@ -36,9 +36,11 @@ export default function CreateUserDialog({ open, onClose, onCreated }: CreateUse
   const t = useTranslations("admin");
   const tCommon = useTranslations("common");
   const tErrors = useTranslations("errors");
+  const tProfile = useTranslations("profileSettings");
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [username, setUsername] = useState("");
   const [role, setRole] = useState<"USER" | "ADMIN">("USER");
   const [creating, setCreating] = useState(false);
@@ -54,6 +56,9 @@ export default function CreateUserDialog({ open, onClose, onCreated }: CreateUse
     if (!code) {
       return tCommon("error");
     }
+    if (code === "PASSWORD_MISMATCH") {
+      return tProfile("errorMismatch");
+    }
     try {
       return tErrors(code as Parameters<typeof tErrors>[0]);
     } catch {
@@ -65,6 +70,7 @@ export default function CreateUserDialog({ open, onClose, onCreated }: CreateUse
   function handleClose() {
     setEmail("");
     setPassword("");
+    setConfirmPassword("");
     setUsername("");
     setRole("USER");
     setFormError(null);
@@ -73,6 +79,11 @@ export default function CreateUserDialog({ open, onClose, onCreated }: CreateUse
 
   /** Submits the create-user form. */
   async function handleSubmit() {
+    if (!confirmPassword || password !== confirmPassword) {
+      setFormError(tProfile("errorMismatch"));
+      return;
+    }
+
     setCreating(true);
     setFormError(null);
 
@@ -80,7 +91,7 @@ export default function CreateUserDialog({ open, onClose, onCreated }: CreateUse
       const res = await fetch("/api/admin/users", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, role, username: username.trim() }),
+        body: JSON.stringify({ email, password, confirmPassword, role, username: username.trim() }),
       });
 
       const json = await res.json();
@@ -128,6 +139,14 @@ export default function CreateUserDialog({ open, onClose, onCreated }: CreateUse
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            fullWidth
+            required
+          />
+          <TextField
+            label={tProfile("confirmPassword")}
+            type="password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
             fullWidth
             required
           />

@@ -62,6 +62,9 @@ function validatePasswordChange(changePassword: unknown, password: unknown): Ret
   if (password.length < MIN_PASSWORD_LENGTH) {
     return fail("PASSWORD_TOO_SHORT", 400);
   }
+  if (password.length > MAX_PASSWORD_LENGTH) {
+    return fail("PASSWORD_TOO_LONG", 400);
+  }
   return null;
 }
 
