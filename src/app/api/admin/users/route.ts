@@ -51,6 +51,12 @@ export async function POST(req: NextRequest) {
   if (!email || !password) { return fail("MISSING_FIELDS", 400); }
   if (!username) { return fail("MISSING_USERNAME", 400); }
   if (password.length < 8) { return fail("PASSWORD_TOO_SHORT", 400); }
+  if (password.length > 72) { return fail("PASSWORD_TOO_LONG", 400); }
+
+  const confirmPassword = typeof body.confirmPassword === "string" ? body.confirmPassword : "";
+  if (!confirmPassword || password !== confirmPassword) {
+    return fail("PASSWORD_MISMATCH", 400);
+  }
 
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) { return fail("EMAIL_ALREADY_EXISTS", 409); }

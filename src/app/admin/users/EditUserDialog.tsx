@@ -61,11 +61,13 @@ export default function EditUserDialog({ user, isSelf, onClose, onSaved }: EditU
   const t = useTranslations("admin");
   const tCommon = useTranslations("common");
   const tErrors = useTranslations("errors");
+  const tProfile = useTranslations("profileSettings");
   const { addMessage } = useMessageQueue();
 
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [changePassword, setChangePassword] = useState(false);
   const [role, setRole] = useState<"USER" | "ADMIN">("USER");
   const [status, setStatus] = useState<"PENDING" | "ACTIVE" | "SUSPENDED">("ACTIVE");
@@ -81,6 +83,7 @@ export default function EditUserDialog({ user, isSelf, onClose, onSaved }: EditU
       setEmail(user.email);
       setUsername(user.username ?? "");
       setPassword("");
+      setConfirmPassword("");
       setChangePassword(false);
       setRole(user.role);
       setStatus(user.status);
@@ -115,6 +118,11 @@ export default function EditUserDialog({ user, isSelf, onClose, onSaved }: EditU
     }
 
     if (changePassword) {
+      if (!confirmPassword || password !== confirmPassword) {
+        setError(tProfile("errorMismatch"));
+        setSaving(false);
+        return;
+      }
       body.changePassword = true;
       body.password = password;
     }
@@ -171,21 +179,31 @@ export default function EditUserDialog({ user, isSelf, onClose, onSaved }: EditU
                 checked={changePassword}
                 onChange={(e) => {
                   setChangePassword(e.target.checked);
-                  if (!e.target.checked) { setPassword(""); }
+                  if (!e.target.checked) { setPassword(""); setConfirmPassword(""); }
                 }}
               />
             }
             label={t("fields.changePassword")}
           />
           {changePassword && (
-            <TextField
-              label={t("fields.password")}
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              fullWidth
-              required
-            />
+            <>
+              <TextField
+                label={t("fields.password")}
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                fullWidth
+                required
+              />
+              <TextField
+                label={tProfile("confirmPassword")}
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                fullWidth
+                required
+              />
+            </>
           )}
           <FormControl fullWidth>
             <InputLabel>{t("fields.role")}</InputLabel>
