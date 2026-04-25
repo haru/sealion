@@ -1,7 +1,8 @@
 "use client";
 
 import Avatar from "@mui/material/Avatar";
-import { useState } from "react";
+
+import GravatarImage from "@/components/ui/GravatarImage";
 
 /** Props for the {@link UserAvatar} component. */
 export interface UserAvatarProps {
@@ -29,8 +30,6 @@ function deriveInitial(email: string): string {
  * @returns MUI Avatar with Gravatar image or email initial.
  */
 export default function UserAvatar({ email, gravatarUrl, size = 32 }: UserAvatarProps) {
-  const [imgError, setImgError] = useState(false);
-
   const initial = deriveInitial(email);
 
   const avatarSx = {
@@ -41,21 +40,9 @@ export default function UserAvatar({ email, gravatarUrl, size = 32 }: UserAvatar
     fontWeight: 600,
   };
 
-  if (gravatarUrl && !imgError) {
-    return (
-      <Avatar
-        src={gravatarUrl}
-        sx={avatarSx}
-        imgProps={{ onError: () => setImgError(true) }}
-      >
-        {initial}
-      </Avatar>
-    );
+  if (gravatarUrl) {
+    return <GravatarImage key={gravatarUrl} src={gravatarUrl} initial={initial} sx={avatarSx} />;
   }
 
-  return (
-    <Avatar sx={avatarSx}>
-      {initial}
-    </Avatar>
-  );
+  return <Avatar sx={avatarSx}>{initial}</Avatar>;
 }
