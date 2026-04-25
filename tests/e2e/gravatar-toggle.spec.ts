@@ -49,7 +49,12 @@ test.describe("Gravatar toggle — US2: disable Gravatar", () => {
             error: null,
           }),
         });
-      } else if (route.request().method() === "PATCH") {
+      } else {
+        await route.continue();
+      }
+    });
+    await page.route("**/api/account/settings", async (route) => {
+      if (route.request().method() === "PATCH") {
         await route.fulfill({
           status: 200,
           contentType: "application/json",
@@ -63,7 +68,7 @@ test.describe("Gravatar toggle — US2: disable Gravatar", () => {
     await goToProfileSettings(page);
 
     // Toggle should be ON (Gravatar enabled)
-    const toggle = page.getByTestId("profile-gravatar-toggle");
+    const toggle = page.getByRole("switch");
     await expect(toggle).toBeChecked();
 
     // Turn it OFF
@@ -71,8 +76,8 @@ test.describe("Gravatar toggle — US2: disable Gravatar", () => {
     await expect(toggle).not.toBeChecked();
 
     // Save
-    await page.getByTestId("profile-gravatar-save-button").click();
-    await expect(page.getByTestId("profile-gravatar-success-message")).toBeVisible();
+    await page.getByTestId("profile-save-button").click();
+    await expect(page.getByTestId("profile-save-success")).toBeVisible();
   });
 
   test("after disabling Gravatar, page reload shows toggle OFF", async ({ page }) => {
@@ -94,7 +99,7 @@ test.describe("Gravatar toggle — US2: disable Gravatar", () => {
 
     await goToProfileSettings(page);
 
-    const toggle = page.getByTestId("profile-gravatar-toggle");
+    const toggle = page.getByRole("switch");
     await expect(toggle).not.toBeChecked();
   });
 });
@@ -124,7 +129,12 @@ test.describe("Gravatar toggle — US1: enable Gravatar", () => {
             error: null,
           }),
         });
-      } else if (route.request().method() === "PATCH") {
+      } else {
+        await route.continue();
+      }
+    });
+    await page.route("**/api/account/settings", async (route) => {
+      if (route.request().method() === "PATCH") {
         await route.fulfill({
           status: 200,
           contentType: "application/json",
@@ -137,14 +147,14 @@ test.describe("Gravatar toggle — US1: enable Gravatar", () => {
 
     await goToProfileSettings(page);
 
-    const toggle = page.getByTestId("profile-gravatar-toggle");
+    const toggle = page.getByRole("switch");
     await expect(toggle).not.toBeChecked();
 
     await toggle.click();
     await expect(toggle).toBeChecked();
 
-    await page.getByTestId("profile-gravatar-save-button").click();
-    await expect(page.getByTestId("profile-gravatar-success-message")).toBeVisible();
+    await page.getByTestId("profile-save-button").click();
+    await expect(page.getByTestId("profile-save-success")).toBeVisible();
   });
 });
 

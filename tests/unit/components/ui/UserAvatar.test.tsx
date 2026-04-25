@@ -47,6 +47,23 @@ describe("UserAvatar", () => {
       expect(screen.getByText("?")).toBeInTheDocument();
     });
   });
+
+  describe("when gravatarUrl changes after error", () => {
+    test("resets imgError and retries loading new gravatarUrl", () => {
+      const { rerender } = render(
+        <UserAvatar email="alice@example.com" gravatarUrl={GRAVATAR_URL} size={32} />
+      );
+      const img = screen.getByRole("img");
+      fireEvent.error(img);
+      expect(screen.queryByRole("img")).toBeNull();
+
+      const newUrl = "https://www.gravatar.com/avatar/abcdef?s=32&d=404";
+      rerender(<UserAvatar email="alice@example.com" gravatarUrl={newUrl} size={32} />);
+      const newImg = screen.getByRole("img");
+      expect(newImg).toBeInTheDocument();
+      expect((newImg as HTMLImageElement).src).toContain("abcdef");
+    });
+  });
 });
 
 // T019: US3 — error-state test (gravatarUrl provided, onError fires → shows initial)
