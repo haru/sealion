@@ -141,12 +141,21 @@ describe("POST /api/admin/users", () => {
     expect(json.error).toBe("MISSING_USERNAME");
   });
 
-  it("returns 400 PASSWORD_MISMATCH when password is too short and confirm is provided", async () => {
+  it("returns 400 PASSWORD_TOO_SHORT when password is too short and confirm is provided", async () => {
     mockAuth.mockResolvedValue(ADMIN_SESSION);
     const res = await POST(makeRequest("POST", { email: "new@ex.com", password: "short", confirmPassword: "short", username: "John" }));
     expect(res.status).toBe(400);
     const json = await res.json();
     expect(json.error).toBe("PASSWORD_TOO_SHORT");
+  });
+
+  it("returns 400 PASSWORD_TOO_LONG when password exceeds 72 characters", async () => {
+    mockAuth.mockResolvedValue(ADMIN_SESSION);
+    const longPassword = "a".repeat(73);
+    const res = await POST(makeRequest("POST", { email: "new@ex.com", password: longPassword, confirmPassword: longPassword, username: "John" }));
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.error).toBe("PASSWORD_TOO_LONG");
   });
 
   it("returns 409 when email already exists", async () => {

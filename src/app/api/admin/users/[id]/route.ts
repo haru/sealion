@@ -75,18 +75,10 @@ function validatePasswordChange(changePassword: unknown, password: unknown): Ret
  * @returns An error response if validation fails, or `null` if validation passes.
  */
 function validatePatchFields(body: PatchBody): ReturnType<typeof fail> | null {
-  const { status, password, changePassword } = body;
+  const { status } = body;
 
   if (status !== undefined && !VALID_STATUSES.has(status as UserStatus)) {
     return fail("INVALID_INPUT", 400);
-  }
-
-  if (
-    changePassword === true &&
-    typeof password === "string" &&
-    password.length > MAX_PASSWORD_LENGTH
-  ) {
-    return fail("PASSWORD_TOO_LONG", 400);
   }
 
   return null;
