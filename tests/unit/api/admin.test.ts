@@ -116,19 +116,52 @@ describe("POST /api/admin/users", () => {
     expect(json.error).toBe("PASSWORD_TOO_SHORT");
   });
 
+  it("returns 400 PASSWORD_MISMATCH when confirmPassword is missing", async () => {
+    mockAuth.mockResolvedValue(ADMIN_SESSION);
+    const res = await POST(makeRequest("POST", { email: "new@ex.com", password: "password123", username: "John" }));
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.error).toBe("PASSWORD_MISMATCH");
+  });
+
+  it("returns 400 PASSWORD_MISMATCH when passwords do not match", async () => {
+    mockAuth.mockResolvedValue(ADMIN_SESSION);
+    const res = await POST(makeRequest("POST", { email: "new@ex.com", password: "password123", confirmPassword: "different", username: "John" }));
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.error).toBe("PASSWORD_MISMATCH");
+  });
+
   it("returns 400 MISSING_USERNAME when username is not provided", async () => {
     mockAuth.mockResolvedValue(ADMIN_SESSION);
-    const res = await POST(makeRequest("POST", { email: "new@ex.com", password: "password123" }));
+    const res = await POST(makeRequest("POST", { email: "new@ex.com", password: "password123", confirmPassword: "password123" }));
     const json = await res.json();
 
     expect(res.status).toBe(400);
     expect(json.error).toBe("MISSING_USERNAME");
   });
 
+  it("returns 400 PASSWORD_TOO_SHORT when password is too short and confirm is provided", async () => {
+    mockAuth.mockResolvedValue(ADMIN_SESSION);
+    const res = await POST(makeRequest("POST", { email: "new@ex.com", password: "short", confirmPassword: "short", username: "John" }));
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.error).toBe("PASSWORD_TOO_SHORT");
+  });
+
+  it("returns 400 PASSWORD_TOO_LONG when password exceeds 72 characters", async () => {
+    mockAuth.mockResolvedValue(ADMIN_SESSION);
+    const longPassword = "a".repeat(73);
+    const res = await POST(makeRequest("POST", { email: "new@ex.com", password: longPassword, confirmPassword: longPassword, username: "John" }));
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.error).toBe("PASSWORD_TOO_LONG");
+  });
+
   it("returns 409 when email already exists", async () => {
     mockAuth.mockResolvedValue(ADMIN_SESSION);
     mockFindUnique.mockResolvedValue({ id: "existing", email: "new@ex.com" });
-    const res = await POST(makeRequest("POST", { email: "new@ex.com", password: "password123", username: "John" }));
+    const res = await POST(makeRequest("POST", { email: "new@ex.com", password: "password123", confirmPassword: "password123", username: "John" }));
     expect(res.status).toBe(409);
     const json = await res.json();
     expect(json.error).toBe("EMAIL_ALREADY_EXISTS");
@@ -139,7 +172,7 @@ describe("POST /api/admin/users", () => {
     mockFindUnique.mockResolvedValue(null);
     mockCreate.mockResolvedValue({ id: "new-1", email: "new@ex.com", role: "USER", createdAt: new Date() });
 
-    const res = await POST(makeRequest("POST", { email: "new@ex.com", password: "password123", username: "John" }));
+    const res = await POST(makeRequest("POST", { email: "new@ex.com", password: "password123", confirmPassword: "password123", username: "John" }));
     expect(res.status).toBe(201);
     const json = await res.json();
     expect(json.data.email).toBe("new@ex.com");
@@ -153,7 +186,7 @@ describe("POST /api/admin/users", () => {
     mockFindUnique.mockResolvedValue(null);
     mockCreate.mockResolvedValue({ id: "new-4", email: "new@ex.com", role: "USER", createdAt: new Date() });
 
-    const res = await POST(makeRequest("POST", { email: "new@ex.com", password: "password123", username: "John Doe" }));
+    const res = await POST(makeRequest("POST", { email: "new@ex.com", password: "password123", confirmPassword: "password123", username: "John Doe" }));
     expect(res.status).toBe(201);
     expect(mockCreate).toHaveBeenCalledWith(
       expect.objectContaining({ data: expect.objectContaining({ username: "John Doe" }) })
@@ -165,7 +198,7 @@ describe("POST /api/admin/users", () => {
     mockFindUnique.mockResolvedValue(null);
     mockCreate.mockResolvedValue({ id: "new-2", email: "admin2@ex.com", role: "ADMIN", createdAt: new Date() });
 
-    const res = await POST(makeRequest("POST", { email: "admin2@ex.com", password: "password123", role: "ADMIN", username: "Admin2" }));
+    const res = await POST(makeRequest("POST", { email: "admin2@ex.com", password: "password123", confirmPassword: "password123", role: "ADMIN", username: "Admin2" }));
     expect(res.status).toBe(201);
     expect(mockCreate).toHaveBeenCalledWith(
       expect.objectContaining({ data: expect.objectContaining({ role: "ADMIN" }) })
@@ -177,7 +210,7 @@ describe("POST /api/admin/users", () => {
     mockFindUnique.mockResolvedValue(null);
     mockCreate.mockResolvedValue({ id: "new-3", email: "new@ex.com", role: "USER", createdAt: new Date() });
 
-    const res = await POST(makeRequest("POST", { email: "new@ex.com", password: "password123", role: "SUPERADMIN", username: "John" }));
+    const res = await POST(makeRequest("POST", { email: "new@ex.com", password: "password123", confirmPassword: "password123", role: "SUPERADMIN", username: "John" }));
     expect(res.status).toBe(201);
     expect(mockCreate).toHaveBeenCalledWith(
       expect.objectContaining({ data: expect.objectContaining({ role: "USER" }) })

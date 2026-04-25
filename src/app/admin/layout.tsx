@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 
 import DashboardShell from "@/components/layout/DashboardShell";
 import { auth } from "@/lib/auth/auth";
+import { getGravatarUrl } from "@/lib/gravatar/gravatar";
 
 import { AdminSessionProvider } from "./AdminSessionProvider";
 
@@ -33,8 +34,11 @@ export default async function AdminLayout({
     );
   }
 
+  const email = session.user.email ?? "";
+  const gravatarUrl = session.user.useGravatar ? getGravatarUrl(email, 32) : undefined;
+
   return (
-    <DashboardShell email={session.user.email ?? ""} role={session.user.role ?? "USER"}>
+    <DashboardShell email={email} role={session.user.role ?? "USER"} gravatarUrl={gravatarUrl}>
       <AdminSessionProvider userId={session.user.id}>{children}</AdminSessionProvider>
     </DashboardShell>
   );

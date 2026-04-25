@@ -195,6 +195,26 @@ describe("PATCH /api/account/profile — input validation (no DB required)", () 
     expect(json.error).toBe("INVALID_INPUT");
   });
 
+  test("returns 400 when both username and useGravatar are present in the same request", async () => {
+    jest.resetModules();
+    jest.doMock("@/lib/auth/auth", () => ({
+      auth: jest.fn().mockResolvedValue({
+        user: { id: TEST_USER_ID, email: TEST_USER_EMAIL, role: "USER" },
+      }),
+    }));
+    jest.doMock("@/lib/db/db", () => ({
+      prisma: {
+        user: { findUnique: jest.fn(), update: jest.fn() },
+      },
+    }));
+    const { PATCH } = await import("@/app/api/account/profile/route");
+    const req = makePatchRequest({ username: "newname", useGravatar: true });
+    const res = await PATCH(req);
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.error).toBe("INVALID_INPUT");
+  });
+
   test("returns 200 when username is set to null (clear)", async () => {
     jest.resetModules();
     jest.doMock("@/lib/auth/auth", () => ({
@@ -525,5 +545,171 @@ describe("PATCH /api/account/profile — with real database", () => {
 
     const user = await prisma.user.findUnique({ where: { id: TEST_USER_ID } });
     expect(user?.username).toBeNull();
+  });
+});
+
+describe("GET /api/account/profile — useGravatar field (no DB required)", () => {
+  test("returns useGravatar: false by default", async () => {
+    jest.resetModules();
+    jest.doMock("@/lib/auth/auth", () => ({
+      auth: jest.fn().mockResolvedValue({
+        user: { id: TEST_USER_ID, email: TEST_USER_EMAIL, role: "USER" },
+      }),
+    }));
+    jest.doMock("@/lib/db/db", () => ({
+      prisma: {
+        user: {
+          findUnique: jest.fn().mockResolvedValue({
+            id: TEST_USER_ID,
+            email: TEST_USER_EMAIL,
+            username: null,
+            role: "USER",
+            useGravatar: false,
+          }),
+          count: jest.fn().mockResolvedValue(0),
+        },
+      },
+    }));
+    const { GET } = await import("@/app/api/account/profile/route");
+    const res = await GET();
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.data.useGravatar).toBe(false);
+  });
+
+  test("returns useGravatar: true when user has it enabled", async () => {
+    jest.resetModules();
+    jest.doMock("@/lib/auth/auth", () => ({
+      auth: jest.fn().mockResolvedValue({
+        user: { id: TEST_USER_ID, email: TEST_USER_EMAIL, role: "USER" },
+      }),
+    }));
+    jest.doMock("@/lib/db/db", () => ({
+      prisma: {
+        user: {
+          findUnique: jest.fn().mockResolvedValue({
+            id: TEST_USER_ID,
+            email: TEST_USER_EMAIL,
+            username: null,
+            role: "USER",
+            useGravatar: true,
+          }),
+          count: jest.fn().mockResolvedValue(0),
+        },
+      },
+    }));
+    const { GET } = await import("@/app/api/account/profile/route");
+    const res = await GET();
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.data.useGravatar).toBe(true);
+  });
+});
+
+describe("PATCH /api/account/profile — useGravatar validation (no DB required)", () => {
+  test("returns 200 when useGravatar is true", async () => {
+    jest.resetModules();
+    jest.doMock("@/lib/auth/auth", () => ({
+      auth: jest.fn().mockResolvedValue({
+        user: { id: TEST_USER_ID, email: TEST_USER_EMAIL, role: "USER" },
+      }),
+    }));
+    jest.doMock("@/lib/db/db", () => ({
+      prisma: {
+        user: {
+          findUnique: jest.fn().mockResolvedValue({ id: TEST_USER_ID, email: TEST_USER_EMAIL }),
+          update: jest.fn().mockResolvedValue({ id: TEST_USER_ID }),
+        },
+      },
+    }));
+    const { PATCH } = await import("@/app/api/account/profile/route");
+    const req = makePatchRequest({ useGravatar: true });
+    const res = await PATCH(req);
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.error).toBeNull();
+  });
+
+  test("returns 200 when useGravatar is false", async () => {
+    jest.resetModules();
+    jest.doMock("@/lib/auth/auth", () => ({
+      auth: jest.fn().mockResolvedValue({
+        user: { id: TEST_USER_ID, email: TEST_USER_EMAIL, role: "USER" },
+      }),
+    }));
+    jest.doMock("@/lib/db/db", () => ({
+      prisma: {
+        user: {
+          findUnique: jest.fn().mockResolvedValue({ id: TEST_USER_ID, email: TEST_USER_EMAIL }),
+          update: jest.fn().mockResolvedValue({ id: TEST_USER_ID }),
+        },
+      },
+    }));
+    const { PATCH } = await import("@/app/api/account/profile/route");
+    const req = makePatchRequest({ useGravatar: false });
+    const res = await PATCH(req);
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.error).toBeNull();
+  });
+
+  test("returns 400 when useGravatar is not a boolean", async () => {
+    jest.resetModules();
+    jest.doMock("@/lib/auth/auth", () => ({
+      auth: jest.fn().mockResolvedValue({
+        user: { id: TEST_USER_ID, email: TEST_USER_EMAIL, role: "USER" },
+      }),
+    }));
+    jest.doMock("@/lib/db/db", () => ({
+      prisma: {
+        user: { findUnique: jest.fn(), update: jest.fn() },
+      },
+    }));
+    const { PATCH } = await import("@/app/api/account/profile/route");
+    const req = makePatchRequest({ useGravatar: "yes" });
+    const res = await PATCH(req);
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.error).toBe("INVALID_INPUT");
+  });
+});
+
+describe("PATCH /api/account/profile — useGravatar with real database", () => {
+  const dbTest = dbAvailable ? test : test.skip;
+
+  dbTest("persists useGravatar: true to database", async () => {
+    const { PATCH } = await importRoute();
+    const req = makePatchRequest({ useGravatar: true });
+    const res = await PATCH(req);
+    expect(res.status).toBe(200);
+
+    const user = await prisma.user.findUnique({ where: { id: TEST_USER_ID } });
+    expect(user?.useGravatar).toBe(true);
+  });
+
+  dbTest("GET returns useGravatar: true after enabling", async () => {
+    const { GET } = await importRoute();
+    const res = await GET();
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.data.useGravatar).toBe(true);
+  });
+
+  dbTest("persists useGravatar: false to database (disable)", async () => {
+    const { PATCH } = await importRoute();
+    const req = makePatchRequest({ useGravatar: false });
+    const res = await PATCH(req);
+    expect(res.status).toBe(200);
+
+    const user = await prisma.user.findUnique({ where: { id: TEST_USER_ID } });
+    expect(user?.useGravatar).toBe(false);
+  });
+
+  dbTest("GET returns useGravatar: false after disabling (T018)", async () => {
+    const { GET } = await importRoute();
+    const res = await GET();
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.data.useGravatar).toBe(false);
   });
 });

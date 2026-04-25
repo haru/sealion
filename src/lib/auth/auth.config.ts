@@ -41,6 +41,7 @@ export const authConfig: NextAuthConfig = {
       if (token) {
         session.user.id = (token.id as string | undefined) ?? "";
         session.user.role = (token.role as string | undefined) ?? "USER";
+        session.user.useGravatar = (token.useGravatar as boolean | undefined) ?? false;
       }
       return session;
     },

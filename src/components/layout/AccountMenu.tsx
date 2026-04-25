@@ -3,7 +3,6 @@
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import LogoutIcon from "@mui/icons-material/Logout";
 import SettingsIcon from "@mui/icons-material/Settings";
-import Avatar from "@mui/material/Avatar";
 import Box from "@mui/material/Box";
 import Divider from "@mui/material/Divider";
 import IconButton from "@mui/material/IconButton";
@@ -16,33 +15,34 @@ import { signOut } from "next-auth/react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 
+import UserAvatar from "@/components/ui/UserAvatar";
+
 /** Props for the {@link AccountMenu} component. */
 export interface AccountMenuProps {
   /** Authenticated user's email address, used to derive initials and display in the dropdown. */
   email: string;
+  /** Pre-computed Gravatar URL. When provided, displays the Gravatar image. */
+  gravatarUrl?: string;
 }
 
 /**
  * Account icon button in the titlebar that opens a dropdown menu.
  *
- * Displays the user's initials in a circular avatar. On click, opens a MUI Menu
- * containing:
+ * Displays the user's avatar (Gravatar or email initial) in a circular avatar. On click, opens
+ * a MUI Menu containing:
  *  - the user's email address (non-interactive display)
  *  - a link to Profile Settings (`/settings/profile`)
  *  - a link to Issue Management Settings (`/settings/providers`)
  *  - a Log Out button
  *
- * @param props - Component props containing the authenticated user's email.
+ * @param props - Component props containing the authenticated user's email and optional Gravatar URL.
  * @returns The account icon button and its dropdown menu.
  */
-export default function AccountMenu({ email }: AccountMenuProps) {
+export default function AccountMenu({ email, gravatarUrl }: AccountMenuProps) {
   const t = useTranslations("accountMenu");
   const tAuth = useTranslations("auth");
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
-
-  const localPart = email ? email.split("@")[0] : "";
-  const initial = localPart.length > 0 ? localPart[0].toUpperCase() : "?";
 
   const handleOpen = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -69,17 +69,7 @@ export default function AccountMenu({ email }: AccountMenuProps) {
         size="small"
         sx={{ ml: 1 }}
       >
-        <Avatar
-          sx={{
-            width: 32,
-            height: 32,
-            bgcolor: "primary.main",
-            fontSize: "0.8rem",
-            fontWeight: 600,
-          }}
-        >
-          {initial}
-        </Avatar>
+        <UserAvatar email={email} gravatarUrl={gravatarUrl} size={32} />
       </IconButton>
 
       <Menu
