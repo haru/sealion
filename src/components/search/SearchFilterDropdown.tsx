@@ -1,6 +1,6 @@
 "use client";
 
-import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
+import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutlined";
 import EventIcon from "@mui/icons-material/Event";
 import FolderIcon from "@mui/icons-material/Folder";
 import PersonIcon from "@mui/icons-material/Person";
