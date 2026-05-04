@@ -1,6 +1,6 @@
 "use client";
 
-import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
+import ErrorOutlineIcon from "@mui/icons-material/ErrorOutlined";
 import { Box, Button, Typography } from "@mui/material";
 import { useTranslations } from "next-intl";
 

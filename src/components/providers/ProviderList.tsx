@@ -71,7 +71,7 @@ export default function ProviderList({ providers, onDelete, onUpdated }: Provide
               <ProviderIcon iconUrl={provider.iconUrl} label={provider.type} />
             </Box>
             <Box sx={{ flexGrow: 1, overflow: "hidden" }}>
-              <Typography variant="subtitle1" fontWeight="medium" noWrap>
+              <Typography variant="subtitle1" noWrap sx={{ fontWeight: "medium" }}>
                 {provider.displayName}
               </Typography>
               <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 0.5 }}>

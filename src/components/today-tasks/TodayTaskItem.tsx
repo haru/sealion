@@ -2,7 +2,7 @@
 
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import RemoveCircleOutlineIcon from "@mui/icons-material/RemoveCircleOutline";
+import RemoveCircleOutlineIcon from "@mui/icons-material/RemoveCircleOutlined";
 import { Tooltip } from "@mui/material";
 import type { SxProps, Theme } from "@mui/material/styles";
 import { useTranslations } from "next-intl";

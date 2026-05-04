@@ -181,7 +181,7 @@ export default function ProjectList({ refreshSignal }: ProjectListProps) {
                 }
                 disabled={isToggling}
                 size="small"
-                inputProps={{ "aria-label": t("includeUnassigned") }}
+                slotProps={{ input: { "aria-label": t("includeUnassigned") } }}
               />
               {isToggling && <CircularProgress size={14} />}
             </Box>
