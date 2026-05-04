@@ -53,7 +53,7 @@ export default function SetupPage() {
 
   return (
     <AuthCard>
-      <Typography variant="h5" component="h2" fontWeight="700" textAlign="center" gutterBottom sx={{ mb: 2 }}>
+      <Typography variant="h5" component="h2" gutterBottom sx={{ mb: 2, fontWeight: 700, textAlign: "center" }}>
         {t("setupTitle")}
       </Typography>
 
@@ -95,7 +95,7 @@ export default function SetupPage() {
           onChange={(e) => setPassword(e.target.value)}
           required
           fullWidth
-          inputProps={{ minLength: 8 }}
+          slotProps={{ htmlInput: { minLength: 8 } }}
           autoComplete="new-password"
           variant="outlined"
         />

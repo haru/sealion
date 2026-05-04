@@ -6,7 +6,7 @@ import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import PeopleIcon from "@mui/icons-material/People";
 import SecurityOutlinedIcon from "@mui/icons-material/SecurityOutlined";
-import { Collapse, List, ListItemButton, ListItemIcon, ListItemText } from "@mui/material";
+import { Collapse, List, ListItemButton, ListItemIcon, ListItemText, Typography } from "@mui/material";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -66,8 +66,7 @@ export default function AdminNavSection({ variant, onClose }: AdminNavSectionPro
           <AdminPanelSettingsIcon sx={{ fontSize: 18 }} />
         </ListItemIcon>
         <ListItemText
-          primary={t("systemAdmin")}
-          primaryTypographyProps={{ fontSize: "0.85rem", fontWeight: 500 }}
+          primary={<Typography sx={{ fontSize: "0.85rem", fontWeight: 500 }}>{t("systemAdmin")}</Typography>}
         />
         {adminOpen ? <ExpandLessIcon sx={{ fontSize: 16 }} /> : <ExpandMoreIcon sx={{ fontSize: 16 }} />}
       </ListItemButton>
@@ -85,8 +84,7 @@ export default function AdminNavSection({ variant, onClose }: AdminNavSectionPro
               <PeopleIcon sx={{ fontSize: 18 }} />
             </ListItemIcon>
             <ListItemText
-              primary={t("userManagement")}
-              primaryTypographyProps={{ fontSize: "0.85rem", fontWeight: pathname === "/admin/users" ? 600 : 500 }}
+              primary={<Typography sx={{ fontSize: "0.85rem", fontWeight: pathname === "/admin/users" ? 600 : 500 }}>{t("userManagement")}</Typography>}
             />
           </ListItemButton>
 
@@ -101,8 +99,7 @@ export default function AdminNavSection({ variant, onClose }: AdminNavSectionPro
               <SecurityOutlinedIcon sx={{ fontSize: 18 }} />
             </ListItemIcon>
             <ListItemText
-              primary={t("authSettings")}
-              primaryTypographyProps={{ fontSize: "0.85rem", fontWeight: pathname === "/admin/auth-settings" ? 600 : 500 }}
+              primary={<Typography sx={{ fontSize: "0.85rem", fontWeight: pathname === "/admin/auth-settings" ? 600 : 500 }}>{t("authSettings")}</Typography>}
             />
           </ListItemButton>
 
@@ -117,8 +114,7 @@ export default function AdminNavSection({ variant, onClose }: AdminNavSectionPro
               <EmailOutlinedIcon sx={{ fontSize: 18 }} />
             </ListItemIcon>
             <ListItemText
-              primary={t("smtpSettings")}
-              primaryTypographyProps={{ fontSize: "0.85rem", fontWeight: pathname === "/admin/smtp-settings" ? 600 : 500 }}
+              primary={<Typography sx={{ fontSize: "0.85rem", fontWeight: pathname === "/admin/smtp-settings" ? 600 : 500 }}>{t("smtpSettings")}</Typography>}
             />
           </ListItemButton>
         </List>
