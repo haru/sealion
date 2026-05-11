@@ -82,8 +82,20 @@ export default function AdminUsersPage() {
   }, [addMessage, tCommon]);
 
   useEffect(() => {
-    void fetchUsers();
-  }, [fetchUsers]);
+    let active = true;
+    fetch("/api/admin/users")
+      .then((res) => (res.ok ? res.json() : Promise.reject()))
+      .then((json) => {
+        if (active) { setUsers(json.data); }
+      })
+      .catch(() => {
+        if (active) { addMessage("error", tCommon("error")); }
+      })
+      .finally(() => {
+        if (active) { setLoading(false); }
+      });
+    return () => { active = false; };
+  }, [addMessage, tCommon]);
 
   /**
    * Translates an API error code into a user-facing string.
@@ -121,6 +133,7 @@ export default function AdminUsersPage() {
       if (res.ok) {
         addMessage("information", t("deleteSuccess"));
         setDeleteTarget(null);
+        setLoading(true);
         await fetchUsers();
       } else {
         const code =
@@ -249,6 +262,7 @@ export default function AdminUsersPage() {
         onClose={() => setCreateOpen(false)}
         onCreated={async () => {
           addMessage("information", t("createSuccess"));
+          setLoading(true);
           await fetchUsers();
         }}
       />
@@ -257,7 +271,7 @@ export default function AdminUsersPage() {
         user={editTarget}
         isSelf={editTarget?.id === currentUserId}
         onClose={() => setEditTarget(null)}
-        onSaved={fetchUsers}
+        onSaved={() => { setLoading(true); void fetchUsers(); }}
       />
 
       <Dialog
