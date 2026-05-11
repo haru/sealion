@@ -66,7 +66,6 @@ export default function AdminUsersPage() {
   usePageHeader(t("userManagement"), undefined, PeopleIcon, undefined, tSidebar("systemAdmin"), AdminPanelSettingsIcon);
 
   const fetchUsers = useCallback(async () => {
-    setLoading(true);
     try {
       const res = await fetch("/api/admin/users");
       if (res.ok) {
@@ -82,20 +81,9 @@ export default function AdminUsersPage() {
   }, [addMessage, tCommon]);
 
   useEffect(() => {
-    let active = true;
-    fetch("/api/admin/users")
-      .then((res) => (res.ok ? res.json() : Promise.reject()))
-      .then((json) => {
-        if (active) { setUsers(json.data); }
-      })
-      .catch(() => {
-        if (active) { addMessage("error", tCommon("error")); }
-      })
-      .finally(() => {
-        if (active) { setLoading(false); }
-      });
-    return () => { active = false; };
-  }, [addMessage, tCommon]);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- data-fetching pattern: all setState calls are after await
+    void fetchUsers();
+  }, [fetchUsers]);
 
   /**
    * Translates an API error code into a user-facing string.

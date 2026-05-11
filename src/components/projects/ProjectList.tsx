@@ -56,21 +56,26 @@ export default function ProjectList({ refreshSignal }: ProjectListProps) {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
 
+  const fetchProjects = useCallback(async () => {
+    try {
+      const res = await fetch("/api/projects");
+      if (!res.ok) {
+        throw new Error();
+      }
+      const json = await res.json();
+      setError(null);
+      setProjects(json.data);
+    } catch {
+      setError(tCommon("error"));
+    } finally {
+      setLoading(false);
+    }
+  }, [tCommon]);
+
   useEffect(() => {
-    let active = true;
-    fetch("/api/projects")
-      .then((res) => (res.ok ? res.json() : Promise.reject()))
-      .then((json) => {
-        if (active) { setProjects(json.data); }
-      })
-      .catch(() => {
-        if (active) { setError(tCommon("error")); }
-      })
-      .finally(() => {
-        if (active) { setLoading(false); }
-      });
-    return () => { active = false; };
-  }, [tCommon, refreshSignal]);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- data-fetching pattern: all setState calls are after await
+    void fetchProjects();
+  }, [fetchProjects, refreshSignal]);
 
   const handleToggleUnassigned = useCallback(
     async (projectId: string, currentValue: boolean) => {
