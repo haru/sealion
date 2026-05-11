@@ -29,18 +29,21 @@
     "axios": "^1.15.2",
     "bcryptjs": "^3.0.3",
     "hpagent": "^1.2.0",
-    "next": "16.2.2",
+    "next": "^16.2.6",
     "next-auth": "^5.0.0-beta.31",
-    "next-intl": "^4.9.0",
-    "nodemailer": "^7.0.13",
+    "next-intl": "^4.11.2",
+    "nodemailer": "^8.0.5",
     "pg": "^8.20.0",
     "react": "19.2.6",
     "react-dom": "19.2.6"
   },
   "overrides": {
-    "@hono/node-server": ">=1.19.10",
-    "hono": ">=4.12.7",
-    "lodash": ">=4.17.23"
+    "@hono/node-server": ">=1.19.13",
+    "defu": ">=6.1.5",
+    "fast-uri": ">=3.1.2",
+    "hono": ">=4.12.18",
+    "lodash": ">=4.17.23",
+    "postcss": ">=8.5.10"
   },
   "devDependencies": {
     "@playwright/test": "^1.59.1",
