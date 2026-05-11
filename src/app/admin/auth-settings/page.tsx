@@ -133,7 +133,7 @@ export default function AuthSettingsPage() {
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" pt={8}>
+      <Box sx={{ display: "flex", justifyContent: "center", pt: 8 }}>
         <CircularProgress />
       </Box>
     );
@@ -154,10 +154,10 @@ export default function AuthSettingsPage() {
                     setAllowUserSignup(e.target.checked);
                     if (!e.target.checked) { setRequireEmailVerification(false); }
                   }}
-                  inputProps={{ "aria-label": t("allowUserSignup") }}
+                  slotProps={{ input: { "aria-label": t("allowUserSignup") } }}
                 />
               }
-              label={<Typography fontWeight={500}>{t("allowUserSignup")}</Typography>}
+              label={<Typography sx={{ fontWeight: 500 }}>{t("allowUserSignup")}</Typography>}
             />
             <FormHelperText sx={{ ml: 0 }}>{t("allowUserSignupHint")}</FormHelperText>
           </Stack>
@@ -170,10 +170,10 @@ export default function AuthSettingsPage() {
                   <Switch
                     checked={requireEmailVerification}
                     onChange={(e) => setRequireEmailVerification(e.target.checked)}
-                    inputProps={{ "aria-label": t("requireEmailVerification") }}
+                    slotProps={{ input: { "aria-label": t("requireEmailVerification") } }}
                   />
                 }
-                label={<Typography fontWeight={500}>{t("requireEmailVerification")}</Typography>}
+                label={<Typography sx={{ fontWeight: 500 }}>{t("requireEmailVerification")}</Typography>}
               />
               <FormHelperText sx={{ ml: 0 }}>{t("requireEmailVerificationHint")}</FormHelperText>
             </Stack>

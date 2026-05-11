@@ -154,7 +154,7 @@ export default function SmtpSettingsPage() {
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" pt={8}>
+      <Box sx={{ display: "flex", justifyContent: "center", pt: 8 }}>
         <CircularProgress />
       </Box>
     );
@@ -182,7 +182,7 @@ export default function SmtpSettingsPage() {
             onChange={(e) => setPort(Number(e.target.value))}
             required
             fullWidth
-            inputProps={{ min: 1, max: 65535 }}
+            slotProps={{ htmlInput: { min: 1, max: 65535 } }}
           />
 
           <TextField
@@ -208,10 +208,10 @@ export default function SmtpSettingsPage() {
               <Switch
                 checked={useTls}
                 onChange={(e) => setUseTls(e.target.checked)}
-                inputProps={{ "aria-label": t("useTls") }}
+                slotProps={{ input: { "aria-label": t("useTls") } }}
               />
             }
-            label={<Typography fontWeight={500}>{t("useTls")}</Typography>}
+            label={<Typography sx={{ fontWeight: 500 }}>{t("useTls")}</Typography>}
           />
 
           <FormControlLabel
@@ -219,10 +219,10 @@ export default function SmtpSettingsPage() {
               <Switch
                 checked={requireAuth}
                 onChange={(e) => setRequireAuth(e.target.checked)}
-                inputProps={{ "aria-label": t("requireAuth") }}
+                slotProps={{ input: { "aria-label": t("requireAuth") } }}
               />
             }
-            label={<Typography fontWeight={500}>{t("requireAuth")}</Typography>}
+            label={<Typography sx={{ fontWeight: 500 }}>{t("requireAuth")}</Typography>}
           />
 
           <Collapse in={requireAuth} unmountOnExit>

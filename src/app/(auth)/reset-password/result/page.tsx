@@ -37,7 +37,7 @@ export default function ResetPasswordResultPage() {
 
   return (
     <AuthCard>
-      <Typography variant="h5" component="h2" fontWeight="700" textAlign="center" gutterBottom sx={{ mb: 3 }}>
+      <Typography variant="h5" component="h2" gutterBottom sx={{ mb: 3, fontWeight: 700, textAlign: "center" }}>
         {isSuccess ? t("resultSuccessTitle") : t("confirmTitle")}
       </Typography>
 

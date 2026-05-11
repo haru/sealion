@@ -122,8 +122,7 @@ export default function Sidebar({ open, onClose, variant, isAdmin }: SidebarProp
             <FormatListBulletedIcon sx={{ fontSize: 18 }} />
           </ListItemIcon>
           <ListItemText
-            primary={t("todo")}
-            primaryTypographyProps={{ fontSize: "0.85rem", fontWeight: pathname === "/" ? 600 : 500 }}
+            primary={<Typography sx={{ fontSize: "0.85rem", fontWeight: pathname === "/" ? 600 : 500 }}>{t("todo")}</Typography>}
           />
         </ListItemButton>
 
@@ -138,8 +137,7 @@ export default function Sidebar({ open, onClose, variant, isAdmin }: SidebarProp
             <FolderOpenIcon sx={{ fontSize: 18 }} />
           </ListItemIcon>
           <ListItemText
-            primary={t("projectManagement")}
-            primaryTypographyProps={{ fontSize: "0.85rem", fontWeight: pathname === "/projects" ? 600 : 500 }}
+            primary={<Typography sx={{ fontSize: "0.85rem", fontWeight: pathname === "/projects" ? 600 : 500 }}>{t("projectManagement")}</Typography>}
           />
         </ListItemButton>
 
@@ -154,8 +152,7 @@ export default function Sidebar({ open, onClose, variant, isAdmin }: SidebarProp
             <TuneIcon sx={{ fontSize: 18 }} />
           </ListItemIcon>
           <ListItemText
-            primary={t("boardSettings")}
-            primaryTypographyProps={{ fontSize: "0.85rem", fontWeight: pathname === "/settings/board" ? 600 : 500 }}
+            primary={<Typography sx={{ fontSize: "0.85rem", fontWeight: pathname === "/settings/board" ? 600 : 500 }}>{t("boardSettings")}</Typography>}
           />
         </ListItemButton>
 

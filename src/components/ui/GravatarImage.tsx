@@ -27,7 +27,7 @@ export default function GravatarImage({ src, initial, sx }: GravatarImageProps) 
   }
 
   return (
-    <Avatar src={src} sx={sx} imgProps={{ onError: () => setImgError(true) }}>
+    <Avatar src={src} sx={sx} slotProps={{ img: { onError: () => setImgError(true) } }}>
       {initial}
     </Avatar>
   );

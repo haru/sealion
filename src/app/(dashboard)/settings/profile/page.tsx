@@ -192,7 +192,7 @@ export default function ProfileSettingsPage() {
           value={username}
           onChange={(e) => setUsername(e.target.value)}
           fullWidth
-          inputProps={{ maxLength: 50 }}
+          slotProps={{ htmlInput: { maxLength: 50 } }}
           disabled={isLoading}
         />
 

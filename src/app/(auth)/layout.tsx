@@ -35,9 +35,9 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         <Typography
           variant="h3"
           component="h1"
-          fontWeight="900"
           sx={{
             color: "primary.dark",
+            fontWeight: 900,
             letterSpacing: "-0.5px",
             textShadow: "0 2px 10px rgba(0,0,0,0.05)",
           }}

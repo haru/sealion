@@ -85,7 +85,7 @@ export default function CompleteIssueModal({
           value={comment}
           onChange={(e) => setComment(e.target.value)}
           disabled={loading}
-          inputProps={{ maxLength: 1000 }}
+          slotProps={{ htmlInput: { maxLength: 1000 } }}
           sx={{ mt: 1 }}
         />
 

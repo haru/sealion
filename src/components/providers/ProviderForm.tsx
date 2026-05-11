@@ -120,7 +120,7 @@ export default function ProviderForm({ onSubmit }: ProviderFormProps) {
           fullWidth
           name="providerName"
           autoComplete="organization"
-          inputProps={{ "data-testid": "provider-name-input" }}
+          slotProps={{ htmlInput: { "data-testid": "provider-name-input" } }}
         />
 
         {selectedMeta && selectedMeta.baseUrlMode !== "none" && (
@@ -143,7 +143,7 @@ export default function ProviderForm({ onSubmit }: ProviderFormProps) {
             onChange={(e) => handleCredentialChange(field.key, e.target.value)}
             required={field.required}
             fullWidth
-            inputProps={{ "data-testid": `${field.key}-input` }}
+            slotProps={{ htmlInput: { "data-testid": `${field.key}-input` } }}
           />
         ))}
 

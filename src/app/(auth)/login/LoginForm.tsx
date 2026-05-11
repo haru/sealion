@@ -68,7 +68,7 @@ export function LoginForm({ showSignup, showPasswordReset }: LoginFormProps) {
 
   return (
     <AuthCard>
-      <Typography variant="h5" component="h2" fontWeight="700" textAlign="center" gutterBottom sx={{ mb: 3 }}>
+      <Typography variant="h5" component="h2" gutterBottom sx={{ mb: 3, fontWeight: 700, textAlign: "center" }}>
         {t("loginTitle")}
       </Typography>
 
