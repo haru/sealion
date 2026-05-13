@@ -200,11 +200,6 @@ docker compose up -d
 
 git-flow を使用しています。プルリクエストは `develop` ブランチに対して行ってください。
 
-> **注意:** next-auth が nodemailer@^8 に対応するまで、依存関係のインストールは以下のコマンドを使用してください：
-> ```sh
-> npm install --legacy-peer-deps
-> ```
-
 ---
 
 ## ライセンス
