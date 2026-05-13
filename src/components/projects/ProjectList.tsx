@@ -57,14 +57,13 @@ export default function ProjectList({ refreshSignal }: ProjectListProps) {
   const [togglingId, setTogglingId] = useState<string | null>(null);
 
   const fetchProjects = useCallback(async () => {
-    setLoading(true);
-    setError(null);
     try {
       const res = await fetch("/api/projects");
       if (!res.ok) {
         throw new Error();
       }
       const json = await res.json();
+      setError(null);
       setProjects(json.data);
     } catch {
       setError(tCommon("error"));
@@ -74,6 +73,7 @@ export default function ProjectList({ refreshSignal }: ProjectListProps) {
   }, [tCommon]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- data-fetching pattern: all setState calls are after await
     void fetchProjects();
   }, [fetchProjects, refreshSignal]);
 
