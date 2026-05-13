@@ -66,7 +66,6 @@ export default function AdminUsersPage() {
   usePageHeader(t("userManagement"), undefined, PeopleIcon, undefined, tSidebar("systemAdmin"), AdminPanelSettingsIcon);
 
   const fetchUsers = useCallback(async () => {
-    setLoading(true);
     try {
       const res = await fetch("/api/admin/users");
       if (res.ok) {
@@ -82,6 +81,7 @@ export default function AdminUsersPage() {
   }, [addMessage, tCommon]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- data-fetching pattern: all setState calls are after await
     void fetchUsers();
   }, [fetchUsers]);
 
@@ -121,6 +121,7 @@ export default function AdminUsersPage() {
       if (res.ok) {
         addMessage("information", t("deleteSuccess"));
         setDeleteTarget(null);
+        setLoading(true);
         await fetchUsers();
       } else {
         const code =
@@ -249,6 +250,7 @@ export default function AdminUsersPage() {
         onClose={() => setCreateOpen(false)}
         onCreated={async () => {
           addMessage("information", t("createSuccess"));
+          setLoading(true);
           await fetchUsers();
         }}
       />
@@ -257,7 +259,7 @@ export default function AdminUsersPage() {
         user={editTarget}
         isSelf={editTarget?.id === currentUserId}
         onClose={() => setEditTarget(null)}
-        onSaved={fetchUsers}
+        onSaved={() => { setLoading(true); void fetchUsers(); }}
       />
 
       <Dialog
