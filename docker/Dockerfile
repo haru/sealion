@@ -4,7 +4,7 @@ WORKDIR /app
 
 RUN apk add --no-cache postgresql-client
 
-COPY package.json package-lock.json .npmrc ./
+COPY package.json package-lock.json ./
 COPY prisma/ ./prisma/
 COPY prisma.config.ts ./prisma.config.ts
 RUN npm ci

@@ -3,7 +3,10 @@
     "allow": [
       "Bash(gh repo:*)",
       "Bash(gh run *)",
-      "Bash(npm ls *)"
+      "Bash(npm ls *)",
+      "Bash(npm --version)",
+      "Bash(npm ci *)",
+      "Bash(npm show *)"
     ],
     "additionalDirectories": [
       "/tmp",
