@@ -201,6 +201,11 @@ Database migrations run automatically on container startup.
 
 This project uses git-flow. Please submit pull requests against the `develop` branch.
 
+> **Note:** Until next-auth adds support for nodemailer@^8, install dependencies with:
+> ```sh
+> npm install --legacy-peer-deps
+> ```
+
 ---
 
 ## License

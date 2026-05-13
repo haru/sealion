@@ -59,24 +59,10 @@ export default function AddProjectDialog({ open, onClose }: AddProjectDialogProp
   const [externalProjects, setExternalProjects] = useState<ExternalProject[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [filter, setFilter] = useState("");
-  const [loadingProviders, setLoadingProviders] = useState(false);
+  const [loadingProviders, setLoadingProviders] = useState(() => open);
   const [loadingProjects, setLoadingProjects] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const [prevOpen, setPrevOpen] = useState(open);
-  if (open !== prevOpen) {
-    setPrevOpen(open);
-    if (open) {
-      setStep("provider");
-      setSelectedProvider(null);
-      setExternalProjects([]);
-      setSelected(new Set());
-      setFilter("");
-      setError(null);
-      setLoadingProviders(true);
-    }
-  }
 
   useEffect(() => {
     if (!open) { return; }

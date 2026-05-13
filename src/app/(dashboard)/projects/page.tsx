@@ -15,7 +15,14 @@ export default function ProjectsPage() {
   const t = useTranslations("projects");
   usePageHeader(t("title"), undefined, FolderOpenIcon);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogKey, setDialogKey] = useState(0);
   const [refreshSignal, setRefreshSignal] = useState(0);
+
+  /** Opens the add-project dialog with a fresh key so its state resets. */
+  function handleDialogOpen() {
+    setDialogKey((k) => k + 1);
+    setDialogOpen(true);
+  }
 
   /** Handles dialog close and triggers a list refresh if a project was saved. */
   function handleDialogClose(saved: boolean) {
@@ -29,7 +36,7 @@ export default function ProjectsPage() {
         <Button
           variant="contained"
           startIcon={<AddIcon />}
-          onClick={() => setDialogOpen(true)}
+          onClick={handleDialogOpen}
         >
           {t("addProject")}
         </Button>
@@ -37,7 +44,7 @@ export default function ProjectsPage() {
 
       <ProjectList refreshSignal={refreshSignal} />
 
-      <AddProjectDialog open={dialogOpen} onClose={handleDialogClose} />
+      <AddProjectDialog key={dialogKey} open={dialogOpen} onClose={handleDialogClose} />
     </Container>
   );
 }
