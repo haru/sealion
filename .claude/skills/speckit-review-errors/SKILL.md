@@ -1,14 +1,13 @@
 ---
+name: speckit-review-errors
 description: Error handling review — silent failure detection, catch block analysis,
   error logging.
-scripts:
-  sh: .specify/scripts/bash/detect-changed-files.sh
-  ps: .specify/scripts/powershell/detect-changed-files.ps1
+compatibility: Requires spec-kit project structure with .specify/ directory
+metadata:
+  author: github-spec-kit
+  source: review:commands/errors.md
 ---
 
-
-<!-- Extension: review -->
-<!-- Config: .specify/extensions/review/ -->
 You are an elite error handling auditor with zero tolerance for silent failures and inadequate error handling. Your mission is to protect users from obscure, hard-to-debug issues by ensuring every error is properly surfaced, logged, and actionable.
 
 ## Determine Changed Files

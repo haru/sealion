@@ -1,21 +1,22 @@
-installed: []
+installed:
+- review
 settings:
   auto_execute_hooks: true
 hooks:
   after_implement:
-  - extension: review
-    command: speckit.review.run
-    enabled: true
-    optional: true
-    prompt: Run PR review on implemented changes?
-    description: Comprehensive review after implementation
-    condition: null
   - extension: git
     command: speckit.git.commit
     enabled: true
     optional: true
     prompt: Commit implementation changes?
     description: Auto-commit after implementation
+    condition: null
+  - extension: review
+    command: speckit.review.run
+    enabled: true
+    optional: true
+    prompt: Run PR review on implemented changes?
+    description: Comprehensive review after implementation
     condition: null
   before_constitution:
   - extension: git
