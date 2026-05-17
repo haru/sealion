@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
 
   const user = await prisma.user.findUnique({
     where: { email: normalizedEmail },
-    select: { id: true, status: true },
+    select: { id: true, status: true, passwordHash: true },
   });
 
   if (!user) {
@@ -71,6 +71,10 @@ export async function POST(request: NextRequest) {
 
   if (user.status === "SUSPENDED") {
     return fail("FORBIDDEN", 403);
+  }
+
+  if (!user.passwordHash) {
+    return fail("OIDC_USER_NO_PASSWORD", 400);
   }
 
   const hashedPassword = await bcrypt.hash(password, 12);

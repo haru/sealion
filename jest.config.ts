@@ -52,7 +52,7 @@ const resolvedConfig = async () => {
   return {
     ...base,
     transformIgnorePatterns: [
-      "/node_modules/(?!(next-intl)/)",
+      "/node_modules/(?!(next-intl|next-auth|@auth/core|jose|oauth4webapi|preact|preact-render-to-string|@panva/hkdf)/)",
     ],
   };
 };

@@ -50,6 +50,7 @@ function makeRequest(body: object): NextRequest {
 const ACTIVE_USER = {
   id: "user-1",
   status: "ACTIVE",
+  passwordHash: "$2a$10$existinghash",
 };
 
 describe("POST /api/auth/reset-password/confirm", () => {
@@ -92,7 +93,7 @@ describe("POST /api/auth/reset-password/confirm", () => {
     expect(mockNormalizeEmail).toHaveBeenCalledWith("User@Example.COM ");
     expect(mockUserFindUnique).toHaveBeenCalledWith({
       where: { email: "user@example.com" },
-      select: { id: true, status: true },
+      select: { id: true, status: true, passwordHash: true },
     });
   });
 
@@ -176,6 +177,21 @@ describe("POST /api/auth/reset-password/confirm", () => {
 
     expect(res.status).toBe(403);
     expect(json.error).toBe("FORBIDDEN");
+  });
+
+  it("returns 400 OIDC_USER_NO_PASSWORD when user has null passwordHash", async () => {
+    mockUserFindUnique.mockResolvedValue({ id: "user-1", status: "ACTIVE", passwordHash: null });
+
+    const req = makeRequest({
+      token: "tok",
+      password: "newpassword123",
+      confirmPassword: "newpassword123",
+    });
+    const res = await POST(req);
+    const json = await res.json();
+
+    expect(res.status).toBe(400);
+    expect(json.error).toBe("OIDC_USER_NO_PASSWORD");
   });
 
   it("returns 404 when user no longer exists", async () => {

@@ -99,6 +99,9 @@ export async function PATCH(request: NextRequest) {
     let newPasswordHash: string | undefined;
 
     if (parsed.changePassword) {
+      if (!user.passwordHash) {
+        return fail("OIDC_USER_NO_PASSWORD", 400);
+      }
       const isCorrect = await bcrypt.compare(parsed.currentPassword, user.passwordHash);
       if (!isCorrect) {
         return fail("PASSWORD_INCORRECT", 400);

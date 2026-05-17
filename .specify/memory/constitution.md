@@ -1,7 +1,7 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version change: 1.3.0 → 1.4.0
+Version change: 1.3.0 → 1.4.0 → 1.4.1
 Modified principles:
   - V. Simplicity (YAGNI) → V. Simplicity (KISS, DRY, YAGNI):
     expanded to make KISS and DRY explicit alongside the existing YAGNI rule.
@@ -349,7 +349,7 @@ amendment.
 - **Runtime**: Node.js 20 LTS / TypeScript 5
 - **Framework**: Next.js 16 (App Router) — no Pages Router patterns
 - **UI**: MUI v7 (Material UI) + Material Icons — no other component libraries
-- **Auth**: Auth.js v5 (next-auth) with Prisma adapter; credentials-based (email/password)
+- **Auth**: Auth.js v5 (next-auth) with Prisma adapter; credentials-based (email/password), OIDC, and OAuth2 providers configured at runtime via the admin UI
 - **Database**: PostgreSQL 16 via Prisma 7 ORM — raw SQL MUST only be used where Prisma cannot
   express the query
 - **i18n**: next-intl 4 (locale prefix: `never`)
@@ -448,4 +448,4 @@ arises between this document and any other guideline, this constitution takes pr
 - Decisions rising to ADR-worthiness MUST have a corresponding ADR file under `docs/adr/` or an
   explicit user confirmation that no ADR is needed.
 
-**Version**: 1.4.0 | **Ratified**: 2026-03-20 | **Last Amended**: 2026-05-17
+**Version**: 1.4.1 | **Ratified**: 2026-03-20 | **Last Amended**: 2026-05-17

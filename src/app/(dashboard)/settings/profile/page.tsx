@@ -20,6 +20,8 @@ import { DeleteAccountModal } from "@/components/settings/DeleteAccountModal";
 import GravatarSection from "@/components/settings/GravatarSection";
 import { usePageHeader } from "@/hooks/usePageHeader";
 
+import { AccountLinksSection } from "./_components/AccountLinksSection";
+
 /**
  * Profile settings page.
  *
@@ -204,6 +206,10 @@ export default function ProfileSettingsPage() {
           disabled={isLoading || isSubmitting}
           onChange={setUseGravatar}
         />
+
+        <Divider sx={{ my: 2 }} />
+
+        <AccountLinksSection />
 
         <Divider sx={{ my: 2 }} />
 

@@ -1,28 +1,54 @@
+/**
+ * Login page — server component.
+ * Server-fetches enabled IdPs so the LoginForm + ExternalProviderButtons render
+ * in one round-trip. Also reads `?error=` query for IdP-callback failure codes.
+ */
+
 import { redirect } from "next/navigation";
 
 import { getAuthSettings } from "@/lib/auth/auth-settings";
 import { prisma } from "@/lib/db/db";
 import { getSmtpSettings } from "@/lib/email/smtp-settings";
+import { listEnabled } from "@/services/auth-provider/repository";
 
 import { LoginForm } from "./LoginForm";
 
+interface LoginPageProps {
+  searchParams?: Promise<{ error?: string }>;
+}
+
 /**
- * Login page — server component.
+ * Renders the local credentials form alongside any configured external IdP
+ * buttons. Redirects to `/setup` when no users exist.
  *
- * Redirects to `/setup` when no users exist in the database (first-time setup).
- * Otherwise renders the login form, passing the current `allowUserSignup` setting
- * and whether the "Forgot password?" link should be shown (SMTP configured).
+ * @param props - Next.js search params (Promise in App Router).
+ * @returns The rendered login page.
  */
-export default async function LoginPage() {
+export default async function LoginPage(props: LoginPageProps) {
   const count = await prisma.user.count();
   if (count === 0) {
     redirect("/setup");
   }
 
-  const [{ allowUserSignup }, smtpSettings] = await Promise.all([
+  const [{ allowUserSignup }, smtpSettings, enabled, resolvedSearch] = await Promise.all([
     getAuthSettings(),
     getSmtpSettings(),
+    listEnabled(),
+    props.searchParams ?? Promise.resolve({} as { error?: string }),
   ]);
 
-  return <LoginForm showSignup={allowUserSignup} showPasswordReset={smtpSettings !== null} />;
+  const providers = enabled.map((r) => ({
+    providerId: r.providerId,
+    type: r.type,
+    displayName: r.displayName,
+  }));
+
+  return (
+    <LoginForm
+      showSignup={allowUserSignup}
+      showPasswordReset={smtpSettings !== null}
+      externalProviders={providers}
+      externalError={resolvedSearch?.error ?? null}
+    />
+  );
 }
