@@ -18,6 +18,12 @@ import {
 } from "@/services/auth-provider";
 import { AUTH_PROVIDERS_CACHE_TAG } from "@/services/auth-provider/repository";
 
+/**
+ * Serialises an AuthProvider record to its public API shape.
+ *
+ * @param record - The raw AuthProvider record from the database.
+ * @returns The public-safe representation.
+ */
 function publicShape(record: {
   id: string;
   providerId: string;
@@ -44,6 +50,11 @@ function publicShape(record: {
   };
 }
 
+/**
+ * Lists all AuthProviders with linked account counts (admin only).
+ *
+ * @returns `200` with an array of providers and their linked account counts.
+ */
 export async function GET() {
   const session = await auth();
   if (!session?.user) { return fail("UNAUTHORIZED", 401); }
@@ -60,6 +71,12 @@ export async function GET() {
   return ok(data);
 }
 
+/**
+ * Creates a new AuthProvider (admin only).
+ *
+ * @param req - The incoming HTTP request with the create payload.
+ * @returns `201` with the created provider, or an error response.
+ */
 export async function POST(req: NextRequest) {
   const session = await auth();
   if (!session?.user) { return fail("UNAUTHORIZED", 401); }

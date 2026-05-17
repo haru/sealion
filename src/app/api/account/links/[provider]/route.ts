@@ -5,6 +5,15 @@ import { auth } from "@/lib/auth/auth";
 import { prisma } from "@/lib/db/db";
 import { canUnlinkAccount } from "@/services/auth-provider/account-linking";
 
+/**
+ * Unlinks an OAuth provider account from the authenticated user.
+ *
+ * @param request - The incoming HTTP request.
+ * @param params - Route parameters containing the provider name.
+ * @returns `204` on success, `400` if it is the last auth method,
+ *          `401` if unauthenticated, `404` if the link does not exist,
+ *          `500` on unexpected error.
+ */
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ provider: string }> },

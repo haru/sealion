@@ -2,6 +2,12 @@ import { fail, ok } from "@/lib/api/api-response";
 import { auth } from "@/lib/auth/auth";
 import { prisma } from "@/lib/db/db";
 
+/**
+ * Returns all linked OAuth accounts for the authenticated user.
+ *
+ * @returns `200` with an array of linked provider accounts.
+ *          `401` if unauthenticated, `500` on unexpected error.
+ */
 export async function GET() {
   const session = await auth();
   if (!session?.user?.id) {

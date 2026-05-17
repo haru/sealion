@@ -20,6 +20,12 @@ import {
 } from "@/services/auth-provider/repository";
 import { AuthProviderUpdateSchema } from "@/services/auth-provider/schemas";
 
+/**
+ * Serialises an AuthProvider record to its public API shape.
+ *
+ * @param record - The raw AuthProvider record from the database.
+ * @returns The public-safe representation with ISO date strings.
+ */
 function toPublic(record: {
   id: string;
   providerId: string;
@@ -46,6 +52,13 @@ function toPublic(record: {
   };
 }
 
+/**
+ * Partially updates an AuthProvider by ID (admin only).
+ *
+ * @param request - The incoming HTTP request with the update payload.
+ * @param params - Route parameters containing the provider UUID.
+ * @returns `200` with the updated provider, or an error response.
+ */
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -89,6 +102,13 @@ export async function PATCH(
   }
 }
 
+/**
+ * Deletes an AuthProvider by ID (admin only).
+ *
+ * @param request - The incoming HTTP request.
+ * @param params - Route parameters containing the provider UUID.
+ * @returns `204` on success, `409` if linked accounts exist, or an error response.
+ */
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },

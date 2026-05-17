@@ -4,7 +4,7 @@
  * one button per IdP. Secret fields are intentionally excluded.
  */
 
-import { NextResponse } from "next/server";
+import type { NextResponse } from "next/server";
 
 import { fail, ok } from "@/lib/api/api-response";
 import { listEnabled } from "@/services/auth-provider/repository";
@@ -12,6 +12,12 @@ import { listEnabled } from "@/services/auth-provider/repository";
 /** Cache for 30 seconds; admin writes invalidate `auth-providers` tag. */
 const CACHE_HEADER = "max-age=30";
 
+/**
+ * Returns all enabled AuthProviders for the login screen (public, unauthenticated).
+ *
+ * @returns `200` with an array of enabled providers, cached for 30 seconds.
+ *          `500` on unexpected error.
+ */
 export async function GET(): Promise<NextResponse> {
   try {
     const rows = await listEnabled();
