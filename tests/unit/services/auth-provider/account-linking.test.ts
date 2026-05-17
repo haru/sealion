@@ -11,6 +11,7 @@ jest.mock("@/lib/db/db", () => ({
     user: { findUnique: jest.fn(), create: jest.fn() },
     account: { findUnique: jest.fn(), create: jest.fn() },
     authProvider: { findUnique: jest.fn() },
+    $transaction: jest.fn(),
   },
 }));
 
@@ -27,9 +28,14 @@ const mockUserCreate = prisma.user.create as jest.Mock;
 const mockAccountFind = prisma.account.findUnique as jest.Mock;
 const mockAccountCreate = prisma.account.create as jest.Mock;
 const mockGetSettings = getAuthSettings as jest.Mock;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const mockPrismaTransaction = (prisma as any).$transaction as jest.Mock;
 
 beforeEach(() => {
   jest.clearAllMocks();
+  // Run the transaction callback with the same mock prisma client as tx.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  mockPrismaTransaction.mockImplementation(async (fn: any) => fn(prisma));
 });
 
 function googleAccount(overrides: Record<string, unknown> = {}) {
@@ -163,27 +169,47 @@ describe("handleExternalSignIn — new user creation", () => {
     expect(mockAccountCreate).toHaveBeenCalled();
   });
 
-  it("creates a PENDING user when requireEmailVerification=true and IdP didn't verify", async () => {
+  it("rejects sign-in for unverified IdP email even when requireEmailVerification is true", async () => {
     mockUserFind.mockResolvedValue(null);
     mockGetSettings.mockResolvedValue({
       allowUserSignup: true,
       requireEmailVerification: true,
       sessionTimeoutMinutes: null,
     });
-    mockUserCreate.mockResolvedValue({ id: "new_user_2" });
 
     const result = await handleExternalSignIn({
       user: { id: "tmp", email: "carol@example.com" },
-      // verified=false → should land as PENDING because requireEmailVerification=true
       account: googleAccount(),
       profile: { email: "carol@example.com", email_verified: false },
     });
 
-    expect(result).toBe(true);
-    const createArg = mockUserCreate.mock.calls[0]![0] as {
-      data: { status: string };
-    };
-    expect(createArg.data.status).toBe("PENDING");
+    // An unverified IdP email must always be rejected regardless of the
+    // requireEmailVerification setting — we never create PENDING users via
+    // external IdPs because there is no local verification flow to complete.
+    expect(result).toBe("/login?error=EMAIL_NOT_VERIFIED");
+    expect(mockUserCreate).not.toHaveBeenCalled();
+  });
+
+  it("wraps User and Account creation in a single transaction", async () => {
+    mockUserFind.mockResolvedValue(null);
+    mockGetSettings.mockResolvedValue({
+      allowUserSignup: true,
+      requireEmailVerification: false,
+      sessionTimeoutMinutes: null,
+    });
+    mockUserCreate.mockResolvedValue({ id: "tx_user_1" });
+
+    await handleExternalSignIn({
+      user: { id: "tmp", email: "eve@example.com" },
+      account: googleAccount(),
+      profile: { email: "eve@example.com", email_verified: true },
+    });
+
+    // User and Account must be created atomically so a failed Account insert
+    // cannot leave an orphaned User row.
+    expect(mockPrismaTransaction).toHaveBeenCalled();
+    expect(mockUserCreate).toHaveBeenCalled();
+    expect(mockAccountCreate).toHaveBeenCalled();
   });
 
   it("rejects SIGNUP_DISABLED when no existing user and allowUserSignup=false", async () => {

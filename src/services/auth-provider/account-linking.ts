@@ -87,7 +87,7 @@ export async function handleExternalSignIn(
   const settings = await getAuthSettings();
   const requireVerification = settings.requireEmailVerification ?? false;
 
-  if (!emailVerified && !requireVerification) {
+  if (!emailVerified) {
     return "/login?error=EMAIL_NOT_VERIFIED";
   }
 
@@ -159,30 +159,32 @@ interface CreateUserAndLinkParams {
   account: Account;
 }
 
-/** Creates a new `User` + `Account` pair and returns `true`. */
+/** Creates a new `User` + `Account` pair atomically and returns `true`. */
 async function createUserAndLink(p: CreateUserAndLinkParams): Promise<true> {
   const status: "PENDING" | "ACTIVE" =
     p.requireVerification && !p.emailVerified ? "PENDING" : "ACTIVE";
 
-  const newUser = await prisma.user.create({
-    data: {
-      email: p.email,
-      passwordHash: null,
-      role: "USER",
-      status,
-      username: deriveUsername(p.profileName, p.email),
-      useGravatar: false,
-    },
-    select: { id: true },
-  });
+  await prisma.$transaction(async (tx) => {
+    const newUser = await tx.user.create({
+      data: {
+        email: p.email,
+        passwordHash: null,
+        role: "USER",
+        status,
+        username: deriveUsername(p.profileName, p.email),
+        useGravatar: false,
+      },
+      select: { id: true },
+    });
 
-  await prisma.account.create({
-    data: {
-      provider: p.account.provider,
-      providerAccountId: p.account.providerAccountId,
-      type: p.account.type,
-      userId: newUser.id,
-    },
+    await tx.account.create({
+      data: {
+        provider: p.account.provider,
+        providerAccountId: p.account.providerAccountId,
+        type: p.account.type,
+        userId: newUser.id,
+      },
+    });
   });
 
   return true;

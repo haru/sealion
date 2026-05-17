@@ -6,8 +6,7 @@
 
 import { Prisma } from "@prisma/client";
 import { revalidateTag } from "next/cache";
-import type { NextRequest } from "next/server";
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 
 import { fail, failWithDetails, ok } from "@/lib/api/api-response";
