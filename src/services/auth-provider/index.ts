@@ -28,6 +28,7 @@ export {
 export {
   listAll,
   listEnabled,
+  listEnabledDisplayOnly,
   findById,
   findByProviderId,
   create,
@@ -35,3 +36,5 @@ export {
   remove,
   countLinkedAccounts,
 } from "./repository";
+
+export { validateUpdateIssuerUrl } from "./schemas";

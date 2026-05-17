@@ -27,7 +27,12 @@ let dbAvailable = false;
 
 async function resetTable() {
   await prisma.authProvider.deleteMany({
-    where: { providerId: { startsWith: "google-admin-test" } },
+    where: {
+      OR: [
+        { providerId: { startsWith: "google-admin-test" } },
+        { providerId: "google" },
+      ],
+    },
   });
 }
 

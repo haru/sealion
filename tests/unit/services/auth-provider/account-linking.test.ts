@@ -10,6 +10,7 @@ jest.mock("@/lib/db/db", () => ({
   prisma: {
     user: { findUnique: jest.fn(), create: jest.fn() },
     account: { findUnique: jest.fn(), create: jest.fn() },
+    authProvider: { findUnique: jest.fn() },
   },
 }));
 

@@ -1,7 +1,10 @@
 /**
  * E2E test for the OIDC login MVP using `oauth2-mock-server`.
  * Flow: admin seeds an `OIDC_GENERIC` provider via the admin UI, signs out,
- * signs in via the mock IdP, lands on the dashboard.
+ * verifies the IdP button appears on the login page.
+ *
+ * TODO: Expand to cover the full OAuth redirect/callback/dashboard flow once
+ * the mock IdP supports automated browser-based consent.
  */
 
 import { test, expect, type Page } from "@playwright/test";

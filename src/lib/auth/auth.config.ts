@@ -1,9 +1,7 @@
 import type { NextAuthConfig } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 
-import { handleExternalSignIn } from "@/services/auth-provider/account-linking";
-
-// Lightweight config for Edge runtime (middleware) — no Prisma
+// Lightweight config for Edge runtime (middleware) — no Prisma, no DB-dependent callbacks
 export const authConfig: NextAuthConfig = {
   pages: { signIn: "/login" },
   providers: [
@@ -11,20 +9,6 @@ export const authConfig: NextAuthConfig = {
     Credentials({}),
   ],
   callbacks: {
-    /**
-     * signIn callback — passes the credentials flow through untouched and routes
-     * external OAuth/OIDC accounts to {@link handleExternalSignIn} for explicit
-     * email-verified verification + account auto-link / auto-create.
-     *
-     * @param params - Auth.js signIn payload.
-     * @returns `true` to allow, `false` to deny generically, or a `/login?error=…` URL.
-     */
-    async signIn({ user, account, profile }) {
-      if (!account || account.type === "credentials") {
-        return true;
-      }
-      return handleExternalSignIn({ user, account, profile });
-    },
     authorized({ auth, request }) {
       const { nextUrl } = request;
       const isAuthenticated = !!auth?.user;

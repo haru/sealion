@@ -15,7 +15,7 @@ import { canUnlinkAccount } from "@/services/auth-provider/account-linking";
  *          `500` on unexpected error.
  */
 export async function DELETE(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ provider: string }> },
 ) {
   const session = await auth();

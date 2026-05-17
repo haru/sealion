@@ -92,6 +92,32 @@ export const listEnabled = unstable_cache(
   { tags: [AUTH_PROVIDERS_CACHE_TAG], revalidate: LIST_ENABLED_TTL_SECONDS },
 );
 
+/** Display-only projection returned by {@link listEnabledDisplayOnly}. */
+export type AuthProviderDisplayInfo = {
+  providerId: string;
+  type: AuthProviderType;
+  displayName: string;
+};
+
+/**
+ * Cached lookup of enabled providers returning only display-safe fields.
+ * Does NOT decrypt `clientSecret`. Use for public/unauthenticated endpoints
+ * (login page, login-button API).
+ *
+ * @returns Enabled provider display info, ordered by `createdAt ASC`.
+ */
+export const listEnabledDisplayOnly = unstable_cache(
+  async (): Promise<AuthProviderDisplayInfo[]> => {
+    return prisma.authProvider.findMany({
+      where: { enabled: true },
+      select: { providerId: true, type: true, displayName: true },
+      orderBy: { createdAt: "asc" },
+    });
+  },
+  ["auth-providers:list-enabled-display"],
+  { tags: [AUTH_PROVIDERS_CACHE_TAG], revalidate: LIST_ENABLED_TTL_SECONDS },
+);
+
 /**
  * Looks up a provider by primary key.
  *

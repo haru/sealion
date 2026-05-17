@@ -98,7 +98,7 @@ export default function AdminAuthProvidersPage() {
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>{t("table.icon")}</TableCell>
+              <TableCell padding="none" sx={{ width: 48 }}><span className="sr-only">Icon</span></TableCell>
               <TableCell>{t("table.displayName")}</TableCell>
               <TableCell>{t("table.providerId")}</TableCell>
               <TableCell>{t("table.type")}</TableCell>

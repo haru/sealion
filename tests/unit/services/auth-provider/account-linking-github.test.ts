@@ -11,6 +11,7 @@ jest.mock("@/lib/db/db", () => ({
   prisma: {
     user: { findUnique: jest.fn(), create: jest.fn() },
     account: { findUnique: jest.fn(), create: jest.fn() },
+    authProvider: { findUnique: jest.fn() },
   },
 }));
 
@@ -41,6 +42,7 @@ const mockUserFind = prisma.user.findUnique as jest.Mock;
 const mockUserCreate = prisma.user.create as jest.Mock;
 const mockAccountFind = prisma.account.findUnique as jest.Mock;
 const mockAccountCreate = prisma.account.create as jest.Mock;
+const mockAuthProviderFind = prisma.authProvider.findUnique as jest.Mock;
 const mockGetSettings = getAuthSettings as jest.Mock;
 
 function githubAccount(overrides: Record<string, unknown> = {}) {
@@ -60,6 +62,7 @@ beforeEach(() => {
     requireEmailVerification: false,
     sessionTimeoutMinutes: null,
   });
+  mockAuthProviderFind.mockResolvedValue({ type: "GITHUB" });
 });
 
 describe("resolveGithubVerifiedEmail", () => {

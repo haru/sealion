@@ -9,7 +9,7 @@ import { redirect } from "next/navigation";
 import { getAuthSettings } from "@/lib/auth/auth-settings";
 import { prisma } from "@/lib/db/db";
 import { getSmtpSettings } from "@/lib/email/smtp-settings";
-import { listEnabled } from "@/services/auth-provider/repository";
+import { listEnabledDisplayOnly } from "@/services/auth-provider/repository";
 
 import { LoginForm } from "./LoginForm";
 
@@ -33,7 +33,7 @@ export default async function LoginPage(props: LoginPageProps) {
   const [{ allowUserSignup }, smtpSettings, enabled, resolvedSearch] = await Promise.all([
     getAuthSettings(),
     getSmtpSettings(),
-    listEnabled(),
+    listEnabledDisplayOnly(),
     props.searchParams ?? Promise.resolve({} as { error?: string }),
   ]);
 

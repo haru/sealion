@@ -320,6 +320,7 @@ function mapApiError(
     case "PASSWORD_TOO_LONG": return tErrors("PASSWORD_TOO_LONG");
     case "PASSWORD_INCORRECT": return tErrors("PASSWORD_INCORRECT");
     case "USERNAME_TOO_LONG": return tErrors("USERNAME_TOO_LONG");
+    case "OIDC_USER_NO_PASSWORD": return tErrors("OIDC_USER_NO_PASSWORD");
     default: return t("errorUnexpected");
   }
 }

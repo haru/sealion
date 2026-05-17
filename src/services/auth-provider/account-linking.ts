@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/naming-convention -- Auth.js/OAuth tokens use snake_case (access_token, refresh_token, id_token, ...) per RFC 6749 and 7519; mirroring the spec at this boundary is required. */
-
 /**
  * External-IdP sign-in handler. Verifies the IdP's email-verified claim, then
  * either links the IdP account to an existing Sealion user (matched by email)
@@ -12,6 +10,7 @@ import type { Account, Profile, User } from "next-auth";
 
 import { getAuthSettings } from "@/lib/auth/auth-settings";
 import { prisma } from "@/lib/db/db";
+import { AuthProviderType } from "@/services/auth-provider/types";
 
 /** GitHub `/user/emails` API response shape. */
 interface GithubEmailEntry {
@@ -31,34 +30,10 @@ export interface HandleExternalSignInParams {
 /** Profile shape narrowed to the fields IdPs commonly return for email verification. */
 interface ExternalProfileLike {
   email?: string | null;
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   email_verified?: boolean;
   name?: string | null;
   picture?: string | null;
-}
-
-/** Auth.js v5 OAuth/OIDC token fields persisted on the `Account` row. */
-type AccountTokenFields = {
-  access_token: string | null;
-  refresh_token: string | null;
-  expires_at: number | null;
-  token_type: string | null;
-  scope: string | null;
-  id_token: string | null;
-  session_state: string | null;
-};
-
-/** Extracts the Auth.js token fields, defaulting any missing entry to `null`. */
-function extractAccountTokens(account: Account): AccountTokenFields {
-  const a = account as Partial<AccountTokenFields> & { session_state?: unknown };
-  return {
-    access_token: a.access_token ?? null,
-    refresh_token: a.refresh_token ?? null,
-    expires_at: typeof a.expires_at === "number" ? a.expires_at : null,
-    token_type: a.token_type ?? null,
-    scope: a.scope ?? null,
-    id_token: a.id_token ?? null,
-    session_state: typeof a.session_state === "string" ? a.session_state : null,
-  };
 }
 
 /**
@@ -77,16 +52,37 @@ export async function handleExternalSignIn(
   if (!account || account.type === "credentials") { return true; }
 
   const profileLike = (profile ?? {}) as ExternalProfileLike;
-  const rawEmail = profileLike.email ?? user.email ?? null;
+  const accessToken = (account as Record<string, unknown>).access_token as string | null ?? null;
+
+  const providerInfo = await prisma.authProvider.findUnique({
+    where: { providerId: account.provider },
+    select: { type: true },
+  });
+  const providerType = providerInfo?.type ?? null;
+
+  let rawEmail = profileLike.email ?? user.email ?? null;
+  let emailVerifiedByGithub = false;
+
+  if (!rawEmail && providerType === AuthProviderType.GITHUB && accessToken) {
+    const resolved = await tryResolveGithubPrimaryEmail(accessToken);
+    if (resolved) {
+      rawEmail = resolved;
+      emailVerifiedByGithub = true;
+    }
+  }
+
   if (!rawEmail) { return "/login?error=NO_EMAIL_FROM_PROVIDER"; }
 
   const email = rawEmail.toLowerCase();
-  const emailVerified = await resolveEmailVerified({
-    profileEmailVerified: profileLike.email_verified === true,
-    accountProvider: account.provider,
-    accessToken: (account as Partial<AccountTokenFields>).access_token ?? null,
-    email,
-  });
+
+  const emailVerified = emailVerifiedByGithub
+    ? true
+    : await resolveEmailVerified({
+        profileEmailVerified: profileLike.email_verified === true,
+        providerType,
+        accessToken,
+        email,
+      });
 
   const settings = await getAuthSettings();
   const requireVerification = settings.requireEmailVerification ?? false;
@@ -95,11 +91,27 @@ export async function handleExternalSignIn(
     return "/login?error=EMAIL_NOT_VERIFIED";
   }
 
+  return linkOrCreateUser({ email, emailVerified, requireVerification, profileLike, account });
+}
+
+/** Resolves an existing user by email, checks status, and links the account. */
+async function linkOrCreateUser(params: {
+  email: string;
+  emailVerified: boolean;
+  requireVerification: boolean;
+  profileLike: ExternalProfileLike;
+  account: Account;
+}): Promise<boolean | string> {
+  const { email, emailVerified, requireVerification, profileLike, account } = params;
+
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
+    if (existing.status === "SUSPENDED") { return false; }
+    if (existing.status === "PENDING") { return "/login?error=EMAIL_NOT_VERIFIED"; }
     return linkAccountIfMissing(existing.id, account);
   }
 
+  const settings = await getAuthSettings();
   if (!settings.allowUserSignup) {
     return "/login?error=SIGNUP_DISABLED";
   }
@@ -119,6 +131,7 @@ async function linkAccountIfMissing(
 ): Promise<true> {
   const already = await prisma.account.findUnique({
     where: {
+      // eslint-disable-next-line @typescript-eslint/naming-convention
       provider_providerAccountId: {
         provider: account.provider,
         providerAccountId: account.providerAccountId,
@@ -132,7 +145,6 @@ async function linkAccountIfMissing(
         providerAccountId: account.providerAccountId,
         type: account.type,
         userId,
-        ...extractAccountTokens(account),
       },
     });
   }
@@ -161,6 +173,7 @@ async function createUserAndLink(p: CreateUserAndLinkParams): Promise<true> {
       username: deriveUsername(p.profileName, p.email),
       useGravatar: false,
     },
+    select: { id: true },
   });
 
   await prisma.account.create({
@@ -169,15 +182,15 @@ async function createUserAndLink(p: CreateUserAndLinkParams): Promise<true> {
       providerAccountId: p.account.providerAccountId,
       type: p.account.type,
       userId: newUser.id,
-      ...extractAccountTokens(p.account),
     },
   });
+
   return true;
 }
 
 interface ResolveEmailVerifiedParams {
   profileEmailVerified: boolean;
-  accountProvider: string;
+  providerType: AuthProviderType | null;
   accessToken: string | null;
   email: string;
 }
@@ -195,10 +208,35 @@ async function resolveEmailVerified(
   params: ResolveEmailVerifiedParams,
 ): Promise<boolean> {
   if (params.profileEmailVerified) { return true; }
-  if (params.accountProvider === "github" && params.accessToken) {
+  if (params.providerType === AuthProviderType.GITHUB && params.accessToken) {
     return resolveGithubVerifiedEmail(params.accessToken, params.email);
   }
   return false;
+}
+
+/**
+ * Tries to resolve the primary verified email from the GitHub `/user/emails`
+ * API. Used as a fallback when the GitHub profile does not expose the email.
+ *
+ * @param accessToken - The GitHub OAuth access token.
+ * @returns The lowercase primary verified email, or `null` if unavailable.
+ */
+async function tryResolveGithubPrimaryEmail(
+  accessToken: string,
+): Promise<string | null> {
+  try {
+    const res = await axios.get<GithubEmailEntry[]>("https://api.github.com/user/emails", {
+      headers: { Authorization: `Bearer ${accessToken}`, Accept: "application/vnd.github+json" },
+    });
+    const primary = res.data.find((e) => e.primary && e.verified);
+    return primary?.email?.toLowerCase() ?? null;
+  } catch (err: unknown) {
+    console.warn("[auth/github-email-resolve] failed to resolve primary email", {
+      status: axios.isAxiosError(err) ? err.response?.status : undefined,
+      message: err instanceof Error ? err.message : "unknown",
+    });
+    return null;
+  }
 }
 
 /**
@@ -254,7 +292,7 @@ function deriveUsername(
  * password or another linked IdP.
  *
  * @param userId - The user's internal ID.
- * @param provider - The provider string of the Account to unlink.
+ * @param _provider - The provider string of the Account to unlink.
  * @returns `true` if unlinking is safe.
  */
 export async function canUnlinkAccount(

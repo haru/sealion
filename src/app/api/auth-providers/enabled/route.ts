@@ -7,7 +7,7 @@
 import type { NextResponse } from "next/server";
 
 import { fail, ok } from "@/lib/api/api-response";
-import { listEnabled } from "@/services/auth-provider/repository";
+import { listEnabledDisplayOnly } from "@/services/auth-provider/repository";
 
 /** Cache for 30 seconds; admin writes invalidate `auth-providers` tag. */
 const CACHE_HEADER = "max-age=30";
@@ -20,13 +20,8 @@ const CACHE_HEADER = "max-age=30";
  */
 export async function GET(): Promise<NextResponse> {
   try {
-    const rows = await listEnabled();
-    const data = rows.map((r) => ({
-      providerId: r.providerId,
-      type: r.type,
-      displayName: r.displayName,
-    }));
-    const res = ok(data);
+    const rows = await listEnabledDisplayOnly();
+    const res = ok(rows);
     res.headers.set("Cache-Control", CACHE_HEADER);
     return res;
   } catch (error: unknown) {

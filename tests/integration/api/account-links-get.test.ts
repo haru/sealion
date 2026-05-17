@@ -84,7 +84,7 @@ describe("GET /api/account/links", () => {
     const res = await GET();
     expect(res.status).toBe(200);
     const body = await res.json();
-    expect(body.success).toBe(true);
+    expect(body.error).toBeNull();
     expect(Array.isArray(body.data)).toBe(true);
     const ours = body.data.find((a: { provider: string }) => a.provider === TEST_PROVIDER);
     expect(ours).toBeDefined();

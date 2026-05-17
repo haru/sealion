@@ -12,7 +12,7 @@ jest.mock("next/cache", () => ({
 function mockListEnabled(rows: unknown[]) {
   jest.resetModules();
   jest.doMock("@/services/auth-provider/repository", () => ({
-    listEnabled: jest.fn().mockResolvedValue(rows),
+    listEnabledDisplayOnly: jest.fn().mockResolvedValue(rows),
   }));
 }
 

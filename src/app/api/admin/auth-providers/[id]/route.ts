@@ -8,6 +8,7 @@ import { Prisma } from "@prisma/client";
 import { revalidateTag } from "next/cache";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
+import { z } from "zod";
 
 import { fail, failWithDetails, ok } from "@/lib/api/api-response";
 import { auth } from "@/lib/auth/auth";
@@ -18,7 +19,7 @@ import {
   update,
   AUTH_PROVIDERS_CACHE_TAG,
 } from "@/services/auth-provider/repository";
-import { AuthProviderUpdateSchema } from "@/services/auth-provider/schemas";
+import { AuthProviderUpdateSchema, validateUpdateIssuerUrl } from "@/services/auth-provider/schemas";
 
 /**
  * Serialises an AuthProvider record to its public API shape.
@@ -63,9 +64,14 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const session = await auth();
-  if (!session?.user || session.user.role !== "ADMIN") {
-    return fail("FORBIDDEN", 403);
+  try {
+    const session = await auth();
+    if (!session?.user || session.user.role !== "ADMIN") {
+      return fail("FORBIDDEN", 403);
+    }
+  } catch (error: unknown) {
+    console.error("[api/admin/auth-providers PATCH auth]", error);
+    return fail("INTERNAL_ERROR", 500);
   }
 
   const { id } = await params;
@@ -78,16 +84,32 @@ export async function PATCH(
 
   const parsed = AuthProviderUpdateSchema.safeParse(body);
   if (!parsed.success) {
-    return fail("INVALID_INPUT", 400);
+    return failWithDetails("INVALID_INPUT", parsed.error.issues, 400);
   }
 
-  const existing = await findById(id);
+  let existing;
+  try {
+    existing = await findById(id);
+  } catch (error: unknown) {
+    console.error("[api/admin/auth-providers PATCH findById]", error);
+    return fail("INTERNAL_ERROR", 500);
+  }
   if (!existing) {
     return fail("NOT_FOUND", 404);
   }
 
   try {
-    const updated = await update(id, parsed.data, session.user.id);
+    validateUpdateIssuerUrl(parsed.data, existing.type);
+  } catch (error: unknown) {
+    if (error instanceof z.ZodError) {
+      return failWithDetails("INVALID_INPUT", error.issues, 400);
+    }
+    return fail("INVALID_INPUT", 400);
+  }
+
+  try {
+    const session = await auth();
+    const updated = await update(id, parsed.data, session?.user?.id);
     revalidateTag(AUTH_PROVIDERS_CACHE_TAG, "");
     return ok(toPublic(updated));
   } catch (error: unknown) {
@@ -105,26 +127,43 @@ export async function PATCH(
 /**
  * Deletes an AuthProvider by ID (admin only).
  *
- * @param request - The incoming HTTP request.
+ * @param _request - The incoming HTTP request (unused body).
  * @param params - Route parameters containing the provider UUID.
  * @returns `204` on success, `409` if linked accounts exist, or an error response.
  */
 export async function DELETE(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const session = await auth();
-  if (!session?.user || session.user.role !== "ADMIN") {
-    return fail("FORBIDDEN", 403);
+  try {
+    const session = await auth();
+    if (!session?.user || session.user.role !== "ADMIN") {
+      return fail("FORBIDDEN", 403);
+    }
+  } catch (error: unknown) {
+    console.error("[api/admin/auth-providers DELETE auth]", error);
+    return fail("INTERNAL_ERROR", 500);
   }
 
   const { id } = await params;
-  const existing = await findById(id);
+  let existing;
+  try {
+    existing = await findById(id);
+  } catch (error: unknown) {
+    console.error("[api/admin/auth-providers DELETE findById]", error);
+    return fail("INTERNAL_ERROR", 500);
+  }
   if (!existing) {
     return fail("NOT_FOUND", 404);
   }
 
-  const linked = await countLinkedAccounts(existing.providerId);
+  let linked: number;
+  try {
+    linked = await countLinkedAccounts(existing.providerId);
+  } catch (error: unknown) {
+    console.error("[api/admin/auth-providers DELETE countLinked]", error);
+    return fail("INTERNAL_ERROR", 500);
+  }
   if (linked > 0) {
     return failWithDetails("PROVIDER_IN_USE", { linkedAccountCount: linked }, 409);
   }

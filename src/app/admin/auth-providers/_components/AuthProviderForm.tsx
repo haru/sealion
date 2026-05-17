@@ -44,7 +44,7 @@ export interface AuthProviderFormProps {
  */
 export function AuthProviderForm({
   onCreated,
-  supportedTypes = ["GOOGLE", "OIDC_GENERIC"],
+  supportedTypes = ["GOOGLE", "OIDC_GENERIC", "GITHUB", "MICROSOFT_ENTRA" as const],
 }: AuthProviderFormProps) {
   const t = useTranslations("authProviders.admin");
   const [type, setType] = useState<SupportedAuthProviderType>(supportedTypes[0]);
@@ -69,37 +69,42 @@ export function AuthProviderForm({
       return;
     }
     setLoading(true);
-    const res = await fetch("/api/admin/auth-providers", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        providerId,
-        type,
-        displayName,
-        enabled,
-        issuerUrl: requiresIssuer ? issuerUrl : null,
-        clientId,
-        clientSecret,
-        scope: scope || null,
-      }),
-    });
-    setLoading(false);
-    if (res.status === 201) {
-      setProviderId("");
-      setDisplayName("");
-      setIssuerUrl("");
-      setClientId("");
-      setClientSecret("");
-      setScope("");
-      onCreated?.();
-      return;
-    }
-    let code = "UNKNOWN";
     try {
-      const body = await res.json();
-      if (typeof body?.error === "string") { code = body.error; }
-    } catch { /* keep UNKNOWN */ }
-    setError(t(`form.errors.${code}`));
+      const res = await fetch("/api/admin/auth-providers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          providerId,
+          type,
+          displayName,
+          enabled,
+          issuerUrl: requiresIssuer ? issuerUrl : null,
+          clientId,
+          clientSecret,
+          scope: scope || null,
+        }),
+      });
+      if (res.status === 201) {
+        setProviderId("");
+        setDisplayName("");
+        setIssuerUrl("");
+        setClientId("");
+        setClientSecret("");
+        setScope("");
+        onCreated?.();
+        return;
+      }
+      let code = "UNKNOWN";
+      try {
+        const body = await res.json();
+        if (typeof body?.error === "string") { code = body.error; }
+      } catch { /* keep UNKNOWN */ }
+      setError(t(`form.errors.${code}`));
+    } catch {
+      setError(t("form.errors.UNKNOWN"));
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (

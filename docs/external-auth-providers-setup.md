@@ -18,8 +18,11 @@ This guide explains how to configure external authentication providers (Google, 
    - **Display Name**: Name shown on the login button
    - **Issuer URL** (required for OIDC_GENERIC and MICROSOFT_ENTRA): The OIDC discovery URL
    - **Client ID** and **Client Secret**: From your IdP registration
-5. Copy the **Redirect URI** shown in the form and register it with your IdP
-6. Save
+ 5. Calculate the **Redirect URI** using the pattern: `https://<your-sealion-host>/api/auth/callback/<provider-id>`
+     For example, if provider ID is `google` and your host is `https://sealion.example.com`:
+     `https://sealion.example.com/api/auth/callback/google`
+     Register this URI with your IdP
+ 6. Save
 
 After saving, the login page will show a button for the new provider.
 

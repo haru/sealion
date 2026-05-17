@@ -15,6 +15,7 @@ import {
   getAuthProviderMetadata,
   listEnabled,
 } from "@/services/auth-provider";
+import { handleExternalSignIn } from "@/services/auth-provider/account-linking";
 
 /** Seconds between re-checks of `passwordChangedAt` in the JWT callback. */
 const PWD_CHANGE_RECHECK_INTERVAL_S = 5 * 60;
@@ -81,6 +82,18 @@ export const { handlers, auth, signIn, signOut } = NextAuth(async () => {
     providers: [credentialsProvider, ...externalProviders],
     callbacks: {
       ...authConfig.callbacks,
+      /**
+       * signIn callback — routes external OAuth/OIDC accounts to
+       * {@link handleExternalSignIn} for email-verified verification + account
+       * auto-link / auto-create. Credentials flow passes through untouched.
+       *
+       * @param params - Auth.js signIn payload.
+       * @returns `true` to allow, `false` to deny generically, or a `/login?error=…` URL.
+       */
+      async signIn({ user, account, profile }) {
+        if (!account || account.type === "credentials") { return true; }
+        return handleExternalSignIn({ user, account, profile });
+      },
       /**
        * JWT callback — extends the base callback from auth.config.ts with session timeout support.
        *

@@ -56,19 +56,24 @@ function publicShape(record: {
  * @returns `200` with an array of providers and their linked account counts.
  */
 export async function GET() {
-  const session = await auth();
-  if (!session?.user) { return fail("UNAUTHORIZED", 401); }
-  if (session.user.role !== "ADMIN") { return fail("FORBIDDEN", 403); }
+  try {
+    const session = await auth();
+    if (!session?.user) { return fail("UNAUTHORIZED", 401); }
+    if (session.user.role !== "ADMIN") { return fail("FORBIDDEN", 403); }
 
-  const rows = await listAll();
-  const data = await Promise.all(
-    rows.map(async (row) => ({
-      ...publicShape(row),
-      linkedAccountCount: await countLinkedAccounts(row.providerId),
-    })),
-  );
+    const rows = await listAll();
+    const data = await Promise.all(
+      rows.map(async (row) => ({
+        ...publicShape(row),
+        linkedAccountCount: await countLinkedAccounts(row.providerId),
+      })),
+    );
 
-  return ok(data);
+    return ok(data);
+  } catch (error: unknown) {
+    console.error("[api/admin/auth-providers GET]", error);
+    return fail("INTERNAL_ERROR", 500);
+  }
 }
 
 /**
@@ -78,9 +83,14 @@ export async function GET() {
  * @returns `201` with the created provider, or an error response.
  */
 export async function POST(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user) { return fail("UNAUTHORIZED", 401); }
-  if (session.user.role !== "ADMIN") { return fail("FORBIDDEN", 403); }
+  try {
+    const session = await auth();
+    if (!session?.user) { return fail("UNAUTHORIZED", 401); }
+    if (session.user.role !== "ADMIN") { return fail("FORBIDDEN", 403); }
+  } catch (error: unknown) {
+    console.error("[api/admin/auth-providers POST auth]", error);
+    return fail("INTERNAL_ERROR", 500);
+  }
 
   let body: unknown;
   try {
@@ -95,7 +105,8 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const created = await create(parsed.data, session.user.id);
+    const session = await auth();
+    const created = await create(parsed.data, session?.user?.id);
     revalidateTag(AUTH_PROVIDERS_CACHE_TAG, "");
     return ok(publicShape(created), 201);
   } catch (error: unknown) {

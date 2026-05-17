@@ -23,9 +23,10 @@ function mockRepository(overrides: Record<string, unknown>) {
   jest.doMock("@/services/auth-provider/repository", () => overrides);
 }
 
-function mockSchema(safeParseResult: { success: boolean; data?: unknown }) {
+function mockSchema(safeParseResult: { success: boolean; data?: unknown; error?: { issues: unknown[] } }) {
   jest.doMock("@/services/auth-provider/schemas", () => ({
     AuthProviderUpdateSchema: { safeParse: () => safeParseResult },
+    validateUpdateIssuerUrl: jest.fn(),
   }));
 }
 
@@ -86,7 +87,7 @@ describe("PATCH /api/admin/auth-providers/[id] — unit (no DB required)", () =>
   test("returns 400 when Zod validation fails", async () => {
     mockAuth(adminSession);
     mockRepository({ findById: jest.fn(), update: jest.fn() });
-    mockSchema({ success: false });
+    mockSchema({ success: false, error: { issues: [] } });
     const { PATCH } = await import("@/app/api/admin/auth-providers/[id]/route");
     const res = await PATCH(patchReq("id1", { clientSecret: "" }), {
       params: Promise.resolve({ id: "id1" }),

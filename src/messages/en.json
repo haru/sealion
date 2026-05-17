@@ -347,7 +347,7 @@
     "EMAIL_NOT_VERIFIED": "Your email address has not been verified",
     "INVALID_TOKEN": "Invalid verification token",
     "EXPIRED_TOKEN": "Verification token has expired",
-    "MISSING_TOKEN": "Verification token is missing"
+    "OIDC_USER_NO_PASSWORD": "This account uses external authentication and has no local password."
   },
   "sync": {
     "error": {
@@ -496,6 +496,8 @@
       "LAST_AUTH_METHOD": "Cannot unlink: this is your last authentication method.",
       "NOT_FOUND": "Linked account not found.",
       "NETWORK": "Network error. Please try again.",
+      "UNAUTHORIZED": "Please log in to continue.",
+      "INTERNAL_ERROR": "An unexpected error occurred. Please try again.",
       "UNKNOWN": "An unexpected error occurred."
     }
   }
