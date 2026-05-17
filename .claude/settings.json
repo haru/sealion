@@ -6,7 +6,9 @@
       "Bash(npm ls *)",
       "Bash(npm --version)",
       "Bash(npm ci *)",
-      "Bash(npm show *)"
+      "Bash(npm show *)",
+      "Bash(ls /usr/local/redmine 2>&1 | head -30)",
+      "Read(//usr/local/**)"
     ],
     "additionalDirectories": [
       "/tmp",
