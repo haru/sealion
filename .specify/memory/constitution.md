@@ -1,7 +1,42 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version change: 1.2.3 → 1.3.0
+Version change: 1.3.0 → 1.4.0
+Modified principles:
+  - V. Simplicity (YAGNI) → V. Simplicity (KISS, DRY, YAGNI):
+    expanded to make KISS and DRY explicit alongside the existing YAGNI rule.
+    Added explicit DRY threshold (3 occurrences) and KISS guidance.
+  - VI. Code Documentation: added "file header" rule (every .ts / .tsx file MUST
+    begin with a ~2-line TSDoc block stating its role and responsibility).
+    Clarified TSDoc requirement covers .tsx components too.
+Added principles:
+  - VII. Collocation — related code MUST live together; physical proximity
+    reflects logical cohesion.
+  - VIII. Architecture Decision Records — significant design decisions MUST be
+    recorded as ADRs under docs/adr/, append-only.
+  - IX. UI Design System Coherence — design tokens MUST be used; custom colours
+    MUST be authored in oklch; visual flow / 視線の流れ MUST be intentional.
+Added sections:
+  - Development Workflow › Documentation Reference (use docs/ ; self-describing
+    filenames; ADRs live under docs/adr/).
+Removed sections: None.
+Minor clarifications:
+  - Principle II encryption helper path corrected from `src/lib/encryption.ts` to
+    `src/lib/encryption/encryption.ts` (matches actual codebase).
+Templates checked:
+  - .specify/templates/plan-template.md ✅ no template change needed
+    (Constitution Check is dynamic against the principles in this file).
+  - .specify/templates/spec-template.md ✅ no impact (spec is technology-agnostic).
+  - .specify/templates/tasks-template.md ✅ no impact (categorisation unchanged).
+  - .claude/skills/* ✅ no impact (skills reference principles dynamically).
+Follow-up TODOs:
+  - Initialise `docs/adr/` directory with `0001-record-architecture-decisions.md`
+    (the canonical "we will use ADRs" ADR) and a `README.md` index — to be done
+    in a separate change, not part of this constitution amendment.
+
+---
+
+Previous entry (1.2.3 → 1.3.0)
 Modified principles:
   - III. Multi-Provider Adapter Abstraction: materially expanded with the
     Provider Type Encapsulation rules introduced by spec 030-provider-type-abstraction.
@@ -98,8 +133,8 @@ Security controls MUST be applied at every layer; client-side checks alone are n
 
 - Every API route MUST enforce authentication and authorise the requesting user's session `userId`.
 - Users MUST NOT be able to read or modify another user's data (enforced at the API layer).
-- External provider credentials MUST be stored encrypted using AES-256-GCM (`src/lib/encryption.ts`);
-  plaintext tokens MUST never be persisted.
+- External provider credentials MUST be stored encrypted using AES-256-GCM
+  (`src/lib/encryption/encryption.ts`); plaintext tokens MUST never be persisted.
 - Admin routes MUST be protected in both middleware (`middleware.ts`) and inside each route handler.
 - All user inputs MUST be validated at system boundaries before processing.
 - Secrets (API keys, `AUTH_SECRET`, `CREDENTIALS_ENCRYPTION_KEY`) MUST be stored as environment
@@ -171,37 +206,140 @@ All user-visible strings MUST be externalised; hardcoded display strings are for
 **Rationale**: Japanese and English users are both first-class; retrofitting i18n after the fact
 is costly and error-prone.
 
-### V. Simplicity (YAGNI)
+### V. Simplicity (KISS, DRY, YAGNI)
 
 Complexity MUST be justified; the minimum solution that satisfies current requirements is preferred.
 
-- Features, helpers, or abstractions MUST NOT be added for hypothetical future requirements.
+- **YAGNI** (You Aren't Gonna Need It): Features, helpers, or abstractions MUST NOT be added for
+  hypothetical future requirements. Speculative configuration knobs, feature flags for nothing,
+  and generic "frameworks" awaiting a second caller are all forbidden.
+- **KISS** (Keep It Simple, Stupid): The straightforward implementation MUST be chosen over a clever
+  one. Cleverness that obscures intent (overloaded operators, deep generic chains, point-free
+  functional gymnastics) MUST be refactored to be plainly readable.
+- **DRY** (Don't Repeat Yourself): Logic repeated **three or more times** MUST be extracted to a
+  shared helper, hook, or component. Two occurrences MAY remain duplicated when extracting would
+  couple unrelated concerns or create a wrong abstraction — accept the duplication and revisit on
+  the third occurrence.
 - Functions MUST be under 50 lines; files MUST stay under 800 lines.
 - Nesting MUST NOT exceed 4 levels.
 - Immutable data patterns MUST be used — existing objects MUST NOT be mutated in place.
 - When a simpler alternative exists, it MUST be chosen unless a documented technical reason
   demands complexity (record such justifications in the plan's Complexity Tracking table).
 
-**Rationale**: The codebase is small and evolving quickly; premature abstractions create drag
-and obscure intent.
+**Rationale**: The codebase is small and evolving quickly. KISS keeps code reviewable, DRY keeps it
+maintainable, YAGNI keeps it lean. Premature abstractions create drag and obscure intent; the cost
+of removing a wrong abstraction is far higher than adding one when genuinely needed.
 
 ### VI. Code Documentation
 
-All exported symbols MUST be documented with TSDoc comments.
+Every source file MUST carry a brief header describing its role; every exported symbol MUST be
+documented with TSDoc.
 
-- Every exported function, class, interface, type alias, and constant MUST have a TSDoc block
-  comment (`/** … */`) immediately above its declaration.
+- **File header (MANDATORY)**: Every `.ts` and `.tsx` file MUST begin with a TSDoc block of
+  approximately 2 lines stating the file's role and responsibility. Example:
+  ```ts
+  /**
+   * AuthProvider repository — CRUD operations against the AuthProvider table.
+   * Wraps Prisma calls with AES-256-GCM encryption / decryption of clientSecret.
+   */
+  ```
+- Every exported function, class, interface, type alias, constant, **and React component** (in
+  `.ts` and `.tsx`) MUST have a TSDoc block comment (`/** … */`) immediately above its declaration.
 - TSDoc comments MUST include at minimum: a one-line summary, `@param` tags for each parameter,
-  and a `@returns` tag for non-void functions.
+  and a `@returns` tag for non-void functions. React component props MUST be documented either on
+  the props type or via `@param` on the component function.
 - `@throws` MUST be documented when a function can throw a known error type.
 - Internal (non-exported) helpers SHOULD have a brief comment when their intent is not
   immediately obvious from the name alone.
-- TSDoc MUST be written in English (consistent with the Language rule in Development Workflow).
+- TSDoc and file headers MUST be written in English (consistent with the Language rule in
+  Development Workflow).
 - Documentation MUST be kept in sync with implementation — stale or misleading comments are
   treated as bugs.
 
 **Rationale**: The project integrates multiple external systems; clear API contracts on exported
-symbols reduce onboarding time and prevent misuse across module boundaries.
+symbols reduce onboarding time and prevent misuse across module boundaries. File headers give a
+reader the file's purpose in seconds without scrolling — invaluable during code review and when
+navigating a foreign module.
+
+### VII. Collocation
+
+Related code MUST live together; physical proximity in the filesystem MUST reflect logical cohesion.
+
+- **Feature components** MUST be co-located with their tests, styles, sub-components, and
+  feature-specific hooks. Default to placing them under the consuming route (e.g.,
+  `src/app/admin/auth-providers/_components/AuthProviderForm.tsx`) rather than a top-level
+  `src/components/` directory unless reused across more than one feature.
+- **API route handlers** MUST live at `src/app/api/<route>/route.ts` next to any route-specific
+  helpers (e.g., `_validation.ts`, `_handlers/`). Shared cross-route helpers go in
+  `src/services/` or `src/lib/`.
+- **Domain services** MUST live under `src/services/<domain>/` and group all related modules
+  (types, schemas, factory, registry, repository) together.
+- **Cross-cutting utilities** that genuinely serve more than one domain MAY live in `src/lib/`;
+  introducing a new file in `src/lib/` requires confirming at least two distinct callers (DRY
+  exception: only when reuse is genuine, not anticipated).
+- **Tests** MUST mirror the path of the file under test: a test for
+  `src/services/auth-provider/repository.ts` lives at
+  `tests/unit/services/auth-provider/repository.test.ts`.
+
+**Rationale**: Distant code increases the cost of every change — navigation, refactoring,
+deletion, and review all suffer when related files are spread across the tree. Collocation
+makes the blast radius of a change obvious at a glance and lets unused feature directories
+be deleted as a unit when a feature is removed.
+
+### VIII. Architecture Decision Records (ADRs)
+
+Significant design decisions MUST be recorded as Architecture Decision Records under `docs/adr/`.
+
+- An ADR MUST be written whenever a decision: introduces or removes a major dependency, defines
+  or changes a domain boundary, picks among multiple viable architectures, alters the security
+  model, sets a long-lived convention, or accepts a trade-off that future maintainers might
+  otherwise question.
+- When the author is uncertain whether a decision rises to the level of an ADR, the author MUST
+  ask the user before proceeding rather than guess.
+- ADR files MUST use the naming pattern `docs/adr/NNNN-<short-kebab-name>.md` (e.g.,
+  `docs/adr/0007-dynamic-auth-providers.md`) with a monotonically increasing 4-digit prefix.
+- Each ADR MUST contain: **Context**, **Decision**, **Status** (`Proposed` / `Accepted` /
+  `Superseded by ADR-NNNN`), **Consequences** (positive + negative), and **Date**.
+- ADRs are **append-only**. Past ADRs MUST NOT be edited (typo / formatting fixes excepted).
+  A decision is reversed by writing a NEW ADR that supersedes the old one and updating the old
+  ADR's Status line to `Superseded by ADR-NNNN`.
+- `docs/adr/README.md` SHOULD index ADRs by number, title, and current status.
+
+**Rationale**: ADRs preserve the *why* behind decisions that the code can never express on its
+own — alternatives considered, constraints at the time, stakeholder input, performance
+measurements. The append-only rule turns the directory into a reliable historical record of how
+the system reached its current shape; rewriting history erases the lessons that make the
+record valuable.
+
+### IX. UI Design System Coherence
+
+UI work MUST follow a token-based design system. Custom colours, spacing, and typography MUST
+extend the token set, not bypass it.
+
+- **Design tokens (MANDATORY)**: All colours, spacing, font sizes, radii, and shadows MUST be
+  defined as tokens — MUI theme overrides, CSS custom properties, or a typed token module. Inline
+  hex / rgb / px / em values are forbidden in component code; use the token (`theme.palette.*`,
+  `theme.spacing(n)`, `theme.typography.*`, or the project token module).
+- **Colour space**: Custom colours MUST be authored in oklch (e.g.,
+  `oklch(0.62 0.18 250)`) to ensure perceptual uniformity and predictable lightness derivation.
+  RGB / HSL custom colour definitions MUST NOT be introduced.
+- **Tonal harmony**: A newly introduced colour MUST harmonise with the existing palette — match
+  hue family, neighbouring chroma, and the existing lightness scale. Authors MUST visually
+  compare against existing tokens before introducing a new one and MUST document the rationale
+  (what existing token was insufficient, why) in the PR description.
+- **Visual flow (視線の流れ)**: Layouts MUST guide the reader's eye with intentional hierarchy —
+  primary action positioned per existing app convention (typically top-right or bottom-right),
+  supporting metadata recedes via lower contrast / smaller size, related items align on a shared
+  axis, and grouped controls are visually contained in a single focused region. Primary actions
+  MUST NOT be scattered across multiple regions of a single view.
+- Reusable visual patterns MUST be extracted into MUI theme components or shared component
+  primitives once a third occurrence appears (consistent with the DRY rule in Principle V).
+
+**Rationale**: A coherent visual language reduces cognitive load and signals product quality.
+oklch gives engineers a colour space that "behaves" the way the eye perceives it — derived
+shades stay harmonious without manual tweaking, and dark-mode / hover / disabled variants can
+be computed mechanically. Explicit visual flow keeps power-user productivity high by letting
+the eye land on the next decision without scanning.
 
 ## Technology Standards
 
@@ -241,7 +379,10 @@ amendment.
 4. All CRITICAL and HIGH findings from code-review addressed.
 5. Security checklist cleared (no hardcoded secrets, inputs validated, auth enforced).
 6. TSDoc present on all newly added or modified exported symbols (summary, `@param`, `@returns`,
-   and `@throws` where applicable).
+   and `@throws` where applicable), and every new `.ts` / `.tsx` file carries a ~2-line file
+   header (Principle VI).
+7. Any decision rising to ADR-worthiness per Principle VIII has a corresponding ADR file
+   (or the author has confirmed with the user that one is not needed).
 
 ### Database Migrations
 
@@ -256,6 +397,19 @@ amendment.
 **Rationale**: Modifying an already-merged migration rewrites history that other developers
 and environments have already applied. This causes irrecoverable drift, data loss, and broken
 migration chains that are extremely difficult to recover from in production.
+
+### Documentation Reference
+
+- The `docs/` directory contains project documentation organised by topic. Filenames are intended
+  to be self-describing — authors MUST be able to identify relevant documents by filename alone.
+- Before implementing a feature that touches an existing subsystem, authors SHOULD scan `docs/`
+  for relevant filenames and read matching documents.
+- New documentation MUST be added to `docs/` with a self-describing kebab-case filename (e.g.,
+  `docs/external-auth-providers-setup.md`). Vague names like `notes.md` or `misc.md` MUST NOT
+  be used.
+- ADRs (Principle VIII) live under `docs/adr/` and are governed by the rules in that principle.
+- Spec-Kit feature documents continue to live under `specs/<NNN-feature>/` and are out of scope
+  for the `docs/` directory.
 
 ### Feature Development Order
 
@@ -289,5 +443,9 @@ arises between this document and any other guideline, this constitution takes pr
 - All PRs MUST pass the Constitution Check in `plan-template.md` before Phase 0 research begins.
 - Complexity violations MUST be justified in the plan's Complexity Tracking table.
 - Security and TDD compliance MUST be verified during code review on every PR.
+- New UI work MUST be visually reviewed for compliance with Principle IX (design tokens, oklch,
+  visual flow) before merge.
+- Decisions rising to ADR-worthiness MUST have a corresponding ADR file under `docs/adr/` or an
+  explicit user confirmation that no ADR is needed.
 
-**Version**: 1.3.0 | **Ratified**: 2026-03-20 | **Last Amended**: 2026-04-05
+**Version**: 1.4.0 | **Ratified**: 2026-03-20 | **Last Amended**: 2026-05-17
