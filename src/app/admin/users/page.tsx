@@ -237,7 +237,7 @@ export default function AdminUsersPage() {
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Stack sx={{ direction: "row", justifyContent: "flex-end", mb: 3 }}>
+      <Stack direction="row" sx={{ justifyContent: "flex-end", mb: 3 }}>
         <Button variant="contained" startIcon={<AddIcon />} onClick={() => setCreateOpen(true)}>
           {t("createUser")}
         </Button>
