@@ -7,12 +7,14 @@
       "Bash(npm --version)",
       "Bash(npm ci *)",
       "Bash(npm show *)",
-      "Bash(ls /usr/local/redmine 2>&1 | head -30)",
-      "Read(//usr/local/**)"
+      "Bash(git checkout *)",
+      "Bash(awk '/^## Core Principles/,/^## /{print}' .specify/memory/constitution.md)",
+      "Bash(.specify/scripts/bash/setup-tasks.sh --json)"
     ],
     "additionalDirectories": [
       "/tmp",
-      "/workspaces/sealion/prisma/migrations"
+      "/workspaces/sealion/prisma/migrations",
+      "/workspaces/sealion/specs/"
     ]
   },
   "enabledPlugins": {
