@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import type { NextRequest } from "next/server";
 
 import { ok, fail } from "@/lib/api/api-response";
+import { BCRYPT_ROUNDS } from "@/lib/auth/bcrypt-config";
 import { prisma } from "@/lib/db/db";
 import { normalizeEmail, verifyPasswordResetToken, TokenExpiredError } from "@/lib/email/password-reset";
 
@@ -77,7 +78,7 @@ export async function POST(request: NextRequest) {
     return fail("OIDC_USER_NO_PASSWORD", 400);
   }
 
-  const hashedPassword = await bcrypt.hash(password, 12);
+  const hashedPassword = await bcrypt.hash(password, BCRYPT_ROUNDS);
 
   await prisma.$transaction([
     prisma.user.update({

@@ -1,24 +1,70 @@
 /** @jest-environment node */
 /**
  * Integration test: existing local user signs in via credentials while one OIDC
- * IdP is enabled. Confirms successful sign-in and no interaction with OIDC flow.
+ * IdP is enabled. Confirms the credentials authorize callback still returns a
+ * valid user (not null) when an OIDC provider row is present in the DB.
  */
 
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import type { NextAuthConfig } from "next-auth";
 
 import { encrypt } from "@/lib/encryption/encryption";
 
+let capturedProviderConfig:
+  | {
+      authorize?: (
+        credentials: Record<string, unknown> | undefined,
+      ) => Promise<unknown>;
+    }
+  | undefined;
+
+const mockProviderFactory = jest.fn((config: unknown) => {
+  capturedProviderConfig = config as typeof capturedProviderConfig;
+  return { id: "credentials", ...config };
+});
+
+jest.mock("next-auth/providers/credentials", () => mockProviderFactory);
+
+jest.mock("next-auth", () => ({
+  __esModule: true,
+  default: jest.fn(
+    (config: NextAuthConfig | (() => Promise<NextAuthConfig>)) => {
+      if (typeof config === "function") {
+        void (async () => { await config(); })();
+      }
+      return { handlers: {}, auth: jest.fn(), signIn: jest.fn(), signOut: jest.fn() };
+    },
+  ),
+}));
+
+jest.mock("@auth/prisma-adapter", () => ({ PrismaAdapter: jest.fn(() => ({})) }));
+jest.mock("@/lib/auth/auth-settings", () => ({
+  getAuthSettings: jest.fn().mockResolvedValue({
+    allowUserSignup: true,
+    requireEmailVerification: false,
+    sessionTimeoutMinutes: null,
+  }),
+}));
 jest.mock("next/cache", () => ({
   unstable_cache: <T extends (...args: never[]) => Promise<unknown>>(fn: T) => fn,
   revalidateTag: jest.fn(),
+}));
+jest.mock("@/services/auth-provider/repository", () => ({
+  listEnabled: jest.fn().mockResolvedValue([]),
+  AUTH_PROVIDERS_CACHE_TAG: "auth-providers",
+}));
+jest.mock("@/services/auth-provider", () => ({
+  listEnabled: jest.fn().mockResolvedValue([]),
+  getAuthProviderMetadata: jest.fn(),
 }));
 
 let prisma: PrismaClient;
 let dbAvailable = false;
 
 const TEST_EMAIL = "local-coexist@integration.test";
+const TEST_PASSWORD = "password123";
 const OIDC_PROVIDER = "local-coexist-oidc";
 
 beforeAll(async () => {
@@ -31,12 +77,13 @@ beforeAll(async () => {
   } catch {
     dbAvailable = false;
   }
+  await import("@/lib/auth/auth");
+  await new Promise((resolve) => setImmediate(resolve));
 });
 
 afterAll(async () => {
   if (dbAvailable) {
     await prisma.authProvider.deleteMany({ where: { providerId: OIDC_PROVIDER } });
-    await prisma.account.deleteMany({ where: { provider: OIDC_PROVIDER } });
     await prisma.user.deleteMany({ where: { email: TEST_EMAIL } });
     await prisma.$disconnect();
   }
@@ -45,9 +92,8 @@ afterAll(async () => {
 beforeEach(async () => {
   if (!dbAvailable) { return; }
   await prisma.authProvider.deleteMany({ where: { providerId: OIDC_PROVIDER } });
-  await prisma.account.deleteMany({ where: { provider: OIDC_PROVIDER } });
   await prisma.user.deleteMany({ where: { email: TEST_EMAIL } });
-  const hash = await bcrypt.hash("password123", 10);
+  const hash = await bcrypt.hash(TEST_PASSWORD, 10);
   await prisma.user.create({
     data: {
       email: TEST_EMAIL,
@@ -69,32 +115,35 @@ beforeEach(async () => {
 });
 
 describe("local-auth coexistence with OIDC", () => {
-  it("signs in a local user via credentials while an OIDC provider is enabled", async () => {
+  it("credentials authorize still returns a user when an OIDC provider is enabled", async () => {
     if (!dbAvailable) { return; }
 
-    const { handleExternalSignIn } = await import("@/services/auth-provider/account-linking");
-    const result = await handleExternalSignIn({
-      user: { id: "tmp", email: TEST_EMAIL },
-      account: {
-        provider: OIDC_PROVIDER,
-        providerAccountId: "coexist-sub-1",
-        type: "oidc",
-        access_token: "at",
-      },
-      profile: { email: TEST_EMAIL, email_verified: true },
+    if (!capturedProviderConfig?.authorize) {
+      throw new Error("authorize not captured — mock setup failed");
+    }
+
+    // Credentials sign-in with correct password while an OIDC provider exists in DB.
+    const result = await capturedProviderConfig.authorize({
+      email: TEST_EMAIL,
+      password: TEST_PASSWORD,
     });
 
-    expect(result).toBe(true);
+    expect(result).not.toBeNull();
+    expect((result as { email: string }).email).toBe(TEST_EMAIL);
+  });
 
-    const user = await prisma.user.findUnique({ where: { email: TEST_EMAIL } });
-    expect(user).not.toBeNull();
-    expect(user!.passwordHash).not.toBeNull();
+  it("credentials authorize returns null for wrong password when OIDC provider is enabled", async () => {
+    if (!dbAvailable) { return; }
 
-    const isValid = await bcrypt.compare("password123", user!.passwordHash!);
-    expect(isValid).toBe(true);
+    if (!capturedProviderConfig?.authorize) {
+      throw new Error("authorize not captured — mock setup failed");
+    }
 
-    const accounts = await prisma.account.findMany({ where: { userId: user!.id } });
-    expect(accounts).toHaveLength(1);
-    expect(accounts[0].provider).toBe(OIDC_PROVIDER);
+    const result = await capturedProviderConfig.authorize({
+      email: TEST_EMAIL,
+      password: "wrong-password",
+    });
+
+    expect(result).toBeNull();
   });
 });

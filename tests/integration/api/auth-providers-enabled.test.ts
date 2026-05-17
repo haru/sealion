@@ -10,7 +10,7 @@ import { PrismaClient } from "@prisma/client";
 
 import { encrypt } from "@/lib/encryption/encryption";
 
-const encryptedSecret = encrypt("public-list-secret");
+let encryptedSecret: string;
 
 jest.mock("next/cache", () => ({
   unstable_cache: <T extends (...args: never[]) => Promise<unknown>>(fn: T) => fn,
@@ -38,6 +38,7 @@ afterAll(async () => {
 
 beforeEach(async () => {
   if (dbAvailable) {
+    encryptedSecret = encrypt("public-list-secret");
     await prisma.authProvider.deleteMany({
       where: {
         providerId: { in: ["google-public-test", "github-public-test-disabled"] },
@@ -74,7 +75,7 @@ describe("GET /api/auth-providers/enabled", () => {
     const res = await GET();
     expect(res.status).toBe(200);
     const body = await res.json();
-    expect(body.success).toBe(true);
+    expect(body.error).toBeNull();
     const ourRows = body.data.filter((r: { providerId: string }) =>
       ["google-public-test", "github-public-test-disabled"].includes(r.providerId),
     );

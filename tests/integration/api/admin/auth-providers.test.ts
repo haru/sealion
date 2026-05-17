@@ -138,7 +138,7 @@ describe("POST /api/admin/auth-providers", () => {
     const res = await POST(req);
     expect(res.status).toBe(201);
     const body = await res.json();
-    expect(body.success).toBe(true);
+    expect(body.error).toBeNull();
     expect(body.data.providerId).toBe("google-admin-test");
     expect(JSON.stringify(body)).not.toContain("super-secret-value");
     expect(JSON.stringify(body)).not.toContain("encrypted");
@@ -201,7 +201,7 @@ describe("GET /api/admin/auth-providers", () => {
     const res = await GET();
     expect(res.status).toBe(200);
     const body = await res.json();
-    expect(body.success).toBe(true);
+    expect(body.error).toBeNull();
     expect(Array.isArray(body.data)).toBe(true);
     const ours = body.data.find(
       (r: { providerId: string }) => r.providerId === "google-admin-test",

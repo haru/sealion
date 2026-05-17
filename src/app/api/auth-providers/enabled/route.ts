@@ -6,17 +6,12 @@
 
 import { NextResponse } from "next/server";
 
+import { fail, ok } from "@/lib/api/api-response";
 import { listEnabled } from "@/services/auth-provider/repository";
 
 /** Cache for 30 seconds; admin writes invalidate `auth-providers` tag. */
 const CACHE_HEADER = "max-age=30";
 
-/**
- * Returns the enabled providers' minimal display payload.
- *
- * @returns A JSON response with `{ providerId, type, displayName }[]` and HTTP 200.
- *   Returns HTTP 500 with `INTERNAL_ERROR` on a DB failure.
- */
 export async function GET(): Promise<NextResponse> {
   try {
     const rows = await listEnabled();
@@ -25,15 +20,11 @@ export async function GET(): Promise<NextResponse> {
       type: r.type,
       displayName: r.displayName,
     }));
-    return NextResponse.json(
-      { success: true, data },
-      { status: 200, headers: { "Cache-Control": CACHE_HEADER } },
-    );
+    const res = ok(data);
+    res.headers.set("Cache-Control", CACHE_HEADER);
+    return res;
   } catch (error: unknown) {
     console.error("[api/auth-providers/enabled]", error);
-    return NextResponse.json(
-      { success: false, error: "INTERNAL_ERROR" },
-      { status: 500 },
-    );
+    return fail("INTERNAL_ERROR", 500);
   }
 }

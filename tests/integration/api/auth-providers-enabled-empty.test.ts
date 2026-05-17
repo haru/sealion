@@ -41,7 +41,7 @@ describe("GET /api/auth-providers/enabled — empty state", () => {
     const res = await GET();
     expect(res.status).toBe(200);
     const body = await res.json();
-    expect(body.success).toBe(true);
+    expect(body.error).toBeNull();
     expect(Array.isArray(body.data)).toBe(true);
   });
 });

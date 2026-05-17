@@ -37,7 +37,7 @@ interface LinkedAccount {
 async function fetchLinkedAccounts(): Promise<LinkedAccount[]> {
   const res = await fetch("/api/account/links");
   const body = await res.json();
-  if (!res.ok || !body.success) {
+  if (!res.ok || body.error) {
     throw new Error(body.error ?? "UNKNOWN");
   }
   return body.data;

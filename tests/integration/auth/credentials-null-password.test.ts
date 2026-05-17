@@ -7,7 +7,36 @@
 
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
+import type { NextAuthConfig } from "next-auth";
 
+let capturedProviderConfig:
+  | {
+      authorize?: (
+        credentials: Record<string, unknown> | undefined,
+      ) => Promise<unknown>;
+    }
+  | undefined;
+
+const mockProviderFactory = jest.fn((config: unknown) => {
+  capturedProviderConfig = config as typeof capturedProviderConfig;
+  return { id: "credentials", ...config };
+});
+
+jest.mock("next-auth/providers/credentials", () => mockProviderFactory);
+
+jest.mock("next-auth", () => ({
+  __esModule: true,
+  default: jest.fn(
+    (config: NextAuthConfig | (() => Promise<NextAuthConfig>)) => {
+      if (typeof config === "function") {
+        void (async () => { await config(); })();
+      }
+      return { handlers: {}, auth: jest.fn(), signIn: jest.fn(), signOut: jest.fn() };
+    },
+  ),
+}));
+
+jest.mock("@auth/prisma-adapter", () => ({ PrismaAdapter: jest.fn(() => ({})) }));
 jest.mock("@/lib/auth/auth-settings", () => ({
   getAuthSettings: jest.fn().mockResolvedValue({
     allowUserSignup: true,
@@ -15,12 +44,24 @@ jest.mock("@/lib/auth/auth-settings", () => ({
     sessionTimeoutMinutes: null,
   }),
 }));
-
 jest.mock("next/cache", () => ({
   unstable_cache: <T extends (...args: never[]) => Promise<unknown>>(fn: T) => fn,
   revalidateTag: jest.fn(),
 }));
+jest.mock("@/services/auth-provider/repository", () => ({
+  listEnabled: jest.fn().mockResolvedValue([]),
+  AUTH_PROVIDERS_CACHE_TAG: "auth-providers",
+}));
+jest.mock("@/services/auth-provider", () => ({
+  listEnabled: jest.fn().mockResolvedValue([]),
+  getAuthProviderMetadata: jest.fn(),
+}));
+jest.mock("bcryptjs", () => ({
+  compare: jest.fn().mockResolvedValue(false),
+  hash: jest.fn(),
+}));
 
+// Real Prisma client (integration DB) — not mocked so findUnique reads actual rows.
 let prisma: PrismaClient;
 let dbAvailable = false;
 
@@ -36,6 +77,9 @@ beforeAll(async () => {
   } catch {
     dbAvailable = false;
   }
+  // Load auth module so it registers its NextAuth config (captures authorize).
+  await import("@/lib/auth/auth");
+  await new Promise((resolve) => setImmediate(resolve));
 });
 
 afterAll(async () => {
@@ -59,15 +103,18 @@ beforeEach(async () => {
 });
 
 describe("credentials sign-in with null passwordHash", () => {
-  it("returns null for an OIDC-only user attempting credentials sign-in", async () => {
+  it("returns null for an OIDC-only user — does not crash", async () => {
     if (!dbAvailable) { return; }
 
-    const user = await prisma.user.findUnique({ where: { email: TEST_EMAIL } });
-    expect(user).not.toBeNull();
-    expect(user!.passwordHash).toBeNull();
+    if (!capturedProviderConfig?.authorize) {
+      throw new Error("authorize not captured — mock setup failed");
+    }
 
-    const result = await prisma.user.findUnique({ where: { email: TEST_EMAIL } });
-    expect(result).not.toBeNull();
-    expect(result!.passwordHash).toBeNull();
+    const result = await capturedProviderConfig.authorize({
+      email: TEST_EMAIL,
+      password: "any-password",
+    });
+
+    expect(result).toBeNull();
   });
 });

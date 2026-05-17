@@ -9,6 +9,7 @@ import { revalidateTag } from "next/cache";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
+import { fail, failWithDetails, ok } from "@/lib/api/api-response";
 import { auth } from "@/lib/auth/auth";
 import {
   countLinkedAccounts,
@@ -19,13 +20,6 @@ import {
 } from "@/services/auth-provider/repository";
 import { AuthProviderUpdateSchema } from "@/services/auth-provider/schemas";
 
-/**
- * Strips the decrypted `clientSecret` and serialises dates to ISO strings
- * before returning to the client.
- *
- * @param record - The decrypted provider record.
- * @returns A safe public view of the record.
- */
 function toPublic(record: {
   id: string;
   providerId: string;
@@ -52,21 +46,13 @@ function toPublic(record: {
   };
 }
 
-/**
- * Partially updates a provider. Omitted fields keep their existing values.
- * Calls `revalidateTag("auth-providers")` on success.
- *
- * @param request - The incoming PATCH request.
- * @param context - Route context with the `id` param.
- * @returns 200 with the updated row, or an error response.
- */
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const session = await auth();
   if (!session?.user || session.user.role !== "ADMIN") {
-    return NextResponse.json({ success: false, error: "FORBIDDEN" }, { status: 403 });
+    return fail("FORBIDDEN", 403);
   }
 
   const { id } = await params;
@@ -74,63 +60,53 @@ export async function PATCH(
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ success: false, error: "INVALID_INPUT" }, { status: 400 });
+    return fail("INVALID_INPUT", 400);
   }
 
   const parsed = AuthProviderUpdateSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ success: false, error: "INVALID_INPUT" }, { status: 400 });
+    return fail("INVALID_INPUT", 400);
   }
 
   const existing = await findById(id);
   if (!existing) {
-    return NextResponse.json({ success: false, error: "NOT_FOUND" }, { status: 404 });
+    return fail("NOT_FOUND", 404);
   }
 
   try {
     const updated = await update(id, parsed.data, session.user.id);
     revalidateTag(AUTH_PROVIDERS_CACHE_TAG, "");
-    return NextResponse.json({ success: true, data: toPublic(updated) }, { status: 200 });
+    return ok(toPublic(updated));
   } catch (error: unknown) {
     if (
       error instanceof Prisma.PrismaClientKnownRequestError &&
       error.code === "P2025"
     ) {
-      return NextResponse.json({ success: false, error: "NOT_FOUND" }, { status: 404 });
+      return fail("NOT_FOUND", 404);
     }
     console.error("[api/admin/auth-providers PATCH]", error);
-    return NextResponse.json({ success: false, error: "INTERNAL_ERROR" }, { status: 500 });
+    return fail("INTERNAL_ERROR", 500);
   }
 }
 
-/**
- * Deletes a provider. Returns 409 PROVIDER_IN_USE if linked Accounts exist.
- *
- * @param request - The incoming DELETE request.
- * @param context - Route context with the `id` param.
- * @returns 204 on success, or an error response.
- */
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const session = await auth();
   if (!session?.user || session.user.role !== "ADMIN") {
-    return NextResponse.json({ success: false, error: "FORBIDDEN" }, { status: 403 });
+    return fail("FORBIDDEN", 403);
   }
 
   const { id } = await params;
   const existing = await findById(id);
   if (!existing) {
-    return NextResponse.json({ success: false, error: "NOT_FOUND" }, { status: 404 });
+    return fail("NOT_FOUND", 404);
   }
 
   const linked = await countLinkedAccounts(existing.providerId);
   if (linked > 0) {
-    return NextResponse.json(
-      { success: false, error: "PROVIDER_IN_USE", linkedAccountCount: linked },
-      { status: 409 },
-    );
+    return failWithDetails("PROVIDER_IN_USE", { linkedAccountCount: linked }, 409);
   }
 
   try {
@@ -142,9 +118,9 @@ export async function DELETE(
       error instanceof Prisma.PrismaClientKnownRequestError &&
       error.code === "P2025"
     ) {
-      return NextResponse.json({ success: false, error: "NOT_FOUND" }, { status: 404 });
+      return fail("NOT_FOUND", 404);
     }
     console.error("[api/admin/auth-providers DELETE]", error);
-    return NextResponse.json({ success: false, error: "INTERNAL_ERROR" }, { status: 500 });
+    return fail("INTERNAL_ERROR", 500);
   }
 }

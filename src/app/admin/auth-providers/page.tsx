@@ -60,7 +60,7 @@ export default function AdminAuthProvidersPage() {
     try {
       const res = await fetch("/api/admin/auth-providers");
       const body = await res.json();
-      if (!res.ok || !body.success) {
+      if (!res.ok || body.error) {
         setError(t(`errors.${body.error ?? "UNKNOWN"}`));
         setRows([]);
         return;

@@ -221,7 +221,12 @@ export async function resolveGithubVerifiedEmail(
       (e) => e.primary && e.verified && e.email.toLowerCase() === expectedEmail,
     );
     return verified !== undefined;
-  } catch {
+  } catch (err: unknown) {
+    console.warn("[auth/github-email-verify] failed to resolve verified email", {
+      email: expectedEmail,
+      status: axios.isAxiosError(err) ? err.response?.status : undefined,
+      message: err instanceof Error ? err.message : "unknown",
+    });
     return false;
   }
 }
