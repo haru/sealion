@@ -6,7 +6,6 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Checkbox from "@mui/material/Checkbox";
 import Collapse from "@mui/material/Collapse";
-import Container from "@mui/material/Container";
 import Divider from "@mui/material/Divider";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import TextField from "@mui/material/TextField";
@@ -18,6 +17,7 @@ import { useState, useEffect, useRef } from "react";
 
 import { DeleteAccountModal } from "@/components/settings/DeleteAccountModal";
 import GravatarSection from "@/components/settings/GravatarSection";
+import PageContent from "@/components/ui/PageContent";
 import { usePageHeader } from "@/hooks/usePageHeader";
 
 import { AccountLinksSection } from "./_components/AccountLinksSection";
@@ -160,7 +160,7 @@ export default function ProfileSettingsPage() {
   };
 
   return (
-    <Container maxWidth="sm" sx={{ py: 4 }}>
+    <PageContent maxWidth="sm">
       <Box
         component="form"
         onSubmit={handleSave}
@@ -304,7 +304,7 @@ export default function ProfileSettingsPage() {
           />
         </>
       )}
-    </Container>
+    </PageContent>
   );
 }
 

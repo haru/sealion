@@ -6,7 +6,6 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import PeopleIcon from "@mui/icons-material/People";
 import {
-  Container,
   Chip,
   Button,
   Dialog,
@@ -25,6 +24,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { useAdminUserId } from "@/app/admin/AdminSessionProvider";
 import { useMessageQueue } from "@/components/MessageQueue";
 import DataTable from "@/components/ui/DataTable";
+import PageContent from "@/components/ui/PageContent";
 import { usePageHeader } from "@/hooks/usePageHeader";
 
 import CreateUserDialog from "./CreateUserDialog";
@@ -236,7 +236,7 @@ export default function AdminUsersPage() {
   );
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
+    <PageContent maxWidth="lg">
       <Stack direction="row" sx={{ justifyContent: "flex-end", mb: 3 }}>
         <Button variant="contained" startIcon={<AddIcon />} onClick={() => setCreateOpen(true)}>
           {t("createUser")}
@@ -279,6 +279,6 @@ export default function AdminUsersPage() {
           </Button>
         </DialogActions>
       </Dialog>
-    </Container>
+    </PageContent>
   );
 }

@@ -1,15 +1,10 @@
-/**
- * Admin page — IdP list + add/edit dialog hosting {@link AuthProviderForm}.
- * Lists every configured `AuthProvider` (enabled + disabled) with their
- * linked-account counts. Supports inline edit and delete with confirmation.
- */
-
 "use client";
 
 import AddIcon from "@mui/icons-material/Add";
+import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
-import Box from "@mui/material/Box";
+import KeyIcon from "@mui/icons-material/Key";
 import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
 import Dialog from "@mui/material/Dialog";
@@ -18,24 +13,23 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
 import IconButton from "@mui/material/IconButton";
-import Paper from "@mui/material/Paper";
-import Table from "@mui/material/Table";
-import TableBody from "@mui/material/TableBody";
-import TableCell from "@mui/material/TableCell";
-import TableHead from "@mui/material/TableHead";
-import TableRow from "@mui/material/TableRow";
+import Stack from "@mui/material/Stack";
 import Tooltip from "@mui/material/Tooltip";
-import Typography from "@mui/material/Typography";
+import type { GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
 import { useTranslations } from "next-intl";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { ProviderIcon } from "@/components/auth/ProviderIcon";
 import { useMessageQueue } from "@/components/MessageQueue";
+import DataTable from "@/components/ui/DataTable";
+import PageContent from "@/components/ui/PageContent";
+import { usePageHeader } from "@/hooks/usePageHeader";
 import type { AuthProviderType } from "@/services/auth-provider/types";
 
 import type { AuthProviderInitialValues } from "./_components/AuthProviderForm";
 import { AuthProviderForm } from "./_components/AuthProviderForm";
 
+/** A single auth-provider row as returned by the admin API. */
 interface AdminAuthProviderRow {
   id: string;
   providerId: string;
@@ -51,20 +45,101 @@ interface AdminAuthProviderRow {
 }
 
 /**
- * Renders the admin Auth Providers page.
- *
- * @returns The page element.
+ * Admin page — IdP list + add/edit dialog hosting {@link AuthProviderForm}.
+ * Lists every configured `AuthProvider` (enabled + disabled) with their
+ * linked-account counts. Supports inline edit and delete with confirmation.
  */
 export default function AdminAuthProvidersPage() {
   const t = useTranslations("authProviders.admin");
+  const tSidebar = useTranslations("sidebar");
   const { addMessage } = useMessageQueue();
+
   const [rows, setRows] = useState<AdminAuthProviderRow[]>([]);
   const [open, setOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<AuthProviderInitialValues | undefined>(undefined);
   const [deleteTarget, setDeleteTarget] = useState<AdminAuthProviderRow | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [_error, setError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+
+  usePageHeader(t("title"), undefined, KeyIcon, undefined, tSidebar("systemAdmin"), AdminPanelSettingsIcon);
+
+  const columns = useMemo<GridColDef<AdminAuthProviderRow>[]>(
+    () => [
+      {
+        field: "type",
+        headerName: "",
+        width: 48,
+        sortable: false,
+        filterable: false,
+        renderCell: (params: GridRenderCellParams<AdminAuthProviderRow>) => (
+          <ProviderIcon type={params.row.type} />
+        ),
+      },
+      {
+        field: "displayName",
+        headerName: t("table.displayName"),
+        flex: 1,
+        minWidth: 150,
+      },
+      {
+        field: "providerId",
+        headerName: t("table.providerId"),
+        flex: 1,
+        minWidth: 150,
+        renderCell: (params: GridRenderCellParams<AdminAuthProviderRow>) => (
+          <code>{params.row.providerId}</code>
+        ),
+      },
+      {
+        field: "typeLabel",
+        headerName: t("table.type"),
+        width: 160,
+        renderCell: (params: GridRenderCellParams<AdminAuthProviderRow>) =>
+          t(`types.${params.row.type}`),
+      },
+      {
+        field: "enabled",
+        headerName: t("table.enabled"),
+        width: 110,
+        renderCell: (params: GridRenderCellParams<AdminAuthProviderRow>) =>
+          params.row.enabled
+            ? <Chip size="small" color="success" label={t("table.on")} />
+            : <Chip size="small" label={t("table.off")} />,
+      },
+      {
+        field: "linkedAccountCount",
+        headerName: t("table.linkedAccountCount"),
+        width: 150,
+        align: "right",
+        headerAlign: "right",
+      },
+      {
+        field: "actions",
+        headerName: "",
+        width: 96,
+        sortable: false,
+        filterable: false,
+        align: "center",
+        headerAlign: "center",
+        renderCell: (params: GridRenderCellParams<AdminAuthProviderRow>) => (
+          <Stack direction="row" spacing={0.5}>
+            <Tooltip title={t("editButton")}>
+              <IconButton size="small" onClick={() => handleEdit(params.row)} aria-label={t("editButton")}>
+                <EditOutlinedIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title={t("deleteButton")}>
+              <IconButton size="small" onClick={() => setDeleteTarget(params.row)} aria-label={t("deleteButton")}>
+                <DeleteOutlineOutlinedIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          </Stack>
+        ),
+      },
+    ],
+    [t],
+  );
 
   /** Refreshes the table by calling the admin API. */
   const fetchRows = useCallback(async () => {
@@ -144,72 +219,14 @@ export default function AdminAuthProvidersPage() {
   }
 
   return (
-    <Box sx={{ p: 3, display: "flex", flexDirection: "column", gap: 3 }}>
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <Typography variant="h4" component="h1">{t("title")}</Typography>
+    <PageContent maxWidth="lg">
+      <Stack direction="row" sx={{ justifyContent: "flex-end", mb: 3 }}>
         <Button variant="contained" startIcon={<AddIcon />} onClick={handleAdd}>
           {t("addButton")}
         </Button>
-      </Box>
+      </Stack>
 
-      {error && (
-        <Paper sx={{ p: 2, bgcolor: "error.light", color: "error.contrastText" }}>
-          <Typography variant="body2">{error}</Typography>
-        </Paper>
-      )}
-
-      <Paper variant="outlined">
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell padding="none" sx={{ width: 48 }}><span className="sr-only">Icon</span></TableCell>
-              <TableCell>{t("table.displayName")}</TableCell>
-              <TableCell>{t("table.providerId")}</TableCell>
-              <TableCell>{t("table.type")}</TableCell>
-              <TableCell>{t("table.enabled")}</TableCell>
-              <TableCell align="right">{t("table.linkedAccountCount")}</TableCell>
-              <TableCell padding="none" sx={{ width: 96 }} align="center"><span className="sr-only">Actions</span></TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {!loading && rows.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={7} align="center">
-                  <Typography variant="body2" color="text.secondary">
-                    {t("table.empty")}
-                  </Typography>
-                </TableCell>
-              </TableRow>
-            )}
-            {rows.map((r) => (
-              <TableRow key={r.id}>
-                <TableCell><ProviderIcon type={r.type} /></TableCell>
-                <TableCell>{r.displayName}</TableCell>
-                <TableCell><code>{r.providerId}</code></TableCell>
-                <TableCell>{t(`types.${r.type}`)}</TableCell>
-                <TableCell>
-                  {r.enabled
-                    ? <Chip size="small" color="success" label={t("table.on")} />
-                    : <Chip size="small" label={t("table.off")} />}
-                </TableCell>
-                <TableCell align="right">{r.linkedAccountCount}</TableCell>
-                <TableCell padding="none" align="center">
-                  <Tooltip title={t("editButton")}>
-                    <IconButton size="small" onClick={() => handleEdit(r)} aria-label={t("editButton")}>
-                      <EditOutlinedIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                  <Tooltip title={t("deleteButton")}>
-                    <IconButton size="small" onClick={() => setDeleteTarget(r)} aria-label={t("deleteButton")}>
-                      <DeleteOutlineOutlinedIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </Paper>
+      <DataTable columns={columns} rows={rows} loading={loading} />
 
       <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
         <DialogTitle>{editTarget ? t("editButton") : t("addButton")}</DialogTitle>
@@ -238,6 +255,6 @@ export default function AdminAuthProvidersPage() {
           </Button>
         </DialogActions>
       </Dialog>
-    </Box>
+    </PageContent>
   );
 }

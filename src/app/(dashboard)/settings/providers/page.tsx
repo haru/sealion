@@ -3,7 +3,6 @@
 import AddIcon from "@mui/icons-material/Add";
 import SettingsIcon from "@mui/icons-material/Settings";
 import {
-  Container,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -18,6 +17,7 @@ import { useState, useEffect, useCallback } from "react";
 import AddProviderDialog from "@/components/providers/AddProviderDialog";
 import type { ProviderFormData } from "@/components/providers/ProviderForm";
 import ProviderList from "@/components/providers/ProviderList";
+import PageContent from "@/components/ui/PageContent";
 import { useMessageQueue } from "@/hooks/useMessageQueue";
 import { usePageHeader } from "@/hooks/usePageHeader";
 import { formatProviderApiError, type ProviderApiErrorResponse } from "@/lib/sync/error-utils";
@@ -103,7 +103,7 @@ export default function ProvidersPage() {
   }
 
   return (
-    <Container maxWidth="md" sx={{ py: 4 }}>
+    <PageContent maxWidth="md">
       <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 2 }}>
         <Button
           variant="contained"
@@ -141,6 +141,6 @@ export default function ProvidersPage() {
           </Button>
         </DialogActions>
       </Dialog>
-    </Container>
+    </PageContent>
   );
 }

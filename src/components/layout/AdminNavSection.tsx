@@ -4,7 +4,7 @@ import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 import EmailOutlinedIcon from "@mui/icons-material/EmailOutlined";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import LoginIcon from "@mui/icons-material/Login";
+import KeyIcon from "@mui/icons-material/Key";
 import PeopleIcon from "@mui/icons-material/People";
 import SecurityOutlinedIcon from "@mui/icons-material/SecurityOutlined";
 import { Collapse, List, ListItemButton, ListItemIcon, ListItemText, Typography } from "@mui/material";
@@ -127,7 +127,7 @@ export default function AdminNavSection({ variant, onClose }: AdminNavSectionPro
             sx={baseItemSx(pathname, "/admin/auth-providers")}
           >
             <ListItemIcon sx={{ minWidth: 32, color: "inherit" }}>
-              <LoginIcon sx={{ fontSize: 18 }} />
+              <KeyIcon sx={{ fontSize: 18 }} />
             </ListItemIcon>
             <ListItemText
               primary={<Typography sx={{ fontSize: "0.85rem", fontWeight: pathname === "/admin/auth-providers" ? 600 : 500 }}>{t("oidcSettings")}</Typography>}

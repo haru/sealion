@@ -7,7 +7,6 @@ import {
   Button,
   CircularProgress,
   Collapse,
-  Container,
   Divider,
   FormControlLabel,
   Paper,
@@ -20,6 +19,7 @@ import { useTranslations } from "next-intl";
 import { useState, useEffect } from "react";
 
 import { useMessageQueue } from "@/components/MessageQueue";
+import PageContent from "@/components/ui/PageContent";
 import { usePageHeader } from "@/hooks/usePageHeader";
 import { SMTP_DUMMY_PASSWORD } from "@/lib/email/smtp-constants";
 
@@ -163,7 +163,7 @@ export default function SmtpSettingsPage() {
   const isBusy = saving || testing;
 
   return (
-    <Container maxWidth="sm" sx={{ py: 4 }}>
+    <PageContent maxWidth="sm">
       <Paper sx={{ p: 4 }}>
         <Stack spacing={3}>
 
@@ -263,6 +263,6 @@ export default function SmtpSettingsPage() {
 
         </Stack>
       </Paper>
-    </Container>
+    </PageContent>
   );
 }
