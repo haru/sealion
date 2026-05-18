@@ -1,10 +1,8 @@
 "use client";
 
 import AddIcon from "@mui/icons-material/Add";
-import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
-import PeopleIcon from "@mui/icons-material/People";
 import {
   Chip,
   Button,
@@ -25,7 +23,7 @@ import { useAdminUserId } from "@/app/admin/AdminSessionProvider";
 import { useMessageQueue } from "@/components/MessageQueue";
 import DataTable from "@/components/ui/DataTable";
 import PageContent from "@/components/ui/PageContent";
-import { usePageHeader } from "@/hooks/usePageHeader";
+import { usePageMeta } from "@/hooks/usePageMeta";
 
 import CreateUserDialog from "./CreateUserDialog";
 import EditUserDialog from "./EditUserDialog";
@@ -52,9 +50,10 @@ export default function AdminUsersPage() {
   const t = useTranslations("admin");
   const tCommon = useTranslations("common");
   const tErrors = useTranslations("errors");
-  const tSidebar = useTranslations("sidebar");
   const currentUserId = useAdminUserId();
   const { addMessage } = useMessageQueue();
+
+  usePageMeta();
 
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -62,8 +61,6 @@ export default function AdminUsersPage() {
   const [editTarget, setEditTarget] = useState<User | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
   const [deleting, setDeleting] = useState(false);
-
-  usePageHeader(t("userManagement"), undefined, PeopleIcon, undefined, tSidebar("systemAdmin"), AdminPanelSettingsIcon);
 
   const fetchUsers = useCallback(async () => {
     try {

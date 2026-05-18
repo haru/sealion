@@ -1,7 +1,5 @@
 "use client";
 
-import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
-import SecurityIcon from "@mui/icons-material/Security";
 import {
   Paper,
   Stack,
@@ -23,7 +21,7 @@ import { useState, useEffect } from "react";
 
 import { useMessageQueue } from "@/components/MessageQueue";
 import PageContent from "@/components/ui/PageContent";
-import { usePageHeader } from "@/hooks/usePageHeader";
+import { usePageMeta } from "@/hooks/usePageMeta";
 
 /** The valid sessionTimeoutMinutes option values with their i18n keys. */
 const TIMEOUT_OPTIONS: Array<{ value: number | null; labelKey: string }> = [
@@ -47,10 +45,9 @@ interface AuthSettingsData {
 /** Auth settings admin page — allows ADMIN to configure signup and session timeout. */
 export default function AuthSettingsPage() {
   const t = useTranslations("authSettings");
-  const tSidebar = useTranslations("sidebar");
   const { addMessage } = useMessageQueue();
 
-  usePageHeader(t("title"), undefined, SecurityIcon, undefined, tSidebar("systemAdmin"), AdminPanelSettingsIcon);
+  usePageMeta();
 
   const [saved, setSaved] = useState<AuthSettingsData | null>(null);
   const [allowUserSignup, setAllowUserSignup] = useState(true);

@@ -1,7 +1,6 @@
 "use client";
 
 import AddIcon from "@mui/icons-material/Add";
-import SettingsIcon from "@mui/icons-material/Settings";
 import {
   Dialog,
   DialogTitle,
@@ -19,7 +18,7 @@ import type { ProviderFormData } from "@/components/providers/ProviderForm";
 import ProviderList from "@/components/providers/ProviderList";
 import PageContent from "@/components/ui/PageContent";
 import { useMessageQueue } from "@/hooks/useMessageQueue";
-import { usePageHeader } from "@/hooks/usePageHeader";
+import { usePageMeta } from "@/hooks/usePageMeta";
 import { formatProviderApiError, type ProviderApiErrorResponse } from "@/lib/sync/error-utils";
 
 interface Provider {
@@ -37,7 +36,7 @@ export default function ProvidersPage() {
   const tSync = useTranslations("sync");
 
   const { addMessage } = useMessageQueue();
-  usePageHeader(t("title"), undefined, SettingsIcon);
+  usePageMeta();
   const [providers, setProviders] = useState<Provider[]>([]);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);

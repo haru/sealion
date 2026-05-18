@@ -1,10 +1,8 @@
 "use client";
 
 import AddIcon from "@mui/icons-material/Add";
-import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
-import KeyIcon from "@mui/icons-material/Key";
 import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
 import Dialog from "@mui/material/Dialog";
@@ -23,7 +21,7 @@ import { ProviderIcon } from "@/components/auth/ProviderIcon";
 import { useMessageQueue } from "@/components/MessageQueue";
 import DataTable from "@/components/ui/DataTable";
 import PageContent from "@/components/ui/PageContent";
-import { usePageHeader } from "@/hooks/usePageHeader";
+import { usePageMeta } from "@/hooks/usePageMeta";
 import type { AuthProviderType } from "@/services/auth-provider/types";
 
 import type { AuthProviderInitialValues } from "./_components/AuthProviderForm";
@@ -51,8 +49,9 @@ interface AdminAuthProviderRow {
  */
 export default function AdminAuthProvidersPage() {
   const t = useTranslations("authProviders.admin");
-  const tSidebar = useTranslations("sidebar");
   const { addMessage } = useMessageQueue();
+
+  usePageMeta();
 
   const [rows, setRows] = useState<AdminAuthProviderRow[]>([]);
   const [open, setOpen] = useState(false);
@@ -61,8 +60,6 @@ export default function AdminAuthProvidersPage() {
   const [loading, setLoading] = useState(true);
   const [_error, setError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
-
-  usePageHeader(t("title"), undefined, KeyIcon, undefined, tSidebar("systemAdmin"), AdminPanelSettingsIcon);
 
   const columns = useMemo<GridColDef<AdminAuthProviderRow>[]>(
     () => [
@@ -162,7 +159,7 @@ export default function AdminAuthProvidersPage() {
   }, [t]);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- data-fetching pattern: all setState calls are after await
     void fetchRows();
   }, [fetchRows]);
 

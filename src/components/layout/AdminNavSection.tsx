@@ -1,17 +1,15 @@
 "use client";
 
 import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
-import EmailOutlinedIcon from "@mui/icons-material/EmailOutlined";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import KeyIcon from "@mui/icons-material/Key";
-import PeopleIcon from "@mui/icons-material/People";
-import SecurityOutlinedIcon from "@mui/icons-material/SecurityOutlined";
 import { Collapse, List, ListItemButton, ListItemIcon, ListItemText, Typography } from "@mui/material";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
+
+import { ADMIN_PARENT, type PageRouteConfig, PAGE_ROUTES } from "@/lib/ui/page-routes";
 
 /** Props for {@link AdminNavSection}. */
 interface AdminNavSectionProps {
@@ -20,6 +18,14 @@ interface AdminNavSectionProps {
   /** Callback invoked when the drawer requests to be closed. */
   onClose: () => void;
 }
+
+/** Admin sub-routes rendered inside the collapsible section. */
+const ADMIN_NAV_ITEMS: Array<Pick<PageRouteConfig, "path" | "sidebarLabelKey">> = [
+  { path: "/admin/users", sidebarLabelKey: "userManagement" },
+  { path: "/admin/auth-settings", sidebarLabelKey: "authSettings" },
+  { path: "/admin/smtp-settings", sidebarLabelKey: "smtpSettings" },
+  { path: "/admin/auth-providers", sidebarLabelKey: "oidcSettings" },
+];
 
 /** Shared sx prop for a selected nav item in the sidebar. */
 const selectedSx = {
@@ -67,72 +73,37 @@ export default function AdminNavSection({ variant, onClose }: AdminNavSectionPro
           <AdminPanelSettingsIcon sx={{ fontSize: 18 }} />
         </ListItemIcon>
         <ListItemText
-          primary={<Typography sx={{ fontSize: "0.85rem", fontWeight: 500 }}>{t("systemAdmin")}</Typography>}
+          primary={<Typography sx={{ fontSize: "0.85rem", fontWeight: 500 }}>{t(ADMIN_PARENT.sidebarLabelKey)}</Typography>}
         />
         {adminOpen ? <ExpandLessIcon sx={{ fontSize: 16 }} /> : <ExpandMoreIcon sx={{ fontSize: 16 }} />}
       </ListItemButton>
 
       <Collapse in={adminOpen} timeout="auto" unmountOnExit>
         <List disablePadding>
-          <ListItemButton
-            component={Link}
-            href="/admin/users"
-            selected={pathname === "/admin/users"}
-            onClick={variant === "temporary" ? onClose : undefined}
-            sx={baseItemSx(pathname, "/admin/users")}
-          >
-            <ListItemIcon sx={{ minWidth: 32, color: "inherit" }}>
-              <PeopleIcon sx={{ fontSize: 18 }} />
-            </ListItemIcon>
-            <ListItemText
-              primary={<Typography sx={{ fontSize: "0.85rem", fontWeight: pathname === "/admin/users" ? 600 : 500 }}>{t("userManagement")}</Typography>}
-            />
-          </ListItemButton>
-
-          <ListItemButton
-            component={Link}
-            href="/admin/auth-settings"
-            selected={pathname === "/admin/auth-settings"}
-            onClick={variant === "temporary" ? onClose : undefined}
-            sx={baseItemSx(pathname, "/admin/auth-settings")}
-          >
-            <ListItemIcon sx={{ minWidth: 32, color: "inherit" }}>
-              <SecurityOutlinedIcon sx={{ fontSize: 18 }} />
-            </ListItemIcon>
-            <ListItemText
-              primary={<Typography sx={{ fontSize: "0.85rem", fontWeight: pathname === "/admin/auth-settings" ? 600 : 500 }}>{t("authSettings")}</Typography>}
-            />
-          </ListItemButton>
-
-          <ListItemButton
-            component={Link}
-            href="/admin/smtp-settings"
-            selected={pathname === "/admin/smtp-settings"}
-            onClick={variant === "temporary" ? onClose : undefined}
-            sx={baseItemSx(pathname, "/admin/smtp-settings")}
-          >
-            <ListItemIcon sx={{ minWidth: 32, color: "inherit" }}>
-              <EmailOutlinedIcon sx={{ fontSize: 18 }} />
-            </ListItemIcon>
-            <ListItemText
-              primary={<Typography sx={{ fontSize: "0.85rem", fontWeight: pathname === "/admin/smtp-settings" ? 600 : 500 }}>{t("smtpSettings")}</Typography>}
-            />
-          </ListItemButton>
-
-          <ListItemButton
-            component={Link}
-            href="/admin/auth-providers"
-            selected={pathname === "/admin/auth-providers"}
-            onClick={variant === "temporary" ? onClose : undefined}
-            sx={baseItemSx(pathname, "/admin/auth-providers")}
-          >
-            <ListItemIcon sx={{ minWidth: 32, color: "inherit" }}>
-              <KeyIcon sx={{ fontSize: 18 }} />
-            </ListItemIcon>
-            <ListItemText
-              primary={<Typography sx={{ fontSize: "0.85rem", fontWeight: pathname === "/admin/auth-providers" ? 600 : 500 }}>{t("oidcSettings")}</Typography>}
-            />
-          </ListItemButton>
+          {ADMIN_NAV_ITEMS.map((item) => {
+            const route = PAGE_ROUTES.find((r) => r.path === item.path);
+            const Icon = route?.icon;
+            const isSelected = pathname === item.path;
+            return (
+              <ListItemButton
+                key={item.path}
+                component={Link}
+                href={item.path}
+                selected={isSelected}
+                onClick={variant === "temporary" ? onClose : undefined}
+                sx={baseItemSx(pathname, item.path)}
+              >
+                {Icon && (
+                  <ListItemIcon sx={{ minWidth: 32, color: "inherit" }}>
+                    <Icon sx={{ fontSize: 18 }} />
+                  </ListItemIcon>
+                )}
+                <ListItemText
+                  primary={<Typography sx={{ fontSize: "0.85rem", fontWeight: isSelected ? 600 : 500 }}>{t(item.sidebarLabelKey)}</Typography>}
+                />
+              </ListItemButton>
+            );
+          })}
         </List>
       </Collapse>
     </>

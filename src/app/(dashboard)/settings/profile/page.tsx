@@ -1,6 +1,5 @@
 "use client";
 
-import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -18,7 +17,7 @@ import { useState, useEffect, useRef } from "react";
 import { DeleteAccountModal } from "@/components/settings/DeleteAccountModal";
 import GravatarSection from "@/components/settings/GravatarSection";
 import PageContent from "@/components/ui/PageContent";
-import { usePageHeader } from "@/hooks/usePageHeader";
+import { usePageMeta } from "@/hooks/usePageMeta";
 
 import { AccountLinksSection } from "./_components/AccountLinksSection";
 
@@ -31,7 +30,7 @@ import { AccountLinksSection } from "./_components/AccountLinksSection";
 export default function ProfileSettingsPage() {
   const t = useTranslations("profileSettings");
   const tErrors = useTranslations("errors");
-  usePageHeader(t("title"), undefined, AccountCircleIcon);
+  usePageMeta();
 
   const router = useRouter();
   const { update } = useSession();
