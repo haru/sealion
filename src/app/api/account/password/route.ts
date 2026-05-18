@@ -72,6 +72,10 @@ export async function PATCH(request: NextRequest) {
       return fail("UNAUTHORIZED", 401);
     }
 
+    if (!user.passwordHash) {
+      return fail("OIDC_USER_NO_PASSWORD", 400);
+    }
+
     const isMatch = await bcrypt.compare(currentPassword, user.passwordHash);
     if (!isMatch) {
       return fail("PASSWORD_INCORRECT", 400);

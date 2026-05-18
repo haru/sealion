@@ -1,20 +1,16 @@
 "use client";
 
-import TuneIcon from "@mui/icons-material/Tune";
-import { Container } from "@mui/material";
-import { useTranslations } from "next-intl";
-
 import BoardSettingsForm from "@/components/board-settings/BoardSettingsForm";
-import { usePageHeader } from "@/hooks/usePageHeader";
+import PageContent from "@/components/ui/PageContent";
+import { usePageMeta } from "@/hooks/usePageMeta";
 
 /** Board settings page — controls display items and sort order for the issue list. */
 export default function BoardSettingsPage() {
-  const t = useTranslations("boardSettings");
-  usePageHeader(t("title"), undefined, TuneIcon);
+  usePageMeta();
 
   return (
-    <Container maxWidth="md" sx={{ py: 4 }}>
+    <PageContent maxWidth="md">
       <BoardSettingsForm />
-    </Container>
+    </PageContent>
   );
 }

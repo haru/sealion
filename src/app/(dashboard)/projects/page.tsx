@@ -1,19 +1,19 @@
 "use client";
 
 import AddIcon from "@mui/icons-material/Add";
-import FolderOpenIcon from "@mui/icons-material/FolderOpen";
-import { Box, Button, Container } from "@mui/material";
+import { Box, Button } from "@mui/material";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 
 import AddProjectDialog from "@/components/projects/AddProjectDialog";
 import ProjectList from "@/components/projects/ProjectList";
-import { usePageHeader } from "@/hooks/usePageHeader";
+import PageContent from "@/components/ui/PageContent";
+import { usePageMeta } from "@/hooks/usePageMeta";
 
 /** Projects management page for registering and removing external projects. */
 export default function ProjectsPage() {
   const t = useTranslations("projects");
-  usePageHeader(t("title"), undefined, FolderOpenIcon);
+  usePageMeta();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogKey, setDialogKey] = useState(0);
   const [refreshSignal, setRefreshSignal] = useState(0);
@@ -31,7 +31,7 @@ export default function ProjectsPage() {
   }
 
   return (
-    <Container maxWidth="md" sx={{ py: 4 }}>
+    <PageContent maxWidth="md">
       <Box sx={{ display: "flex", alignItems: "center", justifyContent: "flex-end", mb: 3 }}>
         <Button
           variant="contained"
@@ -45,6 +45,6 @@ export default function ProjectsPage() {
       <ProjectList refreshSignal={refreshSignal} />
 
       <AddProjectDialog key={dialogKey} open={dialogOpen} onClose={handleDialogClose} />
-    </Container>
+    </PageContent>
   );
 }

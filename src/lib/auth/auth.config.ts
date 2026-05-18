@@ -1,7 +1,7 @@
 import type { NextAuthConfig } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 
-// Lightweight config for Edge runtime (middleware) — no Prisma
+// Lightweight config for Edge runtime (middleware) — no Prisma, no DB-dependent callbacks
 export const authConfig: NextAuthConfig = {
   pages: { signIn: "/login" },
   providers: [
