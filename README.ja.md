@@ -45,6 +45,7 @@
 | **プロジェクト選択** | 同期するプロジェクト／リポジトリを選択 |
 | **ボードのカスタマイズ** | 表示するフィールドやリストの並び順を設定 |
 | **マルチユーザー** | 各ユーザーが自分の接続・プロジェクト・TODO リストを個別に管理 |
+| **外部認証 (OIDC / OAuth2)** | ローカルのユーザー名／パスワードに加えて Google / GitHub / Microsoft Entra ID / 汎用 OIDC でのサインインに対応 |
 | **多言語対応** | 英語・日本語 UI |
 | **認証情報の暗号化** | API トークンを AES-256-GCM で暗号化して保存 |
 
@@ -171,7 +172,41 @@ docker compose up -d
 docker compose stop
 ```
 
+---
 
+## 外部認証 (OIDC / OAuth2)
+
+ローカルのユーザー名／パスワードに加えて、外部の ID プロバイダー (IdP) でのサインインに対応しています。標準で以下をサポートします。
+
+- Google
+- GitHub
+- Microsoft Entra ID
+- 汎用 OIDC（`.well-known/openid-configuration` を公開している任意の IdP。Keycloak / Okta / Auth0 など）
+
+### しくみ
+
+- IdP は管理画面から実行時に追加・有効化できます。環境変数の設定や再起動は不要です。
+- Client Secret は PostgreSQL に AES-256-GCM で暗号化して保存されます（Issue Tracker の API トークンと同じ方式）。
+- 検証済みメールアドレスをキーに既存ローカルユーザーと自動的に紐付けされます。新規ユーザーの自動作成は、管理画面の `allowUserSignup` を有効化したときのみ行われます。
+- ローカル認証 (ユーザー名／パスワード) は IdP の有無に関係なくこれまで通り利用できます。
+
+### セットアップ
+
+1. ADMIN ユーザーでサインインし、**`/admin/auth-providers`** を開きます。
+2. **「IdP を追加」** をクリックし、種別 (Google / GitHub / Entra ID / 汎用 OIDC) を選択します。
+3. IdP 側で発行した **Client ID** と **Client Secret** を入力します。汎用 OIDC の場合は **Issuer URL** も入力します。
+4. IdP 側の **リダイレクト URI** に以下を設定します。
+   ```
+   {AUTH_URL}/api/auth/callback/{providerId}
+   ```
+   例: `AUTH_URL=https://sealion.example.com`、Provider ID が `google` の場合
+   `https://sealion.example.com/api/auth/callback/google`
+5. 保存して **「有効化」** をオンにすると、即座に `/login` 画面にボタンが表示されます。
+
+ユーザーは自身のプロフィール設定画面から、紐付け済み IdP の確認と解除ができます。最後に残ったサインイン手段 (ローカルパスワードまたは IdP 連携) は解除できません。
+
+
+---
 
 ## アップデート
 
@@ -190,7 +225,7 @@ docker compose up -d
 |---------|------|
 | フレームワーク | Next.js 16 (App Router) + TypeScript |
 | UI | MUI (Material UI) v7 |
-| 認証 | Auth.js v5 |
+| 認証 | Auth.js v5 (credentials, OIDC, OAuth2) |
 | データベース | PostgreSQL 16 + Prisma 7 |
 | 多言語対応 | next-intl v4 |
 

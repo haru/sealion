@@ -47,6 +47,7 @@ The following issue trackers are currently supported:
 | **Project selection** | Choose which projects/repos to sync per connection |
 | **Board customization** | Configure which fields to show and how to sort your list |
 | **Multi-user** | Each user manages their own connections, projects, and TODO list |
+| **External authentication (OIDC / OAuth2)** | Sign in with Google / GitHub / Microsoft Entra ID / generic OIDC, in addition to local username & password |
 | **Internationalization** | English and Japanese UI |
 | **Encrypted credentials** | API tokens are stored encrypted with AES-256-GCM |
 
@@ -172,7 +173,41 @@ When you access the app for the first time, you will be prompted to create an ad
 docker compose stop
 ```
 
+---
 
+## External Authentication (OIDC / OAuth2)
+
+In addition to local username & password, Sealion can let users sign in with external identity providers. The following are supported out of the box:
+
+- Google
+- GitHub
+- Microsoft Entra ID
+- Generic OIDC (any IdP that exposes a `.well-known/openid-configuration` endpoint, e.g. Keycloak, Okta, Auth0)
+
+### How it works
+
+- Providers are configured at runtime from the admin UI — no env vars, no restart required.
+- Client secrets are stored in PostgreSQL encrypted with AES-256-GCM (same scheme as issue-tracker API tokens).
+- Accounts are linked to existing local users by verified email address. New users are auto-created only when `allowUserSignup` is enabled in admin settings.
+- Local credentials authentication remains available alongside any configured IdPs.
+
+### Setup
+
+1. Sign in as an admin and open **`/admin/auth-providers`**.
+2. Click **"Add provider"** and choose a type (Google / GitHub / Entra ID / Generic OIDC).
+3. Enter the **Client ID** and **Client Secret** issued by the IdP. For Generic OIDC also enter the **Issuer URL**.
+4. Set the IdP's **Authorized redirect URI** to:
+   ```
+   {AUTH_URL}/api/auth/callback/{providerId}
+   ```
+   For example, with `AUTH_URL=https://sealion.example.com` and Provider ID `google`:
+   `https://sealion.example.com/api/auth/callback/google`
+5. Save and toggle **Enabled**. The button appears on `/login` immediately.
+
+Users can review and unlink connected IdPs from their profile settings page. The last remaining sign-in method (local password or IdP link) cannot be removed.
+
+
+---
 
 ## Updating
 
