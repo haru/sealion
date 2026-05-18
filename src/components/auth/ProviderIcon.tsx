@@ -25,8 +25,9 @@ export interface ProviderIconProps {
 }
 
 /**
- * Renders an icon corresponding to the IdP type.
- * Google uses a PNG logo; others use Material Icons glyphs.
+ * Renders a decorative icon corresponding to the IdP type.
+ * Google and Microsoft Entra use image assets; others use Material Icons glyphs.
+ * All images are decorative (`alt=""`) — caller text provides the accessible name.
  * Unknown types fall back to a neutral key glyph.
  *
  * @param props - The {@link ProviderIconProps}.
@@ -38,7 +39,7 @@ export function ProviderIcon({ type, fontSize = "small" }: ProviderIconProps) {
     return (
       <Image
         src="/providers/google.png"
-        alt="Google"
+        alt=""
         width={size}
         height={size}
         style={{ display: "block" }}
@@ -51,7 +52,7 @@ export function ProviderIcon({ type, fontSize = "small" }: ProviderIconProps) {
     return (
       <Image
         src="/providers/azure.svg"
-        alt="Microsoft Entra ID"
+        alt=""
         width={size}
         height={size}
         style={{ display: "block" }}
