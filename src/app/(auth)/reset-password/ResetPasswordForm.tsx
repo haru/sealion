@@ -19,6 +19,7 @@ import { AuthCard } from "@/components/ui/AuthCard";
  */
 export function ResetPasswordForm() {
   const t = useTranslations("resetPassword");
+  const tCommon = useTranslations("common");
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -85,7 +86,7 @@ export function ResetPasswordForm() {
       {!success && (
         <Box component="form" onSubmit={handleSubmit} sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
           <TextField
-            label={t("emailLabel")}
+            label={tCommon("email")}
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}

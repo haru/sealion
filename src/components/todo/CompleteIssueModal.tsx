@@ -43,6 +43,7 @@ export default function CompleteIssueModal({
   onCancel,
 }: CompleteIssueModalProps) {
   const t = useTranslations("completeModal");
+  const tCommon = useTranslations("common");
 
   const [comment, setComment] = useState("");
   const [loading, setLoading] = useState(false);
@@ -98,7 +99,7 @@ export default function CompleteIssueModal({
 
       <DialogActions>
         <Button onClick={handleCancel} disabled={loading}>
-          {t("cancelButton")}
+          {tCommon("cancel")}
         </Button>
         <Button
           onClick={() => void handleConfirm()}

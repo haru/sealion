@@ -12,15 +12,16 @@
     "table": {
       "noRows": "No data",
       "loading": "Loading..."
-    }
+    },
+    "displayName": "Display Name",
+    "email": "Email",
+    "password": "Password",
+    "username": "Username"
   },
   "auth": {
     "login": "Log In",
     "signup": "Sign Up",
     "logout": "Log Out",
-    "email": "Email",
-    "password": "Password",
-    "username": "Display Name",
     "loginTitle": "Welcome back",
     "signupTitle": "Create your account",
     "noAccount": "Don't have an account?",
@@ -80,10 +81,8 @@
     "noProviders": "No issue trackers connected yet.",
     "fields": {
       "type": "Type",
-      "displayName": "Display Name",
       "baseUrl": "Server URL",
       "token": "Personal Access Token",
-      "email": "Email",
       "apiToken": "API Token",
       "apiKey": "API Key"
     },
@@ -121,7 +120,6 @@
       "30d": "30 days",
       "90d": "90 days"
     },
-    "save": "Save",
     "saveSuccess": "Auth settings saved successfully",
     "saveError": "Failed to save auth settings. Please try again."
   },
@@ -132,10 +130,7 @@
     "fromAddress": "From Address",
     "fromName": "From Name",
     "requireAuth": "Require Authentication",
-    "username": "Username",
-    "password": "Password",
     "useTls": "Use TLS",
-    "save": "Save",
     "saveSuccess": "SMTP settings saved successfully",
     "saveError": "Failed to save SMTP settings. Please try again.",
     "testSend": "Send Test Email",
@@ -152,7 +147,7 @@
     "userManagement": "Users",
     "authSettings": "Auth Settings",
     "smtpSettings": "Email Settings",
-    "oidcSettings": "OIDC / IdP",
+    "oidcSettings": "Authentication Providers",
     "tagline": "All Your TODOs, One Place.",
     "version": "Sealion v{version}",
     "settings": "Settings"
@@ -178,7 +173,6 @@
     "errorCurrentIncorrect": "Current password is incorrect.",
     "errorUnexpected": "An unexpected error occurred. Please try again.",
     "changeUsername": "Change Username",
-    "username": "Username",
     "usernameLoadError": "Failed to load your current username. Please reload the page.",
     "usernameSuccess": "Username updated successfully.",
     "usernameErrorTooLong": "Username must be 50 characters or fewer.",
@@ -203,8 +197,7 @@
         "errorLastAdmin": "You are the only administrator and cannot delete your account.",
         "errorUnauthorized": "Your session has expired. Please log in again.",
         "errorUnexpected": "An unexpected error occurred. Please try again.",
-        "confirm": "Delete My Account",
-        "cancel": "Cancel"
+        "confirm": "Delete My Account"
       }
     }
   },
@@ -229,7 +222,6 @@
       "moveDownAriaLabel": "Move down",
       "moveBottomAriaLabel": "Move to bottom"
     },
-    "save": "Save",
     "saveSuccess": "Settings saved successfully",
     "saveError": "Failed to save settings. Please try again.",
     "loadError": "Failed to load board settings. Using defaults."
@@ -280,18 +272,13 @@
       "SUSPENDED": "Suspended"
     },
     "columns": {
-      "email": "Email",
-      "username": "Display Name",
       "role": "Role",
       "status": "Status",
       "createdAt": "Created At",
       "actions": "Actions"
     },
     "fields": {
-      "email": "Email",
-      "password": "Password",
       "changePassword": "Change password",
-      "username": "Display Name",
       "role": "Role",
       "status": "Status"
     }
@@ -315,7 +302,6 @@
     "reasonLabel": "Reason for completion (optional)",
     "reasonPlaceholder": "Add a comment to the issue...",
     "confirmButton": "Complete",
-    "cancelButton": "Cancel",
     "errorMessage": "Failed to close the issue. Please try again."
   },
   "errors": {
@@ -375,7 +361,6 @@
   },
   "resetPassword": {
     "title": "Reset Password",
-    "emailLabel": "Email",
     "submit": "Send Reset Link",
     "successMessage": "If an account with this email exists, a password reset link has been sent.",
     "confirmTitle": "Set New Password",
@@ -430,7 +415,7 @@
   "authProviders": {
     "admin": {
       "title": "Authentication Providers",
-      "addButton": "Add IdP",
+      "addButton": "Add Authentication Provider",
       "types": {
         "GOOGLE": "Google",
         "GITHUB": "GitHub",
@@ -439,7 +424,6 @@
       },
       "table": {
         "icon": "",
-        "displayName": "Display Name",
         "providerId": "Provider ID",
         "type": "Type",
         "enabled": "Status",
@@ -451,8 +435,7 @@
       "form": {
         "type": "Provider Type",
         "providerId": "Provider ID",
-        "providerIdHelp": "Lowercase letters, digits, hyphens. Used in Auth.js callback URLs.",
-        "displayName": "Display Name",
+        "providerIdHelp": "Lowercase letters, digits, hyphens only. Used as the authentication provider identifier.",
         "issuerUrl": "Issuer URL",
         "clientId": "Client ID",
         "clientSecret": "Client Secret",
@@ -460,7 +443,6 @@
         "scope": "Scope (optional)",
         "scopeHelp": "Defaults to the provider's standard scope when empty.",
         "enabled": "Enabled",
-        "save": "Save",
         "saving": "Saving…",
         "update": "Update",
         "updating": "Updating…",
@@ -476,12 +458,8 @@
           "issuerRequired": "Issuer URL is required for this provider type."
         }
       },
-      "editButton": "Edit",
-      "deleteButton": "Delete",
       "deleteConfirmTitle": "Delete IdP",
       "deleteConfirmMessage": "Are you sure you want to delete \"{name}\"? This action cannot be undone.",
-      "deleteConfirmOk": "Delete",
-      "deleteConfirmCancel": "Cancel",
       "deleteSuccess": "IdP deleted successfully.",
       "errors": {
         "FORBIDDEN": "Administrator role required.",

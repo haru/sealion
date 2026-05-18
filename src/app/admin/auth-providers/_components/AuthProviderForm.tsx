@@ -18,6 +18,7 @@ import TextField from "@mui/material/TextField";
 import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 
+import { ProviderIcon } from "@/components/auth/ProviderIcon";
 import type { AuthProviderType } from "@/services/auth-provider/types";
 
 /** Types supported by the form. */
@@ -52,6 +53,8 @@ export interface AuthProviderFormProps {
   onCreated?: () => void;
   /** Called after a successful PATCH returns 200. */
   onUpdated?: () => void;
+  /** Called when the user clicks Cancel. */
+  onCancel?: () => void;
   /** Optional list of types to offer; defaults to all supported types. */
   supportedTypes?: SupportedAuthProviderType[];
   /** When provided the form operates in edit mode and PATCHes to `[id]`. */
@@ -69,10 +72,12 @@ export interface AuthProviderFormProps {
 export function AuthProviderForm({
   onCreated,
   onUpdated,
-  supportedTypes = ["GOOGLE", "OIDC_GENERIC", "GITHUB", "MICROSOFT_ENTRA" as const],
+  onCancel,
+  supportedTypes = ["GOOGLE", "GITHUB", "MICROSOFT_ENTRA", "OIDC_GENERIC" as const],
   initialValues,
 }: AuthProviderFormProps) {
   const t = useTranslations("authProviders.admin");
+  const tCommon = useTranslations("common");
   const isEdit = initialValues !== undefined;
 
   const defaults = useMemo(() => ({
@@ -173,12 +178,11 @@ export function AuthProviderForm({
     }
   }
 
-  const submitLabel = loading
-    ? t(isEdit ? "form.updating" : "form.saving")
-    : t(isEdit ? "form.update" : "form.save");
+  const idleLabel = isEdit ? t("form.update") : tCommon("save");
+  const submitLabel = loading ? t(isEdit ? "form.updating" : "form.saving") : idleLabel;
 
   return (
-    <Box component="form" onSubmit={handleSubmit} sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+    <Box component="form" onSubmit={handleSubmit} autoComplete="off" sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
       {error && <Alert severity="error">{error}</Alert>}
 
       <FormControl fullWidth disabled={isEdit}>
@@ -188,9 +192,18 @@ export function AuthProviderForm({
           value={type}
           label={t("form.type")}
           onChange={(e) => setType(e.target.value as SupportedAuthProviderType)}
+          renderValue={(v) => (
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <ProviderIcon type={v as SupportedAuthProviderType} fontSize="small" />
+              {t(`types.${v as SupportedAuthProviderType}`)}
+            </Box>
+          )}
         >
           {supportedTypes.map((tt) => (
-            <MenuItem key={tt} value={tt}>{t(`types.${tt}`)}</MenuItem>
+            <MenuItem key={tt} value={tt} sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <ProviderIcon type={tt} fontSize="small" />
+              {t(`types.${tt}`)}
+            </MenuItem>
           ))}
         </Select>
       </FormControl>
@@ -206,7 +219,7 @@ export function AuthProviderForm({
       />
 
       <TextField
-        label={t("form.displayName")}
+        label={tCommon("displayName")}
         value={displayName}
         onChange={(e) => setDisplayName(e.target.value)}
         required
@@ -240,6 +253,7 @@ export function AuthProviderForm({
         required={!isEdit}
         fullWidth
         type="password"
+        autoComplete="new-password"
       />
 
       <TextField
@@ -255,7 +269,12 @@ export function AuthProviderForm({
         label={t("form.enabled")}
       />
 
-      <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+      <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1 }}>
+        {onCancel && (
+          <Button type="button" onClick={onCancel} disabled={loading}>
+            {tCommon("cancel")}
+          </Button>
+        )}
         <Button type="submit" variant="contained" disabled={loading}>
           {submitLabel}
         </Button>

@@ -35,6 +35,7 @@ interface DeleteAccountModalProps {
  */
 export function DeleteAccountModal({ open, userEmail, onClose }: DeleteAccountModalProps) {
   const t = useTranslations("profileSettings.dangerZone.modal");
+  const tCommon = useTranslations("common");
 
   const [emailInput, setEmailInput] = useState("");
   const [emailError, setEmailError] = useState<string | null>(null);
@@ -116,7 +117,7 @@ export function DeleteAccountModal({ open, userEmail, onClose }: DeleteAccountMo
           onClick={handleClose}
           disabled={isSubmitting}
         >
-          {t("cancel")}
+          {tCommon("cancel")}
         </Button>
         <Button
           data-testid="delete-account-confirm-button"
