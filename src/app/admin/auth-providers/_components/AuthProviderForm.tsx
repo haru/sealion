@@ -18,6 +18,7 @@ import TextField from "@mui/material/TextField";
 import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 
+import { ProviderIcon } from "@/components/auth/ProviderIcon";
 import type { AuthProviderType } from "@/services/auth-provider/types";
 
 /** Types supported by the form. */
@@ -72,7 +73,7 @@ export function AuthProviderForm({
   onCreated,
   onUpdated,
   onCancel,
-  supportedTypes = ["GOOGLE", "OIDC_GENERIC", "GITHUB", "MICROSOFT_ENTRA" as const],
+  supportedTypes = ["GOOGLE", "GITHUB", "MICROSOFT_ENTRA", "OIDC_GENERIC" as const],
   initialValues,
 }: AuthProviderFormProps) {
   const t = useTranslations("authProviders.admin");
@@ -191,9 +192,18 @@ export function AuthProviderForm({
           value={type}
           label={t("form.type")}
           onChange={(e) => setType(e.target.value as SupportedAuthProviderType)}
+          renderValue={(v) => (
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <ProviderIcon type={v as SupportedAuthProviderType} fontSize="small" />
+              {t(`types.${v as SupportedAuthProviderType}`)}
+            </Box>
+          )}
         >
           {supportedTypes.map((tt) => (
-            <MenuItem key={tt} value={tt}>{t(`types.${tt}`)}</MenuItem>
+            <MenuItem key={tt} value={tt} sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <ProviderIcon type={tt} fontSize="small" />
+              {t(`types.${tt}`)}
+            </MenuItem>
           ))}
         </Select>
       </FormControl>
