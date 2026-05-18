@@ -227,7 +227,7 @@ export default function AdminAuthProvidersPage() {
 
       <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
         <DialogTitle>{editTarget ? t("editButton") : t("addButton")}</DialogTitle>
-        <DialogContent>
+        <DialogContent dividers>
           <AuthProviderForm
             initialValues={editTarget}
             onCreated={() => { handleClose(); void fetchRows(); }}

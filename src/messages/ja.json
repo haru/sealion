@@ -152,7 +152,7 @@
     "userManagement": "ユーザー管理",
     "authSettings": "認証設定",
     "smtpSettings": "メール送信設定",
-    "oidcSettings": "OIDC / IdP",
+    "oidcSettings": "認証プロバイダー",
     "tagline": "All Your TODOs, One Place.",
     "version": "Sealion v{version}",
     "settings": "設定"
@@ -430,7 +430,7 @@
   "authProviders": {
     "admin": {
       "title": "認証プロバイダー",
-      "addButton": "IdP を追加",
+      "addButton": "認証プロバイダーを追加",
       "types": {
         "GOOGLE": "Google",
         "GITHUB": "GitHub",
@@ -451,7 +451,7 @@
       "form": {
         "type": "プロバイダー種別",
         "providerId": "プロバイダー ID",
-        "providerIdHelp": "小文字英数とハイフンのみ。Auth.js のコールバック URL に使われます。",
+        "providerIdHelp": "小文字英数とハイフンのみ。認証プロバイダーの識別子として使用されます。",
         "displayName": "表示名",
         "issuerUrl": "Issuer URL",
         "clientId": "Client ID",

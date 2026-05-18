@@ -152,7 +152,7 @@
     "userManagement": "Users",
     "authSettings": "Auth Settings",
     "smtpSettings": "Email Settings",
-    "oidcSettings": "OIDC / IdP",
+    "oidcSettings": "Authentication Providers",
     "tagline": "All Your TODOs, One Place.",
     "version": "Sealion v{version}",
     "settings": "Settings"
@@ -430,7 +430,7 @@
   "authProviders": {
     "admin": {
       "title": "Authentication Providers",
-      "addButton": "Add IdP",
+      "addButton": "Add Authentication Provider",
       "types": {
         "GOOGLE": "Google",
         "GITHUB": "GitHub",
@@ -451,7 +451,7 @@
       "form": {
         "type": "Provider Type",
         "providerId": "Provider ID",
-        "providerIdHelp": "Lowercase letters, digits, hyphens. Used in Auth.js callback URLs.",
+        "providerIdHelp": "Lowercase letters, digits, hyphens only. Used as the authentication provider identifier.",
         "displayName": "Display Name",
         "issuerUrl": "Issuer URL",
         "clientId": "Client ID",
