@@ -103,7 +103,12 @@ describe("DELETE /api/account/links/[provider] — unit (no DB required)", () =>
       auth: jest.fn().mockResolvedValue({ user: { id: TEST_USER_ID, email: TEST_EMAIL, role: "USER" } }),
     }));
     jest.doMock("@/lib/db/db", () => ({
-      prisma: { account: { deleteMany: jest.fn() } },
+      prisma: {
+        account: {
+          findFirst: jest.fn().mockResolvedValue({ id: "a1" }),
+          deleteMany: jest.fn(),
+        },
+      },
     }));
     jest.doMock("@/services/auth-provider/account-linking", () => ({
       canUnlinkAccount: jest.fn().mockResolvedValue(false),
@@ -116,16 +121,16 @@ describe("DELETE /api/account/links/[provider] — unit (no DB required)", () =>
     expect(json.error).toBe("LAST_AUTH_METHOD");
   });
 
-  test("returns 404 when deleteMany removes zero rows", async () => {
+  test("returns 404 when no matching account exists", async () => {
     jest.resetModules();
     jest.doMock("@/lib/auth/auth", () => ({
       auth: jest.fn().mockResolvedValue({ user: { id: TEST_USER_ID, email: TEST_EMAIL, role: "USER" } }),
     }));
     jest.doMock("@/lib/db/db", () => ({
-      prisma: { account: { deleteMany: jest.fn().mockResolvedValue({ count: 0 }) } },
+      prisma: { account: { findFirst: jest.fn().mockResolvedValue(null) } },
     }));
     jest.doMock("@/services/auth-provider/account-linking", () => ({
-      canUnlinkAccount: jest.fn().mockResolvedValue(true),
+      canUnlinkAccount: jest.fn(),
     }));
     const { DELETE } = await import("@/app/api/account/links/[provider]/route");
     const req = new NextRequest("http://localhost/api/account/links/google", { method: "DELETE" });
@@ -139,7 +144,12 @@ describe("DELETE /api/account/links/[provider] — unit (no DB required)", () =>
       auth: jest.fn().mockResolvedValue({ user: { id: TEST_USER_ID, email: TEST_EMAIL, role: "USER" } }),
     }));
     jest.doMock("@/lib/db/db", () => ({
-      prisma: { account: { deleteMany: jest.fn() } },
+      prisma: {
+        account: {
+          findFirst: jest.fn().mockResolvedValue({ id: "a1" }),
+          deleteMany: jest.fn(),
+        },
+      },
     }));
     jest.doMock("@/services/auth-provider/account-linking", () => ({
       canUnlinkAccount: jest.fn().mockRejectedValue(new Error("DB down")),

@@ -1,6 +1,7 @@
+import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-import { fail, ok } from "@/lib/api/api-response";
+import { fail } from "@/lib/api/api-response";
 import { auth } from "@/lib/auth/auth";
 import { prisma } from "@/lib/db/db";
 import { canUnlinkAccount } from "@/services/auth-provider/account-linking";
@@ -27,20 +28,24 @@ export async function DELETE(
   const userId = session.user.id;
 
   try {
+    const account = await prisma.account.findFirst({
+      where: { userId, provider },
+    });
+
+    if (!account) {
+      return fail("NOT_FOUND", 404);
+    }
+
     const canUnlink = await canUnlinkAccount(userId, provider);
     if (!canUnlink) {
       return fail("LAST_AUTH_METHOD", 400);
     }
 
-    const deleted = await prisma.account.deleteMany({
+    await prisma.account.deleteMany({
       where: { userId, provider },
     });
 
-    if (deleted.count === 0) {
-      return fail("NOT_FOUND", 404);
-    }
-
-    return ok(null, 204);
+    return new NextResponse(null, { status: 204 });
   } catch (error: unknown) {
     console.error("[api/account/links DELETE]", { userId, provider, error });
     return fail("INTERNAL_ERROR", 500);

@@ -1,21 +1,21 @@
-# ADR-0004: Encrypt OAuth Tokens at Rest
+# ADR-0004: OAuth Token Persistence Policy
 
 ## Context
 
-Auth.js v5 persists OAuth2/OIDC tokens (`access_token`, `refresh_token`, `id_token`) in the `Account` table as plaintext. This violates Constitution Principle II ("plaintext tokens MUST never be persisted") and exposes sensitive credentials if the database is compromised.
+Auth.js v5 persists OAuth2/OIDC tokens (`access_token`, `refresh_token`, `id_token`) in the `Account` table as plaintext when using the PrismaAdapter default flow. This raises a concern about token exposure if the database is compromised.
 
 ## Decision
 
-Encrypt `Account.refresh_token` and `Account.access_token` using AES-256-GCM (via the existing `src/lib/encryption/encryption.ts` `encrypt`/`decrypt` utilities) before persistence. Encryption is applied in the Auth.js `events.linkAccount` and `events.signIn` hooks. Decryption happens lazily when the tokens are needed by downstream code.
+OAuth tokens are **intentionally not persisted** in the database. The custom `handleExternalSignIn` flow in `src/services/auth-provider/account-linking.ts` creates `Account` rows with only the minimum fields required for identity linkage (`provider`, `providerAccountId`, `type`, `userId`). No `access_token`, `refresh_token`, or `id_token` values are stored.
 
-Pre-existing plaintext values are best-effort detected (base64-GCM format check) and re-encrypted on read.
+This is a stronger posture than encrypting stored tokens: tokens that are never written to disk cannot be exfiltrated from the database.
 
 ## Consequences
 
-- Small per-request decrypt cost for tokens accessed during API calls
-- Key rotation requires re-encrypting all existing tokens (handled transparently by the `events.signIn` hook on next sign-in)
-- The encryption key (`CREDENTIALS_ENCRYPTION_KEY`) must be maintained across deployments — same requirement as for IssueProvider credentials
+- Downstream code that needs a fresh access token must re-authenticate or use a separate token-refresh flow rather than reading a cached token from the `Account` table.
+- Key rotation concerns that would arise from stored encrypted tokens do not apply.
+- If future functionality requires persistent token storage (e.g., background sync on behalf of the user), a separate encrypted-storage mechanism following the AES-256-GCM pattern in `src/lib/encryption/encryption.ts` should be introduced at that time.
 
 ## Status: Accepted
 
-## Date: 2026-05-17
+## Date: 2026-05-18
