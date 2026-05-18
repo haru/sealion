@@ -29,6 +29,7 @@ import { AccountLinksSection } from "./_components/AccountLinksSection";
  */
 export default function ProfileSettingsPage() {
   const t = useTranslations("profileSettings");
+  const tCommon = useTranslations("common");
   const tErrors = useTranslations("errors");
   usePageMeta();
 
@@ -189,7 +190,7 @@ export default function ProfileSettingsPage() {
 
         <TextField
           data-testid="profile-username"
-          label={t("username")}
+          label={tCommon("username")}
           value={username}
           onChange={(e) => setUsername(e.target.value)}
           fullWidth

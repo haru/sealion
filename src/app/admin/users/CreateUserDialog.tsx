@@ -119,7 +119,7 @@ export default function CreateUserDialog({ open, onClose, onCreated }: CreateUse
             </Alert>
           )}
           <TextField
-            label={t("fields.email")}
+            label={tCommon("email")}
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -127,7 +127,7 @@ export default function CreateUserDialog({ open, onClose, onCreated }: CreateUse
             required
           />
           <TextField
-            label={t("fields.username")}
+            label={tCommon("displayName")}
             type="text"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
@@ -135,7 +135,7 @@ export default function CreateUserDialog({ open, onClose, onCreated }: CreateUse
             required
           />
           <TextField
-            label={t("fields.password")}
+            label={tCommon("password")}
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}

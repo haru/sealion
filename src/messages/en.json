@@ -12,15 +12,16 @@
     "table": {
       "noRows": "No data",
       "loading": "Loading..."
-    }
+    },
+    "displayName": "Display Name",
+    "email": "Email",
+    "password": "Password",
+    "username": "Username"
   },
   "auth": {
     "login": "Log In",
     "signup": "Sign Up",
     "logout": "Log Out",
-    "email": "Email",
-    "password": "Password",
-    "username": "Display Name",
     "loginTitle": "Welcome back",
     "signupTitle": "Create your account",
     "noAccount": "Don't have an account?",
@@ -80,10 +81,8 @@
     "noProviders": "No issue trackers connected yet.",
     "fields": {
       "type": "Type",
-      "displayName": "Display Name",
       "baseUrl": "Server URL",
       "token": "Personal Access Token",
-      "email": "Email",
       "apiToken": "API Token",
       "apiKey": "API Key"
     },
@@ -131,8 +130,6 @@
     "fromAddress": "From Address",
     "fromName": "From Name",
     "requireAuth": "Require Authentication",
-    "username": "Username",
-    "password": "Password",
     "useTls": "Use TLS",
     "saveSuccess": "SMTP settings saved successfully",
     "saveError": "Failed to save SMTP settings. Please try again.",
@@ -176,7 +173,6 @@
     "errorCurrentIncorrect": "Current password is incorrect.",
     "errorUnexpected": "An unexpected error occurred. Please try again.",
     "changeUsername": "Change Username",
-    "username": "Username",
     "usernameLoadError": "Failed to load your current username. Please reload the page.",
     "usernameSuccess": "Username updated successfully.",
     "usernameErrorTooLong": "Username must be 50 characters or fewer.",
@@ -276,18 +272,13 @@
       "SUSPENDED": "Suspended"
     },
     "columns": {
-      "email": "Email",
-      "username": "Display Name",
       "role": "Role",
       "status": "Status",
       "createdAt": "Created At",
       "actions": "Actions"
     },
     "fields": {
-      "email": "Email",
-      "password": "Password",
       "changePassword": "Change password",
-      "username": "Display Name",
       "role": "Role",
       "status": "Status"
     }
@@ -370,7 +361,6 @@
   },
   "resetPassword": {
     "title": "Reset Password",
-    "emailLabel": "Email",
     "submit": "Send Reset Link",
     "successMessage": "If an account with this email exists, a password reset link has been sent.",
     "confirmTitle": "Set New Password",
@@ -434,7 +424,6 @@
       },
       "table": {
         "icon": "",
-        "displayName": "Display Name",
         "providerId": "Provider ID",
         "type": "Type",
         "enabled": "Status",
@@ -447,7 +436,6 @@
         "type": "Provider Type",
         "providerId": "Provider ID",
         "providerIdHelp": "Lowercase letters, digits, hyphens only. Used as the authentication provider identifier.",
-        "displayName": "Display Name",
         "issuerUrl": "Issuer URL",
         "clientId": "Client ID",
         "clientSecret": "Client Secret",

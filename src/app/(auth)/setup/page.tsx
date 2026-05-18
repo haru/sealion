@@ -15,6 +15,7 @@ import { AuthFooterLink } from "@/components/ui/AuthFooterLink";
 /** Admin account setup page shown on first application access when no users exist. */
 export default function SetupPage() {
   const t = useTranslations("auth");
+  const tCommon = useTranslations("common");
   const tErrors = useTranslations("errors");
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -69,7 +70,7 @@ export default function SetupPage() {
 
       <Box component="form" onSubmit={handleSubmit} sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
         <TextField
-          label={t("email")}
+          label={tCommon("email")}
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
@@ -79,7 +80,7 @@ export default function SetupPage() {
           variant="outlined"
         />
         <TextField
-          label={t("username")}
+          label={tCommon("displayName")}
           type="text"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
@@ -89,7 +90,7 @@ export default function SetupPage() {
           variant="outlined"
         />
         <TextField
-          label={t("password")}
+          label={tCommon("password")}
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}

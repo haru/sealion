@@ -53,6 +53,7 @@ export function LoginForm({
   externalError = null,
 }: LoginFormProps) {
   const t = useTranslations("auth");
+  const tCommon = useTranslations("common");
   const tReset = useTranslations("resetPassword");
   const tExternal = useTranslations("externalLogin");
   const router = useRouter();
@@ -138,7 +139,7 @@ export function LoginForm({
 
       <Box component="form" onSubmit={handleSubmit} sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
         <TextField
-          label={t("email")}
+          label={tCommon("email")}
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
@@ -148,7 +149,7 @@ export function LoginForm({
           variant="outlined"
         />
         <TextField
-          label={t("password")}
+          label={tCommon("password")}
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}

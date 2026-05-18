@@ -226,13 +226,13 @@ export default function SmtpSettingsPage() {
           <Collapse in={requireAuth} unmountOnExit>
             <Stack spacing={3}>
               <TextField
-                label={t("username")}
+                label={tCommon("username")}
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 fullWidth
               />
               <TextField
-                label={t("password")}
+                label={tCommon("password")}
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}

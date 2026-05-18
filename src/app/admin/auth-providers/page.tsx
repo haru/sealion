@@ -76,7 +76,7 @@ export default function AdminAuthProvidersPage() {
       },
       {
         field: "displayName",
-        headerName: t("table.displayName"),
+        headerName: tCommon("displayName"),
         flex: 1,
         minWidth: 150,
       },

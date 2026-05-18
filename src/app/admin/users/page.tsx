@@ -143,13 +143,13 @@ export default function AdminUsersPage() {
     () => [
       {
         field: "email",
-        headerName: t("columns.email"),
+        headerName: tCommon("email"),
         flex: 2,
         minWidth: 200,
       },
       {
         field: "username",
-        headerName: t("columns.username"),
+        headerName: tCommon("displayName"),
         flex: 1,
         minWidth: 150,
         renderCell: (params: GridRenderCellParams<User>) => params.row.username ?? "—",

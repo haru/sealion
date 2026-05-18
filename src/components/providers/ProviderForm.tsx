@@ -113,7 +113,7 @@ export default function ProviderForm({ onSubmit }: ProviderFormProps) {
         </FormControl>
 
         <TextField
-          label={t("fields.displayName")}
+          label={tCommon("displayName")}
           value={displayName}
           onChange={(e) => setDisplayName(e.target.value)}
           required

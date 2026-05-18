@@ -210,7 +210,7 @@ export function AuthProviderForm({
       />
 
       <TextField
-        label={t("form.displayName")}
+        label={tCommon("displayName")}
         value={displayName}
         onChange={(e) => setDisplayName(e.target.value)}
         required
