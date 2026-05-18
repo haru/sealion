@@ -5,11 +5,16 @@
  */
 
 import GitHubIcon from "@mui/icons-material/GitHub";
-import GoogleIcon from "@mui/icons-material/Google";
 import KeyIcon from "@mui/icons-material/Key";
-import MicrosoftIcon from "@mui/icons-material/Microsoft";
+import Image from "next/image";
 
 import type { AuthProviderType } from "@/services/auth-provider/types";
+
+const fontSizePx: Record<"small" | "medium" | "large", number> = {
+  small: 20,
+  medium: 24,
+  large: 36,
+};
 
 /** Props for {@link ProviderIcon}. */
 export interface ProviderIconProps {
@@ -20,20 +25,43 @@ export interface ProviderIconProps {
 }
 
 /**
- * Renders a Material Icons glyph corresponding to the IdP type.
+ * Renders an icon corresponding to the IdP type.
+ * Google uses a PNG logo; others use Material Icons glyphs.
  * Unknown types fall back to a neutral key glyph.
  *
  * @param props - The {@link ProviderIconProps}.
- * @returns The MUI icon element.
+ * @returns The icon element.
  */
 export function ProviderIcon({ type, fontSize = "small" }: ProviderIconProps) {
+  if (type === "GOOGLE") {
+    const size = fontSize === "inherit" ? fontSizePx.small : (fontSizePx[fontSize] ?? fontSizePx.small);
+    return (
+      <Image
+        src="/providers/google.png"
+        alt="Google"
+        width={size}
+        height={size}
+        style={{ display: "block" }}
+      />
+    );
+  }
+
+  if (type === "MICROSOFT_ENTRA") {
+    const size = fontSize === "inherit" ? fontSizePx.small : (fontSizePx[fontSize] ?? fontSizePx.small);
+    return (
+      <Image
+        src="/providers/azure.svg"
+        alt="Microsoft Entra ID"
+        width={size}
+        height={size}
+        style={{ display: "block" }}
+      />
+    );
+  }
+
   switch (type) {
-    case "GOOGLE":
-      return <GoogleIcon fontSize={fontSize} />;
     case "GITHUB":
       return <GitHubIcon fontSize={fontSize} />;
-    case "MICROSOFT_ENTRA":
-      return <MicrosoftIcon fontSize={fontSize} />;
     case "OIDC_GENERIC":
     default:
       return <KeyIcon fontSize={fontSize} />;
