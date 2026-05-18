@@ -1,8 +1,5 @@
 "use client";
 
-import FolderOpenIcon from "@mui/icons-material/FolderOpen";
-import FormatListBulletedIcon from "@mui/icons-material/FormatListBulleted";
-import TuneIcon from "@mui/icons-material/Tune";
 import { Box, Drawer, List, ListItemButton, ListItemIcon, ListItemText, Typography } from "@mui/material";
 import Image from "next/image";
 import Link from "next/link";
@@ -11,10 +8,19 @@ import { useTranslations } from "next-intl";
 
 import { version } from "@/../package.json";
 
+import { PAGE_ROUTES } from "@/lib/ui/page-routes";
+
 import AdminNavSection from "./AdminNavSection";
 
 const DRAWER_WIDTH = 240;
 const RELEASE_URL = `https://github.com/haru/sealion/`;
+
+/** Sidebar nav items (non-admin). */
+const MAIN_NAV_ITEMS = [
+  { path: "/", sidebarLabelKey: "todo" },
+  { path: "/projects", sidebarLabelKey: "projectManagement" },
+  { path: "/settings/board", sidebarLabelKey: "boardSettings" },
+] as const;
 
 /** Props for {@link Sidebar}. */
 interface SidebarProps {
@@ -111,50 +117,30 @@ export default function Sidebar({ open, onClose, variant, isAdmin }: SidebarProp
       </Box>
 
       <List disablePadding sx={{ flexGrow: 1 }}>
-        <ListItemButton
-          component={Link}
-          href="/"
-          selected={pathname === "/"}
-          onClick={variant === "temporary" ? onClose : undefined}
-          sx={mainItemSx(pathname === "/")}
-        >
-          <ListItemIcon sx={{ minWidth: 32, color: "inherit" }}>
-            <FormatListBulletedIcon sx={{ fontSize: 18 }} />
-          </ListItemIcon>
-          <ListItemText
-            primary={<Typography sx={{ fontSize: "0.85rem", fontWeight: pathname === "/" ? 600 : 500 }}>{t("todo")}</Typography>}
-          />
-        </ListItemButton>
-
-        <ListItemButton
-          component={Link}
-          href="/projects"
-          selected={pathname === "/projects"}
-          onClick={variant === "temporary" ? onClose : undefined}
-          sx={mainItemSx(pathname === "/projects")}
-        >
-          <ListItemIcon sx={{ minWidth: 32, color: "inherit" }}>
-            <FolderOpenIcon sx={{ fontSize: 18 }} />
-          </ListItemIcon>
-          <ListItemText
-            primary={<Typography sx={{ fontSize: "0.85rem", fontWeight: pathname === "/projects" ? 600 : 500 }}>{t("projectManagement")}</Typography>}
-          />
-        </ListItemButton>
-
-        <ListItemButton
-          component={Link}
-          href="/settings/board"
-          selected={pathname === "/settings/board"}
-          onClick={variant === "temporary" ? onClose : undefined}
-          sx={mainItemSx(pathname === "/settings/board")}
-        >
-          <ListItemIcon sx={{ minWidth: 32, color: "inherit" }}>
-            <TuneIcon sx={{ fontSize: 18 }} />
-          </ListItemIcon>
-          <ListItemText
-            primary={<Typography sx={{ fontSize: "0.85rem", fontWeight: pathname === "/settings/board" ? 600 : 500 }}>{t("boardSettings")}</Typography>}
-          />
-        </ListItemButton>
+        {MAIN_NAV_ITEMS.map((item) => {
+          const route = PAGE_ROUTES.find((r) => r.path === item.path);
+          const Icon = route?.icon;
+          const isSelected = pathname === item.path;
+          return (
+            <ListItemButton
+              key={item.path}
+              component={Link}
+              href={item.path}
+              selected={isSelected}
+              onClick={variant === "temporary" ? onClose : undefined}
+              sx={mainItemSx(isSelected)}
+            >
+              {Icon && (
+                <ListItemIcon sx={{ minWidth: 32, color: "inherit" }}>
+                  <Icon sx={{ fontSize: 18 }} />
+                </ListItemIcon>
+              )}
+              <ListItemText
+                primary={<Typography sx={{ fontSize: "0.85rem", fontWeight: isSelected ? 600 : 500 }}>{t(item.sidebarLabelKey)}</Typography>}
+              />
+            </ListItemButton>
+          );
+        })}
 
         {isAdmin && <AdminNavSection variant={variant} onClose={onClose} />}
       </List>

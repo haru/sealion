@@ -191,7 +191,7 @@ Database migrations run automatically on container startup.
 |----------|-----------|
 | Framework | Next.js 16 (App Router) + TypeScript |
 | UI | MUI (Material UI) v7 |
-| Auth | Auth.js v5 |
+| Auth | Auth.js v5 (credentials, OIDC, OAuth2) |
 | Database | PostgreSQL 16 + Prisma 7 |
 | i18n | next-intl v4 |
 

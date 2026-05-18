@@ -19,12 +19,19 @@ enum UserStatus {
   SUSPENDED
 }
 
+enum AuthProviderType {
+  OIDC_GENERIC
+  GOOGLE
+  GITHUB
+  MICROSOFT_ENTRA
+}
+
 // ─── Models ─────────────────────────────────────────────────────────────────
 
 model User {
   id           String   @id @default(cuid())
   email        String   @unique
-  passwordHash String
+  passwordHash String?
   username     String?
   role                            UserRole    @default(USER)
   status                          UserStatus  @default(ACTIVE)
@@ -134,6 +141,26 @@ model SmtpSettings {
   encryptedPassword String?
   useTls            Boolean  @default(false)
   updatedAt         DateTime @updatedAt
+}
+
+// ─── External Auth Providers ────────────────────────────────────────────────
+
+model AuthProvider {
+  id                    String           @id @default(cuid())
+  providerId            String           @unique
+  type                  AuthProviderType
+  displayName           String
+  enabled               Boolean          @default(true)
+  issuerUrl             String?
+  clientId              String
+  encryptedClientSecret String
+  scope                 String?
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+  createdById           String?
+  updatedById           String?
+
+  @@index([enabled])
 }
 
 // ─── Auth Settings ───────────────────────────────────────────────────────────

@@ -1,13 +1,10 @@
 "use client";
 
-import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
-import EmailIcon from "@mui/icons-material/Email";
 import {
   Box,
   Button,
   CircularProgress,
   Collapse,
-  Container,
   Divider,
   FormControlLabel,
   Paper,
@@ -20,7 +17,8 @@ import { useTranslations } from "next-intl";
 import { useState, useEffect } from "react";
 
 import { useMessageQueue } from "@/components/MessageQueue";
-import { usePageHeader } from "@/hooks/usePageHeader";
+import PageContent from "@/components/ui/PageContent";
+import { usePageMeta } from "@/hooks/usePageMeta";
 import { SMTP_DUMMY_PASSWORD } from "@/lib/email/smtp-constants";
 
 /** Shape of the data returned by GET /api/admin/smtp-settings. */
@@ -38,10 +36,9 @@ interface SmtpSettingsData {
 /** SMTP settings admin page — allows admin to configure and test SMTP server connection. */
 export default function SmtpSettingsPage() {
   const t = useTranslations("smtpSettings");
-  const tSidebar = useTranslations("sidebar");
   const { addMessage } = useMessageQueue();
 
-  usePageHeader(t("title"), undefined, EmailIcon, undefined, tSidebar("systemAdmin"), AdminPanelSettingsIcon);
+  usePageMeta();
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -163,7 +160,7 @@ export default function SmtpSettingsPage() {
   const isBusy = saving || testing;
 
   return (
-    <Container maxWidth="sm" sx={{ py: 4 }}>
+    <PageContent maxWidth="sm">
       <Paper sx={{ p: 4 }}>
         <Stack spacing={3}>
 
@@ -263,6 +260,6 @@ export default function SmtpSettingsPage() {
 
         </Stack>
       </Paper>
-    </Container>
+    </PageContent>
   );
 }

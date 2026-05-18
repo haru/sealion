@@ -252,6 +252,99 @@ describe("PATCH /api/account/password — input validation (no DB required)", ()
     const json = await res.json();
     expect(json.error).toBe("PASSWORD_INCORRECT");
   });
+
+  test("returns 400 INVALID_INPUT when request body is not parseable JSON", async () => {
+    jest.resetModules();
+    jest.doMock("@/lib/auth/auth", () => ({
+      auth: jest.fn().mockResolvedValue({
+        user: { id: TEST_USER_ID, email: TEST_USER_EMAIL, role: "USER" },
+      }),
+    }));
+    jest.doMock("@/lib/db/db", () => ({
+      prisma: {
+        user: { findUnique: jest.fn(), update: jest.fn() },
+      },
+    }));
+    const { PATCH } = await import("@/app/api/account/password/route");
+    const req = new NextRequest("http://localhost/api/account/password", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: "not-json{{{",
+    });
+    const res = await PATCH(req);
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.error).toBe("INVALID_INPUT");
+  });
+
+  test("returns 400 PASSWORD_TOO_LONG when newPassword exceeds 72 characters", async () => {
+    jest.resetModules();
+    jest.doMock("@/lib/auth/auth", () => ({
+      auth: jest.fn().mockResolvedValue({
+        user: { id: TEST_USER_ID, email: TEST_USER_EMAIL, role: "USER" },
+      }),
+    }));
+    jest.doMock("@/lib/db/db", () => ({
+      prisma: {
+        user: { findUnique: jest.fn(), update: jest.fn() },
+      },
+    }));
+    const { PATCH } = await import("@/app/api/account/password/route");
+    const req = makePatchRequest({ currentPassword: "currentpass", newPassword: "a".repeat(73) });
+    const res = await PATCH(req);
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.error).toBe("PASSWORD_TOO_LONG");
+  });
+
+  test("returns 401 when user record not found in DB", async () => {
+    jest.resetModules();
+    jest.doMock("@/lib/auth/auth", () => ({
+      auth: jest.fn().mockResolvedValue({
+        user: { id: TEST_USER_ID, email: TEST_USER_EMAIL, role: "USER" },
+      }),
+    }));
+    jest.doMock("@/lib/db/db", () => ({
+      prisma: {
+        user: {
+          findUnique: jest.fn().mockResolvedValue(null),
+          update: jest.fn(),
+        },
+      },
+    }));
+    const { PATCH } = await import("@/app/api/account/password/route");
+    const req = makePatchRequest({ currentPassword: "currentpass", newPassword: "newpassword123" });
+    const res = await PATCH(req);
+    expect(res.status).toBe(401);
+    const json = await res.json();
+    expect(json.error).toBeTruthy();
+  });
+
+  test("returns 400 OIDC_USER_NO_PASSWORD when user has no password hash", async () => {
+    jest.resetModules();
+    jest.doMock("@/lib/auth/auth", () => ({
+      auth: jest.fn().mockResolvedValue({
+        user: { id: TEST_USER_ID, email: TEST_USER_EMAIL, role: "USER" },
+      }),
+    }));
+    jest.doMock("@/lib/db/db", () => ({
+      prisma: {
+        user: {
+          findUnique: jest.fn().mockResolvedValue({
+            id: TEST_USER_ID,
+            passwordHash: null,
+          }),
+          update: jest.fn(),
+        },
+      },
+    }));
+    const { PATCH } = await import("@/app/api/account/password/route");
+    const req = makePatchRequest({ currentPassword: "currentpass", newPassword: "newpassword123" });
+    const res = await PATCH(req);
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.error).toBe("OIDC_USER_NO_PASSWORD");
+  });
 });
 
 describe("PATCH /api/account/password — with real database", () => {
