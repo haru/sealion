@@ -12,19 +12,49 @@ import { useState } from "react";
 
 import { AuthCard } from "@/components/ui/AuthCard";
 import { AuthFooterLink } from "@/components/ui/AuthFooterLink";
+import type { AuthProviderType } from "@/services/auth-provider/types";
+
+import { ExternalProviderButtons, type EnabledProvider } from "./_components/ExternalProviderButtons";
+
+/** External error codes coming back from `signIn`-callback redirects. */
+const KNOWN_EXTERNAL_ERRORS = new Set([
+  "NO_EMAIL_FROM_PROVIDER",
+  "EMAIL_NOT_VERIFIED",
+  "SIGNUP_DISABLED",
+]);
+
+/** Maps a `?error=` code to the matching i18n key under `externalLogin.errors`. */
+function externalErrorKey(error: string): string | null {
+  switch (error) {
+    case "NO_EMAIL_FROM_PROVIDER": return "errors.noEmail";
+    case "EMAIL_NOT_VERIFIED": return "errors.emailNotVerified";
+    case "SIGNUP_DISABLED": return "errors.signupDisabled";
+    default: return null;
+  }
+}
 
 /** Props for {@link LoginForm}. */
-interface LoginFormProps {
+export interface LoginFormProps {
   /** When true, the "Sign Up" footer link is rendered. */
   showSignup: boolean;
   /** When true, the "Forgot password?" footer link is rendered. */
   showPasswordReset: boolean;
+  /** Enabled external IdPs to render below the credentials form. */
+  externalProviders?: EnabledProvider[];
+  /** Optional external-flow error code from `?error=` query. */
+  externalError?: string | null;
 }
 
-/** Login form with email and password credentials. */
-export function LoginForm({ showSignup, showPasswordReset }: LoginFormProps) {
+/** Login form with email/password credentials and optional external IdP buttons. */
+export function LoginForm({
+  showSignup,
+  showPasswordReset,
+  externalProviders = [],
+  externalError = null,
+}: LoginFormProps) {
   const t = useTranslations("auth");
   const tReset = useTranslations("resetPassword");
+  const tExternal = useTranslations("externalLogin");
   const router = useRouter();
   const searchParams = useSearchParams();
   const rawCallback = searchParams.get("callbackUrl");
@@ -39,6 +69,10 @@ export function LoginForm({ showSignup, showPasswordReset }: LoginFormProps) {
 
   const verified = searchParams.get("verified") === "true";
   const verificationSent = searchParams.get("verification_sent") === "true";
+
+  const externalErrorCode =
+    externalError && KNOWN_EXTERNAL_ERRORS.has(externalError) ? externalError : null;
+  const externalKey = externalErrorCode ? externalErrorKey(externalErrorCode) : null;
 
   /** Submits credentials to Auth.js and redirects on success. */
   async function handleSubmit(e: React.FormEvent) {
@@ -81,6 +115,12 @@ export function LoginForm({ showSignup, showPasswordReset }: LoginFormProps) {
       {verificationSent && (
         <Alert severity="info" sx={{ mb: 3, borderRadius: 2 }}>
           {t("verificationSent")}
+        </Alert>
+      )}
+
+      {externalKey && (
+        <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>
+          {tExternal(externalKey)}
         </Alert>
       )}
 
@@ -136,8 +176,13 @@ export function LoginForm({ showSignup, showPasswordReset }: LoginFormProps) {
         </Button>
       </Box>
 
+      <ExternalProviderButtons providers={externalProviders} callbackUrl={callbackUrl} />
+
       {showSignup && <AuthFooterLink prompt={t("noAccount")} href="/signup" label={t("signup")} />}
       {showPasswordReset && <AuthFooterLink prompt="" href="/reset-password" label={tReset("forgotPassword")} />}
     </AuthCard>
   );
 }
+
+// Re-export the AuthProviderType for callers that build the EnabledProvider[].
+export type { AuthProviderType };

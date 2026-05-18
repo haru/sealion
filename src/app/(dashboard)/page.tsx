@@ -1,7 +1,6 @@
 "use client";
 
 import { DndContext, DragOverlay, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
-import FormatListBulletedIcon from "@mui/icons-material/FormatListBulleted";
 import InboxIcon from "@mui/icons-material/Inbox";
 import { Box, Typography } from "@mui/material";
 import { useTranslations } from "next-intl";
@@ -17,7 +16,7 @@ import TodoList from "@/components/todo/TodoList";
 import { useDashboardDnD } from "@/hooks/useDashboardDnD";
 import { useIssueData } from "@/hooks/useIssueData";
 import { useMessageQueue } from "@/hooks/useMessageQueue";
-import { usePageHeader } from "@/hooks/usePageHeader";
+import { usePageMeta } from "@/hooks/usePageMeta";
 import { useSyncPolling, type SyncProvider } from "@/hooks/useSyncPolling";
 import { useTaskSearch } from "@/hooks/useTaskSearch";
 import { useTodayTaskHandlers } from "@/hooks/useTodayTaskHandlers";
@@ -91,7 +90,7 @@ export default function DashboardPage() {
     [syncProviders, isSyncing],
   );
 
-  usePageHeader(t("title"), syncStatusActions, FormatListBulletedIcon, syncTitleAddon);
+  usePageMeta(syncStatusActions, syncTitleAddon);
 
   // Re-fetch issues whenever the debounced search/filter query changes.
   // Skip on initial mount (loading === true) — the init() call handles the first fetch.

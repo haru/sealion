@@ -26,6 +26,7 @@ See [AGENTS.md](./AGENTS.md) for full architecture, coding conventions, testing 
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan
+at [specs/041-oidc-authentication/plan.md](specs/041-oidc-authentication/plan.md).
 <!-- SPECKIT END -->
 
 ## Active Technologies
@@ -33,5 +34,6 @@ shell commands, and other important information, read the current plan
 - PostgreSQL 16 via Prisma 7 ORM
 
 ## Recent Changes
+- 041-oidc-authentication: Added OIDC / OAuth2 external auth (Google / GitHub / Microsoft Entra / generic OIDC) with admin UI for IdP management; existing local credentials auth preserved
 - 039-gravatar-integration: Added Gravatar support (`useGravatar` boolean column on `User`)
 - 040-unify-profile-save: Unified profile settings form (username, Gravatar, password in one PATCH request)
