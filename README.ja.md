@@ -183,13 +183,6 @@ docker compose stop
 - Microsoft Entra ID
 - 汎用 OIDC（`.well-known/openid-configuration` を公開している任意の IdP。Keycloak / Okta / Auth0 など）
 
-### しくみ
-
-- IdP は管理画面から実行時に追加・有効化できます。環境変数の設定や再起動は不要です。
-- Client Secret は PostgreSQL に AES-256-GCM で暗号化して保存されます（Issue Tracker の API トークンと同じ方式）。
-- 検証済みメールアドレスをキーに既存ローカルユーザーと自動的に紐付けされます。新規ユーザーの自動作成は、管理画面の `allowUserSignup` を有効化したときのみ行われます。
-- ローカル認証 (ユーザー名／パスワード) は IdP の有無に関係なくこれまで通り利用できます。
-
 ### セットアップ
 
 1. ADMIN ユーザーでサインインし、**`/admin/auth-providers`** を開きます。

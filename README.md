@@ -184,13 +184,6 @@ In addition to local username & password, Sealion can let users sign in with ext
 - Microsoft Entra ID
 - Generic OIDC (any IdP that exposes a `.well-known/openid-configuration` endpoint, e.g. Keycloak, Okta, Auth0)
 
-### How it works
-
-- Providers are configured at runtime from the admin UI — no env vars, no restart required.
-- Client secrets are stored in PostgreSQL encrypted with AES-256-GCM (same scheme as issue-tracker API tokens).
-- Accounts are linked to existing local users by verified email address. New users are auto-created only when `allowUserSignup` is enabled in admin settings.
-- Local credentials authentication remains available alongside any configured IdPs.
-
 ### Setup
 
 1. Sign in as an admin and open **`/admin/auth-providers`**.
