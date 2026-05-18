@@ -52,6 +52,8 @@ export interface AuthProviderFormProps {
   onCreated?: () => void;
   /** Called after a successful PATCH returns 200. */
   onUpdated?: () => void;
+  /** Called when the user clicks Cancel. */
+  onCancel?: () => void;
   /** Optional list of types to offer; defaults to all supported types. */
   supportedTypes?: SupportedAuthProviderType[];
   /** When provided the form operates in edit mode and PATCHes to `[id]`. */
@@ -69,10 +71,12 @@ export interface AuthProviderFormProps {
 export function AuthProviderForm({
   onCreated,
   onUpdated,
+  onCancel,
   supportedTypes = ["GOOGLE", "OIDC_GENERIC", "GITHUB", "MICROSOFT_ENTRA" as const],
   initialValues,
 }: AuthProviderFormProps) {
   const t = useTranslations("authProviders.admin");
+  const tCommon = useTranslations("common");
   const isEdit = initialValues !== undefined;
 
   const defaults = useMemo(() => ({
@@ -255,7 +259,12 @@ export function AuthProviderForm({
         label={t("form.enabled")}
       />
 
-      <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+      <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1 }}>
+        {onCancel && (
+          <Button type="button" onClick={onCancel} disabled={loading}>
+            {tCommon("cancel")}
+          </Button>
+        )}
         <Button type="submit" variant="contained" disabled={loading}>
           {submitLabel}
         </Button>

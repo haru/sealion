@@ -232,6 +232,7 @@ export default function AdminAuthProvidersPage() {
             initialValues={editTarget}
             onCreated={() => { handleClose(); void fetchRows(); }}
             onUpdated={() => { handleClose(); void fetchRows(); }}
+            onCancel={handleClose}
           />
         </DialogContent>
       </Dialog>

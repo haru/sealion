@@ -203,8 +203,7 @@
         "errorLastAdmin": "You are the only administrator and cannot delete your account.",
         "errorUnauthorized": "Your session has expired. Please log in again.",
         "errorUnexpected": "An unexpected error occurred. Please try again.",
-        "confirm": "Delete My Account",
-        "cancel": "Cancel"
+        "confirm": "Delete My Account"
       }
     }
   },
