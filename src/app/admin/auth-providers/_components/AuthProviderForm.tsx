@@ -181,7 +181,7 @@ export function AuthProviderForm({
   const submitLabel = loading ? t(isEdit ? "form.updating" : "form.saving") : idleLabel;
 
   return (
-    <Box component="form" onSubmit={handleSubmit} sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+    <Box component="form" onSubmit={handleSubmit} autoComplete="off" sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
       {error && <Alert severity="error">{error}</Alert>}
 
       <FormControl fullWidth disabled={isEdit}>
@@ -243,6 +243,7 @@ export function AuthProviderForm({
         required={!isEdit}
         fullWidth
         type="password"
+        autoComplete="new-password"
       />
 
       <TextField
