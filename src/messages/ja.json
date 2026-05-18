@@ -152,6 +152,7 @@
     "userManagement": "ユーザー管理",
     "authSettings": "認証設定",
     "smtpSettings": "メール送信設定",
+    "oidcSettings": "OIDC / IdP",
     "tagline": "All Your TODOs, One Place.",
     "version": "Sealion v{version}",
     "settings": "設定"
@@ -455,11 +456,14 @@
         "issuerUrl": "Issuer URL",
         "clientId": "Client ID",
         "clientSecret": "Client Secret",
+        "clientSecretEditHelp": "空白のままにすると現在の値を維持します。",
         "scope": "Scope（任意）",
         "scopeHelp": "未指定の場合はプロバイダー既定の Scope を使用します。",
         "enabled": "有効化する",
         "save": "保存",
         "saving": "保存中…",
+        "update": "更新",
+        "updating": "更新中…",
         "errors": {
           "INVALID_INPUT": "入力に不備があります。内容をご確認ください。",
           "PROVIDER_ID_TAKEN": "同じプロバイダー ID がすでに登録されています。",
@@ -467,9 +471,18 @@
           "FORBIDDEN": "管理者権限が必要です。",
           "INTERNAL_ERROR": "エラーが発生しました。もう一度お試しください。",
           "UNKNOWN": "予期しないエラーが発生しました。",
+          "NOT_FOUND": "プロバイダーが見つかりません。",
+          "PROVIDER_IN_USE": "連携ユーザーがいるため削除できません（{linkedAccountCount}件）。",
           "issuerRequired": "この種別では Issuer URL が必須です。"
         }
       },
+      "editButton": "編集",
+      "deleteButton": "削除",
+      "deleteConfirmTitle": "IdP の削除",
+      "deleteConfirmMessage": "「{name}」を削除しますか？この操作は元に戻せません。",
+      "deleteConfirmOk": "削除",
+      "deleteConfirmCancel": "キャンセル",
+      "deleteSuccess": "IdP を削除しました。",
       "errors": {
         "FORBIDDEN": "管理者権限が必要です。",
         "UNAUTHORIZED": "ログインが必要です。",

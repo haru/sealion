@@ -4,6 +4,7 @@ import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 import EmailOutlinedIcon from "@mui/icons-material/EmailOutlined";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import LoginIcon from "@mui/icons-material/Login";
 import PeopleIcon from "@mui/icons-material/People";
 import SecurityOutlinedIcon from "@mui/icons-material/SecurityOutlined";
 import { Collapse, List, ListItemButton, ListItemIcon, ListItemText, Typography } from "@mui/material";
@@ -115,6 +116,21 @@ export default function AdminNavSection({ variant, onClose }: AdminNavSectionPro
             </ListItemIcon>
             <ListItemText
               primary={<Typography sx={{ fontSize: "0.85rem", fontWeight: pathname === "/admin/smtp-settings" ? 600 : 500 }}>{t("smtpSettings")}</Typography>}
+            />
+          </ListItemButton>
+
+          <ListItemButton
+            component={Link}
+            href="/admin/auth-providers"
+            selected={pathname === "/admin/auth-providers"}
+            onClick={variant === "temporary" ? onClose : undefined}
+            sx={baseItemSx(pathname, "/admin/auth-providers")}
+          >
+            <ListItemIcon sx={{ minWidth: 32, color: "inherit" }}>
+              <LoginIcon sx={{ fontSize: 18 }} />
+            </ListItemIcon>
+            <ListItemText
+              primary={<Typography sx={{ fontSize: "0.85rem", fontWeight: pathname === "/admin/auth-providers" ? 600 : 500 }}>{t("oidcSettings")}</Typography>}
             />
           </ListItemButton>
         </List>

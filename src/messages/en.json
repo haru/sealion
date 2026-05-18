@@ -152,6 +152,7 @@
     "userManagement": "Users",
     "authSettings": "Auth Settings",
     "smtpSettings": "Email Settings",
+    "oidcSettings": "OIDC / IdP",
     "tagline": "All Your TODOs, One Place.",
     "version": "Sealion v{version}",
     "settings": "Settings"
@@ -454,11 +455,14 @@
         "issuerUrl": "Issuer URL",
         "clientId": "Client ID",
         "clientSecret": "Client Secret",
+        "clientSecretEditHelp": "Leave blank to keep the current secret.",
         "scope": "Scope (optional)",
         "scopeHelp": "Defaults to the provider's standard scope when empty.",
         "enabled": "Enabled",
         "save": "Save",
         "saving": "Saving…",
+        "update": "Update",
+        "updating": "Updating…",
         "errors": {
           "INVALID_INPUT": "Some fields are invalid. Please review your input.",
           "PROVIDER_ID_TAKEN": "A provider with this ID already exists.",
@@ -466,9 +470,18 @@
           "FORBIDDEN": "Administrator role required.",
           "INTERNAL_ERROR": "Something went wrong. Please try again.",
           "UNKNOWN": "Unexpected error. Please try again.",
+          "NOT_FOUND": "Provider not found.",
+          "PROVIDER_IN_USE": "Cannot delete: {linkedAccountCount, plural, one{# linked account} other{# linked accounts}} exist.",
           "issuerRequired": "Issuer URL is required for this provider type."
         }
       },
+      "editButton": "Edit",
+      "deleteButton": "Delete",
+      "deleteConfirmTitle": "Delete IdP",
+      "deleteConfirmMessage": "Are you sure you want to delete \"{name}\"? This action cannot be undone.",
+      "deleteConfirmOk": "Delete",
+      "deleteConfirmCancel": "Cancel",
+      "deleteSuccess": "IdP deleted successfully.",
       "errors": {
         "FORBIDDEN": "Administrator role required.",
         "UNAUTHORIZED": "You must be signed in.",

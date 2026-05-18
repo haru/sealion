@@ -1,9 +1,8 @@
 "use client";
 
 /**
- * Admin form for creating an `AuthProvider`. Collocated under the admin route
- * (Principle VII) since only this page consumes it. US1 supports GOOGLE and
- * OIDC_GENERIC; GITHUB and MICROSOFT_ENTRA are added in US2 (T044).
+ * Admin form for creating or updating an `AuthProvider`. Collocated under the
+ * admin route (Principle VII) since only this page consumes it.
  */
 
 import Alert from "@mui/material/Alert";
@@ -17,50 +16,103 @@ import Select from "@mui/material/Select";
 import Switch from "@mui/material/Switch";
 import TextField from "@mui/material/TextField";
 import { useTranslations } from "next-intl";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import type { AuthProviderType } from "@/services/auth-provider/types";
 
-/** Types supported by the form in US1. US2 (T044) extends this list. */
+/** Types supported by the form. */
 export type SupportedAuthProviderType = Extract<
   AuthProviderType,
   "GOOGLE" | "OIDC_GENERIC" | "GITHUB" | "MICROSOFT_ENTRA"
 >;
 
+/** Initial values for edit mode. */
+export interface AuthProviderInitialValues {
+  /** Database UUID of the provider. */
+  id: string;
+  /** Unique provider identifier (e.g. "google", "my-oidc"). */
+  providerId: string;
+  /** Provider type. */
+  type: SupportedAuthProviderType;
+  /** Human-readable name shown on the login page. */
+  displayName: string;
+  /** Whether the provider is active. */
+  enabled: boolean;
+  /** Issuer URL for OIDC_GENERIC / MICROSOFT_ENTRA. */
+  issuerUrl: string;
+  /** OAuth client ID. */
+  clientId: string;
+  /** OAuth scope (empty string if not set). */
+  scope: string;
+}
+
 /** Props for {@link AuthProviderForm}. */
 export interface AuthProviderFormProps {
   /** Called after a successful POST returns 201. */
   onCreated?: () => void;
-  /** Optional list of types to offer; defaults to GOOGLE + OIDC_GENERIC for US1. */
+  /** Called after a successful PATCH returns 200. */
+  onUpdated?: () => void;
+  /** Optional list of types to offer; defaults to all supported types. */
   supportedTypes?: SupportedAuthProviderType[];
+  /** When provided the form operates in edit mode and PATCHes to `[id]`. */
+  initialValues?: AuthProviderInitialValues;
 }
 
 /**
- * Controlled MUI form that POSTs to `/api/admin/auth-providers`. Validates
- * client-side that `issuerUrl` is set for OIDC_GENERIC and MICROSOFT_ENTRA.
+ * Controlled MUI form that POSTs to `/api/admin/auth-providers` (create) or
+ * PATCHes to `/api/admin/auth-providers/[id]` (update). Validates client-side
+ * that `issuerUrl` is set for OIDC_GENERIC and MICROSOFT_ENTRA.
  *
  * @param props - {@link AuthProviderFormProps}.
  * @returns The form element.
  */
 export function AuthProviderForm({
   onCreated,
+  onUpdated,
   supportedTypes = ["GOOGLE", "OIDC_GENERIC", "GITHUB", "MICROSOFT_ENTRA" as const],
+  initialValues,
 }: AuthProviderFormProps) {
   const t = useTranslations("authProviders.admin");
-  const [type, setType] = useState<SupportedAuthProviderType>(supportedTypes[0]);
-  const [providerId, setProviderId] = useState("");
-  const [displayName, setDisplayName] = useState("");
-  const [issuerUrl, setIssuerUrl] = useState("");
-  const [clientId, setClientId] = useState("");
-  const [clientSecret, setClientSecret] = useState("");
-  const [enabled, setEnabled] = useState(true);
-  const [scope, setScope] = useState("");
+  const isEdit = initialValues !== undefined;
+
+  const defaults = useMemo(() => ({
+    type: supportedTypes[0],
+    providerId: "",
+    displayName: "",
+    issuerUrl: "",
+    clientId: "",
+    clientSecret: "",
+    enabled: true,
+    scope: "",
+  }), [supportedTypes]);
+
+  const src = isEdit
+    ? {
+        type: initialValues.type,
+        providerId: initialValues.providerId,
+        displayName: initialValues.displayName,
+        issuerUrl: initialValues.issuerUrl,
+        clientId: initialValues.clientId,
+        clientSecret: "",
+        enabled: initialValues.enabled,
+        scope: initialValues.scope,
+      }
+    : defaults;
+
+  const [type, setType] = useState<SupportedAuthProviderType>(src.type);
+  const [providerId, setProviderId] = useState(src.providerId);
+  const [displayName, setDisplayName] = useState(src.displayName);
+  const [issuerUrl, setIssuerUrl] = useState(src.issuerUrl);
+  const [clientId, setClientId] = useState(src.clientId);
+  const [clientSecret, setClientSecret] = useState(src.clientSecret);
+  const [enabled, setEnabled] = useState(src.enabled);
+  const [scope, setScope] = useState(src.scope);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const requiresIssuer = type === "OIDC_GENERIC" || type === "MICROSOFT_ENTRA";
 
-  /** POSTs the form. On 201 calls `onCreated`; on 4xx surfaces a translated error. */
+  /** Submits the form (POST for create, PATCH for update). */
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -69,11 +121,20 @@ export function AuthProviderForm({
       return;
     }
     setLoading(true);
-    try {
-      const res = await fetch("/api/admin/auth-providers", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+    const url = isEdit
+      ? `/api/admin/auth-providers/${initialValues.id}`
+      : "/api/admin/auth-providers";
+    const method = isEdit ? "PATCH" : "POST";
+    const body = isEdit
+      ? {
+          displayName,
+          enabled,
+          issuerUrl: requiresIssuer ? issuerUrl : null,
+          clientId,
+          ...(clientSecret ? { clientSecret } : {}),
+          scope: scope || null,
+        }
+      : {
           providerId,
           type,
           displayName,
@@ -82,9 +143,18 @@ export function AuthProviderForm({
           clientId,
           clientSecret,
           scope: scope || null,
-        }),
+        };
+    try {
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
       });
-      if (res.status === 201) {
+      if (isEdit && res.ok) {
+        onUpdated?.();
+        return;
+      }
+      if (!isEdit && res.status === 201) {
         setProviderId("");
         setDisplayName("");
         setIssuerUrl("");
@@ -94,11 +164,7 @@ export function AuthProviderForm({
         onCreated?.();
         return;
       }
-      let code = "UNKNOWN";
-      try {
-        const body = await res.json();
-        if (typeof body?.error === "string") { code = body.error; }
-      } catch { /* keep UNKNOWN */ }
+      const code = await extractErrorCode(res);
       setError(t(`form.errors.${code}`));
     } catch {
       setError(t("form.errors.UNKNOWN"));
@@ -107,11 +173,15 @@ export function AuthProviderForm({
     }
   }
 
+  const submitLabel = loading
+    ? t(isEdit ? "form.updating" : "form.saving")
+    : t(isEdit ? "form.update" : "form.save");
+
   return (
     <Box component="form" onSubmit={handleSubmit} sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
       {error && <Alert severity="error">{error}</Alert>}
 
-      <FormControl fullWidth>
+      <FormControl fullWidth disabled={isEdit}>
         <InputLabel id="auth-provider-type-label">{t("form.type")}</InputLabel>
         <Select
           labelId="auth-provider-type-label"
@@ -132,6 +202,7 @@ export function AuthProviderForm({
         onChange={(e) => setProviderId(e.target.value)}
         required
         fullWidth
+        disabled={isEdit}
       />
 
       <TextField
@@ -163,9 +234,10 @@ export function AuthProviderForm({
 
       <TextField
         label={t("form.clientSecret")}
+        helperText={isEdit ? t("form.clientSecretEditHelp") : undefined}
         value={clientSecret}
         onChange={(e) => setClientSecret(e.target.value)}
-        required
+        required={!isEdit}
         fullWidth
         type="password"
       />
@@ -185,9 +257,23 @@ export function AuthProviderForm({
 
       <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
         <Button type="submit" variant="contained" disabled={loading}>
-          {loading ? t("form.saving") : t("form.save")}
+          {submitLabel}
         </Button>
       </Box>
     </Box>
   );
+}
+
+/**
+ * Extracts an error code string from a fetch response.
+ *
+ * @param res - The fetch response to extract the code from.
+ * @returns The error code string, or "UNKNOWN" if parsing fails.
+ */
+async function extractErrorCode(res: Response): Promise<string> {
+  try {
+    const body = await res.json();
+    if (typeof body?.error === "string") { return body.error; }
+  } catch { /* keep UNKNOWN */ }
+  return "UNKNOWN";
 }
