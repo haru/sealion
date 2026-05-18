@@ -121,7 +121,6 @@
       "30d": "30日",
       "90d": "90日"
     },
-    "save": "保存",
     "saveSuccess": "認証設定を保存しました",
     "saveError": "認証設定の保存に失敗しました。再試行してください。"
   },
@@ -135,7 +134,6 @@
     "username": "ユーザー名",
     "password": "パスワード",
     "useTls": "TLSを使用",
-    "save": "保存",
     "saveSuccess": "メール送信設定を保存しました",
     "saveError": "メール送信設定の保存に失敗しました。再試行してください。",
     "testSend": "テスト送信",
@@ -228,7 +226,6 @@
       "moveDownAriaLabel": "下へ移動",
       "moveBottomAriaLabel": "末尾へ移動"
     },
-    "save": "保存",
     "saveSuccess": "設定を保存しました",
     "saveError": "設定の保存に失敗しました。再試行してください。",
     "loadError": "ボード設定の読み込みに失敗しました。デフォルト設定を使用します。"
@@ -314,7 +311,6 @@
     "reasonLabel": "完了の理由（任意）",
     "reasonPlaceholder": "Issueにコメントを追加...",
     "confirmButton": "完了",
-    "cancelButton": "キャンセル",
     "errorMessage": "Issueのクローズに失敗しました。もう一度お試しください。"
   },
   "errors": {
@@ -459,7 +455,6 @@
         "scope": "Scope（任意）",
         "scopeHelp": "未指定の場合はプロバイダー既定の Scope を使用します。",
         "enabled": "有効化する",
-        "save": "保存",
         "saving": "保存中…",
         "update": "更新",
         "updating": "更新中…",
@@ -475,12 +470,8 @@
           "issuerRequired": "この種別では Issuer URL が必須です。"
         }
       },
-      "editButton": "編集",
-      "deleteButton": "削除",
       "deleteConfirmTitle": "IdP の削除",
       "deleteConfirmMessage": "「{name}」を削除しますか？この操作は元に戻せません。",
-      "deleteConfirmOk": "削除",
-      "deleteConfirmCancel": "キャンセル",
       "deleteSuccess": "IdP を削除しました。",
       "errors": {
         "FORBIDDEN": "管理者権限が必要です。",

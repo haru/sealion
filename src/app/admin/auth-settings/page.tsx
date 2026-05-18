@@ -45,6 +45,7 @@ interface AuthSettingsData {
 /** Auth settings admin page — allows ADMIN to configure signup and session timeout. */
 export default function AuthSettingsPage() {
   const t = useTranslations("authSettings");
+  const tCommon = useTranslations("common");
   const { addMessage } = useMessageQueue();
 
   usePageMeta();
@@ -204,7 +205,7 @@ export default function AuthSettingsPage() {
             disabled={saving}
             sx={{ alignSelf: "flex-start" }}
           >
-            {t("save")}
+            {tCommon("save")}
           </Button>
 
         </Stack>

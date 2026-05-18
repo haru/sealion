@@ -49,6 +49,7 @@ interface AdminAuthProviderRow {
  */
 export default function AdminAuthProvidersPage() {
   const t = useTranslations("authProviders.admin");
+  const tCommon = useTranslations("common");
   const { addMessage } = useMessageQueue();
 
   usePageMeta();
@@ -121,13 +122,13 @@ export default function AdminAuthProvidersPage() {
         headerAlign: "center",
         renderCell: (params: GridRenderCellParams<AdminAuthProviderRow>) => (
           <Stack direction="row" spacing={0.5}>
-            <Tooltip title={t("editButton")}>
-              <IconButton size="small" onClick={() => handleEdit(params.row)} aria-label={t("editButton")}>
+            <Tooltip title={tCommon("edit")}>
+              <IconButton size="small" onClick={() => handleEdit(params.row)} aria-label={tCommon("edit")}>
                 <EditOutlinedIcon fontSize="small" />
               </IconButton>
             </Tooltip>
-            <Tooltip title={t("deleteButton")}>
-              <IconButton size="small" onClick={() => setDeleteTarget(params.row)} aria-label={t("deleteButton")}>
+            <Tooltip title={tCommon("delete")}>
+              <IconButton size="small" onClick={() => setDeleteTarget(params.row)} aria-label={tCommon("delete")}>
                 <DeleteOutlineOutlinedIcon fontSize="small" />
               </IconButton>
             </Tooltip>
@@ -226,7 +227,7 @@ export default function AdminAuthProvidersPage() {
       <DataTable columns={columns} rows={rows} loading={loading} />
 
       <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
-        <DialogTitle>{editTarget ? t("editButton") : t("addButton")}</DialogTitle>
+        <DialogTitle>{editTarget ? tCommon("edit") : t("addButton")}</DialogTitle>
         <DialogContent dividers>
           <AuthProviderForm
             initialValues={editTarget}
@@ -246,10 +247,10 @@ export default function AdminAuthProvidersPage() {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDeleteTarget(null)} disabled={deleting}>
-            {t("deleteConfirmCancel")}
+            {tCommon("cancel")}
           </Button>
           <Button onClick={handleDeleteConfirm} color="error" variant="contained" disabled={deleting}>
-            {t("deleteConfirmOk")}
+            {tCommon("delete")}
           </Button>
         </DialogActions>
       </Dialog>

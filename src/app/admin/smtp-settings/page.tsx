@@ -36,6 +36,7 @@ interface SmtpSettingsData {
 /** SMTP settings admin page — allows admin to configure and test SMTP server connection. */
 export default function SmtpSettingsPage() {
   const t = useTranslations("smtpSettings");
+  const tCommon = useTranslations("common");
   const { addMessage } = useMessageQueue();
 
   usePageMeta();
@@ -246,7 +247,7 @@ export default function SmtpSettingsPage() {
               onClick={handleSave}
               disabled={isBusy}
             >
-              {t("save")}
+              {tCommon("save")}
             </Button>
 
             <Button

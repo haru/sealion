@@ -121,7 +121,6 @@
       "30d": "30 days",
       "90d": "90 days"
     },
-    "save": "Save",
     "saveSuccess": "Auth settings saved successfully",
     "saveError": "Failed to save auth settings. Please try again."
   },
@@ -135,7 +134,6 @@
     "username": "Username",
     "password": "Password",
     "useTls": "Use TLS",
-    "save": "Save",
     "saveSuccess": "SMTP settings saved successfully",
     "saveError": "Failed to save SMTP settings. Please try again.",
     "testSend": "Send Test Email",
@@ -228,7 +226,6 @@
       "moveDownAriaLabel": "Move down",
       "moveBottomAriaLabel": "Move to bottom"
     },
-    "save": "Save",
     "saveSuccess": "Settings saved successfully",
     "saveError": "Failed to save settings. Please try again.",
     "loadError": "Failed to load board settings. Using defaults."
@@ -314,7 +311,6 @@
     "reasonLabel": "Reason for completion (optional)",
     "reasonPlaceholder": "Add a comment to the issue...",
     "confirmButton": "Complete",
-    "cancelButton": "Cancel",
     "errorMessage": "Failed to close the issue. Please try again."
   },
   "errors": {
@@ -459,7 +455,6 @@
         "scope": "Scope (optional)",
         "scopeHelp": "Defaults to the provider's standard scope when empty.",
         "enabled": "Enabled",
-        "save": "Save",
         "saving": "Saving…",
         "update": "Update",
         "updating": "Updating…",
@@ -475,12 +470,8 @@
           "issuerRequired": "Issuer URL is required for this provider type."
         }
       },
-      "editButton": "Edit",
-      "deleteButton": "Delete",
       "deleteConfirmTitle": "Delete IdP",
       "deleteConfirmMessage": "Are you sure you want to delete \"{name}\"? This action cannot be undone.",
-      "deleteConfirmOk": "Delete",
-      "deleteConfirmCancel": "Cancel",
       "deleteSuccess": "IdP deleted successfully.",
       "errors": {
         "FORBIDDEN": "Administrator role required.",
