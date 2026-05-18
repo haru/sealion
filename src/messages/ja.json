@@ -152,6 +152,7 @@
     "userManagement": "ユーザー管理",
     "authSettings": "認証設定",
     "smtpSettings": "メール送信設定",
+    "oidcSettings": "OIDC / IdP",
     "tagline": "All Your TODOs, One Place.",
     "version": "Sealion v{version}",
     "settings": "設定"
@@ -347,7 +348,8 @@
     "EMAIL_NOT_VERIFIED": "メールアドレスが確認されていません",
     "INVALID_TOKEN": "確認トークンが無効です",
     "EXPIRED_TOKEN": "確認トークンの有効期限が切れています",
-    "MISSING_TOKEN": "確認トークンが見つかりません"
+    "MISSING_TOKEN": "確認トークンが見つかりません",
+    "OIDC_USER_NO_PASSWORD": "このアカウントは外部認証を使用しており、ローカルパスワードが設定されていません。"
   },
   "sync": {
     "error": {
@@ -393,7 +395,8 @@
     "requestNewLink": "新しいリセットメールをリクエスト",
     "forgotPassword": "パスワードを忘れた方",
     "rateLimitError": "しばらくしてから再度お試しください。",
-    "generalError": "予期しないエラーが発生しました。もう一度お試しください。"
+    "generalError": "予期しないエラーが発生しました。もう一度お試しください。",
+    "errorOidcUserNoPassword": "このアカウントは外部認証を使用しており、ローカルパスワードが設定されていません。"
   },
   "a11y": {
     "openMenu": "メニューを開く",
@@ -423,5 +426,93 @@
     "noResults": "条件に一致するIssueがありません。",
     "clearSearch": "検索をクリア",
     "clearFilter": "フィルターをクリア"
+  },
+  "authProviders": {
+    "admin": {
+      "title": "認証プロバイダー",
+      "addButton": "IdP を追加",
+      "types": {
+        "GOOGLE": "Google",
+        "GITHUB": "GitHub",
+        "MICROSOFT_ENTRA": "Microsoft Entra ID",
+        "OIDC_GENERIC": "汎用 OIDC"
+      },
+      "table": {
+        "icon": "",
+        "displayName": "表示名",
+        "providerId": "プロバイダー ID",
+        "type": "種別",
+        "enabled": "状態",
+        "linkedAccountCount": "連携ユーザー数",
+        "empty": "IdP はまだ登録されていません。",
+        "on": "有効",
+        "off": "無効"
+      },
+      "form": {
+        "type": "プロバイダー種別",
+        "providerId": "プロバイダー ID",
+        "providerIdHelp": "小文字英数とハイフンのみ。Auth.js のコールバック URL に使われます。",
+        "displayName": "表示名",
+        "issuerUrl": "Issuer URL",
+        "clientId": "Client ID",
+        "clientSecret": "Client Secret",
+        "clientSecretEditHelp": "空白のままにすると現在の値を維持します。",
+        "scope": "Scope（任意）",
+        "scopeHelp": "未指定の場合はプロバイダー既定の Scope を使用します。",
+        "enabled": "有効化する",
+        "save": "保存",
+        "saving": "保存中…",
+        "update": "更新",
+        "updating": "更新中…",
+        "errors": {
+          "INVALID_INPUT": "入力に不備があります。内容をご確認ください。",
+          "PROVIDER_ID_TAKEN": "同じプロバイダー ID がすでに登録されています。",
+          "UNAUTHORIZED": "ログインが必要です。",
+          "FORBIDDEN": "管理者権限が必要です。",
+          "INTERNAL_ERROR": "エラーが発生しました。もう一度お試しください。",
+          "UNKNOWN": "予期しないエラーが発生しました。",
+          "NOT_FOUND": "プロバイダーが見つかりません。",
+          "PROVIDER_IN_USE": "連携ユーザーがいるため削除できません（{linkedAccountCount}件）。",
+          "issuerRequired": "この種別では Issuer URL が必須です。"
+        }
+      },
+      "editButton": "編集",
+      "deleteButton": "削除",
+      "deleteConfirmTitle": "IdP の削除",
+      "deleteConfirmMessage": "「{name}」を削除しますか？この操作は元に戻せません。",
+      "deleteConfirmOk": "削除",
+      "deleteConfirmCancel": "キャンセル",
+      "deleteSuccess": "IdP を削除しました。",
+      "errors": {
+        "FORBIDDEN": "管理者権限が必要です。",
+        "UNAUTHORIZED": "ログインが必要です。",
+        "INTERNAL_ERROR": "プロバイダー一覧の取得に失敗しました。",
+        "NETWORK": "ネットワークエラーが発生しました。",
+        "UNKNOWN": "予期しないエラーが発生しました。"
+      }
+    }
+  },
+  "externalLogin": {
+    "signInWith": "{provider} でログイン",
+    "orContinueWith": "または",
+    "errors": {
+      "noEmail": "IdP からメールアドレスを取得できませんでした。",
+      "emailNotVerified": "IdP 側でメールアドレスが未検証です。",
+      "signupDisabled": "新規ユーザー登録は無効化されています。管理者にお問い合わせください。"
+    }
+  },
+  "accountLinks": {
+    "title": "連携中の認証プロバイダー",
+    "noAccounts": "外部認証プロバイダーは連携されていません。",
+    "unlink": "連携解除",
+    "linkedAt": "{date} に連携",
+    "errors": {
+      "LAST_AUTH_METHOD": "連携解除できません: これが最後の認証手段です。",
+      "NOT_FOUND": "連携アカウントが見つかりません。",
+      "NETWORK": "ネットワークエラーです。もう一度お試しください。",
+      "UNAUTHORIZED": "続けるにはログインしてください。",
+      "INTERNAL_ERROR": "予期しないエラーが発生しました。もう一度お試しください。",
+      "UNKNOWN": "予期しないエラーが発生しました。"
+    }
   }
 }

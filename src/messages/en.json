@@ -152,6 +152,7 @@
     "userManagement": "Users",
     "authSettings": "Auth Settings",
     "smtpSettings": "Email Settings",
+    "oidcSettings": "OIDC / IdP",
     "tagline": "All Your TODOs, One Place.",
     "version": "Sealion v{version}",
     "settings": "Settings"
@@ -347,7 +348,8 @@
     "EMAIL_NOT_VERIFIED": "Your email address has not been verified",
     "INVALID_TOKEN": "Invalid verification token",
     "EXPIRED_TOKEN": "Verification token has expired",
-    "MISSING_TOKEN": "Verification token is missing"
+    "MISSING_TOKEN": "Reset token is missing.",
+    "OIDC_USER_NO_PASSWORD": "This account uses external authentication and has no local password."
   },
   "sync": {
     "error": {
@@ -393,7 +395,8 @@
     "requestNewLink": "Request a new reset email",
     "forgotPassword": "Forgot password?",
     "rateLimitError": "Please wait before requesting another reset.",
-    "generalError": "An unexpected error occurred. Please try again."
+    "generalError": "An unexpected error occurred. Please try again.",
+    "errorOidcUserNoPassword": "This account uses external authentication and has no local password."
   },
   "a11y": {
     "openMenu": "Open menu",
@@ -423,5 +426,93 @@
     "noResults": "No issues match your search.",
     "clearSearch": "Clear search",
     "clearFilter": "Clear filter"
+  },
+  "authProviders": {
+    "admin": {
+      "title": "Authentication Providers",
+      "addButton": "Add IdP",
+      "types": {
+        "GOOGLE": "Google",
+        "GITHUB": "GitHub",
+        "MICROSOFT_ENTRA": "Microsoft Entra ID",
+        "OIDC_GENERIC": "Generic OIDC"
+      },
+      "table": {
+        "icon": "",
+        "displayName": "Display Name",
+        "providerId": "Provider ID",
+        "type": "Type",
+        "enabled": "Status",
+        "linkedAccountCount": "Linked Accounts",
+        "empty": "No IdPs configured yet.",
+        "on": "Enabled",
+        "off": "Disabled"
+      },
+      "form": {
+        "type": "Provider Type",
+        "providerId": "Provider ID",
+        "providerIdHelp": "Lowercase letters, digits, hyphens. Used in Auth.js callback URLs.",
+        "displayName": "Display Name",
+        "issuerUrl": "Issuer URL",
+        "clientId": "Client ID",
+        "clientSecret": "Client Secret",
+        "clientSecretEditHelp": "Leave blank to keep the current secret.",
+        "scope": "Scope (optional)",
+        "scopeHelp": "Defaults to the provider's standard scope when empty.",
+        "enabled": "Enabled",
+        "save": "Save",
+        "saving": "Saving…",
+        "update": "Update",
+        "updating": "Updating…",
+        "errors": {
+          "INVALID_INPUT": "Some fields are invalid. Please review your input.",
+          "PROVIDER_ID_TAKEN": "A provider with this ID already exists.",
+          "UNAUTHORIZED": "You must be signed in.",
+          "FORBIDDEN": "Administrator role required.",
+          "INTERNAL_ERROR": "Something went wrong. Please try again.",
+          "UNKNOWN": "Unexpected error. Please try again.",
+          "NOT_FOUND": "Provider not found.",
+          "PROVIDER_IN_USE": "Cannot delete: {linkedAccountCount, plural, one{# linked account} other{# linked accounts}} exist.",
+          "issuerRequired": "Issuer URL is required for this provider type."
+        }
+      },
+      "editButton": "Edit",
+      "deleteButton": "Delete",
+      "deleteConfirmTitle": "Delete IdP",
+      "deleteConfirmMessage": "Are you sure you want to delete \"{name}\"? This action cannot be undone.",
+      "deleteConfirmOk": "Delete",
+      "deleteConfirmCancel": "Cancel",
+      "deleteSuccess": "IdP deleted successfully.",
+      "errors": {
+        "FORBIDDEN": "Administrator role required.",
+        "UNAUTHORIZED": "You must be signed in.",
+        "INTERNAL_ERROR": "Something went wrong loading the providers.",
+        "NETWORK": "Network error loading the providers.",
+        "UNKNOWN": "Unexpected error loading the providers."
+      }
+    }
+  },
+  "externalLogin": {
+    "signInWith": "Sign in with {provider}",
+    "orContinueWith": "or continue with",
+    "errors": {
+      "noEmail": "We could not get an email address from the identity provider.",
+      "emailNotVerified": "Your email address is not verified by the identity provider.",
+      "signupDisabled": "New user sign-ups are disabled. Please contact your administrator."
+    }
+  },
+  "accountLinks": {
+    "title": "Linked Identity Providers",
+    "noAccounts": "No external identity providers linked.",
+    "unlink": "Unlink",
+    "linkedAt": "Linked on {date}",
+    "errors": {
+      "LAST_AUTH_METHOD": "Cannot unlink: this is your last authentication method.",
+      "NOT_FOUND": "Linked account not found.",
+      "NETWORK": "Network error. Please try again.",
+      "UNAUTHORIZED": "Please log in to continue.",
+      "INTERNAL_ERROR": "An unexpected error occurred. Please try again.",
+      "UNKNOWN": "An unexpected error occurred."
+    }
   }
 }

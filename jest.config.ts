@@ -33,6 +33,8 @@ const config: Config = {
     "!src/lib/theme.ts",
     "!src/lib/types.ts",
     "!src/services/issue-provider/base.ts",
+    // Type-only files (no runtime code)
+    "!src/services/issue-provider/metadata.ts",
     // Auto-generated Auth.js handler (no unit test needed)
     "!src/app/api/auth/[...nextauth]/route.ts",
   ],
@@ -52,7 +54,7 @@ const resolvedConfig = async () => {
   return {
     ...base,
     transformIgnorePatterns: [
-      "/node_modules/(?!(next-intl)/)",
+      "/node_modules/(?!(next-intl|next-auth|@auth/core|jose|oauth4webapi|preact|preact-render-to-string|@panva/hkdf)/)",
     ],
   };
 };
