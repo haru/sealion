@@ -136,7 +136,7 @@ export default function AdminAuthProvidersPage() {
         ),
       },
     ],
-    [t],
+    [t, tCommon],
   );
 
   /** Refreshes the table by calling the admin API. */

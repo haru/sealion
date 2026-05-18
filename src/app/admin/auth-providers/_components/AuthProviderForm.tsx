@@ -177,9 +177,8 @@ export function AuthProviderForm({
     }
   }
 
-  const submitLabel = loading
-    ? t(isEdit ? "form.updating" : "form.saving")
-    : isEdit ? t("form.update") : tCommon("save");
+  const idleLabel = isEdit ? t("form.update") : tCommon("save");
+  const submitLabel = loading ? t(isEdit ? "form.updating" : "form.saving") : idleLabel;
 
   return (
     <Box component="form" onSubmit={handleSubmit} sx={{ display: "flex", flexDirection: "column", gap: 2 }}>

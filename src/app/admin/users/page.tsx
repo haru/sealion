@@ -229,7 +229,7 @@ export default function AdminUsersPage() {
         },
       },
     ],
-    [t, currentUserId],
+    [t, tCommon, currentUserId],
   );
 
   return (
