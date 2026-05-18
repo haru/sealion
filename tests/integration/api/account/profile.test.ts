@@ -195,6 +195,51 @@ describe("PATCH /api/account/profile — input validation (no DB required)", () 
     expect(json.error).toBe("INVALID_INPUT");
   });
 
+  test("returns 400 when PATCH body is not parseable JSON", async () => {
+    jest.resetModules();
+    jest.doMock("@/lib/auth/auth", () => ({
+      auth: jest.fn().mockResolvedValue({
+        user: { id: TEST_USER_ID, email: TEST_USER_EMAIL, role: "USER" },
+      }),
+    }));
+    jest.doMock("@/lib/db/db", () => ({
+      prisma: {
+        user: { findUnique: jest.fn(), update: jest.fn() },
+      },
+    }));
+    const { PATCH } = await import("@/app/api/account/profile/route");
+    const req = new NextRequest("http://localhost/api/account/profile", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: "not-json{{{",
+    });
+    const res = await PATCH(req);
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.error).toBe("INVALID_INPUT");
+  });
+
+  test("returns 401 when patchUseGravatar finds no user record", async () => {
+    jest.resetModules();
+    jest.doMock("@/lib/auth/auth", () => ({
+      auth: jest.fn().mockResolvedValue({
+        user: { id: TEST_USER_ID, email: TEST_USER_EMAIL, role: "USER" },
+      }),
+    }));
+    jest.doMock("@/lib/db/db", () => ({
+      prisma: {
+        user: {
+          findUnique: jest.fn().mockResolvedValue(null),
+          update: jest.fn(),
+        },
+      },
+    }));
+    const { PATCH } = await import("@/app/api/account/profile/route");
+    const req = makePatchRequest({ useGravatar: true });
+    const res = await PATCH(req);
+    expect(res.status).toBe(401);
+  });
+
   test("returns 400 when both username and useGravatar are present in the same request", async () => {
     jest.resetModules();
     jest.doMock("@/lib/auth/auth", () => ({
@@ -671,6 +716,55 @@ describe("PATCH /api/account/profile — useGravatar validation (no DB required)
     expect(res.status).toBe(400);
     const json = await res.json();
     expect(json.error).toBe("INVALID_INPUT");
+  });
+});
+
+describe("GET /api/account/profile — server error handling (no DB required)", () => {
+  test("returns 500 when DB throws an unexpected error in GET", async () => {
+    jest.resetModules();
+    jest.doMock("@/lib/auth/auth", () => ({
+      auth: jest.fn().mockResolvedValue({
+        user: { id: TEST_USER_ID, email: TEST_USER_EMAIL, role: "USER" },
+      }),
+    }));
+    jest.doMock("@/lib/db/db", () => ({
+      prisma: {
+        user: {
+          findUnique: jest.fn().mockRejectedValue(new Error("DB connection lost")),
+          count: jest.fn(),
+        },
+      },
+    }));
+    const { GET } = await import("@/app/api/account/profile/route");
+    const res = await GET();
+    expect(res.status).toBe(500);
+    const json = await res.json();
+    expect(json.error).toBeTruthy();
+  });
+});
+
+describe("PATCH /api/account/profile — server error handling (no DB required)", () => {
+  test("returns 500 when DB throws an unexpected error in PATCH", async () => {
+    jest.resetModules();
+    jest.doMock("@/lib/auth/auth", () => ({
+      auth: jest.fn().mockResolvedValue({
+        user: { id: TEST_USER_ID, email: TEST_USER_EMAIL, role: "USER" },
+      }),
+    }));
+    jest.doMock("@/lib/db/db", () => ({
+      prisma: {
+        user: {
+          findUnique: jest.fn().mockRejectedValue(new Error("DB connection lost")),
+          update: jest.fn(),
+        },
+      },
+    }));
+    const { PATCH } = await import("@/app/api/account/profile/route");
+    const req = makePatchRequest({ username: "test" });
+    const res = await PATCH(req);
+    expect(res.status).toBe(500);
+    const json = await res.json();
+    expect(json.error).toBeTruthy();
   });
 });
 

@@ -62,6 +62,7 @@
     "eslint-plugin-unused-imports": "^4.4.1",
     "jest": "^30.4.2",
     "jest-environment-jsdom": "^30.4.1",
+    "oauth2-mock-server": "^8.2.2",
     "prisma": "^7.5.0",
     "ts-jest": "^29.4.9",
     "typescript": "^6"

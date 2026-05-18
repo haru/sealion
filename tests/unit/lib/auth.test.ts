@@ -59,10 +59,30 @@ jest.mock("next-auth/providers/credentials", () => mockProviderFactory);
 
 jest.mock("next-auth", () => ({
   __esModule: true,
-  default: jest.fn((config: NextAuthConfig) => {
-    capturedCallbacks = config.callbacks;
+  default: jest.fn((config: NextAuthConfig | (() => Promise<NextAuthConfig>)) => {
+    if (typeof config === "function") {
+      // Async config (post-OIDC refactor): resolve once at module load time
+      // so the test suite still gets a snapshot of the callbacks.
+      void (async () => {
+        const resolved = await config();
+        capturedCallbacks = resolved.callbacks;
+      })();
+    } else {
+      capturedCallbacks = config.callbacks;
+    }
     return { handlers: {}, auth: jest.fn(), signIn: jest.fn(), signOut: jest.fn() };
   }),
+}));
+
+// Stub the auth-provider repository so the async config can resolve without DB.
+jest.mock("@/services/auth-provider/repository", () => ({
+  listEnabled: jest.fn().mockResolvedValue([]),
+  AUTH_PROVIDERS_CACHE_TAG: "auth-providers",
+}));
+
+jest.mock("@/services/auth-provider", () => ({
+  listEnabled: jest.fn().mockResolvedValue([]),
+  getAuthProviderMetadata: jest.fn(),
 }));
 
 import { getAuthSettings } from "@/lib/auth/auth-settings";
@@ -106,6 +126,8 @@ describe("jwt callback — sessionTimeoutMinutes", () => {
 
   beforeAll(async () => {
     await import("@/lib/auth/auth");
+    // Yield a tick to let the async NextAuth config resolver complete.
+    await new Promise((resolve) => setImmediate(resolve));
   });
 
   beforeEach(() => {

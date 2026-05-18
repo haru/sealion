@@ -34,6 +34,31 @@ const patchSettingsSchema = z.discriminatedUnion("changePassword", [
 ]);
 
 /**
+ * Maps Zod validation issues to a specific error code.
+ *
+ * @param issues - The list of Zod validation issues.
+ * @returns The corresponding error code string, or `"INVALID_INPUT"` as fallback.
+ */
+function resolveValidationErrorCode(issues: z.ZodIssue[]): string {
+  const hasTooShort = issues.some(
+    (i) => i.path.includes("newPassword") && i.code === "too_small",
+  );
+  if (hasTooShort) { return "PASSWORD_TOO_SHORT"; }
+
+  const hasTooLong = issues.some(
+    (i) => i.path.includes("newPassword") && i.code === "too_big",
+  );
+  if (hasTooLong) { return "PASSWORD_TOO_LONG"; }
+
+  const hasCurrentRequired = issues.some(
+    (i) => i.path.includes("currentPassword") && i.code === "too_small",
+  );
+  if (hasCurrentRequired) { return "PASSWORD_CURRENT_REQUIRED"; }
+
+  return "INVALID_INPUT";
+}
+
+/**
  * Atomically updates username, Gravatar preference, and optionally the password
  * for the authenticated user in a single Prisma write.
  *
@@ -59,24 +84,7 @@ export async function PATCH(request: NextRequest) {
 
   const parseResult = patchSettingsSchema.safeParse(body);
   if (!parseResult.success) {
-    const issues = parseResult.error.issues;
-    // Surface more specific error codes for password validation failures
-    const hasTooShort = issues.some(
-      (i) => i.path.includes("newPassword") && i.code === "too_small"
-    );
-    if (hasTooShort) { return fail("PASSWORD_TOO_SHORT", 400); }
-
-    const hasTooLong = issues.some(
-      (i) => i.path.includes("newPassword") && i.code === "too_big"
-    );
-    if (hasTooLong) { return fail("PASSWORD_TOO_LONG", 400); }
-
-    const hasCurrentRequired = issues.some(
-      (i) => i.path.includes("currentPassword") && i.code === "too_small"
-    );
-    if (hasCurrentRequired) { return fail("PASSWORD_CURRENT_REQUIRED", 400); }
-
-    return fail("INVALID_INPUT", 400);
+    return fail(resolveValidationErrorCode(parseResult.error.issues), 400);
   }
 
   const parsed = parseResult.data;
@@ -99,6 +107,9 @@ export async function PATCH(request: NextRequest) {
     let newPasswordHash: string | undefined;
 
     if (parsed.changePassword) {
+      if (!user.passwordHash) {
+        return fail("OIDC_USER_NO_PASSWORD", 400);
+      }
       const isCorrect = await bcrypt.compare(parsed.currentPassword, user.passwordHash);
       if (!isCorrect) {
         return fail("PASSWORD_INCORRECT", 400);
