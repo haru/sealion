@@ -190,16 +190,38 @@ describe("useSyncPolling", () => {
   // --- poll(): successful completion path ---
   describe("poll — sync completion", () => {
     it("calls onSyncComplete and sets isSyncing=false when all projects synced", async () => {
+      const AFTER_SYNC = [
+        {
+          id: "p1",
+          displayName: "GitHub",
+          type: "GITHUB",
+          projects: [
+            {
+              id: "proj1",
+              displayName: "repo",
+              lastSyncedAt: new Date(Date.now() + 10000).toISOString(),
+              syncError: null,
+            },
+          ],
+        },
+      ];
+
       (global.fetch as jest.Mock)
         .mockResolvedValueOnce({ ok: true }) // POST
         .mockResolvedValue({
           ok: true,
-          json: jest.fn().mockResolvedValue({ data: PROVIDERS_ALL_SYNCED }),
+          json: jest.fn().mockResolvedValue({ data: AFTER_SYNC }),
         }); // GET polls
 
       const { result } = renderHook(() =>
         useSyncPolling(onSyncComplete, addErrorMessage, "Sync error")
       );
+
+      await act(async () => {
+        result.current.setSyncProviders(PROVIDERS_ALL_SYNCED);
+        await Promise.resolve();
+        await Promise.resolve();
+      });
 
       await act(async () => {
         result.current.handleSyncNow();
@@ -244,7 +266,13 @@ describe("useSyncPolling", () => {
       );
 
       await act(async () => {
-        result.current.maybeAutoSync(PROVIDERS_NOT_SYNCED);
+        result.current.setSyncProviders(PROVIDERS_ALL_SYNCED);
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+
+      await act(async () => {
+        result.current.handleSyncNow();
         await Promise.resolve();
         await Promise.resolve();
       });

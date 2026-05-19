@@ -138,6 +138,19 @@ describe("allProjectsProcessed", () => {
     expect(allProjectsProcessed(providers, baseline)).toBe(false);
   });
 
+  it("returns false when a project is missing from baseline", () => {
+    const baseline = makeBaseline([["p1", SYNC_START]]);
+    const providers = [
+      {
+        projects: [
+          { id: "p1", lastSyncedAt: AFTER, syncError: null },
+          { id: "p2", lastSyncedAt: AFTER, syncError: null },
+        ],
+      },
+    ];
+    expect(allProjectsProcessed(providers, baseline)).toBe(false);
+  });
+
   it("returns true when a project has RATE_LIMITED error but lastSyncedAt changed from baseline", () => {
     const baseline = makeBaseline([["p1", SYNC_START]]);
     const providers = [
@@ -167,7 +180,8 @@ describe("shouldThrottleSync", () => {
   function makeProviders(
     projects: { lastSyncedAt: string | null; syncError: string | null }[]
   ) {
-    return [{ projects }];
+    const tagged = projects.map((p, i) => ({ id: `proj-${i}`, ...p }));
+    return [{ projects: tagged }];
   }
 
   function msAgo(ms: number): string {
@@ -235,8 +249,8 @@ describe("shouldThrottleSync", () => {
 
   it("checks across multiple providers", () => {
     const providers = [
-      { projects: [{ lastSyncedAt: msAgo(5 * 60 * 1000), syncError: null }] },
-      { projects: [{ lastSyncedAt: msAgo(3 * 60 * 1000), syncError: null }] },
+      { projects: [{ id: "proj-a", lastSyncedAt: msAgo(5 * 60 * 1000), syncError: null }] },
+      { projects: [{ id: "proj-b", lastSyncedAt: msAgo(3 * 60 * 1000), syncError: null }] },
     ];
     expect(shouldThrottleSync(providers, THROTTLE_MS)).toBe(true);
   });

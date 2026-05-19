@@ -70,8 +70,8 @@ export function useSyncPolling(
     syncProvidersRef.current = syncProviders;
   }, [syncProviders]);
 
-  const startSync = useCallback(async () => {
-    const providers = syncProvidersRef.current;
+  const startSync = useCallback(async (providers: SyncProvider[]) => {
+    syncProvidersRef.current = providers;
     syncBaselineRef.current = new Map(
       providers.flatMap((p) => p.projects.map((proj) => [proj.id, proj.lastSyncedAt])),
     );
@@ -146,7 +146,7 @@ export function useSyncPolling(
   }, [isSyncing, onSyncComplete, addErrorMessage, errorMessageText]);
 
   const handleSyncNow = useCallback(() => {
-    void startSync();
+    void startSync(syncProvidersRef.current);
   }, [startSync]);
 
   // maybeAutoSync delegates to startSync which builds the baseline before POST,
@@ -154,7 +154,7 @@ export function useSyncPolling(
   const maybeAutoSync = useCallback(
     (providers: SyncProvider[]) => {
       if (!shouldThrottleSync(providers, SYNC_THROTTLE_MS)) {
-        void startSync();
+        void startSync(providers);
       }
     },
     [startSync],

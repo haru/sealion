@@ -71,6 +71,7 @@ export function allProjectsProcessed(
   if (projects.length === 0) { return true; }
   return projects.every(
     (proj) =>
+      baseline.has(proj.id) &&
       proj.lastSyncedAt !== null &&
       proj.lastSyncedAt !== baseline.get(proj.id),
   );
