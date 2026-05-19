@@ -52,7 +52,7 @@ describe("GET /api/auth-providers/enabled — unit (no DB required)", () => {
   test("returns 500 when listEnabled throws", async () => {
     jest.resetModules();
     jest.doMock("@/services/auth-provider/repository", () => ({
-      listEnabled: jest.fn().mockRejectedValue(new Error("DB down")),
+      listEnabledDisplayOnly: jest.fn().mockRejectedValue(new Error("DB down")),
     }));
     const { GET } = await import("@/app/api/auth-providers/enabled/route");
     const res = await GET();

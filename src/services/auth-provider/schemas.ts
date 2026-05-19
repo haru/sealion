@@ -72,13 +72,7 @@ export const AuthProviderUpdateSchema = z.object({
   clientId: z.string().min(1).max(500).optional(),
   clientSecret: z.string().min(1).max(2000).optional(),
   scope: z.string().max(500).nullable().optional(),
-}).refine(
-  (v) => {
-    if (v.issuerUrl !== null) { return true; }
-    return true;
-  },
-  { message: "issuerUrl cannot be cleared for this provider type", path: ["issuerUrl"] },
-);
+});
 
 /**
  * Validates an update payload against an existing provider's type.
@@ -86,7 +80,6 @@ export const AuthProviderUpdateSchema = z.object({
  *
  * @param input - Parsed update input.
  * @param existingType - The provider type of the existing record.
- * @returns `true` if valid.
  * @throws `z.ZodError` when issuerUrl is being cleared for a type that requires it.
  */
 export function validateUpdateIssuerUrl(

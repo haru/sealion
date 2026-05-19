@@ -1,7 +1,6 @@
-import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-import { fail } from "@/lib/api/api-response";
+import { fail, ok } from "@/lib/api/api-response";
 import { auth } from "@/lib/auth/auth";
 import { prisma } from "@/lib/db/db";
 import { canUnlinkAccount } from "@/services/auth-provider/account-linking";
@@ -45,7 +44,7 @@ export async function DELETE(
       where: { userId, provider },
     });
 
-    return new NextResponse(null, { status: 204 });
+    return ok(null, 204);
   } catch (error: unknown) {
     console.error("[api/account/links DELETE]", { userId, provider, error });
     return fail("INTERNAL_ERROR", 500);
