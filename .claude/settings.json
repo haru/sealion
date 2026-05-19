@@ -38,7 +38,14 @@
       "Bash(DATABASE_URL=\"postgresql://postgres:postgres@db:5432/postgres\" CREDENTIALS_ENCRYPTION_KEY=\"0000000000000000000000000000000000000000000000000000000000000001\" npx jest tests/unit/services/auth-provider/ tests/integration/api/admin/auth-providers.test.ts tests/integration/api/auth-providers-enabled.test.ts tests/integration/auth/oidc-signin-callback.test.ts)",
       "Bash(DATABASE_URL=\"postgresql://postgres:postgres@db:5432/postgres\" CREDENTIALS_ENCRYPTION_KEY=\"0000000000000000000000000000000000000000000000000000000000000001\" npx jest tests/unit/services/auth-provider/ tests/integration/api/admin/auth-providers.test.ts tests/integration/api/auth-providers-enabled.test.ts tests/integration/auth/oidc-signin-callback.test.ts tests/unit/middleware/ tests/unit/lib/auth.test.ts tests/unit/no-providertype-references.test.ts)",
       "Bash(CREDENTIALS_ENCRYPTION_KEY=\"0000000000000000000000000000000000000000000000000000000000000001\" npm test -- --testPathPatterns=\"tests/integration/api/auth-providers-enabled.test\" --no-coverage)",
-      "Bash(git remote *)"
+      "Bash(git remote *)",
+      "Bash(git -C /workspaces/sealion status --short)",
+      "Bash(git -C /workspaces/sealion branch --show-current)",
+      "Bash(git -C /workspaces/sealion status)",
+      "Bash(git -C /workspaces/sealion log main..HEAD --oneline)",
+      "Bash(git -C /workspaces/sealion log 33b87a0^..HEAD --name-only --pretty=format:\"%H %s\")",
+      "Bash(git -C /workspaces/sealion diff 33b87a0^..HEAD --stat)",
+      "Bash(git -C /workspaces/sealion diff 33b87a0^..HEAD -- src/lib/sync/sync-utils.ts src/hooks/useSyncPolling.ts tests/unit/lib/sync-utils.test.ts tests/unit/hooks/useSyncPolling.test.ts)"
     ],
     "additionalDirectories": [
       "/tmp",

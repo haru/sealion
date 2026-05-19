@@ -1,98 +1,176 @@
 import { allProjectsProcessed, shouldThrottleSync } from "@/lib/sync/sync-utils";
 
-const PAST = new Date("2026-01-01T00:00:00Z");
-const SYNC_START = new Date("2026-03-15T10:00:00Z");
-const AFTER = new Date("2026-03-15T10:01:00Z");
+const PAST = "2026-01-01T00:00:00Z";
+const SYNC_START = "2026-03-15T10:00:00Z";
+const AFTER = "2026-03-15T10:01:00Z";
+
+function makeBaseline(
+  entries: Array<[string, string | null]>
+): ReadonlyMap<string, string | null> {
+  return new Map(entries);
+}
 
 describe("allProjectsProcessed", () => {
   it("returns true when there are no providers", () => {
-    expect(allProjectsProcessed([], SYNC_START)).toBe(true);
+    const baseline = makeBaseline([]);
+    expect(allProjectsProcessed([], baseline)).toBe(true);
   });
 
   it("returns true when all providers have no projects", () => {
-    expect(allProjectsProcessed([{ projects: [] }], SYNC_START)).toBe(true);
+    const baseline = makeBaseline([]);
+    expect(allProjectsProcessed([{ projects: [] }], baseline)).toBe(true);
   });
 
-  it("returns true when all projects were synced after since", () => {
+  it("returns true when all projects changed from baseline", () => {
+    const baseline = makeBaseline([["p1", SYNC_START]]);
     const providers = [
       {
         projects: [
-          { lastSyncedAt: AFTER.toISOString(), syncError: null },
+          { id: "p1", lastSyncedAt: AFTER, syncError: null },
         ],
       },
     ];
-    expect(allProjectsProcessed(providers, SYNC_START)).toBe(true);
+    expect(allProjectsProcessed(providers, baseline)).toBe(true);
   });
 
-  it("returns true when lastSyncedAt equals since exactly", () => {
+  it("returns true when project lastSyncedAt changed from null to non-null", () => {
+    const baseline = makeBaseline([["p1", null]]);
     const providers = [
-      { projects: [{ lastSyncedAt: SYNC_START.toISOString(), syncError: null }] },
+      {
+        projects: [
+          { id: "p1", lastSyncedAt: AFTER, syncError: null },
+        ],
+      },
     ];
-    expect(allProjectsProcessed(providers, SYNC_START)).toBe(true);
+    expect(allProjectsProcessed(providers, baseline)).toBe(true);
+  });
+
+  it("returns false when lastSyncedAt equals baseline value", () => {
+    const baseline = makeBaseline([["p1", AFTER]]);
+    const providers = [
+      {
+        projects: [
+          { id: "p1", lastSyncedAt: AFTER, syncError: null },
+        ],
+      },
+    ];
+    expect(allProjectsProcessed(providers, baseline)).toBe(false);
+  });
+
+  it("returns true even when server clock is behind client clock", () => {
+    // Clock-skew scenario: client is 3 seconds ahead of server.
+    // The project's lastSyncedAt BEFORE this sync = PRE_SYNC_VALUE (old value from a past sync).
+    // After sync the server writes its own "now" = SERVER_NOW.
+    // Client's "now" at sync start would be "2026-03-15T10:00:05Z" (3 s ahead of server).
+    //
+    // Old wall-clock approach: new Date(SERVER_NOW) >= new Date(clientNow) → FALSE → bug
+    // Baseline approach:       SERVER_NOW !== PRE_SYNC_VALUE          → TRUE  → fixed
+    //
+    // A regression that reintroduces `new Date(lastSyncedAt) >= sinceDate` would make
+    // this test FAIL, because SERVER_NOW ("10:00:02") is before the client start time ("10:00:05").
+    const PRE_SYNC_VALUE = "2026-03-15T09:59:00Z"; // lastSyncedAt before this sync cycle
+    const SERVER_NOW = "2026-03-15T10:00:02Z";     // server writes its current time (3 s behind client)
+    const baseline = makeBaseline([["p1", PRE_SYNC_VALUE]]);
+    const providers = [
+      {
+        projects: [
+          { id: "p1", lastSyncedAt: SERVER_NOW, syncError: null },
+        ],
+      },
+    ];
+    expect(allProjectsProcessed(providers, baseline)).toBe(true);
+  });
+
+  it("returns false when only some projects changed", () => {
+    const baseline = makeBaseline([["p1", SYNC_START], ["p2", SYNC_START]]);
+    const providers = [
+      {
+        projects: [
+          { id: "p1", lastSyncedAt: AFTER, syncError: null },
+          { id: "p2", lastSyncedAt: SYNC_START, syncError: null },
+        ],
+      },
+    ];
+    expect(allProjectsProcessed(providers, baseline)).toBe(false);
+  });
+
+  it("returns true with syncError when lastSyncedAt changed from baseline", () => {
+    const baseline = makeBaseline([["p1", "2026-03-15T09:00:00Z"]]);
+    const providers = [
+      {
+        projects: [
+          { id: "p1", lastSyncedAt: "2026-03-15T10:00:00Z", syncError: "SYNC_FAILED" },
+        ],
+      },
+    ];
+    expect(allProjectsProcessed(providers, baseline)).toBe(true);
+  });
+
+  it("returns false when lastSyncedAt is null in both baseline and current", () => {
+    const baseline = makeBaseline([["p1", null]]);
+    const providers = [
+      {
+        projects: [
+          { id: "p1", lastSyncedAt: null, syncError: null },
+        ],
+      },
+    ];
+    expect(allProjectsProcessed(providers, baseline)).toBe(false);
+  });
+
+  it("returns false when a project was synced before since (baseline unchanged)", () => {
+    const baseline = makeBaseline([["p1", PAST]]);
+    const providers = [
+      {
+        projects: [
+          { id: "p1", lastSyncedAt: PAST, syncError: null },
+        ],
+      },
+    ];
+    expect(allProjectsProcessed(providers, baseline)).toBe(false);
   });
 
   it("returns true when multiple projects across providers are all processed", () => {
+    const baseline = makeBaseline([["p1", SYNC_START], ["p2", SYNC_START]]);
     const providers = [
-      { projects: [{ lastSyncedAt: AFTER.toISOString(), syncError: null }] },
-      { projects: [{ lastSyncedAt: AFTER.toISOString(), syncError: null }] },
+      { projects: [{ id: "p1", lastSyncedAt: AFTER, syncError: null }] },
+      { projects: [{ id: "p2", lastSyncedAt: AFTER, syncError: null }] },
     ];
-    expect(allProjectsProcessed(providers, SYNC_START)).toBe(true);
+    expect(allProjectsProcessed(providers, baseline)).toBe(true);
   });
 
-  it("returns false when a project has never been synced", () => {
+  it("returns false when one provider has unchanged project across multiple providers", () => {
+    const baseline = makeBaseline([["p1", SYNC_START], ["p2", PAST]]);
     const providers = [
-      { projects: [{ lastSyncedAt: null, syncError: null }] },
+      { projects: [{ id: "p1", lastSyncedAt: AFTER, syncError: null }] },
+      { projects: [{ id: "p2", lastSyncedAt: PAST, syncError: null }] },
     ];
-    expect(allProjectsProcessed(providers, SYNC_START)).toBe(false);
+    expect(allProjectsProcessed(providers, baseline)).toBe(false);
   });
 
-  it("returns false when a project was synced before since", () => {
-    const providers = [
-      { projects: [{ lastSyncedAt: PAST.toISOString(), syncError: null }] },
-    ];
-    expect(allProjectsProcessed(providers, SYNC_START)).toBe(false);
-  });
-
-  it("returns false when only some projects are processed", () => {
+  it("returns false when a project is missing from baseline", () => {
+    const baseline = makeBaseline([["p1", SYNC_START]]);
     const providers = [
       {
         projects: [
-          { lastSyncedAt: AFTER.toISOString(), syncError: null },
-          { lastSyncedAt: null, syncError: null },
+          { id: "p1", lastSyncedAt: AFTER, syncError: null },
+          { id: "p2", lastSyncedAt: AFTER, syncError: null },
         ],
       },
     ];
-    expect(allProjectsProcessed(providers, SYNC_START)).toBe(false);
+    expect(allProjectsProcessed(providers, baseline)).toBe(false);
   });
 
-  it("checks across multiple providers", () => {
-    const providers = [
-      { projects: [{ lastSyncedAt: AFTER.toISOString(), syncError: null }] },
-      { projects: [{ lastSyncedAt: PAST.toISOString(), syncError: null }] },
-    ];
-    expect(allProjectsProcessed(providers, SYNC_START)).toBe(false);
-  });
-
-  it("returns true when a project has a syncError but lastSyncedAt is after since", () => {
+  it("returns true when a project has RATE_LIMITED error but lastSyncedAt changed from baseline", () => {
+    const baseline = makeBaseline([["p1", SYNC_START]]);
     const providers = [
       {
         projects: [
-          { lastSyncedAt: AFTER.toISOString(), syncError: "SYNC_FAILED" },
+          { id: "p1", lastSyncedAt: AFTER, syncError: "RATE_LIMITED" },
         ],
       },
     ];
-    expect(allProjectsProcessed(providers, SYNC_START)).toBe(true);
-  });
-
-  it("returns true when a project has RATE_LIMITED error but lastSyncedAt is after since", () => {
-    const providers = [
-      {
-        projects: [
-          { lastSyncedAt: AFTER.toISOString(), syncError: "RATE_LIMITED" },
-        ],
-      },
-    ];
-    expect(allProjectsProcessed(providers, SYNC_START)).toBe(true);
+    expect(allProjectsProcessed(providers, baseline)).toBe(true);
   });
 });
 
@@ -112,7 +190,8 @@ describe("shouldThrottleSync", () => {
   function makeProviders(
     projects: { lastSyncedAt: string | null; syncError: string | null }[]
   ) {
-    return [{ projects }];
+    const tagged = projects.map((p, i) => ({ id: `proj-${i}`, ...p }));
+    return [{ projects: tagged }];
   }
 
   function msAgo(ms: number): string {
@@ -180,8 +259,8 @@ describe("shouldThrottleSync", () => {
 
   it("checks across multiple providers", () => {
     const providers = [
-      { projects: [{ lastSyncedAt: msAgo(5 * 60 * 1000), syncError: null }] },
-      { projects: [{ lastSyncedAt: msAgo(3 * 60 * 1000), syncError: null }] },
+      { projects: [{ id: "proj-a", lastSyncedAt: msAgo(5 * 60 * 1000), syncError: null }] },
+      { projects: [{ id: "proj-b", lastSyncedAt: msAgo(3 * 60 * 1000), syncError: null }] },
     ];
     expect(shouldThrottleSync(providers, THROTTLE_MS)).toBe(true);
   });

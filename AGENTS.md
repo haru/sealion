@@ -176,6 +176,10 @@ Playwright MCP tools: use `http://app:3000` — not `localhost:3000`.
 - `ADDING_A_PROVIDER.md` — step-by-step guide for new adapters
 - `docs/adr/` — Architecture Decision Records (append-only)
 
+<!-- SPECKIT START
+Active feature plan: specs/042-fix-sync-clock-skew/plan.md
+SPECKIT END -->
+
 ## References
 
 - [CLAUDE.md](./CLAUDE.md) — Claude Code pointer to this file
