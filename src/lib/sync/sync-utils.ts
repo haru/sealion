@@ -1,4 +1,5 @@
 interface SyncProject {
+  id: string;
   lastSyncedAt: string | null;
   syncError: string | null;
 }
@@ -48,24 +49,29 @@ export function shouldThrottleSync(providers: SyncProvider[], throttleMs: number
 }
 
 /**
- * Returns true when every project has been processed at or after `since`
- * (i.e. `lastSyncedAt >= since`), regardless of whether the sync succeeded or
- * produced an error. Once the server has processed a project its `lastSyncedAt`
- * is updated, so this is the reliable signal that syncing is done.
+ * Returns true when every project's `lastSyncedAt` differs from its
+ * pre-sync baseline value, indicating the server has processed each
+ * project. Uses baseline comparison (value-change detection) instead
+ * of clock-based comparison to be immune to client–server clock skew.
+ *
  * Also returns true when there are no projects (nothing to sync).
  *
  * @param providers - List of sync providers returned by GET /api/sync.
- * @param since - Timestamp representing the earliest time that should count as
- *   part of the current sync cycle; only projects whose `lastSyncedAt` is at or
- *   after this moment are considered processed.
- * @returns True if every project has been processed at or after `since`.
+ * @param baseline - Snapshot of project lastSyncedAt values captured
+ *   immediately before the sync was triggered. Keys are project IDs,
+ *   values are the corresponding `lastSyncedAt` at that moment.
+ * @returns True if every project has a different `lastSyncedAt` from
+ *   its baseline value.
  */
-export function allProjectsProcessed(providers: SyncProvider[], since: Date): boolean {
+export function allProjectsProcessed(
+  providers: SyncProvider[],
+  baseline: ReadonlyMap<string, string | null>,
+): boolean {
   const projects = providers.flatMap((p) => p.projects);
   if (projects.length === 0) { return true; }
   return projects.every(
     (proj) =>
       proj.lastSyncedAt !== null &&
-      new Date(proj.lastSyncedAt) >= since
+      proj.lastSyncedAt !== baseline.get(proj.id),
   );
 }

@@ -63,10 +63,18 @@ export function useSyncPolling(
 ): UseSyncPollingResult {
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncProviders, setSyncProviders] = useState<SyncProvider[]>([]);
-  const syncStartedAtRef = useRef<Date | null>(null);
+  const syncBaselineRef = useRef<ReadonlyMap<string, string | null> | null>(null);
+  const syncProvidersRef = useRef<SyncProvider[]>([]);
+
+  useEffect(() => {
+    syncProvidersRef.current = syncProviders;
+  }, [syncProviders]);
 
   const startSync = useCallback(async () => {
-    syncStartedAtRef.current = new Date();
+    const providers = syncProvidersRef.current;
+    syncBaselineRef.current = new Map(
+      providers.flatMap((p) => p.projects.map((proj) => [proj.id, proj.lastSyncedAt])),
+    );
     setIsSyncing(true);
     try {
       const res = await fetch("/api/sync", { method: "POST" });
@@ -93,14 +101,20 @@ export function useSyncPolling(
 
       try {
         const syncRes = await fetch("/api/sync");
-        if (cancelled || !syncRes.ok) { return; }
+        if (cancelled || !syncRes.ok) {
+          if (!cancelled) { pollTimeout = setTimeout(poll, 5000); }
+          return;
+        }
 
         const json = await syncRes.json();
         const providers: SyncProvider[] = json.data;
         setSyncProviders(providers);
 
-        const since = syncStartedAtRef.current;
-        if (!since || !allProjectsProcessed(providers, since)) { return; }
+        const baseline = syncBaselineRef.current;
+        if (!baseline || !allProjectsProcessed(providers, baseline)) {
+          if (!cancelled) { pollTimeout = setTimeout(poll, 5000); }
+          return;
+        }
 
         if (!cancelled) { await onSyncComplete(); }
         setIsSyncing(false);
@@ -113,10 +127,6 @@ export function useSyncPolling(
           return;
         }
       }
-
-      if (!cancelled) {
-        pollTimeout = setTimeout(poll, 5000);
-      }
     }
 
     pollTimeout = setTimeout(poll, 5000);
@@ -124,6 +134,8 @@ export function useSyncPolling(
     const safetyTimeout = setTimeout(() => {
       cancelled = true;
       setIsSyncing(false);
+      addErrorMessage("error", errorMessageText);
+      void onSyncComplete();
     }, 120000);
 
     return () => {
@@ -137,6 +149,8 @@ export function useSyncPolling(
     void startSync();
   }, [startSync]);
 
+  // maybeAutoSync delegates to startSync which builds the baseline before POST,
+  // so auto-sync automatically inherits the baseline-based completion fix.
   const maybeAutoSync = useCallback(
     (providers: SyncProvider[]) => {
       if (!shouldThrottleSync(providers, SYNC_THROTTLE_MS)) {
