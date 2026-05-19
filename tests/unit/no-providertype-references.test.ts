@@ -28,15 +28,23 @@ describe("No ProviderType enum references in codebase (T019/T020)", () => {
   });
 
   it("T019: no source file under src/ imports ProviderType from @prisma/client", () => {
+    // Word boundary `\b` distinguishes the removed `ProviderType` enum from the
+    // OIDC feature's `AuthProviderType` enum, which IS legitimately imported.
     const violatingFiles: string[] = [];
     for (const file of sourceFiles) {
       const content = fs.readFileSync(file, "utf-8");
-      if (/import\s+.*ProviderType.*from\s+['"]@prisma\/client['"]/.test(content)) {
+      if (/import\s+[^;]*\bProviderType\b[^;]*from\s+['"]@prisma\/client['"]/.test(content)) {
         const relative = path.relative(process.cwd(), file);
         violatingFiles.push(relative);
       }
     }
     expect(violatingFiles).toEqual([]);
+  });
+
+  it("T020b: prisma/schema.prisma does not contain the removed `enum ProviderType` block", () => {
+    // The OIDC feature adds `enum AuthProviderType`; the legacy `enum ProviderType`
+    // (without the `Auth` prefix) must remain absent.
+    expect(/\benum ProviderType\b/.test(schemaContent)).toBe(false);
   });
 
   it("T020: prisma/schema.prisma does not contain enum ProviderType", () => {

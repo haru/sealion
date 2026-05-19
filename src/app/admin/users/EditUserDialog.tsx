@@ -159,7 +159,7 @@ export default function EditUserDialog({ user, isSelf, onClose, onSaved }: EditU
             </Alert>
           )}
           <TextField
-            label={t("fields.email")}
+            label={tCommon("email")}
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -167,7 +167,7 @@ export default function EditUserDialog({ user, isSelf, onClose, onSaved }: EditU
             required
           />
           <TextField
-            label={t("fields.username")}
+            label={tCommon("displayName")}
             type="text"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
@@ -188,7 +188,7 @@ export default function EditUserDialog({ user, isSelf, onClose, onSaved }: EditU
           {changePassword && (
             <>
               <TextField
-                label={t("fields.password")}
+                label={tCommon("password")}
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}

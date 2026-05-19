@@ -15,6 +15,7 @@ import { AuthFooterLink } from "@/components/ui/AuthFooterLink";
 /** Sign-up page for creating a new user account. */
 export default function SignupPage() {
   const t = useTranslations("auth");
+  const tCommon = useTranslations("common");
   const tErrors = useTranslations("errors");
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -65,7 +66,7 @@ export default function SignupPage() {
 
       <Box component="form" onSubmit={handleSubmit} sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
         <TextField
-          label={t("email")}
+          label={tCommon("email")}
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
@@ -75,7 +76,7 @@ export default function SignupPage() {
           variant="outlined"
         />
         <TextField
-          label={t("username")}
+          label={tCommon("displayName")}
           type="text"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
@@ -85,7 +86,7 @@ export default function SignupPage() {
           variant="outlined"
         />
         <TextField
-          label={t("password")}
+          label={tCommon("password")}
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}

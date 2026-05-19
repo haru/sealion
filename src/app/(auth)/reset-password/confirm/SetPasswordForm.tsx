@@ -85,6 +85,11 @@ export function SetPasswordForm({ token }: SetPasswordFormProps) {
         return;
       }
 
+      if (json.error === "OIDC_USER_NO_PASSWORD") {
+        setError(t("errorOidcUserNoPassword"));
+        return;
+      }
+
       setError(json.error ?? t("generalError"));
     } catch {
       setError(t("generalError"));

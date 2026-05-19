@@ -1,9 +1,6 @@
 "use client";
 
-import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
-import SecurityIcon from "@mui/icons-material/Security";
 import {
-  Container,
   Paper,
   Stack,
   Typography,
@@ -23,7 +20,8 @@ import { useTranslations } from "next-intl";
 import { useState, useEffect } from "react";
 
 import { useMessageQueue } from "@/components/MessageQueue";
-import { usePageHeader } from "@/hooks/usePageHeader";
+import PageContent from "@/components/ui/PageContent";
+import { usePageMeta } from "@/hooks/usePageMeta";
 
 /** The valid sessionTimeoutMinutes option values with their i18n keys. */
 const TIMEOUT_OPTIONS: Array<{ value: number | null; labelKey: string }> = [
@@ -47,10 +45,10 @@ interface AuthSettingsData {
 /** Auth settings admin page — allows ADMIN to configure signup and session timeout. */
 export default function AuthSettingsPage() {
   const t = useTranslations("authSettings");
-  const tSidebar = useTranslations("sidebar");
+  const tCommon = useTranslations("common");
   const { addMessage } = useMessageQueue();
 
-  usePageHeader(t("title"), undefined, SecurityIcon, undefined, tSidebar("systemAdmin"), AdminPanelSettingsIcon);
+  usePageMeta();
 
   const [saved, setSaved] = useState<AuthSettingsData | null>(null);
   const [allowUserSignup, setAllowUserSignup] = useState(true);
@@ -140,7 +138,7 @@ export default function AuthSettingsPage() {
   }
 
   return (
-    <Container maxWidth="sm" sx={{ py: 4 }}>
+    <PageContent maxWidth="sm">
       <Paper sx={{ p: 4 }}>
         <Stack spacing={4}>
 
@@ -207,11 +205,11 @@ export default function AuthSettingsPage() {
             disabled={saving}
             sx={{ alignSelf: "flex-start" }}
           >
-            {t("save")}
+            {tCommon("save")}
           </Button>
 
         </Stack>
       </Paper>
-    </Container>
+    </PageContent>
   );
 }

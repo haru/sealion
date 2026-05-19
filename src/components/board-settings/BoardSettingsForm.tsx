@@ -17,6 +17,7 @@ import SortOrderSection from "./SortOrderSection";
  */
 export default function BoardSettingsForm() {
   const t = useTranslations("boardSettings");
+  const tCommon = useTranslations("common");
 
   const { addMessage } = useMessageQueue();
   const [settings, setSettings] = useState<BoardSettings>(DEFAULT_BOARD_SETTINGS);
@@ -122,7 +123,7 @@ export default function BoardSettingsForm() {
           disabled={saving}
           startIcon={saving ? <CircularProgress size={16} /> : undefined}
         >
-          {t("save")}
+          {tCommon("save")}
         </Button>
       </Box>
 
