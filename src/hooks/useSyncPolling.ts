@@ -64,6 +64,10 @@ export function useSyncPolling(
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncProviders, setSyncProviders] = useState<SyncProvider[]>([]);
   const syncBaselineRef = useRef<ReadonlyMap<string, string | null> | null>(null);
+  // Mirrors syncProviders state so callbacks always see the latest value without
+  // stale closure captures. The useEffect keeps the ref current when setSyncProviders
+  // is called externally (e.g. after initial fetch). startSync also writes directly
+  // so maybeAutoSync(providers) stays in sync with its own argument.
   const syncProvidersRef = useRef<SyncProvider[]>([]);
 
   useEffect(() => {
@@ -133,9 +137,14 @@ export function useSyncPolling(
 
     const safetyTimeout = setTimeout(() => {
       cancelled = true;
-      setIsSyncing(false);
       addErrorMessage("error", errorMessageText);
-      void onSyncComplete();
+      onSyncComplete()
+        .catch(() => {
+          // onSyncComplete failed in safety-timeout path; user already notified above
+        })
+        .finally(() => {
+          setIsSyncing(false);
+        });
     }, 120000);
 
     return () => {

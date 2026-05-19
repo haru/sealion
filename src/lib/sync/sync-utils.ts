@@ -60,8 +60,9 @@ export function shouldThrottleSync(providers: SyncProvider[], throttleMs: number
  * @param baseline - Snapshot of project lastSyncedAt values captured
  *   immediately before the sync was triggered. Keys are project IDs,
  *   values are the corresponding `lastSyncedAt` at that moment.
- * @returns True if every project has a different `lastSyncedAt` from
- *   its baseline value.
+ * @returns True if every project has a non-null `lastSyncedAt` that
+ *   differs from its baseline value (a move from any value to `null` does
+ *   not count as processed).
  */
 export function allProjectsProcessed(
   providers: SyncProvider[],

@@ -58,13 +58,23 @@ describe("allProjectsProcessed", () => {
   });
 
   it("returns true even when server clock is behind client clock", () => {
-    const clientTime = "2026-03-15T10:00:05Z";
-    const serverTime = "2026-03-15T10:00:02Z";
-    const baseline = makeBaseline([["p1", clientTime]]);
+    // Clock-skew scenario: client is 3 seconds ahead of server.
+    // The project's lastSyncedAt BEFORE this sync = PRE_SYNC_VALUE (old value from a past sync).
+    // After sync the server writes its own "now" = SERVER_NOW.
+    // Client's "now" at sync start would be "2026-03-15T10:00:05Z" (3 s ahead of server).
+    //
+    // Old wall-clock approach: new Date(SERVER_NOW) >= new Date(clientNow) → FALSE → bug
+    // Baseline approach:       SERVER_NOW !== PRE_SYNC_VALUE          → TRUE  → fixed
+    //
+    // A regression that reintroduces `new Date(lastSyncedAt) >= sinceDate` would make
+    // this test FAIL, because SERVER_NOW ("10:00:02") is before the client start time ("10:00:05").
+    const PRE_SYNC_VALUE = "2026-03-15T09:59:00Z"; // lastSyncedAt before this sync cycle
+    const SERVER_NOW = "2026-03-15T10:00:02Z";     // server writes its current time (3 s behind client)
+    const baseline = makeBaseline([["p1", PRE_SYNC_VALUE]]);
     const providers = [
       {
         projects: [
-          { id: "p1", lastSyncedAt: serverTime, syncError: null },
+          { id: "p1", lastSyncedAt: SERVER_NOW, syncError: null },
         ],
       },
     ];
