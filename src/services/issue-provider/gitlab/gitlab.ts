@@ -40,6 +40,10 @@ interface GitLabUser {
 }
 
 const MR_EXTERNAL_ID_PREFIX = "mr-";
+// GitLab issue/MR の global-ID 衝突回避のため prefix を付与。See docs/adr/0005-gitlab-mr-external-id-prefix.md
+
+/** Maximum pages fetched per paginated request to prevent unbounded iteration. */
+const MAX_PAGES = 20;
 
 /** Adapter for the GitLab issue provider. */
 export class GitLabAdapter implements IssueProviderAdapter {
@@ -84,7 +88,7 @@ export class GitLabAdapter implements IssueProviderAdapter {
    * @param url - API endpoint URL.
    * @param params - Query parameters for the first page.
    * @returns Array of items across all pages.
-   * @throws On network or API errors.
+   * @throws If more than {@link MAX_PAGES} pages are required or any request fails.
    */
   private async paginateGitLab<T>(url: string, params: Record<string, unknown>): Promise<T[]> {
     const items: T[] = [];
@@ -97,6 +101,9 @@ export class GitLabAdapter implements IssueProviderAdapter {
       items.push(...data);
       const nextPage = headers["x-next-page"];
       if (!nextPage) { break; }
+      if (page >= MAX_PAGES) {
+        throw new Error(`paginateGitLab: exceeded MAX_PAGES (${MAX_PAGES}) for ${url}`);
+      }
       page = Number(nextPage);
     }
 
@@ -105,9 +112,10 @@ export class GitLabAdapter implements IssueProviderAdapter {
 
   /**
    * Fetches merge requests for the project matching the given query parameters.
+   * The state is pinned to `"opened"` and cannot be overridden by `queryParams`.
    * @param projectExternalId - GitLab project global ID.
    * @param queryParams - Additional query parameters (e.g. assignee_id, reviewer_id).
-   * @returns Array of merge requests with mr- prefixed externalIds.
+   * @returns Array of merge requests with `mr-{iid}` externalIds.
    */
   private async fetchMergeRequests(
     projectExternalId: string,
@@ -115,11 +123,11 @@ export class GitLabAdapter implements IssueProviderAdapter {
   ): Promise<NormalizedIssue[]> {
     const mrs = await this.paginateGitLab<GitLabMergeRequest>(
       `/projects/${projectExternalId}/merge_requests`,
-      { state: "opened", ...queryParams },
+      { ...queryParams, state: "opened" }, // state last to prevent callers from overriding
     );
 
     return mrs.map((mr) => ({
-      externalId: `${MR_EXTERNAL_ID_PREFIX}${mr.id}`,
+      externalId: `${MR_EXTERNAL_ID_PREFIX}${mr.iid}`, // project-scoped iid; no global API lookup needed
       title: mr.title,
       dueDate: mr.due_date ? new Date(mr.due_date) : null,
       externalUrl: mr.web_url,
@@ -130,19 +138,9 @@ export class GitLabAdapter implements IssueProviderAdapter {
   }
 
   /**
-   * Resolves a GitLab global merge request ID to its project-scoped IID.
-   * @param globalMrId - The global MR ID (numeric part of externalId, without mr- prefix).
-   * @returns The project-scoped IID.
-   * @throws If the MR is not found (HTTP 404) or the request fails.
-   */
-  private async getMergeRequestIid(globalMrId: string): Promise<number> {
-    const { data } = await this.client.get<{ iid: number }>(`/merge_requests/${globalMrId}`);
-    return data.iid;
-  }
-
-  /**
    * Resolves a GitLab global issue ID to its project-scoped IID.
-   * @param globalIssueId - The global issue ID (externalId stored in the database).
+   * @param globalIssueId - The global issue ID (externalId stored in the database,
+   *   not an `mr-` prefixed MR ID).
    * @returns The project-scoped IID.
    * @throws If the issue is not found (HTTP 404) or the request fails.
    */
@@ -173,18 +171,14 @@ export class GitLabAdapter implements IssueProviderAdapter {
   async fetchAssignedIssues(projectExternalId: string): Promise<NormalizedIssue[]> {
     const { id: userId } = await this.getUser();
 
-    const issues = await this.paginateGitLab<GitLabIssue>(
-      `/projects/${projectExternalId}/issues`,
-      { state: "opened", assignee_id: userId },
-    );
-
-    const assigneeMrs = await this.fetchMergeRequests(projectExternalId, {
-      assignee_id: userId,
-    });
-
-    const reviewerMrs = await this.fetchMergeRequests(projectExternalId, {
-      reviewer_id: userId,
-    });
+    const [issues, assigneeMrs, reviewerMrs] = await Promise.all([
+      this.paginateGitLab<GitLabIssue>(
+        `/projects/${projectExternalId}/issues`,
+        { state: "opened", assignee_id: userId },
+      ),
+      this.fetchMergeRequests(projectExternalId, { assignee_id: userId }),
+      this.fetchMergeRequests(projectExternalId, { reviewer_id: userId }),
+    ]);
 
     const seen = new Set<string>();
     const results: NormalizedIssue[] = [];
@@ -240,8 +234,8 @@ export class GitLabAdapter implements IssueProviderAdapter {
   /** {@inheritDoc} */
   async closeIssue(projectExternalId: string, issueExternalId: string): Promise<void> {
     if (issueExternalId.startsWith(MR_EXTERNAL_ID_PREFIX)) {
-      const globalId = issueExternalId.slice(MR_EXTERNAL_ID_PREFIX.length);
-      const iid = await this.getMergeRequestIid(globalId);
+      // externalId format: mr-{iid} — iid is project-scoped; no global API lookup needed
+      const iid = issueExternalId.slice(MR_EXTERNAL_ID_PREFIX.length);
       await this.client.put(`/projects/${projectExternalId}/merge_requests/${iid}`, {
         state_event: "close",
       });
@@ -257,8 +251,8 @@ export class GitLabAdapter implements IssueProviderAdapter {
   /** {@inheritDoc} */
   async addComment(projectExternalId: string, issueExternalId: string, comment: string): Promise<void> {
     if (issueExternalId.startsWith(MR_EXTERNAL_ID_PREFIX)) {
-      const globalId = issueExternalId.slice(MR_EXTERNAL_ID_PREFIX.length);
-      const iid = await this.getMergeRequestIid(globalId);
+      // externalId format: mr-{iid} — iid is project-scoped; no global API lookup needed
+      const iid = issueExternalId.slice(MR_EXTERNAL_ID_PREFIX.length);
       await this.client.post(`/projects/${projectExternalId}/merge_requests/${iid}/notes`, {
         body: comment,
       });

@@ -319,11 +319,46 @@ describe('syncProviders error collection integration', () => {
 
       const errors = await syncProviders('user-1');
       expect(errors).toHaveLength(0);
+      // notIn: [] means all previously-saved issues (including reviewer PRs) are deleted
       expect(prisma.issue.deleteMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: expect.objectContaining({
             projectId: 'project-1',
             externalId: { notIn: [] },
+          }),
+        }),
+      );
+    });
+
+    it('sync deleteMany includes currently-returned issues in notIn, leaving reviewer PR deletable', async () => {
+      // Simulate: previous sync had saved reviewer PR 'mr-42'.
+      // Current sync returns only a regular issue '101' (reviewer PR no longer returned).
+      // deleteMany must be called with notIn: ['101'], so 'mr-42' is deleted.
+      mockFindMany.mockResolvedValue([makeProvider()]);
+      const { createAdapter } = jest.requireMock('@/services/issue-provider/factory');
+      createAdapter.mockReturnValueOnce({
+        fetchAssignedIssues: jest.fn().mockResolvedValue([
+          {
+            externalId: '101',
+            title: 'Regular issue',
+            dueDate: null,
+            externalUrl: 'https://github.com/owner/repo/issues/101',
+            isUnassigned: false,
+            providerCreatedAt: new Date('2026-01-01T00:00:00Z'),
+            providerUpdatedAt: new Date('2026-01-01T00:00:00Z'),
+          },
+        ]),
+        fetchUnassignedIssues: jest.fn().mockResolvedValue([]),
+      });
+
+      const errors = await syncProviders('user-1');
+      expect(errors).toHaveLength(0);
+      // '101' is retained; any prior reviewer PR not in this list (e.g. 'mr-42') gets deleted
+      expect(prisma.issue.deleteMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            projectId: 'project-1',
+            externalId: { notIn: ['101'] },
           }),
         }),
       );

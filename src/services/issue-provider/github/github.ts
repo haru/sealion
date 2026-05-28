@@ -5,6 +5,9 @@ import type { ExternalProject, IssueProviderAdapter, NormalizedIssue } from "@/l
 
 export { githubMetadata } from "./github.metadata";
 
+/** Maximum pages fetched per paginated request to prevent unbounded iteration. */
+const MAX_PAGES = 20;
+
 /* eslint-disable @typescript-eslint/naming-convention */
 interface GitHubIssue {
   number: number;
@@ -59,6 +62,51 @@ export class GitHubAdapter implements IssueProviderAdapter {
   }
 
   /**
+   * Parses a GitHub project external ID into owner and repo components.
+   * Validates that the ID is exactly in "owner/repo" format with two non-empty segments.
+   * @param projectExternalId - The project external ID (e.g. `"owner/repo"`).
+   * @returns Object with `owner` and `repo` strings.
+   * @throws {Error} If the ID is not valid "owner/repo" format.
+   */
+  private parseOwnerRepo(projectExternalId: string): { owner: string; repo: string } {
+    const parts = projectExternalId.split("/");
+    if (parts.length !== 2 || !parts[0] || !parts[1]) {
+      throw new Error(
+        `Invalid GitHub project ID: "${projectExternalId}". Expected "owner/repo" format.`,
+      );
+    }
+    return { owner: parts[0], repo: parts[1] };
+  }
+
+  /**
+   * Fetches all pages of issues assigned to `login` in the given repository.
+   * @param owner - Repository owner.
+   * @param repo - Repository name.
+   * @param login - Authenticated user's GitHub login.
+   * @returns Flat array of issues across all pages.
+   * @throws If more than {@link MAX_PAGES} pages are required or any request fails.
+   */
+  private async fetchAssignedPages(owner: string, repo: string, login: string): Promise<GitHubIssue[]> {
+    const items: GitHubIssue[] = [];
+    let page = 1;
+
+    while (true) {
+      const { data } = await this.client.get<GitHubIssue[]>(
+        `/repos/${owner}/${repo}/issues`,
+        { params: { state: "open", assignee: login, per_page: 100, page } },
+      );
+      items.push(...data);
+      if (data.length < 100) { break; }
+      if (page >= MAX_PAGES) {
+        throw new Error(`fetchAssignedPages: exceeded MAX_PAGES (${MAX_PAGES}) for ${owner}/${repo}`);
+      }
+      page++;
+    }
+
+    return items;
+  }
+
+  /**
    * Normalizes a GitHub issue/PR to the common NormalizedIssue format.
    * @param issue - Raw GitHub issue/PR object.
    * @param isUnassigned - Whether the issue should be marked as unassigned.
@@ -83,6 +131,7 @@ export class GitHubAdapter implements IssueProviderAdapter {
    * @param repo - Repository name.
    * @param login - Authenticated user's GitHub login.
    * @returns Array of PRs the user is requested to review.
+   * @throws If more than {@link MAX_PAGES} pages are required or any request fails.
    */
   private async fetchReviewerPrs(owner: string, repo: string, login: string): Promise<GitHubIssue[]> {
     const prs: GitHubIssue[] = [];
@@ -98,6 +147,9 @@ export class GitHubAdapter implements IssueProviderAdapter {
       });
       prs.push(...data.items);
       if (data.items.length < 100) { break; }
+      if (page >= MAX_PAGES) {
+        throw new Error(`fetchReviewerPrs: exceeded MAX_PAGES (${MAX_PAGES}) for ${owner}/${repo}`);
+      }
       page++;
     }
 
@@ -128,23 +180,13 @@ export class GitHubAdapter implements IssueProviderAdapter {
 
   /** {@inheritDoc} */
   async fetchAssignedIssues(projectExternalId: string): Promise<NormalizedIssue[]> {
-    const [owner, repo] = projectExternalId.split("/");
+    const { owner, repo } = this.parseOwnerRepo(projectExternalId);
     const login = await this.getLogin();
 
-    const issues: GitHubIssue[] = [];
-    let page = 1;
-
-    while (true) {
-      const { data } = await this.client.get<GitHubIssue[]>(
-        `/repos/${owner}/${repo}/issues`,
-        { params: { state: "open", assignee: login, per_page: 100, page } }
-      );
-      issues.push(...data);
-      if (data.length < 100) { break; }
-      page++;
-    }
-
-    const reviewerPrs = await this.fetchReviewerPrs(owner, repo, login);
+    const [issues, reviewerPrs] = await Promise.all([
+      this.fetchAssignedPages(owner, repo, login),
+      this.fetchReviewerPrs(owner, repo, login),
+    ]);
 
     const seen = new Set<string>();
     const results: NormalizedIssue[] = [];
@@ -168,7 +210,7 @@ export class GitHubAdapter implements IssueProviderAdapter {
 
   /** {@inheritDoc} */
   async fetchUnassignedIssues(projectExternalId: string): Promise<NormalizedIssue[]> {
-    const [owner, repo] = projectExternalId.split("/");
+    const { owner, repo } = this.parseOwnerRepo(projectExternalId);
     const issues: GitHubIssue[] = [];
     let page = 1;
 
@@ -187,7 +229,7 @@ export class GitHubAdapter implements IssueProviderAdapter {
 
   /** {@inheritDoc} */
   async closeIssue(projectExternalId: string, issueExternalId: string): Promise<void> {
-    const [owner, repo] = projectExternalId.split("/");
+    const { owner, repo } = this.parseOwnerRepo(projectExternalId);
     await this.client.patch(`/repos/${owner}/${repo}/issues/${issueExternalId}`, {
       state: "closed",
     });
@@ -195,7 +237,7 @@ export class GitHubAdapter implements IssueProviderAdapter {
 
   /** {@inheritDoc} */
   async addComment(projectExternalId: string, issueExternalId: string, comment: string): Promise<void> {
-    const [owner, repo] = projectExternalId.split("/");
+    const { owner, repo } = this.parseOwnerRepo(projectExternalId);
     await this.client.post(`/repos/${owner}/${repo}/issues/${issueExternalId}/comments`, {
       body: comment,
     });

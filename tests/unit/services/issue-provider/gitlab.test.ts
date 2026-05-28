@@ -265,7 +265,7 @@ describe("GitLabAdapter", () => {
       expect(mockAxiosInstance.get).toHaveBeenCalledTimes(7);
     });
 
-    it("fetches assignee MRs with mr- prefix externalId", async () => {
+    it("fetches assignee MRs with mr- prefix externalId using iid (not global id)", async () => {
       mockAxiosInstance.get
         .mockResolvedValueOnce({ data: { id: 42 } })
         .mockResolvedValueOnce({ data: [], headers: {} })
@@ -280,7 +280,7 @@ describe("GitLabAdapter", () => {
       const adapter = new GitLabAdapter("glpat_test");
       const issues = await adapter.fetchAssignedIssues("1");
       expect(issues).toHaveLength(1);
-      expect(issues[0].externalId).toBe("mr-300");
+      expect(issues[0].externalId).toBe("mr-11"); // iid, not global id
       expect(issues[0].title).toBe("My MR");
       expect(issues[0].isUnassigned).toBe(false);
     });
@@ -300,12 +300,12 @@ describe("GitLabAdapter", () => {
       const adapter = new GitLabAdapter("glpat_test");
       const issues = await adapter.fetchAssignedIssues("1");
       expect(issues).toHaveLength(1);
-      expect(issues[0].externalId).toBe("mr-400");
+      expect(issues[0].externalId).toBe("mr-12"); // iid, not global id
       expect(issues[0].title).toBe("Review MR");
       expect(issues[0].isUnassigned).toBe(false);
     });
 
-    it("does not collide issue and MR with same globalId via mr- prefix", async () => {
+    it("does not collide issue and MR with same iid via mr- prefix", async () => {
       mockAxiosInstance.get
         .mockResolvedValueOnce({ data: { id: 42 } })
         .mockResolvedValueOnce({
@@ -313,6 +313,7 @@ describe("GitLabAdapter", () => {
           headers: {},
         })
         .mockResolvedValueOnce({
+          // MR has iid=2 (different from issue iid=1 by coincidence, but namespaced by mr-)
           data: [makeGitLabMR({ id: 500, iid: 2, title: "MR 500", web_url: "https://gitlab.com/g/p/-/merge_requests/2" })],
           headers: {},
         })
@@ -324,30 +325,68 @@ describe("GitLabAdapter", () => {
       const issues = await adapter.fetchAssignedIssues("1");
       expect(issues).toHaveLength(2);
       const externalIds = issues.map((i) => i.externalId);
-      expect(externalIds).toContain("500");
-      expect(externalIds).toContain("mr-500");
+      expect(externalIds).toContain("500"); // issue externalId = global id
+      expect(externalIds).toContain("mr-2"); // MR externalId = mr-{iid}
     });
 
-    it("closeIssue branches on mr- prefix (C-2.1/C-2.2)", async () => {
-      mockAxiosInstance.get.mockResolvedValueOnce({ data: { iid: 15 } });
+    it("deduplicates MR that appears in both assignee and reviewer lists (I-5)", async () => {
+      const sharedMR = makeGitLabMR({ id: 999, iid: 7, title: "Shared MR", assignees: [{ id: 42 }], reviewers: [{ id: 42 }] });
+      mockAxiosInstance.get
+        .mockResolvedValueOnce({ data: { id: 42 } })
+        .mockResolvedValueOnce({ data: [], headers: {} })
+        .mockResolvedValueOnce({ data: [sharedMR], headers: {} }) // assignee MRs
+        .mockResolvedValueOnce({ data: [sharedMR], headers: {} }); // reviewer MRs — same MR
+      const adapter = new GitLabAdapter("glpat_test");
+      const issues = await adapter.fetchAssignedIssues("1");
+      expect(issues).toHaveLength(1);
+      expect(issues[0].externalId).toBe("mr-7");
+    });
+
+    it("propagates error when MR fetch fails (I-7)", async () => {
+      mockAxiosInstance.get
+        .mockResolvedValueOnce({ data: { id: 42 } })
+        .mockResolvedValueOnce({ data: [], headers: {} }) // issues
+        .mockRejectedValueOnce({ response: { status: 401 } }); // assignee MRs fail
+      const adapter = new GitLabAdapter("glpat_test");
+      await expect(adapter.fetchAssignedIssues("1")).rejects.toBeDefined();
+    });
+
+    it("closeIssue branches on mr- prefix - uses iid directly without global API call (C-2)", async () => {
       mockAxiosInstance.put.mockResolvedValueOnce({});
       const adapter = new GitLabAdapter("glpat_test");
-      await adapter.closeIssue("1", "mr-500");
-      expect(mockAxiosInstance.get).toHaveBeenCalledWith("/merge_requests/500");
+      await adapter.closeIssue("1", "mr-15"); // mr-{iid}
+      expect(mockAxiosInstance.get).not.toHaveBeenCalled(); // no global MR lookup
       expect(mockAxiosInstance.put).toHaveBeenCalledWith("/projects/1/merge_requests/15", {
         state_event: "close",
       });
     });
 
-    it("addComment branches on mr- prefix (C-3.1/C-3.2)", async () => {
-      mockAxiosInstance.get.mockResolvedValueOnce({ data: { iid: 15 } });
+    it("addComment branches on mr- prefix - uses iid directly without global API call (C-2)", async () => {
       mockAxiosInstance.post.mockResolvedValueOnce({});
       const adapter = new GitLabAdapter("glpat_test");
-      await adapter.addComment("1", "mr-500", "Looks good");
-      expect(mockAxiosInstance.get).toHaveBeenCalledWith("/merge_requests/500");
+      await adapter.addComment("1", "mr-15", "Looks good"); // mr-{iid}
+      expect(mockAxiosInstance.get).not.toHaveBeenCalled(); // no global MR lookup
       expect(mockAxiosInstance.post).toHaveBeenCalledWith("/projects/1/merge_requests/15/notes", {
         body: "Looks good",
       });
+    });
+
+    it("closeIssue falls back to issue path for non-MR externalId (I-6 regression)", async () => {
+      mockAxiosInstance.get.mockResolvedValueOnce({ data: { iid: 42 } });
+      mockAxiosInstance.put.mockResolvedValueOnce({});
+      const adapter = new GitLabAdapter("glpat_test");
+      await adapter.closeIssue("1", "101");
+      expect(mockAxiosInstance.get).toHaveBeenCalledWith("/issues/101");
+      expect(mockAxiosInstance.put).toHaveBeenCalledWith("/projects/1/issues/42", { state_event: "close" });
+    });
+
+    it("addComment falls back to issue path for non-MR externalId (I-6 regression)", async () => {
+      mockAxiosInstance.get.mockResolvedValueOnce({ data: { iid: 42 } });
+      mockAxiosInstance.post.mockResolvedValueOnce({});
+      const adapter = new GitLabAdapter("glpat_test");
+      await adapter.addComment("1", "101", "comment");
+      expect(mockAxiosInstance.get).toHaveBeenCalledWith("/issues/101");
+      expect(mockAxiosInstance.post).toHaveBeenCalledWith("/projects/1/issues/42/notes", { body: "comment" });
     });
 
     it("excludes approval rule MRs (FR-013) — only reviewers field matters", async () => {
@@ -359,13 +398,14 @@ describe("GitLabAdapter", () => {
           headers: {},
         })
         .mockResolvedValueOnce({
+          // iid=10 (default in makeGitLabMR) so externalId becomes "mr-10"
           data: [makeGitLabMR({ id: 600, reviewers: [{ id: 42 }], approver_ids: [42] })],
           headers: {},
         });
       const adapter = new GitLabAdapter("glpat_test");
       const issues = await adapter.fetchAssignedIssues("1");
       expect(issues).toHaveLength(1);
-      expect(issues[0].externalId).toBe("mr-600");
+      expect(issues[0].externalId).toBe("mr-10"); // mr-{iid}
     });
   });
 

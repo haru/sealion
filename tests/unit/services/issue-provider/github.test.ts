@@ -189,6 +189,39 @@ describe("GitHubAdapter", () => {
       const adapter = new GitHubAdapter("ghp_test");
       await expect(adapter.fetchAssignedIssues("owner/repo")).rejects.toBeDefined();
     });
+
+    it("throws on invalid projectExternalId (no slash) — C-1", async () => {
+      mockAxiosInstance.get.mockResolvedValueOnce({ data: { login: "testuser" } });
+      const adapter = new GitHubAdapter("ghp_test");
+      await expect(adapter.fetchAssignedIssues("invalid")).rejects.toThrow("Invalid GitHub project ID");
+    });
+
+    it("throws on invalid projectExternalId (empty repo segment) — C-1", async () => {
+      mockAxiosInstance.get.mockResolvedValueOnce({ data: { login: "testuser" } });
+      const adapter = new GitHubAdapter("ghp_test");
+      await expect(adapter.fetchAssignedIssues("owner/")).rejects.toThrow("Invalid GitHub project ID");
+    });
+
+    it("throws on invalid projectExternalId (too many segments) — C-1", async () => {
+      mockAxiosInstance.get.mockResolvedValueOnce({ data: { login: "testuser" } });
+      const adapter = new GitHubAdapter("ghp_test");
+      await expect(adapter.fetchAssignedIssues("owner/repo/extra")).rejects.toThrow("Invalid GitHub project ID");
+    });
+
+    it("throws when fetchReviewerPrs exceeds MAX_PAGES (I-11)", async () => {
+      mockAxiosInstance.get
+        .mockResolvedValueOnce({ data: { login: "testuser" } });
+      // assigned issues: empty (returns in 1 call)
+      mockAxiosInstance.get.mockResolvedValueOnce({ data: [] });
+      // reviewer PRs: 20 full pages then fails
+      for (let i = 0; i < 20; i++) {
+        mockAxiosInstance.get.mockResolvedValueOnce({
+          data: { items: Array(100).fill(makeSearchItem()) },
+        });
+      }
+      const adapter = new GitHubAdapter("ghp_test");
+      await expect(adapter.fetchAssignedIssues("owner/repo")).rejects.toThrow("MAX_PAGES");
+    });
   });
 
   describe("fetchUnassignedIssues", () => {
