@@ -66,7 +66,7 @@ export class GitHubAdapter implements IssueProviderAdapter {
    * Validates that the ID is exactly in "owner/repo" format with two non-empty segments.
    * @param projectExternalId - The project external ID (e.g. `"owner/repo"`).
    * @returns Object with `owner` and `repo` strings.
-   * @throws {Error} If the ID is not valid "owner/repo" format.
+    * @throws \{Error\} If the ID is not valid "owner/repo" format.
    */
   private parseOwnerRepo(projectExternalId: string): { owner: string; repo: string } {
     const parts = projectExternalId.split("/");
