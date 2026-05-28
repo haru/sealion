@@ -184,3 +184,8 @@ SPECKIT END -->
 
 - [CLAUDE.md](./CLAUDE.md) — Claude Code pointer to this file
 - [.github/copilot-instructions.md](./.github/copilot-instructions.md) — Copilot pointer to this file
+
+<!-- SPECKIT START -->
+For additional context about technologies to be used, project structure,
+shell commands, and other important information, read the current plan
+<!-- SPECKIT END -->
