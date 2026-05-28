@@ -93,6 +93,7 @@ export class GitLabAdapter implements IssueProviderAdapter {
   private async paginateGitLab<T>(url: string, params: Record<string, unknown>): Promise<T[]> {
     const items: T[] = [];
     let page = 1;
+    let iteration = 0;
 
     while (true) {
       const { data, headers } = await this.client.get<T[]>(url, {
@@ -101,10 +102,15 @@ export class GitLabAdapter implements IssueProviderAdapter {
       items.push(...data);
       const nextPage = headers["x-next-page"];
       if (!nextPage) { break; }
-      if (page >= MAX_PAGES) {
+      iteration++;
+      if (iteration >= MAX_PAGES) {
         throw new Error(`paginateGitLab: exceeded MAX_PAGES (${MAX_PAGES}) for ${url}`);
       }
-      page = Number(nextPage);
+      const nextPageNum = Number(nextPage);
+      if (!Number.isFinite(nextPageNum) || !Number.isInteger(nextPageNum) || nextPageNum <= page) {
+        throw new Error(`paginateGitLab: invalid x-next-page "${nextPage}" (current: ${page}) for ${url}`);
+      }
+      page = nextPageNum;
     }
 
     return items;
@@ -231,11 +237,23 @@ export class GitLabAdapter implements IssueProviderAdapter {
     }));
   }
 
+  /**
+   * Extracts and validates the numeric IID from an `mr-{iid}` externalId.
+   * @throws If the suffix is empty or non-numeric.
+   */
+  private parseMrIid(issueExternalId: string): string {
+    const iid = issueExternalId.slice(MR_EXTERNAL_ID_PREFIX.length);
+    if (!/^\d+$/.test(iid)) {
+      throw new Error(`Invalid MR externalId "${issueExternalId}": IID must be a non-empty numeric value`);
+    }
+    return iid;
+  }
+
   /** {@inheritDoc} */
   async closeIssue(projectExternalId: string, issueExternalId: string): Promise<void> {
     if (issueExternalId.startsWith(MR_EXTERNAL_ID_PREFIX)) {
       // externalId format: mr-{iid} — iid is project-scoped; no global API lookup needed
-      const iid = issueExternalId.slice(MR_EXTERNAL_ID_PREFIX.length);
+      const iid = this.parseMrIid(issueExternalId);
       await this.client.put(`/projects/${projectExternalId}/merge_requests/${iid}`, {
         state_event: "close",
       });
@@ -252,7 +270,7 @@ export class GitLabAdapter implements IssueProviderAdapter {
   async addComment(projectExternalId: string, issueExternalId: string, comment: string): Promise<void> {
     if (issueExternalId.startsWith(MR_EXTERNAL_ID_PREFIX)) {
       // externalId format: mr-{iid} — iid is project-scoped; no global API lookup needed
-      const iid = issueExternalId.slice(MR_EXTERNAL_ID_PREFIX.length);
+      const iid = this.parseMrIid(issueExternalId);
       await this.client.post(`/projects/${projectExternalId}/merge_requests/${iid}/notes`, {
         body: comment,
       });
