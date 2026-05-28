@@ -177,7 +177,7 @@ Playwright MCP tools: use `http://app:3000` — not `localhost:3000`.
 - `docs/adr/` — Architecture Decision Records (append-only)
 
 <!-- SPECKIT START
-Active feature plan: specs/042-fix-sync-clock-skew/plan.md
+Active feature plan: specs/043-reviewer-assignee/plan.md
 SPECKIT END -->
 
 ## References

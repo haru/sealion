@@ -76,3 +76,4 @@ YYYY-MM-DD
 | 0002 | [Dynamic auth-provider loading](./0002-dynamic-auth-provider-loading.md) | Accepted | 2026-05-17 |
 | 0003 | [Reuse Auth.js `Account` table for IdP links](./0003-reuse-authjs-account-table.md) | Accepted | 2026-05-17 |
 | 0004 | [Encrypt OAuth tokens at rest](./0004-encrypt-oauth-tokens-at-rest.md) | Accepted | 2026-05-17 |
+| 0005 | [GitLab MR `externalId` prefix](./0005-gitlab-mr-external-id-prefix.md) | Accepted | 2026-05-28 |

@@ -25,8 +25,8 @@ See [AGENTS.md](./AGENTS.md) for full architecture, coding conventions, testing 
 
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
-shell commands, and other important information, read the current plan
-at [specs/041-oidc-authentication/plan.md](specs/041-oidc-authentication/plan.md).
+shell commands, and other important information, read the current plan:
+specs/043-reviewer-assignee/plan.md
 <!-- SPECKIT END -->
 
 ## Active Technologies

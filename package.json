@@ -1,6 +1,6 @@
 {
   "name": "sealion",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -31,9 +31,9 @@
     "hpagent": "^1.2.0",
     "next": "16.2.6",
     "next-auth": "^5.0.0-beta.31",
-    "next-intl": "^4.11.2",
+    "next-intl": "^4.12.0",
     "nodemailer": "^7.0.13",
-    "pg": "^8.20.0",
+    "pg": "^8.21.0",
     "react": "19.2.6",
     "react-dom": "19.2.6"
   },
@@ -57,7 +57,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
-    "eslint-plugin-jsdoc": "^62.9.0",
+    "eslint-plugin-jsdoc": "^63.0.0",
     "eslint-plugin-tsdoc": "^0.5.2",
     "eslint-plugin-unused-imports": "^4.4.1",
     "jest": "^30.4.2",
