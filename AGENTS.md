@@ -177,15 +177,10 @@ Playwright MCP tools: use `http://app:3000` — not `localhost:3000`.
 - `docs/adr/` — Architecture Decision Records (append-only)
 
 <!-- SPECKIT START
-Active feature plan: specs/042-fix-sync-clock-skew/plan.md
+Active feature plan: specs/043-reviewer-assignee/plan.md
 SPECKIT END -->
 
 ## References
 
 - [CLAUDE.md](./CLAUDE.md) — Claude Code pointer to this file
 - [.github/copilot-instructions.md](./.github/copilot-instructions.md) — Copilot pointer to this file
-
-<!-- SPECKIT START -->
-For additional context about technologies to be used, project structure,
-shell commands, and other important information, read the current plan
-<!-- SPECKIT END -->
