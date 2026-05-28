@@ -250,4 +250,113 @@ describe('syncProviders error collection integration', () => {
 
     expect(errors[0].projectName).toBe('owner/repo');
   });
+
+  describe('reviewer PR integration (043-reviewer-assignee)', () => {
+    it('sync upserts reviewer PR with isUnassigned=false', async () => {
+      mockFindMany.mockResolvedValue([makeProvider()]);
+      const { createAdapter } = jest.requireMock('@/services/issue-provider/factory');
+      createAdapter.mockReturnValueOnce({
+        fetchAssignedIssues: jest.fn().mockResolvedValue([
+          {
+            externalId: '42',
+            title: 'PR needs review',
+            dueDate: null,
+            externalUrl: 'https://github.com/owner/repo/pull/42',
+            isUnassigned: false,
+            providerCreatedAt: new Date('2026-01-01T00:00:00Z'),
+            providerUpdatedAt: new Date('2026-01-01T00:00:00Z'),
+          },
+        ]),
+        fetchUnassignedIssues: jest.fn().mockResolvedValue([]),
+      });
+
+      const errors = await syncProviders('user-1');
+      expect(errors).toHaveLength(0);
+      const upsertCalls = (prisma.issue.upsert as jest.Mock).mock.calls;
+      expect(upsertCalls.length).toBeGreaterThanOrEqual(1);
+      const upsertInput = upsertCalls[0][0];
+      expect(upsertInput.where.projectId_externalId.externalId).toBe('42');
+      expect(upsertInput.create.isUnassigned).toBe(false);
+      expect(upsertInput.update.isUnassigned).toBe(false);
+    });
+
+    it('sync includes reviewer PR even when includeUnassigned=false', async () => {
+      mockFindMany.mockResolvedValue([makeProvider()]);
+      const { createAdapter } = jest.requireMock('@/services/issue-provider/factory');
+      createAdapter.mockReturnValueOnce({
+        fetchAssignedIssues: jest.fn().mockResolvedValue([
+          {
+            externalId: '42',
+            title: 'Reviewer PR',
+            dueDate: null,
+            externalUrl: 'https://github.com/owner/repo/pull/42',
+            isUnassigned: false,
+            providerCreatedAt: new Date('2026-01-01T00:00:00Z'),
+            providerUpdatedAt: new Date('2026-01-01T00:00:00Z'),
+          },
+        ]),
+        fetchUnassignedIssues: jest.fn().mockResolvedValue([]),
+      });
+
+      const errors = await syncProviders('user-1');
+      expect(errors).toHaveLength(0);
+      expect(prisma.issue.upsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            projectId_externalId: expect.objectContaining({ externalId: '42' }),
+          }),
+        }),
+      );
+    });
+
+    it('sync removes reviewer PR after reviewer is unassigned', async () => {
+      mockFindMany.mockResolvedValue([makeProvider()]);
+      const { createAdapter } = jest.requireMock('@/services/issue-provider/factory');
+      createAdapter.mockReturnValueOnce({
+        fetchAssignedIssues: jest.fn().mockResolvedValue([]),
+        fetchUnassignedIssues: jest.fn().mockResolvedValue([]),
+      });
+
+      const errors = await syncProviders('user-1');
+      expect(errors).toHaveLength(0);
+      expect(prisma.issue.deleteMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            projectId: 'project-1',
+            externalId: { notIn: [] },
+          }),
+        }),
+      );
+    });
+
+    it('project with only non-PR issues produces identical results to baseline', async () => {
+      const regularIssues = [
+        {
+          externalId: '101',
+          title: 'Regular issue',
+          dueDate: null,
+          externalUrl: 'https://github.com/owner/repo/issues/101',
+          isUnassigned: false,
+          providerCreatedAt: new Date('2026-01-01T00:00:00Z'),
+          providerUpdatedAt: new Date('2026-01-01T00:00:00Z'),
+        },
+      ];
+      mockFindMany.mockResolvedValue([makeProvider()]);
+      const { createAdapter } = jest.requireMock('@/services/issue-provider/factory');
+      createAdapter.mockReturnValueOnce({
+        fetchAssignedIssues: jest.fn().mockResolvedValue(regularIssues),
+        fetchUnassignedIssues: jest.fn().mockResolvedValue([]),
+      });
+
+      const errors = await syncProviders('user-1');
+      expect(errors).toHaveLength(0);
+      expect(prisma.issue.upsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            projectId_externalId: expect.objectContaining({ externalId: '101' }),
+          }),
+        }),
+      );
+    });
+  });
 });

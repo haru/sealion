@@ -58,6 +58,52 @@ export class GitHubAdapter implements IssueProviderAdapter {
     return this.loginPromise;
   }
 
+  /**
+   * Normalizes a GitHub issue/PR to the common NormalizedIssue format.
+   * @param issue - Raw GitHub issue/PR object.
+   * @param isUnassigned - Whether the issue should be marked as unassigned.
+   */
+  private normalizeIssue(issue: GitHubIssue, isUnassigned: boolean): NormalizedIssue {
+    return {
+      externalId: String(issue.number),
+      title: issue.title,
+      dueDate: issue.milestone?.due_on ? new Date(issue.milestone.due_on) : null,
+      externalUrl: issue.html_url,
+      isUnassigned,
+      providerCreatedAt: new Date(issue.created_at),
+      providerUpdatedAt: new Date(issue.updated_at),
+    };
+  }
+
+  /**
+   * Fetches open PRs where the authenticated user is a requested reviewer.
+   * Uses the GitHub Search API with `review-requested:` qualifier which
+   * matches only individual reviewers, not team reviewers (FR-011).
+   * @param owner - Repository owner.
+   * @param repo - Repository name.
+   * @param login - Authenticated user's GitHub login.
+   * @returns Array of PRs the user is requested to review.
+   */
+  private async fetchReviewerPrs(owner: string, repo: string, login: string): Promise<GitHubIssue[]> {
+    const prs: GitHubIssue[] = [];
+    let page = 1;
+
+    while (true) {
+      const { data } = await this.client.get<{ items: GitHubIssue[] }>("/search/issues", {
+        params: {
+          q: `is:pr is:open review-requested:${login} repo:${owner}/${repo}`,
+          per_page: 100,
+          page,
+        },
+      });
+      prs.push(...data.items);
+      if (data.items.length < 100) { break; }
+      page++;
+    }
+
+    return prs;
+  }
+
   /** {@inheritDoc} */
   async testConnection(): Promise<void> {
     await this.client.get("/user");
@@ -83,29 +129,41 @@ export class GitHubAdapter implements IssueProviderAdapter {
   /** {@inheritDoc} */
   async fetchAssignedIssues(projectExternalId: string): Promise<NormalizedIssue[]> {
     const [owner, repo] = projectExternalId.split("/");
-    const assignee = await this.getLogin();
+    const login = await this.getLogin();
+
     const issues: GitHubIssue[] = [];
     let page = 1;
 
     while (true) {
       const { data } = await this.client.get<GitHubIssue[]>(
         `/repos/${owner}/${repo}/issues`,
-        { params: { state: "open", assignee, per_page: 100, page } }
+        { params: { state: "open", assignee: login, per_page: 100, page } }
       );
       issues.push(...data);
       if (data.length < 100) { break; }
       page++;
     }
 
-    return issues.map((issue) => ({
-      externalId: String(issue.number),
-      title: issue.title,
-      dueDate: issue.milestone?.due_on ? new Date(issue.milestone.due_on) : null,
-      externalUrl: issue.html_url,
-      isUnassigned: false,
-      providerCreatedAt: new Date(issue.created_at),
-      providerUpdatedAt: new Date(issue.updated_at),
-    }));
+    const reviewerPrs = await this.fetchReviewerPrs(owner, repo, login);
+
+    const seen = new Set<string>();
+    const results: NormalizedIssue[] = [];
+
+    for (const issue of issues) {
+      const id = String(issue.number);
+      if (seen.has(id)) { continue; }
+      seen.add(id);
+      results.push(this.normalizeIssue(issue, false));
+    }
+
+    for (const pr of reviewerPrs) {
+      const id = String(pr.number);
+      if (seen.has(id)) { continue; }
+      seen.add(id);
+      results.push(this.normalizeIssue(pr, false));
+    }
+
+    return results;
   }
 
   /** {@inheritDoc} */
@@ -124,15 +182,7 @@ export class GitHubAdapter implements IssueProviderAdapter {
       page++;
     }
 
-    return issues.map((issue) => ({
-      externalId: String(issue.number),
-      title: issue.title,
-      dueDate: issue.milestone?.due_on ? new Date(issue.milestone.due_on) : null,
-      externalUrl: issue.html_url,
-      isUnassigned: true,
-      providerCreatedAt: new Date(issue.created_at),
-      providerUpdatedAt: new Date(issue.updated_at),
-    }));
+    return issues.map((issue) => this.normalizeIssue(issue, true));
   }
 
   /** {@inheritDoc} */

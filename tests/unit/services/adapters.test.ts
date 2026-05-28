@@ -72,9 +72,7 @@ describe("GitHubAdapter", () => {
 
   describe("fetchAssignedIssues", () => {
     it("normalizes GitHub issues", async () => {
-      // First call: GET /user to resolve login
       mockAxiosInstance.get.mockResolvedValueOnce({ data: { login: "testuser" } });
-      // Second call: GET /repos/owner/repo/issues
       mockAxiosInstance.get.mockResolvedValueOnce({
         data: [
           {
@@ -86,6 +84,7 @@ describe("GitHubAdapter", () => {
           },
         ],
       });
+      mockAxiosInstance.get.mockResolvedValueOnce({ data: { items: [] } });
 
       const issues = await adapter.fetchAssignedIssues("owner/repo");
       expect(issues).toHaveLength(1);
@@ -101,6 +100,7 @@ describe("GitHubAdapter", () => {
     it("uses authenticated user login as assignee filter", async () => {
       mockAxiosInstance.get.mockResolvedValueOnce({ data: { login: "myuser" } });
       mockAxiosInstance.get.mockResolvedValueOnce({ data: [] });
+      mockAxiosInstance.get.mockResolvedValueOnce({ data: { items: [] } });
 
       await adapter.fetchAssignedIssues("owner/repo");
 
@@ -113,7 +113,10 @@ describe("GitHubAdapter", () => {
 
     it("caches the login and does not call /user twice", async () => {
       mockAxiosInstance.get.mockResolvedValueOnce({ data: { login: "myuser" } });
-      mockAxiosInstance.get.mockResolvedValue({ data: [] });
+      mockAxiosInstance.get.mockResolvedValueOnce({ data: [] });
+      mockAxiosInstance.get.mockResolvedValueOnce({ data: { items: [] } });
+      mockAxiosInstance.get.mockResolvedValueOnce({ data: [] });
+      mockAxiosInstance.get.mockResolvedValueOnce({ data: { items: [] } });
 
       await adapter.fetchAssignedIssues("owner/repo1");
       await adapter.fetchAssignedIssues("owner/repo2");
@@ -163,6 +166,7 @@ describe("GitHubAdapter", () => {
       mockAxiosInstance.get.mockResolvedValueOnce({
         data: [{ number: 1, title: "My issue", state: "open", html_url: "https://github.com/owner/repo/issues/1" }],
       });
+      mockAxiosInstance.get.mockResolvedValueOnce({ data: { items: [] } });
 
       const issues = await adapter.fetchAssignedIssues("owner/repo");
       expect(issues[0].isUnassigned).toBe(false);
@@ -184,6 +188,7 @@ describe("GitHubAdapter", () => {
           },
         ],
       });
+      mockAxiosInstance.get.mockResolvedValueOnce({ data: { items: [] } });
 
       const issues = await adapter.fetchAssignedIssues("owner/repo");
       expect(issues[0].providerCreatedAt).toEqual(new Date("2026-01-15T10:00:00Z"));

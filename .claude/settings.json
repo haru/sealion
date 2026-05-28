@@ -45,7 +45,10 @@
       "Bash(git -C /workspaces/sealion log main..HEAD --oneline)",
       "Bash(git -C /workspaces/sealion log 33b87a0^..HEAD --name-only --pretty=format:\"%H %s\")",
       "Bash(git -C /workspaces/sealion diff 33b87a0^..HEAD --stat)",
-      "Bash(git -C /workspaces/sealion diff 33b87a0^..HEAD -- src/lib/sync/sync-utils.ts src/hooks/useSyncPolling.ts tests/unit/lib/sync-utils.test.ts tests/unit/hooks/useSyncPolling.test.ts)"
+      "Bash(git -C /workspaces/sealion diff 33b87a0^..HEAD -- src/lib/sync/sync-utils.ts src/hooks/useSyncPolling.ts tests/unit/lib/sync-utils.test.ts tests/unit/hooks/useSyncPolling.test.ts)",
+      "Bash(.specify/extensions/git/scripts/bash/create-new-feature.sh --json \"pr-reviewer-assignee\")",
+      "Bash(mkdir -p specs/043-reviewer-assignee/checklists)",
+      "Bash(cp .specify/templates/spec-template.md specs/043-reviewer-assignee/spec.md)"
     ],
     "additionalDirectories": [
       "/tmp",
