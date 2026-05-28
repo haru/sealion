@@ -40,7 +40,7 @@ interface GitLabUser {
 }
 
 const MR_EXTERNAL_ID_PREFIX = "mr-";
-// GitLab issue/MR の global-ID 衝突回避のため prefix を付与。See docs/adr/0005-gitlab-mr-external-id-prefix.md
+// GitLab issue と MR の externalId 衝突回避のため MR に mr-{iid} prefix を付与。See docs/adr/0005-gitlab-mr-external-id-prefix.md
 
 /** Maximum pages fetched per paginated request to prevent unbounded iteration. */
 const MAX_PAGES = 20;

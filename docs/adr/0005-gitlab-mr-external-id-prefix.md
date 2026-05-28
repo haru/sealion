@@ -16,12 +16,12 @@ GitHub 側は本問題の影響を受けない。GitHub では issue と PR が�
 
 ## Decision
 
-GitLab adapter において、MR を `Issue` テーブルに保存する際の `externalId` は **`mr-{globalId}`** 形式 (例: `"mr-12345"`) を用いる。GitLab issue の `externalId` は従来どおり `{globalId}` (例: `"12345"`) のまま変更しない。
+GitLab adapter において、MR を `Issue` テーブルに保存する際の `externalId` は **`mr-{iid}`** 形式 (例: `"mr-42"`) を用いる。GitLab issue の `externalId` は従来どおり `{globalId}` (例: `"12345"`) のまま変更しない。
 
 この規約に伴い、GitLab adapter 内の以下のメソッドが externalId のプレフィックスを判別ロジックとして利用する:
 
-- `closeIssue(projectExternalId, issueExternalId)`: `mr-` で始まる場合は MR endpoint (`PUT /projects/:id/merge_requests/:iid`) を、そうでなければ既存の issue endpoint (`PUT /projects/:id/issues/:iid`) を呼ぶ。
-- `addComment(projectExternalId, issueExternalId, comment)`: 同様に MR notes endpoint と issue notes endpoint を分岐する。
+- `closeIssue(projectExternalId, issueExternalId)`: `mr-` で始まる場合は MR endpoint (`PUT /projects/:id/merge_requests/:iid`) を、そうでなければ既存の issue endpoint (`PUT /projects/:id/issues/:iid`) を呼ぶ。suffix の `iid` は `externalId` から `mr-` プレフィックスを剥がした値。
+- `addComment(projectExternalId, issueExternalId, comment)`: 同様に MR notes endpoint と issue notes endpoint を分岐する。suffix の `iid` は同様に `mr-` を剥がした値。
 
 プレフィックス規約の適用範囲は **GitLab adapter のみ** に限定する。他プロバイダ (GitHub / Jira / Redmine / Linear / Asana / Trello / Backlog) の `externalId` 形式には影響しない。
 
@@ -33,7 +33,7 @@ Accepted
 
 ### Positive
 
-- GitLab issue と MR の global ID が衝突しても、`Issue` テーブルのユニーク制約は安全に維持される。
+- GitLab issue と MR の ID が衝突しても、`Issue` テーブルのユニーク制約は安全に維持される。MR は `mr-` プレフィックス付きの `iid` を使用するため、issue の `externalId` (数値文字列のみ) と明確に区別される。
 - 既存 GitLab issue データ (`externalId` が数値文字列のみ) は無変更のままで前方互換が保たれる。マイグレーションスクリプトや一括 re-sync は不要。
 - 規約が文字列の頭 3 文字 (`mr-`) のみで判別可能なため、コード上の分岐ロジックは極めて単純 (`externalId.startsWith("mr-")`)。
 - 将来 MR 専用の機能 (例: approval rule 連携、MR ステータス badge) を追加する際にも、`externalId` から MR と判定できる。

@@ -157,7 +157,7 @@ describe("GitHubAdapter", () => {
       expect(mockAxiosInstance.get).toHaveBeenCalledWith("/search/issues", expect.anything());
     });
 
-    it("excludes team-reviewer-only PRs (FR-011)", async () => {
+    it("fetches reviewer-requested PRs via Search API (FR-011)", async () => {
       mockAxiosInstance.get
         .mockResolvedValueOnce({ data: { login: "testuser" } })
         .mockResolvedValueOnce({ data: [] })
