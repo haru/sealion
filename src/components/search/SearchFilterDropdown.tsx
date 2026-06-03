@@ -6,7 +6,7 @@ import FolderIcon from "@mui/icons-material/Folder";
 import PersonIcon from "@mui/icons-material/Person";
 import StorageIcon from "@mui/icons-material/Storage";
 import UpdateIcon from "@mui/icons-material/Update";
-import { Popover, Box, Typography, MenuItem, ListItemIcon, ListItemText } from "@mui/material";
+import { Popover, Box, Typography, MenuList, MenuItem, ListItemIcon, ListItemText } from "@mui/material";
 import { useTranslations } from "next-intl";
 
 import type { TaskFilterState } from "@/hooks/useTaskSearch";
@@ -149,24 +149,26 @@ export default function SearchFilterDropdown({
 
     return (
       <Popover open={open && visibleKeys.length > 0} {...popoverProps}>
-        <Box sx={{ py: 1 }}>
+        <Box sx={{ pt: 1 }}>
           <Typography
             variant="overline"
             sx={{ px: 2, color: "text.secondary", display: "block", mb: 0.5 }}
           >
             {t("filterBy")}
           </Typography>
-          {visibleKeys.map((key) => {
-            const Icon = filterKeyIcon(key);
-            return (
-              <MenuItem key={key} dense onClick={() => onKeySelect(key)}>
-                <ListItemIcon sx={{ minWidth: 32 }}>
-                  <Icon fontSize="small" />
-                </ListItemIcon>
-                <ListItemText primary={t(FILTER_KEY_LABEL[key])} />
-              </MenuItem>
-            );
-          })}
+          <MenuList disablePadding dense>
+            {visibleKeys.map((key) => {
+              const Icon = filterKeyIcon(key);
+              return (
+                <MenuItem key={key} onClick={() => onKeySelect(key)}>
+                  <ListItemIcon sx={{ minWidth: 32 }}>
+                    <Icon fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText primary={t(FILTER_KEY_LABEL[key])} />
+                </MenuItem>
+              );
+            })}
+          </MenuList>
         </Box>
       </Popover>
     );
@@ -191,23 +193,24 @@ export default function SearchFilterDropdown({
 
   return (
     <Popover open={open} {...popoverProps}>
-      <Box sx={{ py: 1 }}>
+      <Box sx={{ pt: 1 }}>
         <Typography
           variant="overline"
           sx={{ px: 2, color: "text.secondary", display: "block", mb: 0.5 }}
         >
           {t(FILTER_KEY_LABEL[pendingFilterKey])}
         </Typography>
-        {visibleItems.map((item) => (
-          <MenuItem
-            key={item.value}
-            dense
-            selected={item.selected}
-            onClick={() => onValueSelect(pendingFilterKey, item.filterValue)}
-          >
-            {item.label}
-          </MenuItem>
-        ))}
+        <MenuList disablePadding dense>
+          {visibleItems.map((item) => (
+            <MenuItem
+              key={item.value}
+              selected={item.selected}
+              onClick={() => onValueSelect(pendingFilterKey, item.filterValue)}
+            >
+              {item.label}
+            </MenuItem>
+          ))}
+        </MenuList>
       </Box>
     </Popover>
   );
