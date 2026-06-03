@@ -16,7 +16,7 @@
     "@dnd-kit/sortable": "^10.0.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
-    "@linear/sdk": "^83.0.0",
+    "@linear/sdk": "^86.0.0",
     "@mui/icons-material": "^9.0.1",
     "@mui/material": "^9.0.0",
     "@mui/material-nextjs": "^9.0.0",
