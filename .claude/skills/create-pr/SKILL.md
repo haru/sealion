@@ -15,6 +15,8 @@ Create a pull request from the current branch to `develop`, with an English titl
 git branch --show-current
 ```
 
+**If the current branch starts with `release/`**, skip the rest of the steps below and follow the [Release branch procedure](#release-branch-procedure) instead.
+
 Then get the full commit history since `develop`:
 
 ```bash
@@ -102,3 +104,42 @@ If the label does not exist in the repository yet, omit `--label` and note it to
 ### 7. Report back
 
 After the PR is created, output the PR URL so the user can navigate to it directly.
+
+---
+
+## Release branch procedure
+
+Use this procedure when the current branch name starts with `release/` (e.g. `release/1.2.3`).
+
+### Target branch
+
+`main`
+
+### Title
+
+Extract the version from the branch name and format it as:
+
+```
+Release <version>
+```
+
+Example: branch `release/1.2.3` → title `Release 1.2.3`
+
+### Body
+
+Use the title text only — no further detail is needed:
+
+```
+Release 1.2.3
+```
+
+### Create the PR
+
+```bash
+gh pr create \
+  --base main \
+  --title "Release <version>" \
+  --body "Release <version>"
+```
+
+After creation, output the PR URL.
