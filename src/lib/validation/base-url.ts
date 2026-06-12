@@ -1,4 +1,22 @@
 /**
+ * Returns a validation error message when baseUrl is enabled and malformed, or null when valid.
+ * @param enabled - Whether the baseUrl field is active (required mode, or optional mode with checkbox on).
+ * @param touched - Whether the field has been blurred at least once.
+ * @param value - The current baseUrl value.
+ * @param errorMsg - The error message to return when validation fails.
+ * @returns The error message string, or `null` when the field is valid or should not be validated.
+ */
+export function getBaseUrlValidationError(
+  enabled: boolean,
+  touched: boolean,
+  value: string,
+  errorMsg: string,
+): string | null {
+  if (!enabled || !touched || !value) { return null; }
+  return isValidBaseUrl(value) ? null : errorMsg;
+}
+
+/**
  * Validates that a URL is an absolute URL with an http or https scheme and a non-empty host.
  * Used to validate optional base URLs for self-hosted / Enterprise provider instances.
  *

@@ -1,4 +1,7 @@
-/** @jest-environment node */
+/**
+ * Unit tests for the GitHubAdapter — connection, CRUD, pagination, baseUrl, reviewer PR fetching.
+ * @jest-environment node
+ */
 
 jest.mock("axios", () => ({
   create: jest.fn().mockReturnValue({
@@ -98,6 +101,16 @@ describe("GitHubAdapter", () => {
       const adapter = new GitHubAdapter("ghp_test");
       const projects = await adapter.listProjects();
       expect(projects).toHaveLength(101);
+    });
+
+    it("throws when listProjects exceeds MAX_PAGES", async () => {
+      for (let i = 0; i < 20; i++) {
+        mockAxiosInstance.get.mockResolvedValueOnce({
+          data: Array(100).fill({ full_name: "owner/repo" }),
+        });
+      }
+      const adapter = new GitHubAdapter("ghp_test");
+      await expect(adapter.listProjects()).rejects.toThrow("MAX_PAGES");
     });
   });
 
@@ -235,6 +248,16 @@ describe("GitHubAdapter", () => {
       expect(issues[0].isUnassigned).toBe(true);
       expect(issues[0].externalId).toBe("5");
     });
+
+    it("throws when fetchUnassignedIssues exceeds MAX_PAGES", async () => {
+      for (let i = 0; i < 20; i++) {
+        mockAxiosInstance.get.mockResolvedValueOnce({
+          data: Array(100).fill(makeGitHubIssue({ assignee: null })),
+        });
+      }
+      const adapter = new GitHubAdapter("ghp_test");
+      await expect(adapter.fetchUnassignedIssues("owner/repo")).rejects.toThrow("MAX_PAGES");
+    });
   });
 
   describe("closeIssue", () => {
@@ -246,6 +269,12 @@ describe("GitHubAdapter", () => {
         "/repos/owner/repo/issues/42",
         { state: "closed" },
       );
+    });
+
+    it("throws when PATCH returns non-2xx status", async () => {
+      mockAxiosInstance.patch.mockResolvedValue({ status: 403, data: { message: "Forbidden" } });
+      const adapter = new GitHubAdapter("ghp_test");
+      await expect(adapter.closeIssue("owner/repo", "42")).rejects.toThrow("closeIssue failed");
     });
   });
 
@@ -259,10 +288,32 @@ describe("GitHubAdapter", () => {
         { body: "LGTM" },
       );
     });
+
+    it("throws when POST returns non-2xx status", async () => {
+      mockAxiosInstance.post.mockResolvedValue({ status: 403, data: { message: "Forbidden" } });
+      const adapter = new GitHubAdapter("ghp_test");
+      await expect(adapter.addComment("owner/repo", "42", "LGTM")).rejects.toThrow("addComment failed");
+    });
+  });
+
+  describe("getLogin — rejected promise recovery", () => {
+    it("clears cached rejected promise so a second call can succeed", async () => {
+      const error = new Error("Network error");
+      mockAxiosInstance.get
+        .mockRejectedValueOnce(error)
+        .mockResolvedValueOnce({ data: { login: "testuser" } });
+      const adapter = new GitHubAdapter("ghp_test");
+
+      await expect(adapter.testConnection()).rejects.toThrow("Network error");
+
+      mockAxiosInstance.get.mockClear();
+      mockAxiosInstance.get.mockResolvedValue({ data: { login: "testuser" } });
+      await expect(adapter.testConnection()).resolves.toBeUndefined();
+      expect(mockAxiosInstance.get).toHaveBeenCalledWith("/user");
+    });
   });
 });
 
-// T007 — US1: GitHubAdapter baseUrl resolution
 describe("GitHubAdapter — baseUrl resolution", () => {
   beforeEach(() => {
     jest.clearAllMocks();

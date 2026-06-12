@@ -1,3 +1,4 @@
+/** API routes for listing and creating providers (GET, POST). */
 import type { NextRequest } from "next/server";
 
 import { ok, fail, failWithDetails } from "@/lib/api/api-response";
@@ -17,11 +18,17 @@ export async function GET() {
   const session = await auth();
   if (!session) { return fail("UNAUTHORIZED", 401); }
 
-  const providers = await prisma.issueProvider.findMany({
-    where: { userId: session.user.id },
-    select: { id: true, type: true, displayName: true, baseUrl: true, createdAt: true },
-    orderBy: { createdAt: "asc" },
-  });
+  let providers;
+  try {
+    providers = await prisma.issueProvider.findMany({
+      where: { userId: session.user.id },
+      select: { id: true, type: true, displayName: true, baseUrl: true, createdAt: true },
+      orderBy: { createdAt: "asc" },
+    });
+  } catch (error) {
+    console.error("[provider] Failed to list providers:", error instanceof Error ? error.message : String(error));
+    return fail("INTERNAL_ERROR", 500);
+  }
 
   return ok(providers.map((p) => ({ ...p, iconUrl: getProviderIconUrl(p.type) })));
 }

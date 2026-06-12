@@ -1,3 +1,4 @@
+/** Modal dialog for editing an existing issue provider's display name, base URL, or credentials. */
 "use client";
 
 import {
@@ -20,14 +21,8 @@ import { useTranslations } from "next-intl";
 import { type FormEvent, useState } from "react";
 
 import { formatProviderApiError, type ProviderApiErrorResponse } from "@/lib/sync/error-utils";
-import { isValidBaseUrl } from "@/lib/validation/base-url";
+import { getBaseUrlValidationError, isValidBaseUrl } from "@/lib/validation/base-url";
 import { getProviderMetadata } from "@/services/issue-provider/registry";
-
-/** Returns a validation error message when baseUrl is enabled and malformed, or null when valid. */
-function getBaseUrlError(enabled: boolean, touched: boolean, value: string, errorMsg: string): string | null {
-  if (!enabled || !touched || !value) { return null; }
-  return isValidBaseUrl(value) ? null : errorMsg;
-}
 
 /** Builds the PATCH request body for the provider update. */
 function buildPatchBody(
@@ -93,7 +88,7 @@ export default function ProviderEditModal({
   const [error, setError] = useState<string | null>(null);
 
   const baseUrlEnabled = isRequired || (isOptional && useCustomBaseUrl);
-  const baseUrlError = getBaseUrlError(baseUrlEnabled, baseUrlTouched, baseUrl, t("fields.invalidBaseUrl"));
+  const baseUrlError = getBaseUrlValidationError(baseUrlEnabled, baseUrlTouched, baseUrl, t("fields.invalidBaseUrl"));
 
   /** Updates a single credential field. */
   function handleCredentialChange(key: string, value: string) {

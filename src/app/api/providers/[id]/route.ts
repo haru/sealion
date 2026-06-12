@@ -1,3 +1,4 @@
+/** API routes for single provider CRUD (GET, PATCH, DELETE). */
 import type { NextRequest } from "next/server";
 
 import { ok, fail, failWithDetails } from "@/lib/api/api-response";
@@ -9,6 +10,31 @@ import { createConnectionTestErrorDetails } from "@/lib/sync/error-utils";
 import { isValidBaseUrl } from "@/lib/validation/base-url";
 import { createAdapter, getProviderIconUrl } from "@/services/issue-provider/factory";
 import { getProviderMetadata } from "@/services/issue-provider/registry";
+
+/**
+ * Validates the PATCH request body shape.
+ * @param body - The parsed JSON body to validate.
+ * @returns The validated and typed body, or `null` if invalid.
+ */
+function validatePatchBody(body: unknown): {
+  displayName: string;
+  baseUrl?: string;
+  changeCredentials: boolean;
+  credentials?: Record<string, string>;
+} | null {
+  if (typeof body !== "object" || body === null) { return null; }
+  const obj = body as Record<string, unknown>;
+  if (typeof obj.displayName !== "string" || obj.displayName.length < 1) { return null; }
+  if (typeof obj.changeCredentials !== "boolean") { return null; }
+  if (obj.baseUrl !== undefined && typeof obj.baseUrl !== "string") { return null; }
+  if (obj.credentials !== undefined && typeof obj.credentials !== "object") { return null; }
+  return {
+    displayName: obj.displayName,
+    baseUrl: obj.baseUrl as string | undefined,
+    changeCredentials: obj.changeCredentials,
+    credentials: obj.credentials as Record<string, string> | undefined,
+  };
+}
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -120,7 +146,12 @@ export async function DELETE(req: NextRequest, { params }: RouteContext) {
 
   if (!provider) { return fail("FORBIDDEN", 403); }
 
-  await prisma.issueProvider.delete({ where: { id } });
+  try {
+    await prisma.issueProvider.delete({ where: { id } });
+  } catch (error) {
+    console.error("[provider] Failed to delete provider:", error instanceof Error ? error.message : String(error));
+    return fail("INTERNAL_ERROR", 500);
+  }
 
   return ok({ id });
 }
@@ -142,12 +173,9 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
   const body = await req.json().catch(() => null);
   if (!body) { return fail("INVALID_BODY", 400); }
 
-  const { displayName, baseUrl: rawBaseUrl, changeCredentials, credentials } = body as {
-    displayName: string;
-    baseUrl?: string;
-    changeCredentials: boolean;
-    credentials?: Record<string, string>;
-  };
+  const parsed = validatePatchBody(body);
+  if (!parsed) { return fail("INVALID_BODY", 400); }
+  const { displayName, baseUrl: rawBaseUrl, changeCredentials, credentials } = parsed;
 
   const metadata = getProviderMetadata(provider.type);
   const { toStore: normalizedBaseUrl, forAdapter: adapterBaseUrl } = normalizeBaseUrl(
@@ -155,9 +183,6 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
     rawBaseUrl,
     provider.baseUrl,
   );
-
-  // Validate displayName
-  if (!displayName) { return fail("MISSING_FIELDS", 400); }
 
   // Validate baseUrl for providers that require it
   if (metadata?.baseUrlMode === "required" && !normalizedBaseUrl) { return fail("MISSING_FIELDS", 400); }

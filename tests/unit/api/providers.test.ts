@@ -1,4 +1,7 @@
-/** @jest-environment node */
+/**
+ * Unit tests for the provider API routes (GET, POST, PATCH, DELETE).
+ * @jest-environment node
+ */
 import { GET, POST } from "@/app/api/providers/route";
 import { DELETE, PATCH } from "@/app/api/providers/[id]/route";
 import { NextRequest } from "next/server";
@@ -177,6 +180,17 @@ describe("GET /api/providers", () => {
       })
     );
   });
+
+  it("returns 500 when Prisma findMany fails", async () => {
+    mockFindMany.mockRejectedValueOnce(new Error("Database connection lost"));
+
+    const req = makeRequest("GET");
+    const res = await GET(req);
+
+    expect(res.status).toBe(500);
+    const json = await res.json();
+    expect(json.error).toBe("INTERNAL_ERROR");
+  });
 });
 
 describe("POST /api/providers", () => {
@@ -322,6 +336,18 @@ describe("DELETE /api/providers/[id]", () => {
     const res = await DELETE(req, { params: Promise.resolve({ id: "p1" }) });
 
     expect(res.status).toBe(401);
+  });
+
+  it("returns 500 when Prisma delete fails", async () => {
+    mockFindFirst.mockResolvedValue({ id: "p1", userId: "user-1" });
+    mockDelete.mockRejectedValueOnce(new Error("Foreign key constraint violation"));
+
+    const req = makeRequest("DELETE", undefined, "http://localhost/api/providers/p1");
+    const res = await DELETE(req, { params: Promise.resolve({ id: "p1" }) });
+
+    expect(res.status).toBe(500);
+    const json = await res.json();
+    expect(json.error).toBe("INTERNAL_ERROR");
   });
 });
 
@@ -502,6 +528,28 @@ describe("PATCH /api/providers/[id]", () => {
     const res = await PATCH(req, { params: Promise.resolve({ id: "p1" }) });
 
     expect(res.status).toBe(401);
+  });
+
+  it("returns 400 when changeCredentials is not a boolean (Zod validation)", async () => {
+    mockFindFirst.mockResolvedValue({ id: "p1", userId: "user-1", type: "GITHUB", encryptedCredentials: "enc", baseUrl: null });
+
+    const req = makeRequest("PATCH", { displayName: "X", changeCredentials: "true" }, "http://localhost/api/providers/p1");
+    const res = await PATCH(req, { params: Promise.resolve({ id: "p1" }) });
+
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.error).toBe("INVALID_BODY");
+  });
+
+  it("returns 400 when displayName is missing from body (Zod validation)", async () => {
+    mockFindFirst.mockResolvedValue({ id: "p1", userId: "user-1", type: "GITHUB", encryptedCredentials: "enc", baseUrl: null });
+
+    const req = makeRequest("PATCH", { changeCredentials: false, baseUrl: "https://example.com" }, "http://localhost/api/providers/p1");
+    const res = await PATCH(req, { params: Promise.resolve({ id: "p1" }) });
+
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.error).toBe("INVALID_BODY");
   });
 
   it("returns 403 when provider belongs to different user", async () => {

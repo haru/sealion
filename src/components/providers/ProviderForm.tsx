@@ -1,3 +1,4 @@
+/** Form for creating a new issue provider, with provider-type selection and credential fields. */
 "use client";
 
 import {
@@ -18,14 +19,8 @@ import {
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 
-import { isValidBaseUrl } from "@/lib/validation/base-url";
+import { getBaseUrlValidationError, isValidBaseUrl } from "@/lib/validation/base-url";
 import { getAllProviders } from "@/services/issue-provider/registry";
-
-/** Returns a validation error message when baseUrl is enabled and malformed, or null when valid. */
-function getBaseUrlError(enabled: boolean, touched: boolean, value: string, errorMsg: string): string | null {
-  if (!enabled || !touched || !value) { return null; }
-  return isValidBaseUrl(value) ? null : errorMsg;
-}
 
 /** Removes the `baseUrl` key from a credentials object immutably. */
 function withoutBaseUrl(creds: Record<string, string>): Record<string, string> {
@@ -66,7 +61,7 @@ export default function ProviderForm({ onSubmit }: ProviderFormProps) {
   const showBaseUrlField = isRequired || isOptional;
   const baseUrlEnabled = isRequired || (isOptional && useCustomBaseUrl);
   const baseUrlValue = credentials.baseUrl ?? "";
-  const baseUrlError = getBaseUrlError(baseUrlEnabled, baseUrlTouched, baseUrlValue, t("fields.invalidBaseUrl"));
+  const baseUrlError = getBaseUrlValidationError(baseUrlEnabled, baseUrlTouched, baseUrlValue, t("fields.invalidBaseUrl"));
 
   /** Updates a single credential field. */
   function handleCredentialChange(key: string, value: string) {

@@ -1,3 +1,4 @@
+/** GitHub provider metadata — credential schema, fields, and baseUrl mode. */
 import { z } from "zod";
 
 import type { ProviderMetadata } from "@/services/issue-provider/metadata";

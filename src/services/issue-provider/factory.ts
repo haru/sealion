@@ -1,3 +1,4 @@
+/** Factory for creating provider adapters and resolving provider credentials. */
 import type { IssueProviderAdapter } from "@/lib/types";
 
 import { AsanaAdapter } from "./asana/asana";
@@ -10,16 +11,19 @@ import { RedmineAdapter } from "./redmine/redmine";
 import { getProviderMetadata } from "./registry";
 import { TrelloAdapter } from "./trello/trello";
 
+/** Credentials for a GitHub provider. */
 export interface GitHubCredentials {
   token: string;
 }
 
+/** Credentials for a Jira provider. */
 export interface JiraCredentials {
   baseUrl: string;
   email: string;
   apiToken: string;
 }
 
+/** Credentials for a Redmine provider. */
 export interface RedmineCredentials {
   baseUrl: string;
   apiKey: string;
@@ -52,6 +56,7 @@ export interface BacklogCredentials {
   apiKey: string;
 }
 
+/** Discriminated union of all provider credential types. */
 export type ProviderCredentials =
   | GitHubCredentials
   | JiraCredentials
@@ -75,9 +80,9 @@ export function getProviderIconUrl(type: string): string | null {
  * Creates an {@link IssueProviderAdapter} for the given provider type and credentials.
  * @param type - The provider type string (e.g. `"GITHUB"`).
  * @param credentials - Decrypted credentials for the provider.
- * @param baseUrl - Optional base URL for providers that use a separate base URL
- *   (e.g. GitLab self-hosted instances). Ignored by GitHub/Jira/Redmine whose
- *   `baseUrl` is already embedded in their credential types.
+ * @param baseUrl - Optional base URL for providers that support a separate base URL
+ *   (e.g. GitHub Enterprise Server, GitLab self-hosted instances).
+ *   Ignored by Jira/Redmine/Backlog whose `baseUrl` is embedded in their credential types.
  * @throws If the provider type is not supported.
  */
 export function createAdapter(

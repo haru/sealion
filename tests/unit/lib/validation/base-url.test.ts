@@ -1,5 +1,5 @@
 /** @jest-environment node */
-import { isValidBaseUrl } from "@/lib/validation/base-url";
+import { getBaseUrlValidationError, isValidBaseUrl } from "@/lib/validation/base-url";
 
 describe("isValidBaseUrl", () => {
   describe("valid URLs", () => {
@@ -105,5 +105,27 @@ describe("isValidBaseUrl", () => {
     it("rejects URL with username and password", () => {
       expect(isValidBaseUrl("https://user:pass@github.example.com")).toBe(false);
     });
+  });
+});
+
+describe("getBaseUrlValidationError", () => {
+  it("returns null when enabled=false", () => {
+    expect(getBaseUrlValidationError(false, true, "bad", "Error msg")).toBeNull();
+  });
+
+  it("returns null when touched=false", () => {
+    expect(getBaseUrlValidationError(true, false, "bad", "Error msg")).toBeNull();
+  });
+
+  it("returns null when value is empty", () => {
+    expect(getBaseUrlValidationError(true, true, "", "Error msg")).toBeNull();
+  });
+
+  it("returns null when value is valid", () => {
+    expect(getBaseUrlValidationError(true, true, "https://example.com", "Error msg")).toBeNull();
+  });
+
+  it("returns error message when value is invalid", () => {
+    expect(getBaseUrlValidationError(true, true, "notaurl", "Invalid URL")).toBe("Invalid URL");
   });
 });

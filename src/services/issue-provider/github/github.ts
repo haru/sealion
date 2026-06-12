@@ -1,3 +1,4 @@
+/** GitHub issue provider adapter — supports both github.com and GitHub Enterprise Server. */
 import axios from "axios";
 
 import { buildAxiosProxyConfig } from "@/lib/proxy/proxy";
@@ -59,12 +60,17 @@ export class GitHubAdapter implements IssueProviderAdapter {
 
   /**
    * Returns the authenticated GitHub username, cached after the first call.
+   * On rejection the cache is cleared so the next call can retry.
    */
   private getLogin(): Promise<string> {
     if (!this.loginPromise) {
       this.loginPromise = this.client
         .get<GitHubUser>("/user")
-        .then(({ data }) => data.login);
+        .then(({ data }) => data.login)
+        .catch((error: unknown) => {
+          this.loginPromise = null;
+          throw error;
+        });
     }
     return this.loginPromise;
   }
@@ -118,6 +124,7 @@ export class GitHubAdapter implements IssueProviderAdapter {
    * Normalizes a GitHub issue/PR to the common NormalizedIssue format.
    * @param issue - Raw GitHub issue/PR object.
    * @param isUnassigned - Whether the issue should be marked as unassigned.
+   * @returns Normalized issue compatible with the unified issue list.
    */
   private normalizeIssue(issue: GitHubIssue, isUnassigned: boolean): NormalizedIssue {
     return {
@@ -180,6 +187,9 @@ export class GitHubAdapter implements IssueProviderAdapter {
       });
       repos.push(...data);
       if (data.length < 100) { break; }
+      if (page >= MAX_PAGES) {
+        throw new Error(`listProjects: exceeded MAX_PAGES (${MAX_PAGES})`);
+      }
       page++;
     }
 
@@ -225,10 +235,13 @@ export class GitHubAdapter implements IssueProviderAdapter {
     while (true) {
       const { data } = await this.client.get<GitHubIssue[]>(
         `/repos/${owner}/${repo}/issues`,
-        { params: { state: "open", assignee: "none", per_page: 100, page } }
+        { params: { state: "open", assignee: "none", per_page: 100, page } },
       );
       issues.push(...data);
       if (data.length < 100) { break; }
+      if (page >= MAX_PAGES) {
+        throw new Error(`fetchUnassignedIssues: exceeded MAX_PAGES (${MAX_PAGES}) for ${owner}/${repo}`);
+      }
       page++;
     }
 
@@ -238,17 +251,23 @@ export class GitHubAdapter implements IssueProviderAdapter {
   /** {@inheritDoc} */
   async closeIssue(projectExternalId: string, issueExternalId: string): Promise<void> {
     const { owner, repo } = this.parseOwnerRepo(projectExternalId);
-    await this.client.patch(`/repos/${owner}/${repo}/issues/${issueExternalId}`, {
+    const { status } = await this.client.patch(`/repos/${owner}/${repo}/issues/${issueExternalId}`, {
       state: "closed",
     });
+    if (status < 200 || status >= 300) {
+      throw new Error(`closeIssue failed with status ${status}`);
+    }
   }
 
   /** {@inheritDoc} */
   async addComment(projectExternalId: string, issueExternalId: string, comment: string): Promise<void> {
     const { owner, repo } = this.parseOwnerRepo(projectExternalId);
-    await this.client.post(`/repos/${owner}/${repo}/issues/${issueExternalId}/comments`, {
+    const { status } = await this.client.post(`/repos/${owner}/${repo}/issues/${issueExternalId}/comments`, {
       body: comment,
     });
+    if (status < 200 || status >= 300) {
+      throw new Error(`addComment failed with status ${status}`);
+    }
   }
 }
 
