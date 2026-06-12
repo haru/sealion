@@ -95,6 +95,10 @@ describe("isValidBaseUrl", () => {
     it("rejects IPv6 unique-local fc00::", () => {
       expect(isValidBaseUrl("http://[fc00::1]")).toBe(false);
     });
+
+    it("rejects IPv6 unique-local fd00:: (upper half of fc00::/7)", () => {
+      expect(isValidBaseUrl("http://[fd00::1]")).toBe(false);
+    });
   });
 
   describe("SSRF mitigations — embedded credentials", () => {
@@ -117,8 +121,8 @@ describe("getBaseUrlValidationError", () => {
     expect(getBaseUrlValidationError(true, false, "bad", "Error msg")).toBeNull();
   });
 
-  it("returns null when value is empty", () => {
-    expect(getBaseUrlValidationError(true, true, "", "Error msg")).toBeNull();
+  it("returns error message when enabled, touched, and value is empty (required)", () => {
+    expect(getBaseUrlValidationError(true, true, "", "Error msg")).toBe("Error msg");
   });
 
   it("returns null when value is valid", () => {

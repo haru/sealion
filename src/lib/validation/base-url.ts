@@ -1,5 +1,6 @@
 /**
- * Returns a validation error message when baseUrl is enabled and malformed, or null when valid.
+ * Returns a validation error message when baseUrl is enabled, touched, and empty or malformed.
+ * Returns `null` when the field is disabled, untouched, or contains a valid URL.
  * @param enabled - Whether the baseUrl field is active (required mode, or optional mode with checkbox on).
  * @param touched - Whether the field has been blurred at least once.
  * @param value - The current baseUrl value.
@@ -12,8 +13,8 @@ export function getBaseUrlValidationError(
   value: string,
   errorMsg: string,
 ): string | null {
-  if (!enabled || !touched || !value) { return null; }
-  return isValidBaseUrl(value) ? null : errorMsg;
+  if (!enabled || !touched) { return null; }
+  return value && isValidBaseUrl(value) ? null : errorMsg;
 }
 
 /**
@@ -64,7 +65,7 @@ function isPrivateHost(host: string): boolean {
   // IPv6 loopback and private ranges.
   if (host === "::1") { return true; }
   if (host.startsWith("::ffff:127.")) { return true; } // IPv4-mapped loopback
-  if (/^fc[0-9a-f]{2}:/i.test(host)) { return true; } // Unique local (fc00::/7)
+  if (/^f[cd][0-9a-f]{2}:/i.test(host)) { return true; } // Unique local (fc00::/7, covers fc.. and fd..)
   if (/^fe[89ab][0-9a-f]:/i.test(host)) { return true; } // Link-local (fe80::/10)
 
   // IPv4 loopback (127.0.0.0/8).

@@ -897,6 +897,56 @@ describe("POST /api/providers — INVALID_BASE_URL (T014)", () => {
     expect(json.error).toBe("INVALID_BASE_URL");
   });
 
+  it("returns 400 INVALID_BODY when credentials is a string (not an object)", async () => {
+    const req = makeRequest("POST", {
+      type: "GITHUB",
+      displayName: "My GitHub",
+      credentials: "not-an-object",
+    });
+    const res = await POST(req);
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.error).toBe("INVALID_BODY");
+  });
+
+  it("returns 400 INVALID_BODY when credentials is an array", async () => {
+    const req = makeRequest("POST", {
+      type: "GITHUB",
+      displayName: "My GitHub",
+      credentials: ["token", "value"],
+    });
+    const res = await POST(req);
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.error).toBe("INVALID_BODY");
+  });
+
+  it("trims whitespace from baseUrl before validation and saves trimmed value", async () => {
+    const { GitHubAdapter } = jest.requireMock("@/services/issue-provider/github/github");
+    GitHubAdapter.mockClear();
+    GitHubAdapter.mockImplementationOnce(() => ({
+      testConnection: jest.fn().mockResolvedValue(undefined),
+    }));
+    mockCreate.mockResolvedValue({
+      id: "p-ghe",
+      type: "GITHUB",
+      displayName: "Acme GHE",
+      baseUrl: "https://github.example.com",
+      createdAt: new Date(),
+    });
+
+    const req = makeRequest("POST", {
+      type: "GITHUB",
+      displayName: "Acme GHE",
+      credentials: { token: "ghp_xxx", baseUrl: "  https://github.example.com  " },
+    });
+    const res = await POST(req);
+    expect(res.status).toBe(201);
+
+    const createCall = mockCreate.mock.calls[0][0];
+    expect(createCall.data.baseUrl).toBe("https://github.example.com");
+  });
+
   it("allows POST GITHUB without baseUrl (github.com path) — no INVALID_BASE_URL", async () => {
     const { GitHubAdapter } = jest.requireMock("@/services/issue-provider/github/github");
     GitHubAdapter.mockImplementationOnce(() => ({
@@ -1040,6 +1090,44 @@ describe("PATCH /api/providers/[id] — US3 baseUrl transitions (T019)", () => {
     expect(res.status).toBe(200);
     const updateCall = mockUpdate.mock.calls[0][0];
     expect(updateCall.data.baseUrl).toBe("https://new.example.com");
+  });
+
+  it("returns 400 INVALID_BODY when PATCH sends baseUrl for baseUrlMode=none provider (LINEAR)", async () => {
+    mockFindFirst.mockResolvedValue({ id: "p1", userId: "user-1", type: "LINEAR", encryptedCredentials: "enc", baseUrl: null });
+
+    const req = makeRequest("PATCH", {
+      displayName: "My Linear",
+      baseUrl: "https://linear.example.com",
+      changeCredentials: false,
+    }, "http://localhost/api/providers/p1");
+    const res = await PATCH(req, { params: Promise.resolve({ id: "p1" }) });
+
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.error).toBe("INVALID_BODY");
+  });
+
+  it("trims whitespace from PATCH baseUrl before validation and saves trimmed value", async () => {
+    const { GitHubAdapter } = jest.requireMock("@/services/issue-provider/github/github");
+    GitHubAdapter.mockClear();
+    GitHubAdapter.mockImplementationOnce(() => ({
+      testConnection: jest.fn().mockResolvedValue(undefined),
+    }));
+
+    mockFindFirst.mockResolvedValue({ id: "p1", userId: "user-1", type: "GITHUB", encryptedCredentials: "enc", baseUrl: null });
+    mockDecrypt.mockReturnValue(JSON.stringify({ token: "ghp_token" }));
+    mockUpdate.mockResolvedValue({ id: "p1", type: "GITHUB", displayName: "My GHE", baseUrl: "https://github.example.com", createdAt: new Date() });
+
+    const req = makeRequest("PATCH", {
+      displayName: "My GHE",
+      baseUrl: "  https://github.example.com  ",
+      changeCredentials: false,
+    }, "http://localhost/api/providers/p1");
+    const res = await PATCH(req, { params: Promise.resolve({ id: "p1" }) });
+
+    expect(res.status).toBe(200);
+    const updateCall = mockUpdate.mock.calls[0][0];
+    expect(updateCall.data.baseUrl).toBe("https://github.example.com");
   });
 
   it("leaves baseUrl unchanged when not sent (existing github.com provider unaffected)", async () => {

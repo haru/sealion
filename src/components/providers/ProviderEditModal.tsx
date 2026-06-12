@@ -118,8 +118,8 @@ export default function ProviderEditModal({
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
 
-    // Block submission if baseUrl is enabled but invalid
-    if (baseUrlEnabled && baseUrl && !isValidBaseUrl(baseUrl)) {
+    // Block submission if baseUrl is enabled but empty or invalid
+    if (baseUrlEnabled && (!baseUrl || !isValidBaseUrl(baseUrl))) {
       setBaseUrlTouched(true);
       return;
     }
@@ -196,7 +196,7 @@ export default function ProviderEditModal({
                   value={baseUrl}
                   onChange={(e) => setBaseUrl(e.target.value)}
                   onBlur={() => setBaseUrlTouched(true)}
-                  required={isRequired}
+                  required={baseUrlEnabled}
                   disabled={isOptional && !useCustomBaseUrl}
                   fullWidth
                   error={Boolean(baseUrlError)}

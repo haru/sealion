@@ -106,6 +106,24 @@ function resolveCredentials(
   };
 }
 
+/**
+ * Validates the base URL value against the provider's mode constraints.
+ * @param rawBaseUrl - The raw baseUrl from the request body (`undefined` = not sent).
+ * @param mode - The provider's `baseUrlMode`.
+ * @param normalizedBaseUrl - The normalised value (after trimming and empty-string handling).
+ * @returns A `Response` error if the combination is invalid, or `null` if it is acceptable.
+ */
+function validateBaseUrlRequest(
+  rawBaseUrl: string | undefined,
+  mode: string | undefined,
+  normalizedBaseUrl: string | null | undefined,
+): Response | null {
+  if (rawBaseUrl !== undefined && mode === "none") { return fail("INVALID_BODY", 400); }
+  if (mode === "required" && !normalizedBaseUrl) { return fail("MISSING_FIELDS", 400); }
+  if (normalizedBaseUrl && !isValidBaseUrl(normalizedBaseUrl)) { return fail("INVALID_BASE_URL", 400); }
+  return null;
+}
+
 type NormalizedBaseUrl = {
   /** URL to write to the DB: `null` = clear, `undefined` = no change, `string` = new URL. */
   toStore: string | null | undefined;
@@ -115,6 +133,7 @@ type NormalizedBaseUrl = {
 
 /**
  * Normalises the raw `baseUrl` from a PATCH request body.
+ * Trims whitespace before storing and validating.
  * @param mode - The provider's `baseUrlMode` (`"optional"`, `"required"`, or `"none"`).
  * @param rawBaseUrl - The raw value from the request body (`undefined` = not sent).
  * @param existingBaseUrl - The current `baseUrl` stored in the DB.
@@ -125,8 +144,9 @@ function normalizeBaseUrl(
   rawBaseUrl: string | undefined,
   existingBaseUrl: string | null,
 ): NormalizedBaseUrl {
+  const trimmed = rawBaseUrl?.trim();
   const toStore: string | null | undefined =
-    (mode === "optional" && rawBaseUrl?.trim() === "") ? null : rawBaseUrl;
+    (mode === "optional" && trimmed === "") ? null : trimmed;
 
   let forAdapter: string | undefined;
   if (toStore !== undefined) {
@@ -186,17 +206,15 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
   const { displayName, baseUrl: rawBaseUrl, changeCredentials, credentials } = parsed;
 
   const metadata = getProviderMetadata(provider.type);
+
   const { toStore: normalizedBaseUrl, forAdapter: adapterBaseUrl } = normalizeBaseUrl(
     metadata?.baseUrlMode,
     rawBaseUrl,
     provider.baseUrl,
   );
 
-  // Validate baseUrl for providers that require it
-  if (metadata?.baseUrlMode === "required" && !normalizedBaseUrl) { return fail("MISSING_FIELDS", 400); }
-
-  // Validate baseUrl format if a non-empty value is provided
-  if (normalizedBaseUrl && !isValidBaseUrl(normalizedBaseUrl)) { return fail("INVALID_BASE_URL", 400); }
+  const baseUrlError = validateBaseUrlRequest(rawBaseUrl, metadata?.baseUrlMode, normalizedBaseUrl);
+  if (baseUrlError) { return baseUrlError; }
 
   // Determine the effective credentials for connection test
   const credResult = resolveCredentials(provider, changeCredentials, credentials, adapterBaseUrl);

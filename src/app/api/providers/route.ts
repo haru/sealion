@@ -33,6 +33,27 @@ export async function GET() {
   return ok(providers.map((p) => ({ ...p, iconUrl: getProviderIconUrl(p.type) })));
 }
 
+type PostBody = {
+  type: string;
+  displayName: string;
+  credentials: Record<string, string>;
+};
+
+/**
+ * Validates the POST /api/providers request body shape.
+ * @param body - The parsed JSON body to validate.
+ * @returns The validated body, or `null` if the shape is invalid.
+ */
+function parsePostBody(body: unknown): PostBody | null {
+  if (typeof body !== "object" || body === null) { return null; }
+  const obj = body as Record<string, unknown>;
+  if (!obj.type || typeof obj.type !== "string") { return null; }
+  if (!obj.displayName || typeof obj.displayName !== "string") { return null; }
+  const creds = obj.credentials;
+  if (!creds || typeof creds !== "object" || Array.isArray(creds)) { return null; }
+  return { type: obj.type, displayName: obj.displayName, credentials: creds as Record<string, string> };
+}
+
 /**
  * POST /api/providers — Creates a new issue provider after verifying the connection.
  */
@@ -40,25 +61,19 @@ export async function POST(req: NextRequest) {
   const session = await auth();
   if (!session) { return fail("UNAUTHORIZED", 401); }
 
-  const body = await req.json().catch(() => null);
-  if (!body) { return fail("INVALID_BODY", 400); }
+  const rawBody = await req.json().catch(() => null);
+  const parsed = parsePostBody(rawBody);
+  if (!parsed) { return fail("INVALID_BODY", 400); }
 
-  const { type, displayName, credentials } = body as {
-    type: string;
-    displayName: string;
-    credentials: Record<string, string>;
-  };
-
-  if (!type || !displayName || !credentials) {
-    return fail("MISSING_FIELDS", 400);
-  }
+  const { type, displayName, credentials } = parsed;
 
   if (!getAllProviders().some((m) => m.type === type)) {
     return fail("INVALID_PROVIDER_TYPE", 400);
   }
 
-  // Extract baseUrl from credentials (stored separately in DB, not encrypted)
-  const { baseUrl, ...credentialsWithoutUrl } = credentials as Record<string, string>;
+  // Extract and trim baseUrl from credentials (stored separately in DB, not encrypted)
+  const { baseUrl: rawBaseUrl, ...credentialsWithoutUrl } = credentials as Record<string, string>;
+  const baseUrl = rawBaseUrl?.trim() || undefined;
 
   // Validate baseUrl format if provided
   if (baseUrl && !isValidBaseUrl(baseUrl)) {

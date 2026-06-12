@@ -90,8 +90,8 @@ export default function ProviderForm({ onSubmit }: ProviderFormProps) {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
-    // Block submission if baseUrl is enabled but invalid
-    if (baseUrlEnabled && baseUrlValue && !isValidBaseUrl(baseUrlValue)) {
+    // Block submission if baseUrl is enabled but empty or invalid
+    if (baseUrlEnabled && (!baseUrlValue || !isValidBaseUrl(baseUrlValue))) {
       setBaseUrlTouched(true);
       return;
     }
@@ -177,11 +177,11 @@ export default function ProviderForm({ onSubmit }: ProviderFormProps) {
           <FormControl fullWidth error={Boolean(baseUrlError)}>
             <TextField
               label={t("fields.baseUrl")}
-              placeholder={isOptional ? "https://github.example.com" : "https://your-domain.example.com"}
+              placeholder="https://your-domain.example.com"
               value={baseUrlValue}
               onChange={(e) => handleCredentialChange("baseUrl", e.target.value)}
               onBlur={() => setBaseUrlTouched(true)}
-              required={isRequired}
+              required={baseUrlEnabled}
               disabled={isOptional && !useCustomBaseUrl}
               fullWidth
               error={Boolean(baseUrlError)}
