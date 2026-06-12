@@ -6,6 +6,7 @@ import { prisma } from "@/lib/db/db";
 import { buildTypedCredentials } from "@/lib/encryption/credentials";
 import { encrypt, decrypt } from "@/lib/encryption/encryption";
 import { createConnectionTestErrorDetails } from "@/lib/sync/error-utils";
+import { isValidBaseUrl } from "@/lib/validation/base-url";
 import { createAdapter, getProviderIconUrl } from "@/services/issue-provider/factory";
 import { getProviderMetadata } from "@/services/issue-provider/registry";
 
@@ -79,6 +80,30 @@ function resolveCredentials(
   };
 }
 
+type NormalizedBaseUrl = {
+  /** URL to write to the DB: `null` = clear, `undefined` = no change, `string` = new URL. */
+  toStore: string | null | undefined;
+  /** URL to pass to the adapter for the connection test (`undefined` = use SaaS default). */
+  forAdapter: string | undefined;
+};
+
+/**
+ * Normalises the raw `baseUrl` from a PATCH request body.
+ * @param mode - The provider's `baseUrlMode` (`"optional"`, `"required"`, or `"none"`).
+ * @param rawBaseUrl - The raw value from the request body (`undefined` = not sent).
+ * @param existingBaseUrl - The current `baseUrl` stored in the DB.
+ * @returns Normalised values for the DB update and adapter instantiation.
+ */
+function normalizeBaseUrl(
+  mode: string | undefined,
+  rawBaseUrl: string | undefined,
+  existingBaseUrl: string | null,
+): NormalizedBaseUrl {
+  const toStore: string | null | undefined = (mode === "optional" && rawBaseUrl?.trim() === "") ? null : rawBaseUrl;
+  const forAdapter: string | undefined = toStore !== undefined ? (toStore ?? undefined) : (existingBaseUrl ?? undefined);
+  return { toStore, forAdapter };
+}
+
 /**
  * DELETE /api/providers/[id] — Deletes an issue provider owned by the authenticated user.
  */
@@ -125,25 +150,30 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
   };
 
   const metadata = getProviderMetadata(provider.type);
-  const baseUrl = (metadata?.baseUrlMode === "optional" && rawBaseUrl?.trim() === "")
-    ? undefined
-    : rawBaseUrl;
+  const { toStore: normalizedBaseUrl, forAdapter: adapterBaseUrl } = normalizeBaseUrl(
+    metadata?.baseUrlMode,
+    rawBaseUrl,
+    provider.baseUrl,
+  );
 
   // Validate displayName
   if (!displayName) { return fail("MISSING_FIELDS", 400); }
 
   // Validate baseUrl for providers that require it
-  if (metadata?.baseUrlMode === "required" && !baseUrl) { return fail("MISSING_FIELDS", 400); }
+  if (metadata?.baseUrlMode === "required" && !normalizedBaseUrl) { return fail("MISSING_FIELDS", 400); }
+
+  // Validate baseUrl format if a non-empty value is provided
+  if (normalizedBaseUrl && !isValidBaseUrl(normalizedBaseUrl)) { return fail("INVALID_BASE_URL", 400); }
 
   // Determine the effective credentials for connection test
-  const credResult = resolveCredentials(provider, changeCredentials, credentials, baseUrl);
+  const credResult = resolveCredentials(provider, changeCredentials, credentials, adapterBaseUrl);
   if (credResult instanceof Response) { return credResult; }
   const { encryptedToStore, effectiveCredentials } = credResult;
 
   // Test connection
   try {
     const typedCredentials = buildTypedCredentials(provider.type, effectiveCredentials);
-    const adapter = createAdapter(provider.type, typedCredentials, baseUrl || provider.baseUrl);
+    const adapter = createAdapter(provider.type, typedCredentials, adapterBaseUrl);
     await adapter.testConnection();
   } catch (error) {
     console.error("[provider] Connection test failed:", error instanceof Error ? error.message : String(error));
@@ -157,7 +187,7 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
       where: { id },
       data: {
         displayName,
-        ...(baseUrl !== undefined ? { baseUrl } : {}),
+        ...(rawBaseUrl !== undefined ? { baseUrl: normalizedBaseUrl } : {}),
         ...(encryptedToStore ? { encryptedCredentials: encryptedToStore } : {}),
       },
       select: { id: true, type: true, displayName: true, baseUrl: true, createdAt: true },

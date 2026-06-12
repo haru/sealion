@@ -261,3 +261,39 @@ describe("GitHubAdapter", () => {
     });
   });
 });
+
+// T007 — US1: GitHubAdapter baseUrl resolution
+describe("GitHubAdapter — baseUrl resolution", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    (axios.create as jest.Mock).mockReturnValue(mockAxiosInstance);
+  });
+
+  it("uses https://api.github.com when no baseUrl is provided", () => {
+    new GitHubAdapter("ghp_test");
+    expect(axios.create).toHaveBeenCalledWith(
+      expect.objectContaining({ baseURL: "https://api.github.com" }),
+    );
+  });
+
+  it("uses ${baseUrl}/api/v3 when baseUrl is provided", () => {
+    new GitHubAdapter("ghp_test", "https://github.example.com");
+    expect(axios.create).toHaveBeenCalledWith(
+      expect.objectContaining({ baseURL: "https://github.example.com/api/v3" }),
+    );
+  });
+
+  it("strips trailing slash from baseUrl before appending /api/v3", () => {
+    new GitHubAdapter("ghp_test", "https://github.example.com/");
+    expect(axios.create).toHaveBeenCalledWith(
+      expect.objectContaining({ baseURL: "https://github.example.com/api/v3" }),
+    );
+  });
+
+  it("uses https://api.github.com when baseUrl is null", () => {
+    new GitHubAdapter("ghp_test", null);
+    expect(axios.create).toHaveBeenCalledWith(
+      expect.objectContaining({ baseURL: "https://api.github.com" }),
+    );
+  });
+});

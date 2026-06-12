@@ -6,6 +6,7 @@ import { prisma } from "@/lib/db/db";
 import { buildTypedCredentials } from "@/lib/encryption/credentials";
 import { encrypt } from "@/lib/encryption/encryption";
 import { createConnectionTestErrorDetails } from "@/lib/sync/error-utils";
+import { isValidBaseUrl } from "@/lib/validation/base-url";
 import { createAdapter, getProviderIconUrl } from "@/services/issue-provider/factory";
 import { getAllProviders } from "@/services/issue-provider/registry";
 
@@ -49,8 +50,13 @@ export async function POST(req: NextRequest) {
     return fail("INVALID_PROVIDER_TYPE", 400);
   }
 
-  // Extract baseUrl from credentials for Jira/Redmine (stored separately in DB)
+  // Extract baseUrl from credentials (stored separately in DB, not encrypted)
   const { baseUrl, ...credentialsWithoutUrl } = credentials as Record<string, string>;
+
+  // Validate baseUrl format if provided
+  if (baseUrl && !isValidBaseUrl(baseUrl)) {
+    return fail("INVALID_BASE_URL", 400);
+  }
 
   // Test connection before saving (pass full credentials including baseUrl to adapter)
   try {

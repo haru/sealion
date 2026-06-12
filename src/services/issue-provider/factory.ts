@@ -88,7 +88,8 @@ export function createAdapter(
   switch (type) {
     case "GITHUB": {
       const creds = credentials as GitHubCredentials;
-      return new GitHubAdapter(creds.token);
+      const normalized = baseUrl?.trim();
+      return new GitHubAdapter(creds.token, normalized || undefined);
     }
     case "JIRA": {
       const creds = credentials as JiraCredentials;

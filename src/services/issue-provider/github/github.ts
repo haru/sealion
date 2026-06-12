@@ -36,8 +36,16 @@ export class GitHubAdapter implements IssueProviderAdapter {
   private readonly client;
   private loginPromise: Promise<string> | null = null;
 
-  constructor(token: string) {
-    const BASE_URL = "https://api.github.com";
+  /**
+   * @param token - GitHub personal access token.
+   * @param baseUrl - Optional GHE base URL (e.g. `"https://github.example.com"`).
+   *   When provided, the REST API base becomes `${baseUrl}/api/v3`.
+   *   When omitted or null, defaults to `https://api.github.com`.
+   */
+  constructor(token: string, baseUrl?: string | null) {
+    const BASE_URL = baseUrl
+      ? `${baseUrl.replace(/\/$/, "")}/api/v3`
+      : "https://api.github.com";
     this.client = axios.create({
       baseURL: BASE_URL,
       headers: {

@@ -72,7 +72,7 @@ jest.mock("@/services/issue-provider/asana/asana", () => ({
 // Mock registry — getProviderMetadata returns iconUrl, baseUrlMode, and credentialFields
 type MockMeta = { type: string; iconUrl: string; baseUrlMode: string; credentialFields: { key: string; required: boolean }[]; credentialSchema: { parse: (x: unknown) => unknown } };
 const MOCK_REGISTRY: Record<string, MockMeta> = {
-  GITHUB: { type: "GITHUB", iconUrl: "/providers/github.svg", baseUrlMode: "none", credentialFields: [{ key: "token", required: true }], credentialSchema: { parse: (x) => x } },
+  GITHUB: { type: "GITHUB", iconUrl: "/providers/github.svg", baseUrlMode: "optional", credentialFields: [{ key: "token", required: true }], credentialSchema: { parse: (x) => x } },
   JIRA: { type: "JIRA", iconUrl: "/providers/jira.svg", baseUrlMode: "required", credentialFields: [{ key: "email", required: true }, { key: "apiToken", required: true }], credentialSchema: { parse: (x) => x } },
   REDMINE: { type: "REDMINE", iconUrl: "/providers/redmine.svg", baseUrlMode: "required", credentialFields: [{ key: "apiKey", required: true }], credentialSchema: { parse: (x) => x } },
   GITLAB: { type: "GITLAB", iconUrl: "/providers/gitlab.svg", baseUrlMode: "optional", credentialFields: [{ key: "token", required: true }], credentialSchema: { parse: (x) => x } },
@@ -425,6 +425,66 @@ describe("POST /api/providers — baseUrl separation", () => {
     const createCall = mockCreate.mock.calls[0][0];
     expect(createCall.data.baseUrl).toBeUndefined();
   });
+
+  // T008 — US1: POST stores GitHub Enterprise baseUrl and passes it to the adapter
+  it("stores GHE baseUrl in DB and passes it to GitHubAdapter (T008)", async () => {
+    const { GitHubAdapter } = jest.requireMock("@/services/issue-provider/github/github");
+    GitHubAdapter.mockClear();
+    GitHubAdapter.mockImplementationOnce(() => ({
+      testConnection: jest.fn().mockResolvedValue(undefined),
+    }));
+
+    mockCreate.mockResolvedValue({
+      id: "p-ghe",
+      type: "GITHUB",
+      displayName: "Acme GHE",
+      baseUrl: "https://github.example.com",
+      createdAt: new Date(),
+    });
+
+    const req = makeRequest("POST", {
+      type: "GITHUB",
+      displayName: "Acme GHE",
+      credentials: { token: "ghp_xxx", baseUrl: "https://github.example.com" },
+    });
+    const res = await POST(req);
+    expect(res.status).toBe(201);
+
+    // baseUrl must be stored in the DB field
+    const createCall = mockCreate.mock.calls[0][0];
+    expect(createCall.data.baseUrl).toBe("https://github.example.com");
+
+    // GitHubAdapter must receive both token AND baseUrl
+    expect(GitHubAdapter).toHaveBeenCalledWith("ghp_xxx", "https://github.example.com");
+  });
+
+  // T008 — US1: POST without baseUrl (github.com) stores null
+  it("stores null baseUrl when no baseUrl in credentials (github.com path, T008)", async () => {
+    const { GitHubAdapter } = jest.requireMock("@/services/issue-provider/github/github");
+    GitHubAdapter.mockClear();
+    GitHubAdapter.mockImplementationOnce(() => ({
+      testConnection: jest.fn().mockResolvedValue(undefined),
+    }));
+
+    mockCreate.mockResolvedValue({
+      id: "p-gh",
+      type: "GITHUB",
+      displayName: "My GitHub",
+      baseUrl: null,
+      createdAt: new Date(),
+    });
+
+    const req = makeRequest("POST", {
+      type: "GITHUB",
+      displayName: "My GitHub",
+      credentials: { token: "ghp_test" },
+    });
+    const res = await POST(req);
+    expect(res.status).toBe(201);
+
+    // GitHubAdapter must receive token only (no baseUrl arg / null)
+    expect(GitHubAdapter).toHaveBeenCalledWith("ghp_test", undefined);
+  });
 });
 
 // --- T008: PATCH /api/providers/[id] tests ---
@@ -742,5 +802,217 @@ describe("PATCH /api/providers/[id] — baseUrlMode validation", () => {
     const res = await PATCH(req, { params: Promise.resolve({ id: "p1" }) });
 
     expect(res.status).toBe(200);
+  });
+});
+
+// T014 — US2: INVALID_BASE_URL validation on POST and PATCH
+
+describe("POST /api/providers — INVALID_BASE_URL (T014)", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockAuth.mockResolvedValue(SESSION);
+  });
+
+  it("returns 400 INVALID_BASE_URL for POST GITHUB with ftp:// baseUrl", async () => {
+    const req = makeRequest("POST", {
+      type: "GITHUB",
+      displayName: "Bad GHE",
+      credentials: { token: "ghp_xxx", baseUrl: "ftp://github.example.com" },
+    });
+    const res = await POST(req);
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.error).toBe("INVALID_BASE_URL");
+  });
+
+  it("returns 400 INVALID_BASE_URL for POST GITHUB with plain-text baseUrl", async () => {
+    const req = makeRequest("POST", {
+      type: "GITHUB",
+      displayName: "Bad GHE",
+      credentials: { token: "ghp_xxx", baseUrl: "notaurl" },
+    });
+    const res = await POST(req);
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.error).toBe("INVALID_BASE_URL");
+  });
+
+  it("returns 400 INVALID_BASE_URL for POST GITLAB with invalid baseUrl", async () => {
+    const req = makeRequest("POST", {
+      type: "GITLAB",
+      displayName: "Bad GitLab",
+      credentials: { token: "glpat-xxx", baseUrl: "notaurl" },
+    });
+    const res = await POST(req);
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.error).toBe("INVALID_BASE_URL");
+  });
+
+  it("allows POST GITHUB without baseUrl (github.com path) — no INVALID_BASE_URL", async () => {
+    const { GitHubAdapter } = jest.requireMock("@/services/issue-provider/github/github");
+    GitHubAdapter.mockImplementationOnce(() => ({
+      testConnection: jest.fn().mockResolvedValue(undefined),
+    }));
+    mockCreate.mockResolvedValue({ id: "p1", type: "GITHUB", displayName: "My GitHub", baseUrl: null, createdAt: new Date() });
+
+    const req = makeRequest("POST", {
+      type: "GITHUB",
+      displayName: "My GitHub",
+      credentials: { token: "ghp_test" },
+    });
+    const res = await POST(req);
+    expect(res.status).toBe(201);
+  });
+});
+
+describe("PATCH /api/providers/[id] — INVALID_BASE_URL (T014)", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockAuth.mockResolvedValue(SESSION);
+  });
+
+  it("returns 400 INVALID_BASE_URL for PATCH GITHUB with ftp:// baseUrl", async () => {
+    mockFindFirst.mockResolvedValue({ id: "p1", userId: "user-1", type: "GITHUB", encryptedCredentials: "enc", baseUrl: null });
+    mockDecrypt.mockReturnValue(JSON.stringify({ token: "ghp_token" }));
+
+    const req = makeRequest("PATCH", {
+      displayName: "My GHE",
+      baseUrl: "ftp://github.example.com",
+      changeCredentials: false,
+    }, "http://localhost/api/providers/p1");
+    const res = await PATCH(req, { params: Promise.resolve({ id: "p1" }) });
+
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.error).toBe("INVALID_BASE_URL");
+  });
+
+  it("returns 400 INVALID_BASE_URL for PATCH GITHUB with plain-text baseUrl", async () => {
+    mockFindFirst.mockResolvedValue({ id: "p1", userId: "user-1", type: "GITHUB", encryptedCredentials: "enc", baseUrl: null });
+    mockDecrypt.mockReturnValue(JSON.stringify({ token: "ghp_token" }));
+
+    const req = makeRequest("PATCH", {
+      displayName: "My GHE",
+      baseUrl: "notaurl",
+      changeCredentials: false,
+    }, "http://localhost/api/providers/p1");
+    const res = await PATCH(req, { params: Promise.resolve({ id: "p1" }) });
+
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.error).toBe("INVALID_BASE_URL");
+  });
+
+  it("returns 400 INVALID_BASE_URL for PATCH GITLAB with invalid baseUrl", async () => {
+    mockFindFirst.mockResolvedValue({ id: "p1", userId: "user-1", type: "GITLAB", encryptedCredentials: "enc", baseUrl: null });
+    mockDecrypt.mockReturnValue(JSON.stringify({ token: "glpat-token" }));
+
+    const req = makeRequest("PATCH", {
+      displayName: "My GitLab",
+      baseUrl: "javascript:alert(1)",
+      changeCredentials: false,
+    }, "http://localhost/api/providers/p1");
+    const res = await PATCH(req, { params: Promise.resolve({ id: "p1" }) });
+
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.error).toBe("INVALID_BASE_URL");
+  });
+
+  it("allows PATCH with valid https baseUrl — no INVALID_BASE_URL", async () => {
+    const { GitHubAdapter } = jest.requireMock("@/services/issue-provider/github/github");
+    GitHubAdapter.mockImplementationOnce(() => ({
+      testConnection: jest.fn().mockResolvedValue(undefined),
+    }));
+
+    mockFindFirst.mockResolvedValue({ id: "p1", userId: "user-1", type: "GITHUB", encryptedCredentials: "enc", baseUrl: null });
+    mockDecrypt.mockReturnValue(JSON.stringify({ token: "ghp_token" }));
+    mockUpdate.mockResolvedValue({ id: "p1", type: "GITHUB", displayName: "My GHE", baseUrl: "https://github.example.com", createdAt: new Date() });
+
+    const req = makeRequest("PATCH", {
+      displayName: "My GHE",
+      baseUrl: "https://github.example.com",
+      changeCredentials: false,
+    }, "http://localhost/api/providers/p1");
+    const res = await PATCH(req, { params: Promise.resolve({ id: "p1" }) });
+
+    expect(res.status).toBe(200);
+  });
+});
+
+// T019 — US3: PATCH baseUrl state transitions
+
+describe("PATCH /api/providers/[id] — US3 baseUrl transitions (T019)", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockAuth.mockResolvedValue(SESSION);
+  });
+
+  it("converts baseUrl='' to null (GHE OFF → github.com)", async () => {
+    const { GitHubAdapter } = jest.requireMock("@/services/issue-provider/github/github");
+    GitHubAdapter.mockImplementationOnce(() => ({
+      testConnection: jest.fn().mockResolvedValue(undefined),
+    }));
+
+    mockFindFirst.mockResolvedValue({ id: "p1", userId: "user-1", type: "GITHUB", encryptedCredentials: "enc", baseUrl: "https://github.example.com" });
+    mockDecrypt.mockReturnValue(JSON.stringify({ token: "ghp_token" }));
+    mockUpdate.mockResolvedValue({ id: "p1", type: "GITHUB", displayName: "My GHE", baseUrl: null, createdAt: new Date() });
+
+    const req = makeRequest("PATCH", {
+      displayName: "My GHE",
+      baseUrl: "",
+      changeCredentials: false,
+    }, "http://localhost/api/providers/p1");
+    const res = await PATCH(req, { params: Promise.resolve({ id: "p1" }) });
+
+    expect(res.status).toBe(200);
+    // DB update must set baseUrl to null (empty string = switch to github.com)
+    const updateCall = mockUpdate.mock.calls[0][0];
+    expect(updateCall.data.baseUrl).toBeNull();
+  });
+
+  it("changes GHE URL to a new valid URL", async () => {
+    const { GitHubAdapter } = jest.requireMock("@/services/issue-provider/github/github");
+    GitHubAdapter.mockImplementationOnce(() => ({
+      testConnection: jest.fn().mockResolvedValue(undefined),
+    }));
+
+    mockFindFirst.mockResolvedValue({ id: "p1", userId: "user-1", type: "GITHUB", encryptedCredentials: "enc", baseUrl: "https://old.example.com" });
+    mockDecrypt.mockReturnValue(JSON.stringify({ token: "ghp_token" }));
+    mockUpdate.mockResolvedValue({ id: "p1", type: "GITHUB", displayName: "My GHE", baseUrl: "https://new.example.com", createdAt: new Date() });
+
+    const req = makeRequest("PATCH", {
+      displayName: "My GHE",
+      baseUrl: "https://new.example.com",
+      changeCredentials: false,
+    }, "http://localhost/api/providers/p1");
+    const res = await PATCH(req, { params: Promise.resolve({ id: "p1" }) });
+
+    expect(res.status).toBe(200);
+    const updateCall = mockUpdate.mock.calls[0][0];
+    expect(updateCall.data.baseUrl).toBe("https://new.example.com");
+  });
+
+  it("leaves baseUrl unchanged when not sent (existing github.com provider unaffected)", async () => {
+    const { GitHubAdapter } = jest.requireMock("@/services/issue-provider/github/github");
+    GitHubAdapter.mockImplementationOnce(() => ({
+      testConnection: jest.fn().mockResolvedValue(undefined),
+    }));
+
+    mockFindFirst.mockResolvedValue({ id: "p1", userId: "user-1", type: "GITHUB", encryptedCredentials: "enc", baseUrl: null });
+    mockDecrypt.mockReturnValue(JSON.stringify({ token: "ghp_token" }));
+    mockUpdate.mockResolvedValue({ id: "p1", type: "GITHUB", displayName: "My GitHub", baseUrl: null, createdAt: new Date() });
+
+    const req = makeRequest("PATCH", {
+      displayName: "My GitHub",
+      changeCredentials: false,
+    }, "http://localhost/api/providers/p1");
+    const res = await PATCH(req, { params: Promise.resolve({ id: "p1" }) });
+
+    expect(res.status).toBe(200);
+    const updateCall = mockUpdate.mock.calls[0][0];
+    // No baseUrl key in update data means it's not being changed
+    expect(updateCall.data).not.toHaveProperty("baseUrl");
   });
 });
