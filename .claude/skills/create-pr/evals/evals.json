@@ -1,0 +1,23 @@
+{
+  "skill_name": "create-pr",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "PRを作成してください",
+      "expected_output": "A PR is created targeting the develop branch. The title is in English derived from the spec.md (since 044-ghe-url-support is the current branch and has a spec.md). The description has bullet points in English. An appropriate label (enhancement) is applied.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Please create a pull request for this branch",
+      "expected_output": "A PR is created targeting the develop branch. The title is in English. The description summarizes the changes in bullet points. A label is selected.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "今の変更をレビューに出したいです。プルリクを作ってもらえますか？",
+      "expected_output": "A PR is created targeting the develop branch. The title comes from spec.md content (translated to English). Description is a concise bullet list in English. Label is appropriate.",
+      "files": []
+    }
+  ]
+}
