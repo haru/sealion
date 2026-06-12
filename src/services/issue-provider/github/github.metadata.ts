@@ -1,3 +1,4 @@
+/** GitHub provider metadata — credential schema, fields, and baseUrl mode. */
 import { z } from "zod";
 
 import type { ProviderMetadata } from "@/services/issue-provider/metadata";
@@ -16,7 +17,7 @@ export const githubMetadata: ProviderMetadata = {
   type: "GITHUB",
   displayName: "GitHub",
   iconUrl: "/providers/github.svg",
-  baseUrlMode: "none",
+  baseUrlMode: "optional",
   credentialFields: [
     { key: "token", labelKey: "token", inputType: "password", required: true },
   ],

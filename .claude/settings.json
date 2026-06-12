@@ -50,12 +50,25 @@
       "Bash(mkdir -p specs/043-reviewer-assignee/checklists)",
       "Bash(cp .specify/templates/spec-template.md specs/043-reviewer-assignee/spec.md)",
       "Bash(jobs -l)",
-      "Bash(kill %1)"
+      "Bash(kill %1)",
+      "Bash(ls /home/node/.claude/skills/ 2>/dev/null && echo \"exists\" || echo \"not found\")",
+      "Read(//home/node/.claude/skills/**)",
+      "Bash(ls /home/node/.claude/plugins/cache/claude-plugins-official/skill-creator/unknown/skills/ 2>/dev/null | head -20)",
+      "Read(//home/node/.claude/plugins/cache/claude-plugins-official/skill-creator/unknown/skills/**)",
+      "Bash(# Check where other skills are installed by looking at the config *)",
+      "Read(//home/node/.claude/**)",
+      "Bash(mkdir -p /home/node/.claude/skills/learned/create-pr)",
+      "Edit(~/.claude/skills/learned/**)",
+      "Bash(mkdir -p /home/node/.claude/skills/learned/create-pr/evals)",
+      "Bash(gh label *)",
+      "Edit(/.claude/skills/create-pr/**)"
     ],
     "additionalDirectories": [
       "/tmp",
       "/workspaces/sealion/prisma/migrations",
-      "/workspaces/sealion/specs/"
+      "/workspaces/sealion/specs/",
+      "/home/node/.claude/skills/learned",
+      "/home/node/.claude/skills/learned/create-pr"
     ]
   },
   "enabledPlugins": {

@@ -84,7 +84,9 @@
       "baseUrl": "サーバーURL",
       "token": "Personal Access Token",
       "apiToken": "APIトークン",
-      "apiKey": "APIキー"
+      "apiKey": "APIキー",
+      "useCustomBaseUrl": "セルフホスト / Enterprise インスタンスを使用する",
+      "invalidBaseUrl": "有効なURL（http:// または https://）を入力してください"
     },
     "testConnection": "接続テスト",
     "connectionSuccess": "接続に成功しました",
