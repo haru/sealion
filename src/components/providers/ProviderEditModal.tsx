@@ -24,16 +24,26 @@ import { formatProviderApiError, type ProviderApiErrorResponse } from "@/lib/syn
 import { getBaseUrlValidationError, isValidBaseUrl } from "@/lib/validation/base-url";
 import { getProviderMetadata } from "@/services/issue-provider/registry";
 
+interface BuildPatchBodyArgs {
+  displayName: string;
+  changeCredentials: boolean;
+  credentials: Record<string, string>;
+  isRequired: boolean;
+  isOptional: boolean;
+  useCustomBaseUrl: boolean;
+  baseUrl: string;
+}
+
 /** Builds the PATCH request body for the provider update. */
-function buildPatchBody(
-  displayName: string,
-  changeCredentials: boolean,
-  credentials: Record<string, string>,
-  isRequired: boolean,
-  isOptional: boolean,
-  useCustomBaseUrl: boolean,
-  baseUrl: string,
-): Record<string, unknown> {
+export function buildPatchBody({
+  displayName,
+  changeCredentials,
+  credentials,
+  isRequired,
+  isOptional,
+  useCustomBaseUrl,
+  baseUrl,
+}: BuildPatchBodyArgs): Record<string, unknown> {
   const body: Record<string, unknown> = { displayName, changeCredentials };
   if (isRequired) {
     body.baseUrl = baseUrl;
@@ -118,7 +128,7 @@ export default function ProviderEditModal({
     setError(null);
 
     try {
-      const body = buildPatchBody(displayName, changeCredentials, credentials, isRequired, isOptional, useCustomBaseUrl, baseUrl);
+      const body = buildPatchBody({ displayName, changeCredentials, credentials, isRequired, isOptional, useCustomBaseUrl, baseUrl });
 
       const res = await fetch(`/api/providers/${provider.id}`, {
         method: "PATCH",

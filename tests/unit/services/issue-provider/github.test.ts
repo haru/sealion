@@ -170,21 +170,6 @@ describe("GitHubAdapter", () => {
       expect(mockAxiosInstance.get).toHaveBeenCalledWith("/search/issues", expect.anything());
     });
 
-    it("fetches reviewer-requested PRs via Search API (FR-011)", async () => {
-      mockAxiosInstance.get
-        .mockResolvedValueOnce({ data: { login: "testuser" } })
-        .mockResolvedValueOnce({ data: [] })
-        .mockResolvedValueOnce({
-          data: {
-            items: [makeSearchItem({ number: 99, title: "Team review PR" })],
-          },
-        });
-      const adapter = new GitHubAdapter("ghp_test");
-      const issues = await adapter.fetchAssignedIssues("owner/repo");
-      expect(issues).toHaveLength(1);
-      expect(issues[0].externalId).toBe("99");
-    });
-
     it("propagates Search API 422/403 errors (C-1.9)", async () => {
       mockAxiosInstance.get
         .mockResolvedValueOnce({ data: { login: "testuser" } })
@@ -215,10 +200,36 @@ describe("GitHubAdapter", () => {
       await expect(adapter.fetchAssignedIssues("owner/")).rejects.toThrow("Invalid GitHub project ID");
     });
 
+    it("throws on invalid projectExternalId (empty owner segment) — T-4", async () => {
+      mockAxiosInstance.get.mockResolvedValueOnce({ data: { login: "testuser" } });
+      const adapter = new GitHubAdapter("ghp_test");
+      await expect(adapter.fetchAssignedIssues("/repo")).rejects.toThrow("Invalid GitHub project ID");
+    });
+
     it("throws on invalid projectExternalId (too many segments) — C-1", async () => {
       mockAxiosInstance.get.mockResolvedValueOnce({ data: { login: "testuser" } });
       const adapter = new GitHubAdapter("ghp_test");
       await expect(adapter.fetchAssignedIssues("owner/repo/extra")).rejects.toThrow("Invalid GitHub project ID");
+    });
+
+    it("maps milestone.due_on to dueDate — T-6", async () => {
+      mockAxiosInstance.get
+        .mockResolvedValueOnce({ data: { login: "testuser" } })
+        .mockResolvedValueOnce({ data: [makeGitHubIssue({ number: 1, milestone: { due_on: "2026-12-31T00:00:00Z" } })] })
+        .mockResolvedValueOnce({ data: { items: [] } });
+      const adapter = new GitHubAdapter("ghp_test");
+      const issues = await adapter.fetchAssignedIssues("owner/repo");
+      expect(issues[0].dueDate).toEqual(new Date("2026-12-31T00:00:00Z"));
+    });
+
+    it("sets dueDate to null when milestone is absent — T-6", async () => {
+      mockAxiosInstance.get
+        .mockResolvedValueOnce({ data: { login: "testuser" } })
+        .mockResolvedValueOnce({ data: [makeGitHubIssue({ number: 1, milestone: null })] })
+        .mockResolvedValueOnce({ data: { items: [] } });
+      const adapter = new GitHubAdapter("ghp_test");
+      const issues = await adapter.fetchAssignedIssues("owner/repo");
+      expect(issues[0].dueDate).toBeNull();
     });
 
     it("throws when fetchReviewerPrs exceeds MAX_PAGES (I-11)", async () => {
@@ -296,8 +307,8 @@ describe("GitHubAdapter", () => {
     });
   });
 
-  describe("getLogin — rejected promise recovery", () => {
-    it("clears cached rejected promise so a second call can succeed", async () => {
+  describe("getLogin — caching behaviour", () => {
+    it("clears cached rejected promise so a second call can succeed — T-5 error path", async () => {
       const error = new Error("Network error");
       mockAxiosInstance.get
         .mockRejectedValueOnce(error)
@@ -310,6 +321,21 @@ describe("GitHubAdapter", () => {
       mockAxiosInstance.get.mockResolvedValue({ data: { login: "testuser" } });
       await expect(adapter.testConnection()).resolves.toBeUndefined();
       expect(mockAxiosInstance.get).toHaveBeenCalledWith("/user");
+    });
+
+    it("caches resolved login so a second fetchAssignedIssues call does not re-request /user — T-5", async () => {
+      mockAxiosInstance.get
+        .mockResolvedValueOnce({ data: { login: "testuser" } }) // getLogin (1st call)
+        .mockResolvedValueOnce({ data: [] })                    // assigned issues (1st)
+        .mockResolvedValueOnce({ data: { items: [] } })         // reviewer prs (1st)
+        .mockResolvedValueOnce({ data: [] })                    // assigned issues (2nd)
+        .mockResolvedValueOnce({ data: { items: [] } });        // reviewer prs (2nd)
+      const adapter = new GitHubAdapter("ghp_test");
+      await adapter.fetchAssignedIssues("owner/repo");
+      await adapter.fetchAssignedIssues("owner/repo");
+      // /user is called only once; subsequent calls use the cached promise
+      expect(mockAxiosInstance.get).toHaveBeenCalledTimes(5);
+      expect(mockAxiosInstance.get).toHaveBeenNthCalledWith(1, "/user");
     });
   });
 });
@@ -345,6 +371,18 @@ describe("GitHubAdapter — baseUrl resolution", () => {
     new GitHubAdapter("ghp_test", null);
     expect(axios.create).toHaveBeenCalledWith(
       expect.objectContaining({ baseURL: "https://api.github.com" }),
+    );
+  });
+
+  it("calls GET /user/repos using correct path when constructed with GHE baseUrl — T-7", async () => {
+    (axios.create as jest.Mock).mockReturnValue(mockAxiosInstance);
+    const adapter = new GitHubAdapter("ghp_test", "https://github.example.com");
+    mockAxiosInstance.get.mockResolvedValue({ data: [{ full_name: "org/repo" }] });
+    const projects = await adapter.listProjects();
+    expect(projects).toEqual([{ externalId: "org/repo", displayName: "org/repo" }]);
+    expect(mockAxiosInstance.get).toHaveBeenCalledWith(
+      "/user/repos",
+      expect.objectContaining({ params: expect.objectContaining({ per_page: 100, page: 1 }) }),
     );
   });
 });

@@ -125,8 +125,16 @@ function normalizeBaseUrl(
   rawBaseUrl: string | undefined,
   existingBaseUrl: string | null,
 ): NormalizedBaseUrl {
-  const toStore: string | null | undefined = (mode === "optional" && rawBaseUrl?.trim() === "") ? null : rawBaseUrl;
-  const forAdapter: string | undefined = toStore !== undefined ? (toStore ?? undefined) : (existingBaseUrl ?? undefined);
+  const toStore: string | null | undefined =
+    (mode === "optional" && rawBaseUrl?.trim() === "") ? null : rawBaseUrl;
+
+  let forAdapter: string | undefined;
+  if (toStore !== undefined) {
+    forAdapter = toStore ?? undefined;
+  } else {
+    forAdapter = existingBaseUrl ?? undefined;
+  }
+
   return { toStore, forAdapter };
 }
 
