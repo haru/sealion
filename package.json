@@ -1,6 +1,6 @@
 {
   "name": "sealion",
-  "version": "0.7.1",
+  "version": "0.8.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -26,7 +26,7 @@
     "@prisma/config": "^7.5.0",
     "@types/nodemailer": "^7.0.11",
     "@types/pg": "^8.20.0",
-    "axios": "^1.16.1",
+    "axios": "^1.17.0",
     "bcryptjs": "^3.0.3",
     "hpagent": "^1.2.0",
     "next": "16.2.6",
@@ -56,13 +56,13 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "16.2.6",
-    "eslint-plugin-jsdoc": "^63.0.0",
+    "eslint-config-next": "16.2.7",
+    "eslint-plugin-jsdoc": "^63.0.2",
     "eslint-plugin-tsdoc": "^0.5.2",
     "eslint-plugin-unused-imports": "^4.4.1",
     "jest": "^30.4.2",
     "jest-environment-jsdom": "^30.4.1",
-    "oauth2-mock-server": "^8.2.2",
+    "oauth2-mock-server": "^8.2.3",
     "prisma": "^7.5.0",
     "ts-jest": "^29.4.11",
     "typescript": "^6"

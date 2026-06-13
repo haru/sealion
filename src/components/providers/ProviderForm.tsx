@@ -1,9 +1,13 @@
+/** Form for creating a new issue provider, with provider-type selection and credential fields. */
 "use client";
 
 import {
   Box,
   Button,
+  Checkbox,
   FormControl,
+  FormControlLabel,
+  FormHelperText,
   InputLabel,
   MenuItem,
   Select,
@@ -15,7 +19,14 @@ import {
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 
+import { getBaseUrlValidationError, isValidBaseUrl } from "@/lib/validation/base-url";
 import { getAllProviders } from "@/services/issue-provider/registry";
+
+/** Removes the `baseUrl` key from a credentials object immutably. */
+function withoutBaseUrl(creds: Record<string, string>): Record<string, string> {
+  const { baseUrl: _removed, ...rest } = creds;
+  return rest;
+}
 
 /** Data shape submitted by {@link ProviderForm}. */
 export interface ProviderFormData {
@@ -39,10 +50,18 @@ export default function ProviderForm({ onSubmit }: ProviderFormProps) {
   const [type, setType] = useState<string>(firstType);
   const [displayName, setDisplayName] = useState("");
   const [credentials, setCredentials] = useState<Record<string, string>>({});
+  const [useCustomBaseUrl, setUseCustomBaseUrl] = useState(false);
+  const [baseUrlTouched, setBaseUrlTouched] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const selectedMeta = providers.find((p) => p.type === type);
+  const isOptional = selectedMeta?.baseUrlMode === "optional";
+  const isRequired = selectedMeta?.baseUrlMode === "required";
+  const showBaseUrlField = isRequired || isOptional;
+  const baseUrlEnabled = isRequired || (isOptional && useCustomBaseUrl);
+  const baseUrlValue = credentials.baseUrl ?? "";
+  const baseUrlError = getBaseUrlValidationError(baseUrlEnabled, baseUrlTouched, baseUrlValue, t("fields.invalidBaseUrl"));
 
   /** Updates a single credential field. */
   function handleCredentialChange(key: string, value: string) {
@@ -53,12 +72,30 @@ export default function ProviderForm({ onSubmit }: ProviderFormProps) {
   function handleTypeChange(newType: string) {
     setType(newType);
     setCredentials({});
+    setUseCustomBaseUrl(false);
+    setBaseUrlTouched(false);
     setError(null);
+  }
+
+  /** Toggles the custom base URL checkbox. */
+  function handleToggleCustomBaseUrl(checked: boolean) {
+    setUseCustomBaseUrl(checked);
+    if (!checked) {
+      setCredentials((prev) => withoutBaseUrl(prev));
+      setBaseUrlTouched(false);
+    }
   }
 
   /** Submits the new provider form. */
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+
+    // Block submission if baseUrl is enabled but empty or invalid
+    if (baseUrlEnabled && (!baseUrlValue || !isValidBaseUrl(baseUrlValue))) {
+      setBaseUrlTouched(true);
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
@@ -66,6 +103,7 @@ export default function ProviderForm({ onSubmit }: ProviderFormProps) {
       await onSubmit({ type, displayName, credentials });
       setDisplayName("");
       setCredentials({});
+      setUseCustomBaseUrl(false);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       setError(msg);
@@ -123,15 +161,33 @@ export default function ProviderForm({ onSubmit }: ProviderFormProps) {
           slotProps={{ htmlInput: { "data-testid": "provider-name-input" } }}
         />
 
-        {selectedMeta && selectedMeta.baseUrlMode !== "none" && (
-          <TextField
-            label={t("fields.baseUrl")}
-            placeholder={selectedMeta.baseUrlMode === "optional" ? "https://gitlab.com" : "https://your-domain.example.com"}
-            value={credentials.baseUrl ?? ""}
-            onChange={(e) => handleCredentialChange("baseUrl", e.target.value)}
-            required={selectedMeta.baseUrlMode === "required"}
-            fullWidth
+        {showBaseUrlField && isOptional && (
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={useCustomBaseUrl}
+                onChange={(e) => handleToggleCustomBaseUrl(e.target.checked)}
+              />
+            }
+            label={t("fields.useCustomBaseUrl")}
           />
+        )}
+
+        {showBaseUrlField && (
+          <FormControl fullWidth error={Boolean(baseUrlError)}>
+            <TextField
+              label={t("fields.baseUrl")}
+              placeholder="https://your-domain.example.com"
+              value={baseUrlValue}
+              onChange={(e) => handleCredentialChange("baseUrl", e.target.value)}
+              onBlur={() => setBaseUrlTouched(true)}
+              required={baseUrlEnabled}
+              disabled={isOptional && !useCustomBaseUrl}
+              fullWidth
+              error={Boolean(baseUrlError)}
+            />
+            {baseUrlError && <FormHelperText>{baseUrlError}</FormHelperText>}
+          </FormControl>
         )}
 
         {selectedMeta?.credentialFields.map((field) => (

@@ -1,3 +1,4 @@
+/** API routes for single provider CRUD (GET, PATCH, DELETE). */
 import type { NextRequest } from "next/server";
 
 import { ok, fail, failWithDetails } from "@/lib/api/api-response";
@@ -6,8 +7,36 @@ import { prisma } from "@/lib/db/db";
 import { buildTypedCredentials } from "@/lib/encryption/credentials";
 import { encrypt, decrypt } from "@/lib/encryption/encryption";
 import { createConnectionTestErrorDetails } from "@/lib/sync/error-utils";
+import { isValidBaseUrl } from "@/lib/validation/base-url";
 import { createAdapter, getProviderIconUrl } from "@/services/issue-provider/factory";
 import { getProviderMetadata } from "@/services/issue-provider/registry";
+
+/**
+ * Validates the PATCH request body shape.
+ * @param body - The parsed JSON body to validate.
+ * @returns The validated and typed body, or `null` if invalid.
+ */
+function validatePatchBody(body: unknown): {
+  displayName: string;
+  baseUrl?: string;
+  changeCredentials: boolean;
+  credentials?: Record<string, string>;
+} | null {
+  if (typeof body !== "object" || body === null) { return null; }
+  const obj = body as Record<string, unknown>;
+  if (typeof obj.displayName !== "string" || obj.displayName.length < 1) { return null; }
+  if (typeof obj.changeCredentials !== "boolean") { return null; }
+  if (obj.baseUrl !== undefined && typeof obj.baseUrl !== "string") { return null; }
+  if (obj.credentials !== undefined && (
+    typeof obj.credentials !== "object" || obj.credentials === null || Array.isArray(obj.credentials)
+  )) { return null; }
+  return {
+    displayName: obj.displayName,
+    baseUrl: obj.baseUrl as string | undefined,
+    changeCredentials: obj.changeCredentials,
+    credentials: obj.credentials as Record<string, string> | undefined,
+  };
+}
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -80,6 +109,58 @@ function resolveCredentials(
 }
 
 /**
+ * Validates the base URL value against the provider's mode constraints.
+ * @param rawBaseUrl - The raw baseUrl from the request body (`undefined` = not sent).
+ * @param mode - The provider's `baseUrlMode`.
+ * @param normalizedBaseUrl - The normalised value (after trimming and empty-string handling).
+ * @returns A `Response` error if the combination is invalid, or `null` if it is acceptable.
+ */
+function validateBaseUrlRequest(
+  rawBaseUrl: string | undefined,
+  mode: string | undefined,
+  normalizedBaseUrl: string | null | undefined,
+): Response | null {
+  if (rawBaseUrl !== undefined && mode === "none") { return fail("INVALID_BODY", 400); }
+  if (mode === "required" && !normalizedBaseUrl) { return fail("MISSING_FIELDS", 400); }
+  if (normalizedBaseUrl && !isValidBaseUrl(normalizedBaseUrl)) { return fail("INVALID_BASE_URL", 400); }
+  return null;
+}
+
+type NormalizedBaseUrl = {
+  /** URL to write to the DB: `null` = clear, `undefined` = no change, `string` = new URL. */
+  toStore: string | null | undefined;
+  /** URL to pass to the adapter for the connection test (`undefined` = use SaaS default). */
+  forAdapter: string | undefined;
+};
+
+/**
+ * Normalises the raw `baseUrl` from a PATCH request body.
+ * Trims whitespace before storing and validating.
+ * @param mode - The provider's `baseUrlMode` (`"optional"`, `"required"`, or `"none"`).
+ * @param rawBaseUrl - The raw value from the request body (`undefined` = not sent).
+ * @param existingBaseUrl - The current `baseUrl` stored in the DB.
+ * @returns Normalised values for the DB update and adapter instantiation.
+ */
+function normalizeBaseUrl(
+  mode: string | undefined,
+  rawBaseUrl: string | undefined,
+  existingBaseUrl: string | null,
+): NormalizedBaseUrl {
+  const trimmed = rawBaseUrl?.trim();
+  const toStore: string | null | undefined =
+    (mode === "optional" && trimmed === "") ? null : trimmed;
+
+  let forAdapter: string | undefined;
+  if (toStore !== undefined) {
+    forAdapter = toStore ?? undefined;
+  } else {
+    forAdapter = existingBaseUrl ?? undefined;
+  }
+
+  return { toStore, forAdapter };
+}
+
+/**
  * DELETE /api/providers/[id] — Deletes an issue provider owned by the authenticated user.
  */
 export async function DELETE(req: NextRequest, { params }: RouteContext) {
@@ -95,7 +176,12 @@ export async function DELETE(req: NextRequest, { params }: RouteContext) {
 
   if (!provider) { return fail("FORBIDDEN", 403); }
 
-  await prisma.issueProvider.delete({ where: { id } });
+  try {
+    await prisma.issueProvider.delete({ where: { id } });
+  } catch (error) {
+    console.error("[provider] Failed to delete provider:", error instanceof Error ? error.message : String(error));
+    return fail("INTERNAL_ERROR", 500);
+  }
 
   return ok({ id });
 }
@@ -117,33 +203,30 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
   const body = await req.json().catch(() => null);
   if (!body) { return fail("INVALID_BODY", 400); }
 
-  const { displayName, baseUrl: rawBaseUrl, changeCredentials, credentials } = body as {
-    displayName: string;
-    baseUrl?: string;
-    changeCredentials: boolean;
-    credentials?: Record<string, string>;
-  };
+  const parsed = validatePatchBody(body);
+  if (!parsed) { return fail("INVALID_BODY", 400); }
+  const { displayName, baseUrl: rawBaseUrl, changeCredentials, credentials } = parsed;
 
   const metadata = getProviderMetadata(provider.type);
-  const baseUrl = (metadata?.baseUrlMode === "optional" && rawBaseUrl?.trim() === "")
-    ? undefined
-    : rawBaseUrl;
 
-  // Validate displayName
-  if (!displayName) { return fail("MISSING_FIELDS", 400); }
+  const { toStore: normalizedBaseUrl, forAdapter: adapterBaseUrl } = normalizeBaseUrl(
+    metadata?.baseUrlMode,
+    rawBaseUrl,
+    provider.baseUrl,
+  );
 
-  // Validate baseUrl for providers that require it
-  if (metadata?.baseUrlMode === "required" && !baseUrl) { return fail("MISSING_FIELDS", 400); }
+  const baseUrlError = validateBaseUrlRequest(rawBaseUrl, metadata?.baseUrlMode, normalizedBaseUrl);
+  if (baseUrlError) { return baseUrlError; }
 
   // Determine the effective credentials for connection test
-  const credResult = resolveCredentials(provider, changeCredentials, credentials, baseUrl);
+  const credResult = resolveCredentials(provider, changeCredentials, credentials, adapterBaseUrl);
   if (credResult instanceof Response) { return credResult; }
   const { encryptedToStore, effectiveCredentials } = credResult;
 
   // Test connection
   try {
     const typedCredentials = buildTypedCredentials(provider.type, effectiveCredentials);
-    const adapter = createAdapter(provider.type, typedCredentials, baseUrl || provider.baseUrl);
+    const adapter = createAdapter(provider.type, typedCredentials, adapterBaseUrl);
     await adapter.testConnection();
   } catch (error) {
     console.error("[provider] Connection test failed:", error instanceof Error ? error.message : String(error));
@@ -157,7 +240,7 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
       where: { id },
       data: {
         displayName,
-        ...(baseUrl !== undefined ? { baseUrl } : {}),
+        ...(rawBaseUrl !== undefined ? { baseUrl: normalizedBaseUrl } : {}),
         ...(encryptedToStore ? { encryptedCredentials: encryptedToStore } : {}),
       },
       select: { id: true, type: true, displayName: true, baseUrl: true, createdAt: true },

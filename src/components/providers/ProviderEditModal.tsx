@@ -1,3 +1,4 @@
+/** Modal dialog for editing an existing issue provider's display name, base URL, or credentials. */
 "use client";
 
 import {
@@ -7,9 +8,11 @@ import {
   DialogContent,
   DialogActions,
   Button,
-  TextField,
   Checkbox,
+  FormControl,
   FormControlLabel,
+  FormHelperText,
+  TextField,
   Alert,
   Stack,
   CircularProgress,
@@ -18,7 +21,40 @@ import { useTranslations } from "next-intl";
 import { type FormEvent, useState } from "react";
 
 import { formatProviderApiError, type ProviderApiErrorResponse } from "@/lib/sync/error-utils";
+import { getBaseUrlValidationError, isValidBaseUrl } from "@/lib/validation/base-url";
 import { getProviderMetadata } from "@/services/issue-provider/registry";
+
+interface BuildPatchBodyArgs {
+  displayName: string;
+  changeCredentials: boolean;
+  credentials: Record<string, string>;
+  isRequired: boolean;
+  isOptional: boolean;
+  useCustomBaseUrl: boolean;
+  baseUrl: string;
+}
+
+/** Builds the PATCH request body for the provider update. */
+export function buildPatchBody({
+  displayName,
+  changeCredentials,
+  credentials,
+  isRequired,
+  isOptional,
+  useCustomBaseUrl,
+  baseUrl,
+}: BuildPatchBodyArgs): Record<string, unknown> {
+  const body: Record<string, unknown> = { displayName, changeCredentials };
+  if (isRequired) {
+    body.baseUrl = baseUrl;
+  } else if (isOptional) {
+    body.baseUrl = useCustomBaseUrl ? baseUrl : "";
+  }
+  if (changeCredentials) {
+    body.credentials = credentials;
+  }
+  return body;
+}
 
 interface Provider {
   id: string;
@@ -47,35 +83,52 @@ export default function ProviderEditModal({
   const tSync = useTranslations("sync");
 
   const metadata = getProviderMetadata(provider.type);
+  const isOptional = metadata?.baseUrlMode === "optional";
+  const isRequired = metadata?.baseUrlMode === "required";
+  const showBaseUrlField = isRequired || isOptional;
 
   const [displayName, setDisplayName] = useState(provider.displayName);
+  // For optional providers, checkbox is ON when provider.baseUrl is non-null
+  const [useCustomBaseUrl, setUseCustomBaseUrl] = useState(isOptional ? Boolean(provider.baseUrl) : false);
   const [baseUrl, setBaseUrl] = useState(provider.baseUrl ?? "");
+  const [baseUrlTouched, setBaseUrlTouched] = useState(false);
   const [changeCredentials, setChangeCredentials] = useState(false);
   const [credentials, setCredentials] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const baseUrlEnabled = isRequired || (isOptional && useCustomBaseUrl);
+  const baseUrlError = getBaseUrlValidationError(baseUrlEnabled, baseUrlTouched, baseUrl, t("fields.invalidBaseUrl"));
 
   /** Updates a single credential field. */
   function handleCredentialChange(key: string, value: string) {
     setCredentials((prev) => ({ ...prev, [key]: value }));
   }
 
+  /** Toggles the custom base URL checkbox. */
+  function handleToggleCustomBaseUrl(checked: boolean) {
+    setUseCustomBaseUrl(checked);
+    if (!checked) {
+      setBaseUrl("");
+      setBaseUrlTouched(false);
+    }
+  }
+
   /** Submits the provider update form. */
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+
+    // Block submission if baseUrl is enabled but empty or invalid
+    if (baseUrlEnabled && (!baseUrl || !isValidBaseUrl(baseUrl))) {
+      setBaseUrlTouched(true);
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
     try {
-      const body: Record<string, unknown> = { displayName, changeCredentials };
-      if (metadata?.baseUrlMode === "required") {
-        body.baseUrl = baseUrl;
-      } else if (metadata?.baseUrlMode === "optional" && baseUrl.trim() !== "") {
-        body.baseUrl = baseUrl;
-      }
-      if (changeCredentials) {
-        body.credentials = credentials;
-      }
+      const body = buildPatchBody({ displayName, changeCredentials, credentials, isRequired, isOptional, useCustomBaseUrl, baseUrl });
 
       const res = await fetch(`/api/providers/${provider.id}`, {
         method: "PATCH",
@@ -124,14 +177,32 @@ export default function ProviderEditModal({
               fullWidth
             />
 
-            {metadata && metadata.baseUrlMode !== "none" && (
-              <TextField
-                label={t("fields.baseUrl")}
-                value={baseUrl}
-                onChange={(e) => setBaseUrl(e.target.value)}
-                required={metadata.baseUrlMode === "required"}
-                fullWidth
+            {showBaseUrlField && isOptional && (
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={useCustomBaseUrl}
+                    onChange={(e) => handleToggleCustomBaseUrl(e.target.checked)}
+                  />
+                }
+                label={t("fields.useCustomBaseUrl")}
               />
+            )}
+
+            {showBaseUrlField && (
+              <FormControl fullWidth error={Boolean(baseUrlError)}>
+                <TextField
+                  label={t("fields.baseUrl")}
+                  value={baseUrl}
+                  onChange={(e) => setBaseUrl(e.target.value)}
+                  onBlur={() => setBaseUrlTouched(true)}
+                  required={baseUrlEnabled}
+                  disabled={isOptional && !useCustomBaseUrl}
+                  fullWidth
+                  error={Boolean(baseUrlError)}
+                />
+                {baseUrlError && <FormHelperText>{baseUrlError}</FormHelperText>}
+              </FormControl>
             )}
 
             <FormControlLabel

@@ -25,7 +25,7 @@ describe("getAllProviders()", () => {
 
   it("returns providers with correct baseUrlMode", () => {
     const byType = Object.fromEntries(getAllProviders().map((p) => [p.type, p]));
-    expect(byType["GITHUB"].baseUrlMode).toBe("none");
+    expect(byType["GITHUB"].baseUrlMode).toBe("optional");
     expect(byType["JIRA"].baseUrlMode).toBe("required");
     expect(byType["REDMINE"].baseUrlMode).toBe("required");
     expect(byType["GITLAB"].baseUrlMode).toBe("optional");

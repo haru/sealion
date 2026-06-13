@@ -1,4 +1,7 @@
-/** @jest-environment node */
+/**
+ * Unit tests for the provider adapter factory — createAdapter, baseUrl normalization.
+ * @jest-environment node
+ */
 
 jest.mock("@/services/issue-provider/github/github", () => ({
   GitHubAdapter: jest.fn().mockImplementation(() => ({
@@ -55,6 +58,9 @@ jest.mock("@/services/issue-provider/registry", () => ({
 import { AsanaAdapter } from "@/services/issue-provider/asana/asana";
 import { BacklogAdapter } from "@/services/issue-provider/backlog/backlog";
 import { createAdapter } from "@/services/issue-provider/factory";
+import { GitHubAdapter } from "@/services/issue-provider/github/github";
+import { GitLabAdapter } from "@/services/issue-provider/gitlab/gitlab";
+import { JiraAdapter } from "@/services/issue-provider/jira/jira";
 import { TrelloAdapter } from "@/services/issue-provider/trello/trello";
 
 describe("createAdapter — post-enum removal (T010/T011)", () => {
@@ -86,5 +92,46 @@ describe("createAdapter — post-enum removal (T010/T011)", () => {
     const adapter = createAdapter("BACKLOG", { baseUrl: "https://myspace.backlog.com", apiKey: "backlog-key" });
     expect(adapter).toBeDefined();
     expect(BacklogAdapter).toHaveBeenCalledWith("https://myspace.backlog.com", "backlog-key");
+  });
+});
+
+describe("createAdapter — baseUrl normalization", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("passes trimmed baseUrl to GitHubAdapter", () => {
+    createAdapter("GITHUB", { token: "ghp_test" }, "https://github.example.com");
+    expect(GitHubAdapter).toHaveBeenCalledWith("ghp_test", "https://github.example.com");
+  });
+
+  it("passes undefined when baseUrl is undefined for GitHub", () => {
+    createAdapter("GITHUB", { token: "ghp_test" });
+    expect(GitHubAdapter).toHaveBeenCalledWith("ghp_test", undefined);
+  });
+
+  it("passes undefined when baseUrl is null for GitHub", () => {
+    createAdapter("GITHUB", { token: "ghp_test" }, null);
+    expect(GitHubAdapter).toHaveBeenCalledWith("ghp_test", undefined);
+  });
+
+  it("converts whitespace-only baseUrl to undefined for GitHub", () => {
+    createAdapter("GITHUB", { token: "ghp_test" }, "  ");
+    expect(GitHubAdapter).toHaveBeenCalledWith("ghp_test", undefined);
+  });
+
+  it("trims whitespace from baseUrl before passing to GitHubAdapter", () => {
+    createAdapter("GITHUB", { token: "ghp_test" }, "  https://github.example.com  ");
+    expect(GitHubAdapter).toHaveBeenCalledWith("ghp_test", "https://github.example.com");
+  });
+
+  it("passes trimmed baseUrl to GitLabAdapter", () => {
+    createAdapter("GITLAB", { token: "glpat_test" }, "https://gitlab.example.com");
+    expect(GitLabAdapter).toHaveBeenCalledWith("glpat_test", "https://gitlab.example.com");
+  });
+
+  it("ignores baseUrl for Jira (embedded in credentials)", () => {
+    createAdapter("JIRA", { baseUrl: "https://jira.example.com", email: "u@e.com", apiToken: "tok" }, "https://other.example.com");
+    expect(JiraAdapter).toHaveBeenCalledWith("https://jira.example.com", "u@e.com", "tok");
   });
 });

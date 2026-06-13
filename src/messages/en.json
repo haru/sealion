@@ -84,7 +84,9 @@
       "baseUrl": "Server URL",
       "token": "Personal Access Token",
       "apiToken": "API Token",
-      "apiKey": "API Key"
+      "apiKey": "API Key",
+      "useCustomBaseUrl": "Use self-hosted / Enterprise instance",
+      "invalidBaseUrl": "Enter a valid URL (http:// or https://)"
     },
     "testConnection": "Test Connection",
     "connectionSuccess": "Connection successful",
