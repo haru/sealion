@@ -27,7 +27,9 @@ function validatePatchBody(body: unknown): {
   if (typeof obj.displayName !== "string" || obj.displayName.length < 1) { return null; }
   if (typeof obj.changeCredentials !== "boolean") { return null; }
   if (obj.baseUrl !== undefined && typeof obj.baseUrl !== "string") { return null; }
-  if (obj.credentials !== undefined && typeof obj.credentials !== "object") { return null; }
+  if (obj.credentials !== undefined && (
+    typeof obj.credentials !== "object" || obj.credentials === null || Array.isArray(obj.credentials)
+  )) { return null; }
   return {
     displayName: obj.displayName,
     baseUrl: obj.baseUrl as string | undefined,

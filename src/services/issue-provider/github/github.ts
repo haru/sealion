@@ -231,23 +231,13 @@ export class GitHubAdapter implements IssueProviderAdapter {
   /** {@inheritDoc} */
   async closeIssue(projectExternalId: string, issueExternalId: string): Promise<void> {
     const { owner, repo } = this.parseOwnerRepo(projectExternalId);
-    const { status } = await this.client.patch(`/repos/${owner}/${repo}/issues/${issueExternalId}`, {
-      state: "closed",
-    });
-    if (status < 200 || status >= 300) {
-      throw new Error(`closeIssue failed with status ${status}`);
-    }
+    await this.client.patch(`/repos/${owner}/${repo}/issues/${issueExternalId}`, { state: "closed" });
   }
 
   /** {@inheritDoc} */
   async addComment(projectExternalId: string, issueExternalId: string, comment: string): Promise<void> {
     const { owner, repo } = this.parseOwnerRepo(projectExternalId);
-    const { status } = await this.client.post(`/repos/${owner}/${repo}/issues/${issueExternalId}/comments`, {
-      body: comment,
-    });
-    if (status < 200 || status >= 300) {
-      throw new Error(`addComment failed with status ${status}`);
-    }
+    await this.client.post(`/repos/${owner}/${repo}/issues/${issueExternalId}/comments`, { body: comment });
   }
 }
 

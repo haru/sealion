@@ -283,9 +283,13 @@ describe("GitHubAdapter", () => {
     });
 
     it("throws when PATCH returns non-2xx status", async () => {
-      mockAxiosInstance.patch.mockResolvedValue({ status: 403, data: { message: "Forbidden" } });
+      const axiosError = Object.assign(new Error("Request failed with status code 403"), {
+        isAxiosError: true,
+        response: { status: 403, data: { message: "Forbidden" } },
+      });
+      mockAxiosInstance.patch.mockRejectedValue(axiosError);
       const adapter = new GitHubAdapter("ghp_test");
-      await expect(adapter.closeIssue("owner/repo", "42")).rejects.toThrow("closeIssue failed");
+      await expect(adapter.closeIssue("owner/repo", "42")).rejects.toThrow();
     });
   });
 
@@ -301,26 +305,36 @@ describe("GitHubAdapter", () => {
     });
 
     it("throws when POST returns non-2xx status", async () => {
-      mockAxiosInstance.post.mockResolvedValue({ status: 403, data: { message: "Forbidden" } });
+      const axiosError = Object.assign(new Error("Request failed with status code 403"), {
+        isAxiosError: true,
+        response: { status: 403, data: { message: "Forbidden" } },
+      });
+      mockAxiosInstance.post.mockRejectedValue(axiosError);
       const adapter = new GitHubAdapter("ghp_test");
-      await expect(adapter.addComment("owner/repo", "42", "LGTM")).rejects.toThrow("addComment failed");
+      await expect(adapter.addComment("owner/repo", "42", "LGTM")).rejects.toThrow();
     });
   });
 
   describe("getLogin — caching behaviour", () => {
-    it("clears cached rejected promise so a second call can succeed — T-5 error path", async () => {
+    it("clears cached rejected promise so a second fetchAssignedIssues call can succeed — T-5", async () => {
       const error = new Error("Network error");
-      mockAxiosInstance.get
-        .mockRejectedValueOnce(error)
-        .mockResolvedValueOnce({ data: { login: "testuser" } });
+      // First call: getLogin rejects (simulating a real network failure)
+      mockAxiosInstance.get.mockRejectedValueOnce(error);
       const adapter = new GitHubAdapter("ghp_test");
 
-      await expect(adapter.testConnection()).rejects.toThrow("Network error");
+      await expect(adapter.fetchAssignedIssues("owner/repo")).rejects.toThrow("Network error");
 
+      // Clear call history, then set up for success on the second attempt
       mockAxiosInstance.get.mockClear();
-      mockAxiosInstance.get.mockResolvedValue({ data: { login: "testuser" } });
-      await expect(adapter.testConnection()).resolves.toBeUndefined();
-      expect(mockAxiosInstance.get).toHaveBeenCalledWith("/user");
+      mockAxiosInstance.get
+        .mockResolvedValueOnce({ data: { login: "testuser" } }) // getLogin retry
+        .mockResolvedValueOnce({ data: [] })                    // assigned issues
+        .mockResolvedValueOnce({ data: { items: [] } });        // reviewer prs
+
+      await expect(adapter.fetchAssignedIssues("owner/repo")).resolves.toEqual([]);
+      // Verify that /user was called again (cache was cleared, not reused)
+      expect(mockAxiosInstance.get).toHaveBeenNthCalledWith(1, "/user");
+      expect(mockAxiosInstance.get).toHaveBeenCalledTimes(3);
     });
 
     it("caches resolved login so a second fetchAssignedIssues call does not re-request /user — T-5", async () => {
