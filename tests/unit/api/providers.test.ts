@@ -733,6 +733,34 @@ describe("PATCH /api/providers/[id]", () => {
     expect(json.error).toBe("CREDENTIALS_DECRYPT_FAILED");
   });
 
+  it("returns 400 INVALID_BODY when credentials is null in PATCH body", async () => {
+    mockFindFirst.mockResolvedValue({ id: "p1", userId: "user-1", type: "GITHUB", encryptedCredentials: "enc", baseUrl: null });
+
+    const req = makeRequest("PATCH", {
+      displayName: "X",
+      changeCredentials: true,
+      credentials: null,
+    }, "http://localhost/api/providers/p1");
+    const res = await PATCH(req, { params: Promise.resolve({ id: "p1" }) });
+
+    expect(res.status).toBe(400);
+    expect((await res.json()).error).toBe("INVALID_BODY");
+  });
+
+  it("returns 400 INVALID_BODY when credentials is an array in PATCH body", async () => {
+    mockFindFirst.mockResolvedValue({ id: "p1", userId: "user-1", type: "GITHUB", encryptedCredentials: "enc", baseUrl: null });
+
+    const req = makeRequest("PATCH", {
+      displayName: "X",
+      changeCredentials: true,
+      credentials: ["token", "value"],
+    }, "http://localhost/api/providers/p1");
+    const res = await PATCH(req, { params: Promise.resolve({ id: "p1" }) });
+
+    expect(res.status).toBe(400);
+    expect((await res.json()).error).toBe("INVALID_BODY");
+  });
+
   it("returns 500 when Prisma update fails on PATCH", async () => {
     const { GitHubAdapter } = jest.requireMock("@/services/issue-provider/github/github");
     GitHubAdapter.mockImplementationOnce(() => ({
@@ -914,6 +942,18 @@ describe("POST /api/providers — INVALID_BASE_URL (T014)", () => {
       type: "GITHUB",
       displayName: "My GitHub",
       credentials: ["token", "value"],
+    });
+    const res = await POST(req);
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.error).toBe("INVALID_BODY");
+  });
+
+  it("returns 400 INVALID_BODY when credentials contain non-string values", async () => {
+    const req = makeRequest("POST", {
+      type: "GITHUB",
+      displayName: "My GitHub",
+      credentials: { token: 123 },
     });
     const res = await POST(req);
     expect(res.status).toBe(400);

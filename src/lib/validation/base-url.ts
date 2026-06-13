@@ -30,10 +30,11 @@ export function getBaseUrlValidationError(
  * @returns `true` if the URL is a valid, public-looking http/https absolute URL; `false` otherwise.
  */
 export function isValidBaseUrl(url: string): boolean {
-  if (!url) { return false; }
+  const trimmed = url.trim();
+  if (!trimmed) { return false; }
   let parsed: URL;
   try {
-    parsed = new URL(url);
+    parsed = new URL(trimmed);
   } catch {
     return false;
   }

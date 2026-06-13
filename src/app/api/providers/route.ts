@@ -51,7 +51,9 @@ function parsePostBody(body: unknown): PostBody | null {
   if (!obj.displayName || typeof obj.displayName !== "string") { return null; }
   const creds = obj.credentials;
   if (!creds || typeof creds !== "object" || Array.isArray(creds)) { return null; }
-  return { type: obj.type, displayName: obj.displayName, credentials: creds as Record<string, string> };
+  const credsObj = creds as Record<string, unknown>;
+  if (Object.values(credsObj).some((v) => typeof v !== "string")) { return null; }
+  return { type: obj.type, displayName: obj.displayName, credentials: credsObj as Record<string, string> };
 }
 
 /**

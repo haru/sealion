@@ -7,6 +7,10 @@ describe("isValidBaseUrl", () => {
       expect(isValidBaseUrl("https://github.example.com")).toBe(true);
     });
 
+    it("accepts URL with leading/trailing whitespace (trims before validation)", () => {
+      expect(isValidBaseUrl("  https://github.example.com  ")).toBe(true);
+    });
+
     it("accepts http URL with hostname", () => {
       expect(isValidBaseUrl("http://github.example.com")).toBe(true);
     });

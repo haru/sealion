@@ -338,6 +338,91 @@ describe("Provider registration cycle (Integration)", () => {
     await prisma.issueProvider.delete({ where: { id: providerId } });
   });
 
+  // T-GHE1: POST with invalid baseUrl returns 400 INVALID_BASE_URL
+  it("T-GHE1: POST returns 400 INVALID_BASE_URL when baseUrl has ftp scheme", async () => {
+    if (skipIfNoDB()) return;
+
+    const { POST } = await importProvidersRouteWithPrisma(prisma);
+
+    const postReq = new NextRequest("http://localhost/api/providers", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type: "GITHUB",
+        displayName: "Bad GHE",
+        credentials: { token: "ghp_xxx", baseUrl: "ftp://github.example.com" },
+      }),
+    });
+
+    const postRes = await POST(postReq);
+    expect(postRes.status).toBe(400);
+    const json = await postRes.json();
+    expect(json.error).toBe("INVALID_BASE_URL");
+  });
+
+  // T-GHE2: POST trims whitespace from baseUrl before saving
+  it("T-GHE2: POST trims leading/trailing whitespace from baseUrl before storing", async () => {
+    if (skipIfNoDB()) return;
+
+    const { POST } = await importProvidersRouteWithPrisma(prisma);
+
+    const postReq = new NextRequest("http://localhost/api/providers", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type: "GITHUB",
+        displayName: "Trim Test GHE",
+        credentials: { token: "ghp_trim", baseUrl: "  https://trim.github.example.com  " },
+      }),
+    });
+
+    const postRes = await POST(postReq);
+    expect(postRes.status).toBe(201);
+    const providerId = (await postRes.json()).data.id;
+
+    const dbProvider = await prisma.issueProvider.findUnique({ where: { id: providerId } });
+    expect(dbProvider?.baseUrl).toBe("https://trim.github.example.com");
+
+    await prisma.issueProvider.delete({ where: { id: providerId } });
+  });
+
+  // T-GHE3: PATCH clears baseUrl when empty string is sent (GHE → github.com)
+  it("T-GHE3: PATCH stores null when baseUrl is cleared (GHE OFF)", async () => {
+    if (skipIfNoDB()) return;
+
+    const { POST } = await importProvidersRouteWithPrisma(prisma);
+    const { PATCH } = await importProviderIdRouteWithPrisma(prisma);
+
+    // Create a GHE provider
+    const postRes = await POST(new NextRequest("http://localhost/api/providers", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type: "GITHUB",
+        displayName: "GHE Clear Test",
+        credentials: { token: "ghp_clear", baseUrl: "https://clear.github.example.com" },
+      }),
+    }));
+    expect(postRes.status).toBe(201);
+    const providerId = (await postRes.json()).data.id;
+
+    // PATCH: clear the baseUrl
+    const patchRes = await PATCH(
+      new NextRequest(`http://localhost/api/providers/${providerId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ displayName: "GHE Clear Test", baseUrl: "", changeCredentials: false }),
+      }),
+      { params: Promise.resolve({ id: providerId }) },
+    );
+    expect(patchRes.status).toBe(200);
+
+    const dbProvider = await prisma.issueProvider.findUnique({ where: { id: providerId } });
+    expect(dbProvider?.baseUrl).toBeNull();
+
+    await prisma.issueProvider.delete({ where: { id: providerId } });
+  });
+
   // T016: GET /api/providers returns providers with correct type strings after schema change
   it("T016: GET returns providers with correct type strings after enum removal", async () => {
     if (skipIfNoDB()) return;
