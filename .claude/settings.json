@@ -65,7 +65,6 @@
       "mcp__context7__resolve-library-id",
       "WebSearch",
       "WebFetch(domain:github.com)",
-      "Bash(git -C /workspaces/sealion show --stat 2e526f8)",
       "Read(//home/node/.openwiki/**)",
       "mcp__context7__query-docs"
     ],
