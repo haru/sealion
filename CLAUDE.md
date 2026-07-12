@@ -37,3 +37,13 @@ shell commands, and other important information, read the current plan:
 - 041-oidc-authentication: Added OIDC / OAuth2 external auth (Google / GitHub / Microsoft Entra / generic OIDC) with admin UI for IdP management; existing local credentials auth preserved
 - 039-gravatar-integration: Added Gravatar support (`useGravatar` boolean column on `User`)
 - 040-unify-profile-save: Unified profile settings form (username, Gravatar, password in one PATCH request)
+
+<!-- OPENWIKI:START -->
+
+## OpenWiki
+
+This repository uses OpenWiki for recurring code documentation. Start with `openwiki/quickstart.md`, then follow its links to architecture, workflows, domain concepts, operations, integrations, testing guidance, and source maps.
+
+The scheduled OpenWiki GitHub Actions workflow refreshes the repository wiki. Do not hand-edit generated OpenWiki pages unless explicitly asked; prefer updating source code/docs and letting OpenWiki regenerate.
+
+<!-- OPENWIKI:END -->
