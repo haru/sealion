@@ -7,12 +7,18 @@ on:
       - "docker/**"
       - ".devcontainer/**"
       - ".vscode/**"
+      - "openwiki/**"
+      - "AGENTS.md"
+      - "CLAUDE.md"
   pull_request:
     branches: ["**"]
     paths-ignore:
       - "docker/**"
       - ".devcontainer/**"
       - ".vscode/**"
+      - "openwiki/**"
+      - "AGENTS.md"
+      - "CLAUDE.md"
 
 permissions:
   contents: read
