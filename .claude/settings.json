@@ -61,7 +61,13 @@
       "Edit(~/.claude/skills/learned/**)",
       "Bash(mkdir -p /home/node/.claude/skills/learned/create-pr/evals)",
       "Bash(gh label *)",
-      "Edit(/.claude/skills/create-pr/**)"
+      "Edit(/.claude/skills/create-pr/**)",
+      "mcp__context7__resolve-library-id",
+      "WebSearch",
+      "WebFetch(domain:github.com)",
+      "Bash(git -C /workspaces/sealion show --stat 2e526f8)",
+      "Read(//home/node/.openwiki/**)",
+      "mcp__context7__query-docs"
     ],
     "additionalDirectories": [
       "/tmp",
