@@ -40,7 +40,6 @@ jobs:
             openwiki
             AGENTS.md
             CLAUDE.md
-            .github/workflows/openwiki-update.yml
           base: develop
           branch: openwiki/update
           commit-message: "docs: update OpenWiki"
