@@ -20,6 +20,8 @@ Stop if it reports schema drift: development migration commands can reset data. 
 
 The checked-in CI workflow (`.github/workflows/ci.yml`) installs dependencies and runs linting, Jest/coverage, and a production build. Playwright is configured separately in [`playwright.config.ts`](../playwright.config.ts) to start `npm run dev` and run Chromium E2E tests. Additional workflows build containers, prevent inappropriate main-branch PRs, and manage release-tag backmerge.
 
+[`openwiki-update.yml`](../.github/workflows/openwiki-update.yml) can also be dispatched manually or runs daily at 08:00 UTC. It installs OpenWiki under Node 22, runs a code-wiki update, and opens or updates `openwiki/update` with the configured documentation paths. Its model, tracing, and PR-path settings are workflow configuration; change them deliberately, since the scheduled job can otherwise carry those changes into its generated PR.
+
 Recent history is mostly dependency maintenance, but the recent product changes reveal active risk areas:
 
 - provider base-URL validation and GitHub Enterprise support;
