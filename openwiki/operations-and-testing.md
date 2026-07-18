@@ -1,3 +1,10 @@
+---
+type: Operations and testing guide
+title: Sealion operations and testing
+description: "Deployment, database safety, CI automation, test strategy, and operational considerations for maintaining Sealion."
+tags: [operations, testing, ci, deployment]
+---
+
 # Operations and testing
 
 ## Deployment and startup
@@ -20,7 +27,7 @@ Stop if it reports schema drift: development migration commands can reset data. 
 
 The checked-in CI workflow (`.github/workflows/ci.yml`) installs dependencies and runs linting, Jest/coverage, and a production build. Playwright is configured separately in [`playwright.config.ts`](../playwright.config.ts) to start `npm run dev` and run Chromium E2E tests. Additional workflows build containers, prevent inappropriate main-branch PRs, and manage release-tag backmerge.
 
-[`openwiki-update.yml`](../.github/workflows/openwiki-update.yml) can also be dispatched manually or runs daily at 08:00 UTC. It installs OpenWiki under Node 22, runs a code-wiki update, and opens or updates `openwiki/update` with the configured documentation paths. Its model, tracing, and PR-path settings are workflow configuration; change them deliberately, since the scheduled job can otherwise carry those changes into its generated PR.
+[`openwiki-update.yml`](../.github/workflows/openwiki-update.yml) runs manually or daily at 08:00 UTC, checks out the triggering ref without a ref pin, uses Node 22, and runs OpenWiki with OpenRouter's `z-ai/glm-5.2`. LangSmith tracing is enabled for the `openwiki` project. It opens or updates an `openwiki/update` PR containing `openwiki`, `AGENTS.md`, `CLAUDE.md`, and `.github/workflows/openwiki-update.yml`; no explicit PR base branch is configured.
 
 Recent history is mostly dependency maintenance, but the recent product changes reveal active risk areas:
 

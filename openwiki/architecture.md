@@ -1,3 +1,10 @@
+---
+type: Architecture reference
+title: Sealion architecture
+description: "Runtime boundaries, tenant data ownership, API conventions, authentication design, and engineering constraints for the Sealion application."
+tags: [architecture, nextjs, auth, prisma]
+---
+
 # Architecture
 
 ## Runtime boundaries
