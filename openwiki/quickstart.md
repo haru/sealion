@@ -1,3 +1,10 @@
+---
+type: Project overview
+title: Sealion code wiki
+description: "A starting guide to Sealion's product model, runtime stack, engineering commands, and non-negotiable change rules."
+tags: [overview, quickstart, sealion, development]
+---
+
 # Sealion code wiki
 
 Sealion is a self-hosted, multi-user TODO board that aggregates **open issues assigned to a user** from supported external trackers. A user configures one or more connections, selects projects, synchronizes issues into PostgreSQL, and manages a unified backlog and **Today** list. Closing an issue from Sealion closes it in the source tracker before its local row is removed.

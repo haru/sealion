@@ -1,3 +1,10 @@
+---
+type: Integration reference
+title: Sealion integrations
+description: "Issue-tracker adapters, runtime-configured external identity providers, and safeguards for extending Sealion integrations."
+tags: [integrations, issue-providers, authentication, security]
+---
+
 # Integrations
 
 ## Issue providers

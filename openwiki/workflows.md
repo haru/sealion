@@ -1,3 +1,10 @@
+---
+type: Workflow guide
+title: Sealion workflows and domain rules
+description: "Tracker configuration, synchronization, board lifecycle, authentication behavior, and change checklists for Sealion."
+tags: [workflows, synchronization, board, authentication]
+---
+
 # Workflows and domain rules
 
 ## Configure a tracker connection

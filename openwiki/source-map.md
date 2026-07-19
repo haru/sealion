@@ -1,3 +1,10 @@
+---
+type: Source navigation guide
+title: Sealion source map
+description: "A domain-oriented map of Sealion source areas, documentation, and tests to help identify the smallest credible starting point for a change."
+tags: [source-map, navigation, development, testing]
+---
+
 # Source map
 
 Use this page to choose the smallest credible starting area for a change. It intentionally maps domains rather than every source file.
