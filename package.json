@@ -40,7 +40,7 @@
   "overrides": {
     "@hono/node-server": ">=1.19.13",
     "defu": ">=6.1.5",
-    "fast-uri": ">=3.1.2",
+    "fast-uri": ">=4.1.1",
     "hono": ">=4.12.18",
     "lodash": ">=4.17.23",
     "postcss": ">=8.5.10"
