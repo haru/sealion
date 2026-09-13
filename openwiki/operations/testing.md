@@ -29,7 +29,7 @@ The [synchronization workflow](../workflows/synchronization.md) and [provider in
 
 `.github/workflows/ci.yml` runs lint, Jest/coverage, and build on Node 22. Container publishing builds AMD64 and ARM64 images on version tags or manual dispatch. Release automation tags from `package.json`, publishes images, creates a prerelease, and backmerges `main` to `develop`. Contributors are directed to submit PRs against `develop`; direct PRs to `main` are restricted by workflow policy.
 
-At this initialization, `git status --short` reports an unstaged modification to [`.github/workflows/openwiki-update.yml`](../../.github/workflows/openwiki-update.yml). Its current workflow runs daily at 08:00 UTC or manually, installs OpenWiki 0.2.5 with Mermaid/jsdom validation, and opens an `openwiki/update` pull request. The uncommitted workflow switches to OpenRouter model `z-ai/glm-5.2` and adds LangSmith variables; do not treat those details as committed application behavior.
+The committed [`.github/workflows/openwiki-update.yml`](../../.github/workflows/openwiki-update.yml) runs daily at 08:00 UTC or manually, installs OpenWiki 0.2.5 with Mermaid/jsdom validation, and opens an `openwiki/update` pull request. It checks out `develop`, uses Node 22, and runs `openwiki code --update --print` with `OPENAI_API_KEY`, `OPENWIKI_PROVIDER: openai`, and model `gpt-5.6-luna`. The repository working tree is clean; treat workflow configuration as repository automation rather than application runtime behavior.
 
 ## Operational watch-outs
 
