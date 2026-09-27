@@ -50,9 +50,9 @@ After schema work, check migration status before `npx prisma migrate dev`; devel
 
 These rules are supported by [`AGENTS.md`](../AGENTS.md), [`prisma/schema.prisma`](../prisma/schema.prisma), and current service implementations.
 
-## Git context at initialization
+## Git context
 
-The repository is at commit `6683685b73168f102e4544103bbed68855791f0d`. Recent history is primarily dependency maintenance, provider hardening, external authentication, and documentation automation. High-signal provider changes added bounded pagination, reviewer-assigned GitHub/GitLab work, GitLab merge-request ID prefixes, and GitHub Enterprise base-URL support. The working tree has an unstaged modification to [`.github/workflows/openwiki-update.yml`](../.github/workflows/openwiki-update.yml); [operations and testing](./operations/testing.md) records it as working-tree state rather than committed application behavior.
+The repository is currently at commit `81770fbdca3c2afed9f0a9c9703fc72577c60d8c`, a dependency-maintenance merge that bumps `@types/node` to 26.2.0. The working tree is clean. Recent history is primarily dependency maintenance, provider hardening, external authentication, and documentation automation. High-signal provider changes added bounded pagination, reviewer-assigned GitHub/GitLab work, GitLab merge-request ID prefixes, and GitHub Enterprise base-URL support. The committed [OpenWiki workflow](../.github/workflows/openwiki-update.yml) is described in [operations and testing](./operations/testing.md).
 
 ## Backlog
 
