@@ -7,6 +7,11 @@
     "skill-creator@claude-plugins-official": true,
     "security-guidance@claude-plugins-official": true
   },
+  "attribution": {
+    "commit": "",
+    "pr": "",
+    "sessionUrl": false
+  },
   "extraKnownMarketplaces": {
     "everything-claude-code": {
       "source": {
