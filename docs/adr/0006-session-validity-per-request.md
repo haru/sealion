@@ -28,13 +28,13 @@ We keep the JWT session strategy. Session validity is decided on **every request
    - `authTime < sessionsRevokedAt`
    - the idle timeout has elapsed
 
-   Auth.js then clears the cookie, and `auth()` returns `null`.
+   `auth()` returns `null`. Where Auth.js can write cookies (`/api/auth/session`), it also clears the cookie; a plain server-side `auth()` cannot, so the stale cookie is simply rejected again on every request. A token that has no user id at all (for example the `{}` payload the old code wrote when it revoked a session) is rejected too.
 3. **App-owned time claims.** Security decisions never use `iat` or `exp`.
    - `authTime` (epoch ms) is set once at sign-in and never changes. It is compared with `passwordChangedAt` and `sessionsRevokedAt`.
-   - `lastActivityAt` (epoch ms) is updated only by an explicit client `update({ activity: true })`, which is throttled to at most once per 60 s from real user input events. It is compared with `AuthSettings.sessionTimeoutMinutes`, which is now an **idle** timeout.
+   - `lastActivityAt` (epoch ms) is set at sign-in and afterwards updated only by an explicit client `update({ activity: true })`, which is throttled to at most once per 60 s from real user input events. It is compared with `AuthSettings.sessionTimeoutMinutes`, which is now an **idle** timeout. The setting is read through a 30 s cache that the admin settings handler invalidates, so other server instances may apply a change up to 30 s late.
 4. **Revocation timestamp.** A nullable `User.sessionsRevokedAt` column is set when an admin demotes a user (`ADMIN → USER`) or moves a user out of `ACTIVE`. Admin password changes set `passwordChangedAt`. Promotion and reactivation do not revoke. Because revocation is time-based, a revoked session cannot be revived by later re-promotion or reactivation.
 5. **No server-side exceptions for the current session.** When users change their own password, the server revokes all sessions. The settings page then signs in again with the new password, so the current browser continues without a prompt. The server keeps no "keep this session" state that a client could spoof.
-6. **Migration without mass sign-out.** Tokens issued before this change lack `authTime`. They are treated as signed in at first sight after deployment.
+6. **Migration without mass sign-out.** Tokens issued before this change lack `authTime`. Their `authTime` falls back to their `iat` (the last time Auth.js re-encoded the cookie, so never later than its last use), which means a dormant cookie older than a password change made before the deployment is rejected, while active users, whose `iat` is recent, are not signed out. Their `lastActivityAt` starts at the time of deployment, so nobody is timed out by the deployment itself. Legacy `pwdCheckedAt`/`pwdChangedAt` claims are dropped.
 
 ## Status
 
@@ -51,7 +51,7 @@ Proposed
 
 **Negative**
 
-- Every authenticated request performs one extra primary-key query (target: ≤ 10% median latency increase). DB unavailability now fails closed for authentication.
+- Every authenticated request performs one extra primary-key query (target: ≤ 10% median latency increase). DB unavailability fails closed for authentication: the `jwt` callback logs the failing step (`user-lookup` or `timeout-lookup`) with the user id and re-throws, and Auth.js catches the error, logs a `JWTSessionError` and **clears the session cookie**, so a transient DB outage during a session fetch signs the affected users out. We accept this trade-off: the alternative (trusting a token whose state could not be verified) would defeat revocation.
 - We depend on the Auth.js behaviour that the `jwt` callback runs on every `auth()` and session fetch, and that returning `null` clears the session. An Auth.js upgrade must be checked against this ADR.
 - Idle detection relies on a client component sending `update({ activity: true })`. A client can extend its own idle timer at will. This is acceptable, because the idle timeout protects against abandoned devices, not against an attacker who already holds the cookie (revocation and password changes cover that).
 - Explicit sign-out still only clears the local cookie. A stolen cookie stays usable until revocation, a password change, or idle expiry. Per-session server-side revocation lists remain out of scope.

@@ -2,9 +2,9 @@
 /**
  * Integration tests for session revocation and idle timeout (spec 045).
  *
- * Runs the real jwt/session callbacks from src/lib/auth/auth.ts and the real admin
- * users routes against a real database. Only Auth.js itself and the cookie are simulated:
- * `currentToken` plays the role of the browser's session cookie, and `auth()` resolves it
+ * Runs the real jwt/session callbacks from src/lib/auth/auth.ts and the real admin users routes
+ * against a real database. Auth.js itself, bcrypt, `next/cache` and the provider registry are
+ * mocked. The browser cookie is simulated: `currentToken` plays its role, and `auth()` resolves it
  * through the same callbacks Auth.js would call.
  *
  * Prerequisites: DATABASE_URL pointing at a migrated test DB (npx prisma migrate deploy).
@@ -70,13 +70,25 @@ async function resolveSession(token: Token | null, trigger?: string, session?: u
   return { next, session: out };
 }
 
-/** Simulates a fresh sign-in: Auth.js hands the jwt callback `user` and a token with `sub`. */
-async function signInAs(userId: string): Promise<Token> {
+/**
+ * Simulates a sign-in: Auth.js hands the jwt callback `user` and a token with `sub`.
+ *
+ * @param userId - The user signing in.
+ * @param ageMs - How long ago the sign-in happened. Sessions that a later change must invalidate use
+ *   `EARLIER`, so the strict `authTime < changedAt` comparison never depends on both landing in the
+ *   same millisecond.
+ */
+async function signInAs(userId: string, ageMs = 0): Promise<Token> {
   const jwt = capturedCallbacks?.jwt as unknown as JwtFn;
   const next = await jwt({ token: { sub: userId }, user: { id: userId }, trigger: "signIn", account: null });
   if (!next) { throw new Error("sign-in unexpectedly rejected"); }
-  return next;
+  return ageMs === 0
+    ? next
+    : { ...next, authTime: (next.authTime as number) - ageMs, lastActivityAt: (next.lastActivityAt as number) - ageMs };
 }
+
+/** A sign-in that clearly predates any change the test makes afterwards. */
+const EARLIER = 1000;
 
 async function createUser(name: string, role: "USER" | "ADMIN" = "USER") {
   return db.user.create({
@@ -156,7 +168,7 @@ const itDb = (name: string, fn: () => Promise<void>) =>
 describe("admin revocation (US1, FR-003/004/005)", () => {
   itDb("a demoted admin's existing session can no longer reach admin endpoints", async () => {
     const b = await createUser("admin-b", "ADMIN");
-    currentToken = await signInAs(b.id);
+    currentToken = await signInAs(b.id, EARLIER);
     expect((await listUsersAsCookieHolder()).status).toBe(200);
 
     expect((await adminPatch(b.id, { role: "USER" })).status).toBe(200);
@@ -178,7 +190,7 @@ describe("admin revocation (US1, FR-003/004/005)", () => {
 
   itDb("re-promoting does not revive the old session (FR-005)", async () => {
     const b = await createUser("admin-b", "ADMIN");
-    currentToken = await signInAs(b.id);
+    currentToken = await signInAs(b.id, EARLIER);
     await adminPatch(b.id, { role: "USER" });
     await adminPatch(b.id, { role: "ADMIN" });
 
@@ -199,7 +211,7 @@ describe("admin revocation (US1, FR-003/004/005)", () => {
 describe("suspension and deletion (US2, FR-002/005)", () => {
   itDb("a suspended user's session resolves to null", async () => {
     const u = await createUser("user-u");
-    currentToken = await signInAs(u.id);
+    currentToken = await signInAs(u.id, EARLIER);
     expect((await resolveSession(currentToken)).session).not.toBeNull();
 
     await adminPatch(u.id, { status: "SUSPENDED" });
@@ -209,7 +221,7 @@ describe("suspension and deletion (US2, FR-002/005)", () => {
 
   itDb("reactivating does not revive the old session, but a new sign-in works", async () => {
     const u = await createUser("user-u");
-    currentToken = await signInAs(u.id);
+    currentToken = await signInAs(u.id, EARLIER);
     await adminPatch(u.id, { status: "SUSPENDED" });
     await adminPatch(u.id, { status: "ACTIVE" });
 
@@ -232,7 +244,7 @@ describe("suspension and deletion (US2, FR-002/005)", () => {
 describe("password change (US3, FR-007/008)", () => {
   itDb("an admin-set password ends the user's sessions even if they refresh constantly", async () => {
     const u = await createUser("user-u");
-    currentToken = await signInAs(u.id);
+    currentToken = await signInAs(u.id, EARLIER);
     currentToken = (await resolveSession(currentToken, "update", { activity: true })).next;
 
     await adminPatch(u.id, { changePassword: true, password: "newpassword123" });

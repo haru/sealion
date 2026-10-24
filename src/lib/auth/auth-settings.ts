@@ -1,3 +1,8 @@
+/**
+ * AuthSettings access: reads (or creates) the singleton settings row and exposes the cached
+ * idle-timeout lookup used by the session checks.
+ */
+
 import { Prisma, type AuthSettings } from "@prisma/client";
 import { unstable_cache } from "next/cache";
 
@@ -48,7 +53,7 @@ export async function getAuthSettings(): Promise<AuthSettings> {
 }
 
 /** Cache tag for {@link getSessionTimeoutMinutes}; invalidated by the admin settings PATCH handler. */
-export const AUTH_SETTINGS_CACHE_TAG = "auth-settings";
+export const AUTH_SETTINGS_CACHE_TAG = "auth-settings" as const;
 
 const SESSION_TIMEOUT_TTL_SECONDS = 30;
 
@@ -56,9 +61,12 @@ const SESSION_TIMEOUT_TTL_SECONDS = 30;
  * Returns the configured idle session timeout, cached for 30 seconds.
  *
  * Called by the jwt callback on every authenticated request, so it must not hit the
- * database each time. The admin settings handler invalidates the cache on change.
+ * database each time. The admin settings handler invalidates the cache on change; other
+ * server instances may serve the previous value for up to 30 seconds. Errors are not cached:
+ * they propagate to the caller, so session validation fails closed.
  *
  * @returns The idle timeout in minutes, or `null` when no timeout is configured.
+ * @throws `Error` When the AuthSettings singleton cannot be read or created.
  */
 export const getSessionTimeoutMinutes = unstable_cache(
   async (): Promise<number | null> => (await getAuthSettings()).sessionTimeoutMinutes,

@@ -97,6 +97,8 @@ describe("getAuthSettings", () => {
   });
 });
 
+// Keep this describe last: the cache-tag test below calls jest.resetModules(), which detaches
+// the `mockFindUnique` handles above from freshly imported modules.
 describe("getSessionTimeoutMinutes", () => {
   it("returns the configured idle timeout", async () => {
     mockFindUnique.mockResolvedValue({ ...SINGLETON, sessionTimeoutMinutes: 360 });

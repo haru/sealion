@@ -216,6 +216,45 @@ describe("PATCH /api/account/settings — success with password change (no DB re
   });
 });
 
+describe("PATCH /api/account/settings — session revocation stamp (no DB required)", () => {
+  async function patchWith(body: Record<string, unknown>, passwordHash: string) {
+    const update = jest.fn().mockResolvedValue({ id: TEST_USER_ID });
+    jest.resetModules();
+    jest.doMock("@/lib/auth/auth", () => ({
+      auth: jest.fn().mockResolvedValue({ user: { id: TEST_USER_ID, email: TEST_USER_EMAIL, role: "USER" } }),
+    }));
+    jest.doMock("@/lib/db/db", () => ({
+      prisma: {
+        user: {
+          findUnique: jest.fn().mockResolvedValue({ id: TEST_USER_ID, email: TEST_USER_EMAIL, passwordHash }),
+          update,
+        },
+      },
+    }));
+    const { PATCH } = await import("@/app/api/account/settings/route");
+    const res = await PATCH(makePatchRequest(body));
+    return { res, data: update.mock.calls[0]?.[0]?.data as Record<string, unknown> | undefined };
+  }
+
+  test("stamps passwordChangedAt when the password changes (spec 045, FR-007)", async () => {
+    const { res, data } = await patchWith(
+      { username: "alice", useGravatar: false, changePassword: true, currentPassword: "current123", newPassword: "newpassword123" },
+      bcrypt.hashSync("current123", 4),
+    );
+    expect(res.status).toBe(200);
+    expect(data?.passwordChangedAt).toBeInstanceOf(Date);
+  });
+
+  test("does not stamp passwordChangedAt when only the username or Gravatar changes", async () => {
+    const { res, data } = await patchWith(
+      { username: "alice", useGravatar: true, changePassword: false },
+      bcrypt.hashSync("current123", 4),
+    );
+    expect(res.status).toBe(200);
+    expect(data).not.toHaveProperty("passwordChangedAt");
+  });
+});
+
 // ---------------------------------------------------------------------------
 // Validation errors
 // ---------------------------------------------------------------------------

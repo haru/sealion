@@ -106,8 +106,9 @@ describe("SessionActivityTracker", () => {
     expect(mockUpdate).toHaveBeenCalledTimes(2);
   });
 
-  it("retries on the next input after a network failure and does not throw", async () => {
-    mockUpdate.mockRejectedValueOnce(new Error("offline"));
+  it("logs unexpected failures, retries on the next input, and does not throw", async () => {
+    const errorSpy = jest.spyOn(console, "error").mockImplementation(() => undefined);
+    mockUpdate.mockRejectedValueOnce(new Error("csrf fetch failed"));
     render(<SessionActivityTracker />);
 
     await fire("keydown");
@@ -115,6 +116,25 @@ describe("SessionActivityTracker", () => {
 
     expect(mockUpdate).toHaveBeenCalledTimes(2);
     expect(mockRefresh).not.toHaveBeenCalled();
+    expect(errorSpy).toHaveBeenCalledWith(
+      "[SessionActivityTracker] activity report failed",
+      expect.objectContaining({ message: "csrf fetch failed" }),
+    );
+    errorSpy.mockRestore();
+  });
+
+  it("never reports in the background: no timers, focus or visibility listeners (FR-010a)", async () => {
+    jest.useFakeTimers();
+    render(<SessionActivityTracker />);
+
+    jest.advanceTimersByTime(10 * 60_000);
+    await fire("focus");
+    await act(async () => {
+      document.dispatchEvent(new Event("visibilitychange"));
+    });
+
+    expect(mockUpdate).not.toHaveBeenCalled();
+    jest.useRealTimers();
   });
 
   it("stops listening when unmounted", async () => {

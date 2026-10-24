@@ -1,3 +1,8 @@
+/**
+ * Admin API for the AuthSettings singleton (signup, email verification, idle session timeout).
+ * Saving invalidates the cached idle timeout used by the session checks (spec 045).
+ */
+
 import { revalidateTag } from "next/cache";
 import type { NextRequest } from "next/server";
 
@@ -89,18 +94,24 @@ export async function PATCH(req: NextRequest) {
     }
   }
 
-  const settings = await prisma.authSettings.upsert({
-    where: { id: "singleton" },
-    update: data,
-    create: { id: "singleton", ...data },
-  });
+  try {
+    const settings = await prisma.authSettings.upsert({
+      where: { id: "singleton" },
+      update: data,
+      create: { id: "singleton", ...data },
+    });
 
-  // The idle timeout is cached for the jwt callback; make the change visible immediately.
-  revalidateTag(AUTH_SETTINGS_CACHE_TAG, "");
+    // The idle timeout is cached for the jwt callback. `{ expire: 0 }` expires it immediately;
+    // `updateTag` is not allowed in Route Handlers and an empty profile is deprecated.
+    revalidateTag(AUTH_SETTINGS_CACHE_TAG, { expire: 0 });
 
-  return ok({
-    allowUserSignup: settings.allowUserSignup,
-    sessionTimeoutMinutes: settings.sessionTimeoutMinutes,
-    requireEmailVerification: settings.requireEmailVerification,
-  });
+    return ok({
+      allowUserSignup: settings.allowUserSignup,
+      sessionTimeoutMinutes: settings.sessionTimeoutMinutes,
+      requireEmailVerification: settings.requireEmailVerification,
+    });
+  } catch (error: unknown) {
+    console.error("[admin/auth-settings PATCH] failed to save settings", { fields: Object.keys(data), error });
+    return fail("INTERNAL_ERROR", 500);
+  }
 }

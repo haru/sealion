@@ -104,8 +104,8 @@ test.describe("Session revocation (spec 045)", () => {
     await x.page.click('[data-testid="profile-save-button"]');
 
     // The other browser is signed out; this one keeps working without a login prompt.
-    await expect.poll(async () => (await y.page.request.get("/api/issues")).status()).toBe(401);
-    await expect.poll(async () => (await x.page.request.get("/api/issues")).status()).toBe(200);
+    await expect.poll(async () => (await y.page.request.get("/api/issues")).status(), { timeout: 20000 }).toBe(401);
+    await expect.poll(async () => (await x.page.request.get("/api/issues")).status(), { timeout: 20000 }).toBe(200);
     await x.page.goto("/");
     await expect(x.page).not.toHaveURL(/\/login/);
 

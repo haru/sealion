@@ -9,10 +9,12 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useEffect, useRef } from "react";
 
+import type { SessionActivityUpdate } from "@/lib/auth/session-validity";
+
 /** Minimum time between two activity reports, in milliseconds. */
 export const ACTIVITY_THROTTLE_MS = 60_000;
 
-/** DOM events that count as the user working. Passive movement and scrolling do not. */
+/** DOM events that count as the user working. Pointer movement and `scroll` events do not; wheel input does. */
 const ACTIVITY_EVENTS = ["keydown", "pointerdown", "wheel", "touchstart"] as const;
 
 /**
@@ -43,26 +45,25 @@ export default function SessionActivityTracker(): null {
       lastReportedAtRef.current = now;
 
       updateRef
-        .current({ activity: true })
+        .current({ activity: true } satisfies SessionActivityUpdate)
         .then((session) => {
           // `undefined` means Auth.js skipped the call (still loading): report again on the next input.
           if (session === undefined) { lastReportedAtRef.current = 0; }
           if (session === null) { router.refresh(); }
         })
-        .catch(() => {
-          // Offline or transient failure: nothing to recover, the next input retries immediately.
+        .catch((error: unknown) => {
+          // Auth.js turns network and HTTP failures into `null`, so reaching here means a bug
+          // (for example a failing CSRF fetch or router.refresh). Log it and retry on the next input.
+          console.error("[SessionActivityTracker] activity report failed", error);
           lastReportedAtRef.current = 0;
         });
     };
 
+    const controller = new AbortController();
     for (const eventName of ACTIVITY_EVENTS) {
-      window.addEventListener(eventName, onActivity, { passive: true });
+      window.addEventListener(eventName, onActivity, { passive: true, signal: controller.signal });
     }
-    return () => {
-      for (const eventName of ACTIVITY_EVENTS) {
-        window.removeEventListener(eventName, onActivity);
-      }
-    };
+    return () => controller.abort();
   }, [router]);
 
   return null;

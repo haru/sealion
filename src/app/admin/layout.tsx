@@ -1,3 +1,7 @@
+/**
+ * Admin section layout: the server-side guard for every `/admin` page.
+ */
+
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 
@@ -10,9 +14,10 @@ import { AdminSessionProvider } from "./AdminSessionProvider";
 /**
  * Admin section layout — server-side ADMIN role guard with full dashboard shell.
  *
- * Provides a defence-in-depth check on top of the middleware guard: if a non-admin
- * somehow reaches this layout, they receive a localized 403 page instead of the child
- * content. Wraps children in {@link DashboardShell} for sidebar / title bar and
+ * Unauthenticated, revoked or expired visitors are redirected to `/login`; signed-in non-admins
+ * receive a localized 403 page. No middleware or proxy guard runs in front of this layout
+ * (the root `middleware.ts` is not loaded under `src/`), so this check is authoritative.
+ * Wraps children in {@link DashboardShell} for sidebar / title bar and
  * {@link AdminSessionProvider} for client-side session context.
  *
  * @param props - Layout props containing child page content.

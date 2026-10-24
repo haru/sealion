@@ -1,5 +1,10 @@
 "use client";
 
+/**
+ * Profile settings page: username, Gravatar and password in one save.
+ * After a password change the browser signs in again, because the server revokes all sessions.
+ */
+
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -139,7 +144,8 @@ export default function ProfileSettingsPage() {
           setConfirmPassword("");
         }
 
-        // Refresh JWT session when Gravatar preference changed (FR-010, Decision 5)
+        // Re-fetch the session when the Gravatar preference changed (FR-010, Decision 5).
+        // The jwt callback reloads `useGravatar` from the database; the payload itself is ignored.
         if (useGravatar !== initialUseGravatar.current) {
           await update({ useGravatar });
           initialUseGravatar.current = useGravatar;

@@ -1,5 +1,9 @@
 "use client";
 
+/**
+ * Authenticated app shell: providers, sidebar/title bar, and the session activity tracker.
+ */
+
 import { SessionProvider } from "next-auth/react";
 
 import { MessageQueueProvider } from "@/components/MessageQueue";

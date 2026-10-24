@@ -115,7 +115,24 @@ describe("PATCH /api/admin/auth-settings", () => {
     const { PATCH } = await import("@/app/api/admin/auth-settings/route");
     await PATCH(makePatchRequest({ sessionTimeoutMinutes: 60 }));
 
-    expect(revalidateTag).toHaveBeenCalledWith("auth-settings", "");
+    expect(revalidateTag).toHaveBeenCalledWith("auth-settings", { expire: 0 });
+  });
+
+  it("returns 500 and logs when saving fails, without invalidating the cache", async () => {
+    const errorSpy = jest.spyOn(console, "error").mockImplementation(() => undefined);
+    mockAuth.mockResolvedValue(ADMIN_SESSION);
+    mockUpsert.mockRejectedValue(new Error("db down"));
+    const { PATCH } = await import("@/app/api/admin/auth-settings/route");
+    const res = await PATCH(makePatchRequest({ sessionTimeoutMinutes: 60 }));
+
+    expect(res.status).toBe(500);
+    expect((await res.json()).error).toBe("INTERNAL_ERROR");
+    expect(errorSpy).toHaveBeenCalledWith(
+      "[admin/auth-settings PATCH] failed to save settings",
+      expect.objectContaining({ fields: ["sessionTimeoutMinutes"] }),
+    );
+    expect(revalidateTag).not.toHaveBeenCalled();
+    errorSpy.mockRestore();
   });
 
   it("does not invalidate the cache when validation fails", async () => {

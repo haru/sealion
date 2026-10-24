@@ -116,6 +116,32 @@ describe("PATCH /api/account/password — unauthenticated (no DB required)", () 
   });
 });
 
+describe("PATCH /api/account/password — session revocation stamp (no DB required)", () => {
+  test("stamps passwordChangedAt so every older session stops working (spec 045, FR-007)", async () => {
+    const update = jest.fn().mockResolvedValue({ id: TEST_USER_ID });
+    jest.resetModules();
+    jest.doMock("@/lib/auth/auth", () => ({
+      auth: jest.fn().mockResolvedValue({ user: { id: TEST_USER_ID, email: TEST_USER_EMAIL, role: "USER" } }),
+    }));
+    jest.doMock("@/lib/db/db", () => ({
+      prisma: {
+        user: {
+          findUnique: jest.fn().mockResolvedValue({ id: TEST_USER_ID, passwordHash: bcrypt.hashSync("oldpass123", 4) }),
+          update,
+        },
+      },
+    }));
+    const { PATCH } = await import("@/app/api/account/password/route");
+
+    const res = await PATCH(makePatchRequest({ currentPassword: "oldpass123", newPassword: "newpass12345" }));
+
+    expect(res.status).toBe(200);
+    const data = update.mock.calls[0][0].data as Record<string, unknown>;
+    expect(data.passwordChangedAt).toBeInstanceOf(Date);
+    expect(data.passwordHash).toEqual(expect.any(String));
+  });
+});
+
 describe("PATCH /api/account/password — input validation (no DB required)", () => {
   test("returns 400 when newPassword is shorter than 8 characters", async () => {
     jest.resetModules();

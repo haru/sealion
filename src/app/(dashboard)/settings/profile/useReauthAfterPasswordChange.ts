@@ -1,6 +1,6 @@
 /**
  * Re-signs in the current browser after the user changes their own password.
- * The server revokes every session on a password change, so this keeps only this one alive.
+ * The server revokes every session on a password change, so this signs the browser in again.
  */
 
 import { useRouter } from "next/navigation";
@@ -23,8 +23,12 @@ export function useReauthAfterPasswordChange(): (email: string, newPassword: str
     async (email: string, newPassword: string): Promise<void> => {
       try {
         const result = await signIn("credentials", { email, password: newPassword, redirect: false });
-        if (!result || result.error) { router.refresh(); }
-      } catch {
+        if (!result || result.error) {
+          console.error("[profile] re-sign-in after password change failed", result?.error ?? "no result");
+          router.refresh();
+        }
+      } catch (error: unknown) {
+        console.error("[profile] re-sign-in after password change failed", error);
         router.refresh();
       }
     },

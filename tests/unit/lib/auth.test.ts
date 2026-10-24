@@ -1,6 +1,6 @@
 /** @jest-environment node */
 /**
- * Unit tests for the jwt callback and authorize callback in src/lib/auth.ts.
+ * Unit tests for the jwt callback and authorize callback in src/lib/auth/auth.ts.
  * Covers per-request session validation (spec 045): revocation, password change,
  * idle timeout, activity updates, and user status checks on authorize.
  */
@@ -8,6 +8,7 @@
 import type { NextAuthConfig } from "next-auth";
 
 let capturedCallbacks: NextAuthConfig["callbacks"];
+let capturedConfigFactory: (() => Promise<NextAuthConfig>) | undefined;
 let capturedProviderConfig:
   | {
       credentials?: Record<string, unknown>;
@@ -25,21 +26,11 @@ jest.mock("bcryptjs", () => ({
 }));
 
 jest.mock("@/lib/auth/auth-settings", () => ({
-  getAuthSettings: jest.fn().mockResolvedValue({
-    id: "singleton",
-    allowUserSignup: true,
-    sessionTimeoutMinutes: null,
-    updatedAt: new Date(),
-  }),
   getSessionTimeoutMinutes: jest.fn().mockResolvedValue(null),
 }));
 
 jest.mock("@/lib/db/db", () => ({
   prisma: {
-    authSettings: {
-      findUnique: jest.fn(),
-      create: jest.fn(),
-    },
     user: {
       findUnique: jest.fn(),
       update: jest.fn(),
@@ -62,16 +53,8 @@ jest.mock("next-auth/providers/credentials", () => mockProviderFactory);
 jest.mock("next-auth", () => ({
   __esModule: true,
   default: jest.fn((config: NextAuthConfig | (() => Promise<NextAuthConfig>)) => {
-    if (typeof config === "function") {
-      // Async config (post-OIDC refactor): resolve once at module load time
-      // so the test suite still gets a snapshot of the callbacks.
-      void (async () => {
-        const resolved = await config();
-        capturedCallbacks = resolved.callbacks;
-      })();
-    } else {
-      capturedCallbacks = config.callbacks;
-    }
+    // Async config (post-OIDC refactor): tests resolve it explicitly via loadCallbacks().
+    capturedConfigFactory = typeof config === "function" ? config : async () => config;
     return { handlers: {}, auth: jest.fn(), signIn: jest.fn(), signOut: jest.fn() };
   }),
 }));
@@ -87,12 +70,10 @@ jest.mock("@/services/auth-provider", () => ({
   getAuthProviderMetadata: jest.fn(),
 }));
 
-import { getAuthSettings, getSessionTimeoutMinutes } from "@/lib/auth/auth-settings";
+import { getSessionTimeoutMinutes } from "@/lib/auth/auth-settings";
 import { prisma } from "@/lib/db/db";
 
-const mockGetAuthSettings = getAuthSettings as jest.Mock;
 const mockGetSessionTimeoutMinutes = getSessionTimeoutMinutes as jest.Mock;
-const mockAuthSettingsFindUnique = prisma.authSettings.findUnique as jest.Mock;
 const mockUserFindUnique = prisma.user.findUnique as jest.Mock;
 
 
@@ -108,6 +89,7 @@ const ACTIVE_USER = {
   status: "ACTIVE",
   isActive: true,
   username: "TestUser",
+  useGravatar: false,
   createdAt: new Date(),
   updatedAt: new Date(),
 };
@@ -142,15 +124,16 @@ function dbUser(extra: Record<string, unknown> = {}) {
   };
 }
 
-/** Sets the configured idle timeout for both settings accessors. */
+/** Sets the configured idle timeout. */
 function setTimeoutMinutes(minutes: number | null) {
   mockGetSessionTimeoutMinutes.mockResolvedValue(minutes);
-  mockGetAuthSettings.mockResolvedValue({
-    id: "singleton",
-    allowUserSignup: true,
-    sessionTimeoutMinutes: minutes,
-    updatedAt: new Date(),
-  });
+}
+
+/** Resolves the async NextAuth config once the module under test has been imported. */
+async function loadCallbacks() {
+  await import("@/lib/auth/auth");
+  if (!capturedConfigFactory) { throw new Error("NextAuth config was not captured"); }
+  capturedCallbacks = (await capturedConfigFactory()).callbacks;
 }
 
 async function runJwt(args: Partial<JwtArgs> & { token: Record<string, unknown> }) {
@@ -170,14 +153,14 @@ function sessionToken(extra: Record<string, unknown> = {}) {
 }
 
 describe("jwt callback — per-request session validation", () => {
-  beforeAll(async () => {
-    await import("@/lib/auth/auth");
-    await new Promise((resolve) => setImmediate(resolve));
-  });
+  beforeAll(loadCallbacks);
 
   beforeEach(() => {
     jest.clearAllMocks();
     jest.spyOn(Date, "now").mockReturnValue(MOCKED_NOW);
+    jest.spyOn(console, "info").mockImplementation(() => undefined);
+    jest.spyOn(console, "warn").mockImplementation(() => undefined);
+    jest.spyOn(console, "error").mockImplementation(() => undefined);
     setTimeoutMinutes(null);
     mockUserFindUnique.mockResolvedValue(dbUser());
   });
@@ -339,6 +322,103 @@ describe("jwt callback — per-request session validation", () => {
     });
   });
 
+  describe("tokens issued before spec 045 (no authTime) — dormant cookies cannot outlive a password change", () => {
+    const iatSeconds = (msAgo: number) => Math.floor((MOCKED_NOW - msAgo) / 1000);
+
+    it("falls back to iat for authTime, so a cookie older than the password change is rejected", async () => {
+      mockUserFindUnique.mockResolvedValue(
+        dbUser({ passwordChangedAt: new Date(MOCKED_NOW - 30 * MINUTE) }),
+      );
+      const token = await runJwt({ token: makeToken({ iat: iatSeconds(60 * MINUTE) }) });
+      expect(token).toBeNull();
+    });
+
+    it("keeps a legacy cookie that was last used after the password change", async () => {
+      mockUserFindUnique.mockResolvedValue(
+        dbUser({ passwordChangedAt: new Date(MOCKED_NOW - 30 * MINUTE) }),
+      );
+      const token = await runJwt({ token: makeToken({ iat: iatSeconds(5 * MINUTE) }) });
+      expect(token).not.toBeNull();
+      expect(token?.authTime).toBe(iatSeconds(5 * MINUTE) * 1000);
+    });
+
+    it("uses now when the legacy token has no iat", async () => {
+      const token = await runJwt({ token: makeToken() });
+      expect(token?.authTime).toBe(MOCKED_NOW);
+    });
+
+    it("never treats a legacy token as idle just because of its age (lastActivityAt starts at now)", async () => {
+      setTimeoutMinutes(60);
+      const token = await runJwt({ token: makeToken({ iat: iatSeconds(24 * 60 * MINUTE) }) });
+      expect(token).not.toBeNull();
+      expect(token?.lastActivityAt).toBe(MOCKED_NOW);
+    });
+  });
+
+  describe("tokens without a user id", () => {
+    it.each([
+      ["an empty payload (what the old revocation code wrote)", {}],
+      ["only role and time claims", { role: "ADMIN", authTime: MOCKED_NOW - MINUTE }],
+    ])("rejects %s without touching the database", async (_label, token) => {
+      expect(await runJwt({ token })).toBeNull();
+      expect(mockUserFindUnique).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("failures while loading validation inputs fail closed and are logged with context", () => {
+    it("rejects and logs when the idle timeout cannot be read", async () => {
+      mockGetSessionTimeoutMinutes.mockRejectedValue(new Error("settings down"));
+
+      await expect(runJwt({ token: sessionToken() })).rejects.toThrow("settings down");
+
+      expect(console.error).toHaveBeenCalledWith(
+        "[auth] session validation failed",
+        expect.objectContaining({ userId: "user-1", step: "timeout-lookup" }),
+      );
+    });
+
+    it("logs the user-lookup step when the user query fails", async () => {
+      mockUserFindUnique.mockRejectedValue(new Error("db down"));
+
+      await expect(runJwt({ token: sessionToken() })).rejects.toThrow("db down");
+
+      expect(console.error).toHaveBeenCalledWith(
+        "[auth] session validation failed",
+        expect.objectContaining({ userId: "user-1", step: "user-lookup" }),
+      );
+    });
+  });
+
+  describe("observability", () => {
+    it("logs why a session was rejected", async () => {
+      mockUserFindUnique.mockResolvedValue(dbUser({ status: "SUSPENDED" }));
+
+      await runJwt({ token: sessionToken() });
+
+      expect(console.info).toHaveBeenCalledWith("[auth] session rejected", {
+        userId: "user-1",
+        reason: "USER_INACTIVE",
+      });
+    });
+
+    it("does not log anything for a valid session", async () => {
+      await runJwt({ token: sessionToken() });
+      expect(console.info).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("immutability", () => {
+    it("returns a new object and leaves the incoming token untouched", async () => {
+      const incoming = sessionToken({ role: "ADMIN", pwdCheckedAt: 1, pwdChangedAt: 2 });
+      const snapshot = JSON.parse(JSON.stringify(incoming));
+
+      const result = await runJwt({ token: incoming, trigger: "update", session: { activity: true } });
+
+      expect(result).not.toBe(incoming);
+      expect(incoming).toEqual(snapshot);
+    });
+  });
+
   describe("idle timeout and activity (FR-009, FR-010, FR-010a, FR-011)", () => {
     it("never expires from inactivity when the timeout is null", async () => {
       setTimeoutMinutes(null);
@@ -401,21 +481,45 @@ describe("jwt callback — per-request session validation", () => {
     });
 
     it("applies a newly shortened timeout to an existing session", async () => {
-      const stale = sessionToken({ lastActivityAt: MOCKED_NOW - 2 * 60 * MINUTE });
+      const stale = () => sessionToken({ lastActivityAt: MOCKED_NOW - 2 * 60 * MINUTE });
       setTimeoutMinutes(1440);
-      expect(await runJwt({ token: stale })).not.toBeNull();
+      expect(await runJwt({ token: stale() })).not.toBeNull();
       setTimeoutMinutes(60);
-      expect(await runJwt({ token: stale })).toBeNull();
+      expect(await runJwt({ token: stale() })).toBeNull();
     });
 
-    it("never lets an update payload change authTime or role", async () => {
+    it("never lets an update payload change anything but the activity timestamp", async () => {
       const token = await runJwt({
         token: sessionToken(),
         trigger: "update",
-        session: { activity: true, authTime: 0, role: "ADMIN" },
+        session: {
+          activity: true,
+          authTime: 0,
+          role: "ADMIN",
+          lastActivityAt: Number.MAX_SAFE_INTEGER,
+          sub: "other",
+          id: "other",
+          useGravatar: true,
+        },
       });
-      expect(token?.authTime).toBe(MOCKED_NOW - MINUTE);
-      expect(token?.role).toBe("USER");
+      expect(token).toMatchObject({
+        authTime: MOCKED_NOW - MINUTE,
+        role: "USER",
+        lastActivityAt: MOCKED_NOW,
+        sub: "user-1",
+        id: "user-1",
+        useGravatar: false,
+      });
+    });
+
+    it.each([["true"], [1], [{}], [null]])("ignores a non-boolean activity flag (%p)", async (flag) => {
+      const before = MOCKED_NOW - 30 * MINUTE;
+      const token = await runJwt({
+        token: sessionToken({ lastActivityAt: before }),
+        trigger: "update",
+        session: { activity: flag },
+      });
+      expect(token?.lastActivityAt).toBe(before);
     });
   });
 });
@@ -465,6 +569,6 @@ describe("authorize callback — user status checks", () => {
       password: "password123",
     });
 
-    expect(result).toEqual({ id: "user-1", email: "user@example.com", role: "USER" });
+    expect(result).toEqual({ id: "user-1", email: "user@example.com", role: "USER", useGravatar: false });
   });
 });

@@ -330,3 +330,36 @@ describe("PATCH /api/admin/users/[id] — passwordChangedAt (FR-007)", () => {
     expect(lastUpdateData()).not.toHaveProperty("passwordChangedAt");
   });
 });
+
+describe("PATCH /api/admin/users/[id] — update failures", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockAuth.mockResolvedValue(ADMIN_SESSION);
+    mockUserFindUnique.mockResolvedValue({ ...TARGET_USER, role: "ADMIN" });
+  });
+
+  it("returns 500 and logs which fields were being written when the update fails unexpectedly", async () => {
+    const errorSpy = jest.spyOn(console, "error").mockImplementation(() => undefined);
+    mockUserUpdate.mockRejectedValue(new Error('column "sessionsRevokedAt" does not exist'));
+
+    const res = await callPatch("user-1", { role: "USER" });
+
+    expect(res.status).toBe(500);
+    expect(errorSpy).toHaveBeenCalledWith(
+      "[admin/users PATCH] update failed",
+      expect.objectContaining({ id: "user-1", fields: ["role", "sessionsRevokedAt"] }),
+    );
+    errorSpy.mockRestore();
+  });
+
+  it("returns 409 for a duplicate email without logging an error", async () => {
+    const errorSpy = jest.spyOn(console, "error").mockImplementation(() => undefined);
+    mockUserUpdate.mockRejectedValue({ code: "P2002" });
+
+    const res = await callPatch("user-1", { email: "taken@ex.com" });
+
+    expect(res.status).toBe(409);
+    expect(errorSpy).not.toHaveBeenCalled();
+    errorSpy.mockRestore();
+  });
+});
