@@ -77,3 +77,4 @@ YYYY-MM-DD
 | 0003 | [Reuse Auth.js `Account` table for IdP links](./0003-reuse-authjs-account-table.md) | Accepted | 2026-05-17 |
 | 0004 | [Encrypt OAuth tokens at rest](./0004-encrypt-oauth-tokens-at-rest.md) | Accepted | 2026-05-17 |
 | 0005 | [GitLab MR `externalId` prefix](./0005-gitlab-mr-external-id-prefix.md) | Accepted | 2026-05-28 |
+| 0006 | [Validate session validity on every request with app-owned claims](./0006-session-validity-per-request.md) | Proposed | 2026-10-24 |
