@@ -28,13 +28,39 @@ type PatchBody = {
   changePassword?: boolean;
 };
 
+/** The current values of the user being edited, used to detect session-revoking changes. */
+type TargetState = { role: UserRole; status: UserStatus };
+
+/**
+ * Decides whether a PATCH ends the target's existing sessions (spec 045, FR-004/FR-005).
+ *
+ * Demotion (`ADMIN → USER`) and leaving `ACTIVE` revoke. Promotion, reactivation,
+ * unchanged values, and email/username-only edits do not.
+ *
+ * @param body - The parsed patch request body.
+ * @param target - The target user's role and status before the update.
+ * @returns `true` when `sessionsRevokedAt` must be set.
+ */
+function revokesSessions(body: PatchBody, target: TargetState): boolean {
+  const demoted = target.role === UserRole.ADMIN && body.role === UserRole.USER;
+  const deactivated =
+    target.status === UserStatus.ACTIVE &&
+    VALID_STATUSES.has(body.status as UserStatus) &&
+    body.status !== UserStatus.ACTIVE;
+  return demoted || deactivated;
+}
+
 /**
  * Build the Prisma update data object from validated PATCH body fields.
  *
+ * Also stamps `sessionsRevokedAt` (see {@link revokesSessions}) and `passwordChangedAt`
+ * (when an admin sets a password) so the target's older sessions stop working.
+ *
  * @param body - The parsed patch request body.
+ * @param target - The target user's role and status before the update.
  * @returns Promise resolving to the update data record.
  */
-async function buildUpdateData(body: PatchBody): Promise<Record<string, unknown>> {
+async function buildUpdateData(body: PatchBody, target: TargetState): Promise<Record<string, unknown>> {
   const { status, role, email, username, password, changePassword } = body;
   const data: Record<string, unknown> = {};
   if (status && VALID_STATUSES.has(status as UserStatus)) { data.status = status; }
@@ -43,7 +69,9 @@ async function buildUpdateData(body: PatchBody): Promise<Record<string, unknown>
   if (typeof username === "string") { data.username = username.trim(); }
   if (changePassword === true && typeof password === "string" && password.length >= MIN_PASSWORD_LENGTH) {
     data.passwordHash = await hash(password, 12);
+    data.passwordChangedAt = new Date();
   }
+  if (revokesSessions(body, target)) { data.sessionsRevokedAt = new Date(); }
   return data;
 }
 
@@ -126,7 +154,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     return fail("CANNOT_CHANGE_OWN_ROLE", 403);
   }
 
-  const updateData = await buildUpdateData(patchBody);
+  const updateData = await buildUpdateData(patchBody, target);
 
   try {
     const updated = await prisma.user.update({

@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 
 import DashboardShell from "@/components/layout/DashboardShell";
@@ -15,7 +16,8 @@ import { AdminSessionProvider } from "./AdminSessionProvider";
  * {@link AdminSessionProvider} for client-side session context.
  *
  * @param props - Layout props containing child page content.
- * @returns Children wrapped in DashboardShell for ADMIN users; a localized 403 page otherwise.
+ * @returns Children wrapped in DashboardShell for ADMIN users; a localized 403 page for other signed-in users.
+ * Unauthenticated visitors are redirected to the login page.
  */
 export default async function AdminLayout({
   children,
@@ -23,9 +25,14 @@ export default async function AdminLayout({
   children: React.ReactNode;
 }) {
   const session = await auth();
+  if (!session?.user) {
+    // Revoked, suspended, deleted or expired sessions resolve to null (spec 045, FR-006).
+    redirect("/login");
+  }
+
   const t = await getTranslations("admin");
 
-  if (session?.user?.role !== "ADMIN") {
+  if (session.user.role !== "ADMIN") {
     return (
       <main style={{ padding: "2rem", textAlign: "center" }}>
         <h1>{t("forbiddenTitle")}</h1>

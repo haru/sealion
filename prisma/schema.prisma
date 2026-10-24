@@ -38,6 +38,7 @@ model User {
   emailVerificationToken          String?     @unique
   emailVerificationTokenExpires   DateTime?
   passwordChangedAt               DateTime?
+  sessionsRevokedAt               DateTime?
   useGravatar                     Boolean     @default(false)
   createdAt                       DateTime    @default(now())
   updatedAt    DateTime @updatedAt

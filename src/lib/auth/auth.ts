@@ -8,17 +8,15 @@ import bcrypt from "bcryptjs";
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 
-import { getAuthSettings } from "@/lib/auth/auth-settings";
+import { getSessionTimeoutMinutes } from "@/lib/auth/auth-settings";
 import { authConfig } from "@/lib/auth/auth.config";
+import { evaluateSession } from "@/lib/auth/session-validity";
 import { prisma } from "@/lib/db/db";
 import {
   getAuthProviderMetadata,
   listEnabled,
 } from "@/services/auth-provider";
 import { handleExternalSignIn } from "@/services/auth-provider/account-linking";
-
-/** Seconds between re-checks of `passwordChangedAt` in the JWT callback. */
-const PWD_CHANGE_RECHECK_INTERVAL_S = 5 * 60;
 
 const credentialsProvider = Credentials({
   credentials: {
@@ -95,69 +93,72 @@ export const { handlers, auth, signIn, signOut } = NextAuth(async () => {
         return handleExternalSignIn({ user, account, profile });
       },
       /**
-       * JWT callback — extends the base callback from auth.config.ts with session timeout support.
+       * JWT callback — validates the session on every call and refreshes claims from the database
+       * (spec 045, ADR 0006).
        *
-       * On `signIn`, reads `sessionTimeoutMinutes` from AuthSettings and sets `token.exp` when
-       * a non-null timeout is configured. Other triggers leave the token unchanged.
+       * On `signIn`, stamps the app-owned `authTime` and `lastActivityAt` claims. Auth.js overwrites
+       * `iat`/`exp` on every encode, so security decisions never use them.
        *
-       * Also checks `user.passwordChangedAt` to invalidate sessions after a password change.
-       * To reduce database load, `passwordChangedAt` is cached in the JWT token and only
-       * re-queried from the database every {@link PWD_CHANGE_RECHECK_INTERVAL_S} seconds.
+       * On every call, loads the user by primary key and runs {@link evaluateSession}. The session is
+       * rejected (by returning `null`, never `{}`) when the user is gone or not ACTIVE, when the
+       * session predates a password change or an admin revocation, or when it has been idle longer
+       * than the configured timeout. `role` and `useGravatar` are always taken from the database.
        *
-       * On `update` trigger, refreshes `useGravatar` from the session update payload so that
-       * preference changes are reflected immediately without a full sign-out/sign-in cycle.
+       * Only `trigger === "update"` with `session.activity === true` refreshes `lastActivityAt`, so
+       * background refetches and other `update()` calls never extend the idle timeout.
+       *
+       * Tokens issued before this change lack the time claims; they are stamped with the current
+       * time so nobody is signed out by the deployment.
        *
        * @param token - The current JWT payload.
        * @param user - The authenticated user object (present only on signIn).
        * @param trigger - The event that triggered the callback.
        * @param session - The session update payload (present only on `update` trigger).
-       * @returns The updated JWT token, or an empty object to reject the session.
+       * @returns The updated token, or `null` to end the session.
+       * @throws Re-throws database errors so that validation fails closed.
        */
       async jwt({ token, user, trigger, session }) {
+        const now = Date.now();
+
         if (user) {
           token.id = user.id;
-          token.role = (user as { id: string; email?: string | null; role: string; useGravatar: boolean }).role;
-          token.useGravatar = (user as { id: string; email?: string | null; role: string; useGravatar: boolean }).useGravatar ?? false;
+          token.authTime = now;
+          token.lastActivityAt = now;
         }
-
-        if (trigger === "update") {
-          const update = session as { useGravatar?: boolean } | undefined;
-          if (update?.useGravatar !== undefined) {
-            token.useGravatar = update.useGravatar;
-          }
-        }
-
-        if (trigger === "signIn") {
-          const { sessionTimeoutMinutes } = await getAuthSettings();
-          if (sessionTimeoutMinutes !== null) {
-            token.exp = Math.floor(Date.now() / 1000) + sessionTimeoutMinutes * 60;
-          }
-        }
+        token.authTime = (token.authTime as number | undefined) ?? now;
+        token.lastActivityAt = (token.lastActivityAt as number | undefined) ?? now;
+        delete token.pwdCheckedAt;
+        delete token.pwdChangedAt;
 
         const userId = (token.sub as string | undefined) ?? (token.id as string | undefined);
-        if (userId) {
-          const now = Math.floor(Date.now() / 1000);
-          const lastChecked = (token.pwdCheckedAt as number | undefined) ?? 0;
+        if (!userId) { return token; }
 
-          if (now - lastChecked >= PWD_CHANGE_RECHECK_INTERVAL_S) {
-            const dbUser = await prisma.user.findUnique({
-              where: { id: userId },
-              select: { passwordChangedAt: true, useGravatar: true },
-            });
+        const dbUser = await prisma.user.findUnique({
+          where: { id: userId },
+          select: {
+            role: true,
+            status: true,
+            passwordChangedAt: true,
+            sessionsRevokedAt: true,
+            useGravatar: true,
+          },
+        });
 
-            token.pwdChangedAt = dbUser?.passwordChangedAt
-              ? Math.floor(dbUser.passwordChangedAt.getTime() / 1000)
-              : null;
-            token.pwdCheckedAt = now;
-            token.useGravatar = dbUser?.useGravatar ?? false;
-          }
+        const evaluation = evaluateSession({
+          token: { authTime: token.authTime as number, lastActivityAt: token.lastActivityAt as number },
+          user: dbUser,
+          timeoutMinutes: await getSessionTimeoutMinutes(),
+          now,
+        });
+        if (!evaluation.valid || dbUser === null) { return null; }
 
-          if (token.pwdChangedAt != null) {
-            const iat = token.iat as number | undefined;
-            if (iat !== undefined && iat < (token.pwdChangedAt as number)) {
-              return {};
-            }
-          }
+        token.role = dbUser.role;
+        token.useGravatar = dbUser.useGravatar;
+
+        const isActivityUpdate =
+          trigger === "update" && (session as { activity?: unknown } | undefined)?.activity === true;
+        if (isActivityUpdate) {
+          token.lastActivityAt = now;
         }
 
         return token;

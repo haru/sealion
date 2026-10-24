@@ -211,3 +211,122 @@ describe("PATCH /api/admin/users/[id] — changePassword", () => {
     expect(updateArgs.data).not.toHaveProperty("passwordHash");
   });
 });
+
+/** Returns the `data` object passed to the most recent `prisma.user.update` call. */
+function lastUpdateData(): Record<string, unknown> {
+  const calls = mockUserUpdate.mock.calls;
+  return (calls[calls.length - 1][0] as { data: Record<string, unknown> }).data;
+}
+
+describe("PATCH /api/admin/users/[id] — session revocation markers (spec 045)", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockAuth.mockResolvedValue(ADMIN_SESSION);
+    mockUserUpdate.mockResolvedValue({ ...TARGET_USER });
+  });
+
+  it("sets sessionsRevokedAt when an ADMIN is demoted to USER", async () => {
+    mockUserFindUnique.mockResolvedValue({ ...TARGET_USER, role: "ADMIN" });
+
+    const res = await callPatch("user-1", { role: "USER" });
+
+    expect(res.status).toBe(200);
+    expect(lastUpdateData().sessionsRevokedAt).toBeInstanceOf(Date);
+  });
+
+  it.each(["SUSPENDED", "PENDING"])("sets sessionsRevokedAt when an ACTIVE user becomes %s", async (status) => {
+    mockUserFindUnique.mockResolvedValue({ ...TARGET_USER, status: "ACTIVE" });
+
+    const res = await callPatch("user-1", { status });
+
+    expect(res.status).toBe(200);
+    expect(lastUpdateData().sessionsRevokedAt).toBeInstanceOf(Date);
+  });
+
+  it("does not set sessionsRevokedAt when a USER is promoted to ADMIN", async () => {
+    mockUserFindUnique.mockResolvedValue({ ...TARGET_USER, role: "USER" });
+
+    await callPatch("user-1", { role: "ADMIN" });
+
+    expect(lastUpdateData()).not.toHaveProperty("sessionsRevokedAt");
+  });
+
+  it("does not set sessionsRevokedAt when a suspended user is reactivated", async () => {
+    mockUserFindUnique.mockResolvedValue({ ...TARGET_USER, status: "SUSPENDED" });
+
+    await callPatch("user-1", { status: "ACTIVE" });
+
+    expect(lastUpdateData()).not.toHaveProperty("sessionsRevokedAt");
+  });
+
+  it("does not set sessionsRevokedAt when the role is unchanged", async () => {
+    mockUserFindUnique.mockResolvedValue({ ...TARGET_USER, role: "ADMIN" });
+
+    await callPatch("user-1", { role: "ADMIN" });
+
+    expect(lastUpdateData()).not.toHaveProperty("sessionsRevokedAt");
+  });
+
+  it("does not set sessionsRevokedAt when the status is unchanged", async () => {
+    mockUserFindUnique.mockResolvedValue({ ...TARGET_USER, status: "ACTIVE" });
+
+    await callPatch("user-1", { status: "ACTIVE" });
+
+    expect(lastUpdateData()).not.toHaveProperty("sessionsRevokedAt");
+  });
+
+  it("does not revoke sessions for an email-only change", async () => {
+    mockUserFindUnique.mockResolvedValue(TARGET_USER);
+
+    await callPatch("user-1", { email: "new@ex.com" });
+
+    const data = lastUpdateData();
+    expect(data).not.toHaveProperty("sessionsRevokedAt");
+    expect(data).not.toHaveProperty("passwordChangedAt");
+  });
+
+  it("does not revoke sessions for a username-only change", async () => {
+    mockUserFindUnique.mockResolvedValue(TARGET_USER);
+
+    await callPatch("user-1", { username: "Renamed" });
+
+    expect(lastUpdateData()).not.toHaveProperty("sessionsRevokedAt");
+  });
+
+  it("sets both markers when demoting and changing the password in one request", async () => {
+    mockUserFindUnique.mockResolvedValue({ ...TARGET_USER, role: "ADMIN" });
+
+    await callPatch("user-1", { role: "USER", changePassword: true, password: "newpassword123" });
+
+    const data = lastUpdateData();
+    expect(data.sessionsRevokedAt).toBeInstanceOf(Date);
+    expect(data.passwordChangedAt).toBeInstanceOf(Date);
+  });
+});
+
+describe("PATCH /api/admin/users/[id] — passwordChangedAt (FR-007)", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockAuth.mockResolvedValue(ADMIN_SESSION);
+    mockUserFindUnique.mockResolvedValue(TARGET_USER);
+    mockUserUpdate.mockResolvedValue({ ...TARGET_USER });
+  });
+
+  it("sets passwordChangedAt when an admin sets a new password", async () => {
+    await callPatch("user-1", { changePassword: true, password: "newpassword123" });
+
+    expect(lastUpdateData().passwordChangedAt).toBeInstanceOf(Date);
+  });
+
+  it("does not set passwordChangedAt when changePassword is false", async () => {
+    await callPatch("user-1", { changePassword: false, password: "newpassword123" });
+
+    expect(lastUpdateData()).not.toHaveProperty("passwordChangedAt");
+  });
+
+  it("does not set passwordChangedAt when changePassword is absent", async () => {
+    await callPatch("user-1", { username: "Renamed", password: "newpassword123" });
+
+    expect(lastUpdateData()).not.toHaveProperty("passwordChangedAt");
+  });
+});

@@ -6,6 +6,7 @@ import { MessageQueueProvider } from "@/components/MessageQueue";
 import { PageHeaderProvider } from "@/contexts/PageHeaderContext";
 
 import DashboardShellInner from "./DashboardShellInner";
+import SessionActivityTracker from "./SessionActivityTracker";
 
 /** Props for {@link DashboardShell}. */
 interface DashboardShellProps {
@@ -27,6 +28,7 @@ interface DashboardShellProps {
 export default function DashboardShell({ email, role, gravatarUrl, children }: DashboardShellProps) {
   return (
     <SessionProvider>
+      <SessionActivityTracker />
       <MessageQueueProvider>
         <PageHeaderProvider>
           <DashboardShellInner email={email} role={role} gravatarUrl={gravatarUrl}>{children}</DashboardShellInner>

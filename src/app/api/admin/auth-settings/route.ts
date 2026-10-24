@@ -1,8 +1,9 @@
+import { revalidateTag } from "next/cache";
 import type { NextRequest } from "next/server";
 
 import { ok, fail } from "@/lib/api/api-response";
 import { auth } from "@/lib/auth/auth";
-import { getAuthSettings } from "@/lib/auth/auth-settings";
+import { AUTH_SETTINGS_CACHE_TAG, getAuthSettings } from "@/lib/auth/auth-settings";
 import { prisma } from "@/lib/db/db";
 
 /** Valid values for sessionTimeoutMinutes (null = no timeout). */
@@ -93,6 +94,9 @@ export async function PATCH(req: NextRequest) {
     update: data,
     create: { id: "singleton", ...data },
   });
+
+  // The idle timeout is cached for the jwt callback; make the change visible immediately.
+  revalidateTag(AUTH_SETTINGS_CACHE_TAG, "");
 
   return ok({
     allowUserSignup: settings.allowUserSignup,

@@ -4,7 +4,9 @@ import { NextRequest } from "next/server";
 jest.mock("@/lib/auth/auth", () => ({ auth: jest.fn() }));
 jest.mock("@/lib/auth/auth-settings", () => ({
   getAuthSettings: jest.fn(),
+  AUTH_SETTINGS_CACHE_TAG: "auth-settings",
 }));
+jest.mock("next/cache", () => ({ revalidateTag: jest.fn() }));
 jest.mock("@/lib/db/db", () => ({
   prisma: {
     authSettings: {
@@ -16,6 +18,7 @@ jest.mock("@/lib/db/db", () => ({
 import { auth } from "@/lib/auth/auth";
 import { getAuthSettings } from "@/lib/auth/auth-settings";
 import { prisma } from "@/lib/db/db";
+import { revalidateTag } from "next/cache";
 
 const mockAuth = auth as jest.Mock;
 const mockGetAuthSettings = getAuthSettings as jest.Mock;
@@ -104,6 +107,23 @@ describe("PATCH /api/admin/auth-settings", () => {
 
     expect(res.status).toBe(200);
     expect(json.data.allowUserSignup).toBe(false);
+  });
+
+  it("invalidates the cached session timeout after a successful update", async () => {
+    mockAuth.mockResolvedValue(ADMIN_SESSION);
+    mockUpsert.mockResolvedValue({ ...DEFAULT_SETTINGS, sessionTimeoutMinutes: 60 });
+    const { PATCH } = await import("@/app/api/admin/auth-settings/route");
+    await PATCH(makePatchRequest({ sessionTimeoutMinutes: 60 }));
+
+    expect(revalidateTag).toHaveBeenCalledWith("auth-settings", "");
+  });
+
+  it("does not invalidate the cache when validation fails", async () => {
+    mockAuth.mockResolvedValue(ADMIN_SESSION);
+    const { PATCH } = await import("@/app/api/admin/auth-settings/route");
+    await PATCH(makePatchRequest({ sessionTimeoutMinutes: 999 }));
+
+    expect(revalidateTag).not.toHaveBeenCalled();
   });
 
   it("returns 200 with empty body (no changes)", async () => {

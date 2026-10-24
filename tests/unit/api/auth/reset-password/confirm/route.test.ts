@@ -80,6 +80,18 @@ describe("POST /api/auth/reset-password/confirm", () => {
     expect(mockVTDeleteMany).toHaveBeenCalledWith({ where: { token } });
   });
 
+  it("stamps passwordChangedAt so every session created before the reset stops working (spec 045)", async () => {
+    const req = makeRequest({
+      token: "a".repeat(64),
+      password: "newpassword123",
+      confirmPassword: "newpassword123",
+    });
+    await POST(req);
+
+    const args = mockUserUpdate.mock.calls[0][0] as { data: Record<string, unknown> };
+    expect(args.data.passwordChangedAt).toBeInstanceOf(Date);
+  });
+
   it("normalizes email from the token before user lookup", async () => {
     mockVerify.mockResolvedValue("User@Example.COM ");
 

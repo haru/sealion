@@ -20,6 +20,7 @@ import PageContent from "@/components/ui/PageContent";
 import { usePageMeta } from "@/hooks/usePageMeta";
 
 import { AccountLinksSection } from "./_components/AccountLinksSection";
+import { useReauthAfterPasswordChange } from "./useReauthAfterPasswordChange";
 
 /**
  * Profile settings page.
@@ -35,6 +36,7 @@ export default function ProfileSettingsPage() {
 
   const router = useRouter();
   const { update } = useSession();
+  const reauthenticate = useReauthAfterPasswordChange();
 
   // Profile data
   const [username, setUsername] = useState("");
@@ -129,6 +131,8 @@ export default function ProfileSettingsPage() {
 
         // Clear password fields on success (FR-007)
         if (changePassword) {
+          // The server revoked all sessions; replace this browser's session so the user keeps working.
+          await reauthenticate(userEmail, newPassword);
           setChangePassword(false);
           setCurrentPassword("");
           setNewPassword("");
