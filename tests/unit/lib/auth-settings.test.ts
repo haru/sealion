@@ -14,6 +14,11 @@ jest.mock("@/lib/db/db", () => ({
   },
 }));
 
+const mockUnstableCache = jest.fn(<T>(fn: T) => fn);
+jest.mock("next/cache", () => ({
+  unstable_cache: (...args: [unknown, ...unknown[]]) => mockUnstableCache(...(args as [never])),
+}));
+
 import { prisma } from "@/lib/db/db";
 
 const mockFindUnique = prisma.authSettings.findUnique as jest.Mock;
@@ -89,5 +94,40 @@ describe("getAuthSettings", () => {
     const { getAuthSettings } = await import("@/lib/auth/auth-settings");
 
     await expect(getAuthSettings()).rejects.toThrow("Some DB error");
+  });
+});
+
+// Keep this describe last: the cache-tag test below calls jest.resetModules(), which detaches
+// the `mockFindUnique` handles above from freshly imported modules.
+describe("getSessionTimeoutMinutes", () => {
+  it("returns the configured idle timeout", async () => {
+    mockFindUnique.mockResolvedValue({ ...SINGLETON, sessionTimeoutMinutes: 360 });
+
+    const { getSessionTimeoutMinutes } = await import("@/lib/auth/auth-settings");
+
+    await expect(getSessionTimeoutMinutes()).resolves.toBe(360);
+  });
+
+  it("returns null when no timeout is configured", async () => {
+    mockFindUnique.mockResolvedValue(SINGLETON);
+
+    const { getSessionTimeoutMinutes } = await import("@/lib/auth/auth-settings");
+
+    await expect(getSessionTimeoutMinutes()).resolves.toBeNull();
+  });
+
+  it("is cached for 30 seconds under the auth-settings tag so admin updates can invalidate it", async () => {
+    jest.resetModules();
+    mockUnstableCache.mockClear();
+
+    const mod = await import("@/lib/auth/auth-settings");
+
+    expect(mockUnstableCache).toHaveBeenCalledTimes(1);
+    expect(mockUnstableCache.mock.calls[0]).toEqual([
+      expect.any(Function),
+      ["auth-settings:session-timeout"],
+      { tags: [mod.AUTH_SETTINGS_CACHE_TAG], revalidate: 30 },
+    ]);
+    expect(mod.AUTH_SETTINGS_CACHE_TAG).toBe("auth-settings");
   });
 });

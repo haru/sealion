@@ -1,4 +1,9 @@
-import { UserRole, UserStatus } from "@prisma/client";
+/**
+ * Admin API for a single user: edit (PATCH) and delete (DELETE).
+ * Edits that end a user's sessions are stamped here (spec 045).
+ */
+
+import { type Prisma, type User, UserRole, UserStatus } from "@prisma/client";
 import { hash } from "bcryptjs";
 import type { NextRequest } from "next/server";
 
@@ -28,23 +33,59 @@ type PatchBody = {
   changePassword?: boolean;
 };
 
+/** The current values of the user being edited, used to detect session-revoking changes. */
+type TargetState = Readonly<Pick<User, "role" | "status">>;
+
+/** The validated role/status values a PATCH will write. */
+type RoleStatusChanges = { readonly role?: UserRole; readonly status?: UserStatus };
+
 /**
- * Build the Prisma update data object from validated PATCH body fields.
+ * Decides whether a PATCH ends the target's existing sessions (spec 045, FR-004/FR-005).
+ *
+ * Demotion (`ADMIN → USER`) and leaving `ACTIVE` revoke. Promotion, reactivation,
+ * unchanged values, and email/username-only edits do not.
+ *
+ * @param changes - The validated role and status the PATCH will write.
+ * @param target - The target user's role and status before the update.
+ * @returns `true` when `sessionsRevokedAt` must be set.
+ */
+function revokesSessions(changes: RoleStatusChanges, target: TargetState): boolean {
+  const demoted = target.role === UserRole.ADMIN && changes.role === UserRole.USER;
+  const deactivated =
+    target.status === UserStatus.ACTIVE && changes.status !== undefined && changes.status !== UserStatus.ACTIVE;
+  return demoted || deactivated;
+}
+
+/**
+ * Build the Prisma update data from validated PATCH body fields.
+ *
+ * Also stamps `sessionsRevokedAt` (see {@link revokesSessions}) and `passwordChangedAt`
+ * (when an admin sets a password) so the target's older sessions stop working. The return
+ * type is checked by the compiler, so a misspelt revocation column cannot compile.
  *
  * @param body - The parsed patch request body.
- * @returns Promise resolving to the update data record.
+ * @param target - The target user's role and status before the update.
+ * @returns Promise resolving to the update data.
  */
-async function buildUpdateData(body: PatchBody): Promise<Record<string, unknown>> {
+async function buildUpdateData(body: PatchBody, target: TargetState): Promise<Prisma.UserUpdateInput> {
   const { status, role, email, username, password, changePassword } = body;
-  const data: Record<string, unknown> = {};
-  if (status && VALID_STATUSES.has(status as UserStatus)) { data.status = status; }
-  if (role && Object.values(UserRole).includes(role as UserRole)) { data.role = role; }
-  if (typeof email === "string" && email.trim()) { data.email = email.trim().toLowerCase(); }
-  if (typeof username === "string") { data.username = username.trim(); }
-  if (changePassword === true && typeof password === "string" && password.length >= MIN_PASSWORD_LENGTH) {
-    data.passwordHash = await hash(password, 12);
-  }
-  return data;
+  const now = new Date();
+  const validStatus = status && VALID_STATUSES.has(status as UserStatus) ? (status as UserStatus) : undefined;
+  const validRole = role && Object.values(UserRole).includes(role as UserRole) ? (role as UserRole) : undefined;
+  const passwordHash =
+    changePassword === true && typeof password === "string" && password.length >= MIN_PASSWORD_LENGTH
+      ? await hash(password, 12)
+      : undefined;
+  const normalizedEmail = typeof email === "string" && email.trim() ? email.trim().toLowerCase() : undefined;
+
+  return {
+    ...(validStatus ? { status: validStatus } : {}),
+    ...(validRole ? { role: validRole } : {}),
+    ...(normalizedEmail ? { email: normalizedEmail } : {}),
+    ...(typeof username === "string" ? { username: username.trim() } : {}),
+    ...(passwordHash ? { passwordHash, passwordChangedAt: now } : {}),
+    ...(revokesSessions({ role: validRole, status: validStatus }, target) ? { sessionsRevokedAt: now } : {}),
+  };
 }
 
 /**
@@ -92,6 +133,10 @@ function validatePatchFields(body: PatchBody): ReturnType<typeof fail> | null {
  * - Admin cannot change their own `status` (403 CANNOT_CHANGE_OWN_STATUS).
  * - All other self-edits (email, username, password, or setting role to same value) are permitted.
  *
+ * Session side effects (spec 045, FR-004/FR-005/FR-007): demoting an ADMIN, moving a user out of
+ * ACTIVE, or setting a password ends the target's existing sessions (`sessionsRevokedAt` /
+ * `passwordChangedAt`). Promotion, reactivation, and email/username-only edits do not.
+ *
  * @param req - Incoming request with optional body fields: status, role, email, username, password, changePassword.
  * @param params - Route params containing the target user id.
  * @returns Updated user data on success, or an error response.
@@ -126,7 +171,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     return fail("CANNOT_CHANGE_OWN_ROLE", 403);
   }
 
-  const updateData = await buildUpdateData(patchBody);
+  const updateData = await buildUpdateData(patchBody, target);
 
   try {
     const updated = await prisma.user.update({
@@ -140,6 +185,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     if (typeof err === "object" && err !== null && "code" in err && (err as { code: string }).code === "P2002") {
       return fail("EMAIL_ALREADY_EXISTS", 409);
     }
+    console.error("[admin/users PATCH] update failed", { id, fields: Object.keys(updateData), error: err });
     return fail("INTERNAL_ERROR", 500);
   }
 }

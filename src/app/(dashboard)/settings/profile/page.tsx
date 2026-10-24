@@ -1,5 +1,10 @@
 "use client";
 
+/**
+ * Profile settings page: username, Gravatar and password in one save.
+ * After a password change the browser signs in again, because the server revokes all sessions.
+ */
+
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -20,6 +25,7 @@ import PageContent from "@/components/ui/PageContent";
 import { usePageMeta } from "@/hooks/usePageMeta";
 
 import { AccountLinksSection } from "./_components/AccountLinksSection";
+import { useReauthAfterPasswordChange } from "./useReauthAfterPasswordChange";
 
 /**
  * Profile settings page.
@@ -35,6 +41,7 @@ export default function ProfileSettingsPage() {
 
   const router = useRouter();
   const { update } = useSession();
+  const reauthenticate = useReauthAfterPasswordChange();
 
   // Profile data
   const [username, setUsername] = useState("");
@@ -129,13 +136,16 @@ export default function ProfileSettingsPage() {
 
         // Clear password fields on success (FR-007)
         if (changePassword) {
+          // The server revoked all sessions; replace this browser's session so the user keeps working.
+          await reauthenticate(userEmail, newPassword);
           setChangePassword(false);
           setCurrentPassword("");
           setNewPassword("");
           setConfirmPassword("");
         }
 
-        // Refresh JWT session when Gravatar preference changed (FR-010, Decision 5)
+        // Re-fetch the session when the Gravatar preference changed (FR-010, Decision 5).
+        // The jwt callback reloads `useGravatar` from the database; the payload itself is ignored.
         if (useGravatar !== initialUseGravatar.current) {
           await update({ useGravatar });
           initialUseGravatar.current = useGravatar;

@@ -13,6 +13,8 @@ import { PrismaClient } from "@prisma/client";
 import { NextRequest } from "next/server";
 
 jest.mock("@/lib/auth/auth", () => ({ auth: jest.fn() }));
+// The PATCH handler invalidates the cached idle timeout; there is no Next.js request context here.
+jest.mock("next/cache", () => ({ revalidateTag: jest.fn(), unstable_cache: <T,>(fn: T) => fn }));
 
 import { auth } from "@/lib/auth/auth";
 const mockAuth = auth as jest.Mock;
