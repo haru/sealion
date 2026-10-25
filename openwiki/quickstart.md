@@ -50,9 +50,9 @@ After schema work, check migration status before `npx prisma migrate dev`; devel
 
 These rules are supported by [`AGENTS.md`](../AGENTS.md), [`prisma/schema.prisma`](../prisma/schema.prisma), and current service implementations.
 
-## Git context at initialization
+## Git context at this update
 
-The repository is at commit `6683685b73168f102e4544103bbed68855791f0d`. Recent history is primarily dependency maintenance, provider hardening, external authentication, and documentation automation. High-signal provider changes added bounded pagination, reviewer-assigned GitHub/GitLab work, GitLab merge-request ID prefixes, and GitHub Enterprise base-URL support. The working tree has an unstaged modification to [`.github/workflows/openwiki-update.yml`](../.github/workflows/openwiki-update.yml); [operations and testing](./operations/testing.md) records it as working-tree state rather than committed application behavior.
+The repository is at commit `4a2e6863d5210e6c4072f5cd140807f10b2eca7c` with a clean working tree. The current change fixes session revocation and idle session timeout: per-request JWT validation now reads authoritative user state, app-owned time claims avoid Auth.js `iat`/`exp` rewriting, and explicit browser activity drives idle-timeout refresh. See the [architecture overview](./architecture/overview.md) and [operations/testing guide](./operations/testing.md) for implementation and regression coverage.
 
 ## Backlog
 
