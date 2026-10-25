@@ -20,7 +20,9 @@ sequenceDiagram
     participant Remote as External service
     Browser->>Route: page or API request
     Route->>Auth: authenticate session
-    Auth-->>Route: user identity and role
+    Auth->>DB: load User and AuthSettings
+    DB-->>Auth: status, role, revocation, timeout
+    Auth-->>Route: session or null
     Route->>DB: user-scoped read or write
     Route->>Remote: adapter operation when needed
     Remote-->>Route: provider response
@@ -35,7 +37,7 @@ The root layout composes MUI, `next-intl`, global styling, and the application s
 
 [`src/lib/auth/auth.ts`](../../src/lib/auth/auth.ts) builds the full Auth.js runtime configuration. Local credentials use bcrypt and reject pending, suspended, or passwordless users as appropriate. Enabled external providers are loaded from database configuration through [`src/services/auth-provider/`](../../src/services/auth-provider/).
 
-The dynamic provider decision is recorded in [ADR 0002](../../docs/adr/0002-dynamic-auth-provider-loading.md): provider records are cached for 30 seconds and admin writes invalidate the cache. [ADR 0003](../../docs/adr/0003-reuse-authjs-account-table.md) explains why external links use Auth.js `Account` rows and why automatic dangerous email linking is not enabled. Session JWT claims carry user identity, role, and Gravatar preference; password changes are periodically rechecked to invalidate stale sessions.
+The dynamic provider decision is recorded in [ADR 0002](../../docs/adr/0002-dynamic-auth-provider-loading.md): provider records are cached for 30 seconds and admin writes invalidate the cache. [ADR 0003](../../docs/adr/0003-reuse-authjs-account-table.md) explains why external links use Auth.js `Account` rows and why automatic dangerous email linking is not enabled. Session JWT claims carry user identity, role, and Gravatar preference; the JWT callback now validates every request against the authoritative `User` row and refreshes role/profile state from the database. [`src/lib/auth/session-validity.ts`](../../src/lib/auth/session-validity.ts) uses app-owned `authTime` and `lastActivityAt` claims rather than Auth.js `iat`/`exp`: password changes, admin revocation timestamps, inactive/deleted users, and configured idle timeout can therefore invalidate a session by returning `null`. `User.sessionsRevokedAt` records revocation in [`prisma/schema.prisma`](../../prisma/schema.prisma). The client-only [`SessionActivityTracker`](../../src/components/layout/SessionActivityTracker.tsx) reports explicit keyboard, pointer, wheel, or touch activity at most once per 60 seconds; background refetches do not extend an idle session. See [ADR 0006](../../docs/adr/0006-session-validity-per-request.md) for the security rationale and migration behavior.
 
 ## Persistence and security boundaries
 

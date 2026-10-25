@@ -23,13 +23,13 @@ For schema work, run `npx prisma migrate status` before `npx prisma migrate dev`
 
 Jest uses V8 coverage and a global 95% line threshold. Playwright starts `npm run dev`, runs Chromium, uses one worker in CI, and retains traces on first retry. The practical verification matrix is: targeted unit tests for libraries/providers; integration tests for API ownership and schema behavior; E2E for visible workflows; lint and build for all consequential changes.
 
-The [synchronization workflow](../workflows/synchronization.md) and [provider integrations](../integrations/providers.md) identify the highest-risk behavioral cases.
+The [synchronization workflow](../workflows/synchronization.md) and [provider integrations](../integrations/providers.md) identify the highest-risk behavioral cases. Session security has focused regression coverage in [`tests/unit/lib/auth/session-validity.test.ts`](../../tests/unit/lib/auth/session-validity.test.ts) for pure validity and claim decisions, [`tests/integration/auth/session-revocation.test.ts`](../../tests/integration/auth/session-revocation.test.ts) for the real JWT callback and database state, and [`tests/e2e/flows/session-revocation.spec.ts`](../../tests/e2e/flows/session-revocation.spec.ts) for next-request demotion/suspension behavior. The integration suite requires a migrated test database; the E2E suite requires the running app and seeded admin credentials.
 
 ## CI, release, and repository state
 
 `.github/workflows/ci.yml` runs lint, Jest/coverage, and build on Node 22. Container publishing builds AMD64 and ARM64 images on version tags or manual dispatch. Release automation tags from `package.json`, publishes images, creates a prerelease, and backmerges `main` to `develop`. Contributors are directed to submit PRs against `develop`; direct PRs to `main` are restricted by workflow policy.
 
-At this initialization, `git status --short` reports an unstaged modification to [`.github/workflows/openwiki-update.yml`](../../.github/workflows/openwiki-update.yml). Its current workflow runs daily at 08:00 UTC or manually, installs OpenWiki 0.2.5 with Mermaid/jsdom validation, and opens an `openwiki/update` pull request. The uncommitted workflow switches to OpenRouter model `z-ai/glm-5.2` and adds LangSmith variables; do not treat those details as committed application behavior.
+The committed [`.github/workflows/openwiki-update.yml`](../../.github/workflows/openwiki-update.yml) runs weekly at 08:00 UTC or manually, installs OpenWiki 0.2.5 with Mermaid/jsdom validation, and opens an `openwiki/update` pull request. It uses the `gpt-5.6-luna` model through OpenAI and passes `OPENAI_API_KEY`; treat connector credentials as repository secrets, not documentation content.
 
 ## Operational watch-outs
 
