@@ -47,12 +47,13 @@ After schema work, check migration status before `npx prisma migrate dev`; devel
 4. **Use integration seams.** Keep tracker branching inside `src/services/issue-provider/`; use its registry and factory rather than scattered type checks.
 5. **Localize UI text.** Add user-facing messages to both `src/messages/en.json` and `src/messages/ja.json`.
 6. **Use existing notification and API conventions.** Transient UI messages go through `PageHeaderContext`/`useMessageQueue`; APIs use the shared response helpers.
+7. **Treat session claims as untrusted.** Auth.js revalidates the user record on every request; use `authTime`, `lastActivityAt`, `passwordChangedAt`, and `sessionsRevokedAt` rules rather than `iat`/`exp` for session-security behavior.
 
 These rules are supported by [`AGENTS.md`](../AGENTS.md), [`prisma/schema.prisma`](../prisma/schema.prisma), and current service implementations.
 
 ## Git context at initialization
 
-The repository is at commit `6683685b73168f102e4544103bbed68855791f0d`. Recent history is primarily dependency maintenance, provider hardening, external authentication, and documentation automation. High-signal provider changes added bounded pagination, reviewer-assigned GitHub/GitLab work, GitLab merge-request ID prefixes, and GitHub Enterprise base-URL support. The working tree has an unstaged modification to [`.github/workflows/openwiki-update.yml`](../.github/workflows/openwiki-update.yml); [operations and testing](./operations/testing.md) records it as working-tree state rather than committed application behavior.
+The repository is currently at commit `4a2e6863d5210e6c4072f5cd140807f10b2eca7c` with a clean working tree. The current head adds per-request JWT session validation and revocation behavior, including the `sessionsRevokedAt` user timestamp, app-owned session time claims, and focused unit, integration, and E2E coverage. Earlier provider hardening remains documented in [issue-provider integrations](./integrations/providers.md).
 
 ## Backlog
 

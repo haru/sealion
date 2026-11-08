@@ -23,7 +23,7 @@ For schema work, run `npx prisma migrate status` before `npx prisma migrate dev`
 
 Jest uses V8 coverage and a global 95% line threshold. Playwright starts `npm run dev`, runs Chromium, uses one worker in CI, and retains traces on first retry. The practical verification matrix is: targeted unit tests for libraries/providers; integration tests for API ownership and schema behavior; E2E for visible workflows; lint and build for all consequential changes.
 
-The [synchronization workflow](../workflows/synchronization.md) and [provider integrations](../integrations/providers.md) identify the highest-risk behavioral cases.
+The [synchronization workflow](../workflows/synchronization.md) and [provider integrations](../integrations/providers.md) identify the highest-risk behavioral cases. Authentication changes should also cover the pure validity rules in `tests/unit/lib/auth/session-validity.test.ts`, Auth.js/database integration in `tests/integration/auth/session-revocation.test.ts`, and browser behavior in `tests/e2e/flows/session-revocation.spec.ts`.
 
 ## CI, release, and repository state
 
@@ -36,6 +36,7 @@ At this initialization, `git status --short` reports an unstaged modification to
 - Sync is fire-and-forget and in-process; a `202` response is not completion.
 - Successful empty provider responses are destructive by design.
 - Middleware does not authorize ordinary API routes; handlers must do so.
+- Session validation performs a user lookup on every authenticated request and fails closed if validation dependencies are unavailable; `SessionActivityTracker` reports only explicit user-input activity and is throttled to once per 60 seconds.
 - Node versions differ between the Docker image and CI; validate runtime-sensitive upgrades.
 - Never read or document `.env` or live credentials; use `.env.example` and variable names only.
 
