@@ -53,6 +53,8 @@ Completing an issue is not a local status transition: [`src/app/api/issues/[id]/
 
 ## Identity and administration
 
-`User` has `USER` or `ADMIN` role and `PENDING`, `ACTIVE`, or `SUSPENDED` status. `BoardSettings` stores field visibility and sort order per user. `AuthProvider` stores runtime-configured Google, GitHub, Microsoft Entra, or generic OIDC settings; `AuthSettings` controls signup, verification, and session timeout; `SmtpSettings` supports verification and password-reset mail. Their secrets are encrypted. Auth.js `Account`, `Session`, and `VerificationToken` support authentication and account linking.
+`User` has `USER` or `ADMIN` role and `PENDING`, `ACTIVE`, or `SUSPENDED` status. `passwordChangedAt` and nullable `sessionsRevokedAt` are authentication invalidation timestamps: the latter is set when an administrator demotes or deactivates a user, and sessions whose app-owned `authTime` is older are rejected. `BoardSettings` stores field visibility and sort order per user. `AuthProvider` stores runtime-configured Google, GitHub, Microsoft Entra, or generic OIDC settings; `AuthSettings` controls signup, verification, and idle session timeout; `SmtpSettings` supports verification and password-reset mail. Their secrets are encrypted. Auth.js `Account`, `Session`, and `VerificationToken` support authentication and account linking.
+
+The [architecture overview](../architecture/overview.md) explains how the Auth.js JWT callback reads these user fields on every request and how the dashboard activity tracker maintains `lastActivityAt`.
 
 For the runtime consequences of these relations, see the [architecture overview](../architecture/overview.md). For board interaction and completion behavior, see [synchronization workflows](../workflows/synchronization.md).

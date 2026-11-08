@@ -35,7 +35,13 @@ The root layout composes MUI, `next-intl`, global styling, and the application s
 
 [`src/lib/auth/auth.ts`](../../src/lib/auth/auth.ts) builds the full Auth.js runtime configuration. Local credentials use bcrypt and reject pending, suspended, or passwordless users as appropriate. Enabled external providers are loaded from database configuration through [`src/services/auth-provider/`](../../src/services/auth-provider/).
 
-The dynamic provider decision is recorded in [ADR 0002](../../docs/adr/0002-dynamic-auth-provider-loading.md): provider records are cached for 30 seconds and admin writes invalidate the cache. [ADR 0003](../../docs/adr/0003-reuse-authjs-account-table.md) explains why external links use Auth.js `Account` rows and why automatic dangerous email linking is not enabled. Session JWT claims carry user identity, role, and Gravatar preference; password changes are periodically rechecked to invalidate stale sessions.
+The dynamic provider decision is recorded in [ADR 0002](../../docs/adr/0002-dynamic-auth-provider-loading.md): provider records are cached for 30 seconds and admin writes invalidate the cache. [ADR 0003](../../docs/adr/0003-reuse-authjs-account-table.md) explains why external links use Auth.js `Account` rows and why automatic dangerous email linking is not enabled. Session JWT claims carry user identity, role, and Gravatar preference; the JWT callback now revalidates the authoritative user record on every `auth()` or session fetch rather than trusting stale role or time claims.
+
+### Session validity and revocation
+
+[`src/lib/auth/session-validity.ts`](../../src/lib/auth/session-validity.ts) evaluates app-owned `authTime` and `lastActivityAt` claims against the current user. A session is rejected when the user is missing or inactive, its sign-in predates `passwordChangedAt` or `sessionsRevokedAt`, or its last activity exceeds the configured idle timeout. `iat` and `exp` are not used for security decisions because Auth.js rewrites them during encoding. Only an explicit `update({ activity: true })` from the dashboard activity tracker refreshes the idle timestamp; ordinary refetches do not.
+
+Admin demotion or deactivation sets `User.sessionsRevokedAt`, making revocation irreversible for the affected token even if the user is later promoted or reactivated. Database errors during validation fail closed: the error is logged with the validation step and Auth.js invalidates the session rather than accepting an unverifiable token. See [ADR 0006](../../docs/adr/0006-session-validity-per-request.md) for the security rationale and migration behavior.
 
 ## Persistence and security boundaries
 
