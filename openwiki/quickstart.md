@@ -43,16 +43,17 @@ After schema work, check migration status before `npx prisma migrate dev`; devel
 
 1. **Enforce tenant ownership in every ordinary API handler.** Middleware checks admin paths, but other `/api/**` routes pass through and must call `auth()` plus session-scoped Prisma filters.
 2. **Treat remote trackers as authoritative.** A successful sync upserts returned open issues and deletes local issues absent from that result.
-3. **Protect secrets.** Provider credentials, IdP client secrets, and SMTP passwords are encrypted at rest and must never be logged or returned.
-4. **Use integration seams.** Keep tracker branching inside `src/services/issue-provider/`; use its registry and factory rather than scattered type checks.
-5. **Localize UI text.** Add user-facing messages to both `src/messages/en.json` and `src/messages/ja.json`.
-6. **Use existing notification and API conventions.** Transient UI messages go through `PageHeaderContext`/`useMessageQueue`; APIs use the shared response helpers.
+3. **Treat session state as authoritative on every request.** Auth.js validates the current `User` row and app-owned session claims; demotion, suspension, deletion, password changes, revocation, and idle timeout must end the session.
+4. **Protect secrets.** Provider credentials, IdP client secrets, and SMTP passwords are encrypted at rest and must never be logged or returned.
+5. **Use integration seams.** Keep tracker branching inside `src/services/issue-provider/`; use its registry and factory rather than scattered type checks.
+6. **Localize UI text.** Add user-facing messages to both `src/messages/en.json` and `src/messages/ja.json`.
+7. **Use existing notification and API conventions.** Transient UI messages go through `PageHeaderContext`/`useMessageQueue`; APIs use the shared response helpers.
 
 These rules are supported by [`AGENTS.md`](../AGENTS.md), [`prisma/schema.prisma`](../prisma/schema.prisma), and current service implementations.
 
-## Git context at initialization
+## Git context
 
-The repository is at commit `6683685b73168f102e4544103bbed68855791f0d`. Recent history is primarily dependency maintenance, provider hardening, external authentication, and documentation automation. High-signal provider changes added bounded pagination, reviewer-assigned GitHub/GitLab work, GitLab merge-request ID prefixes, and GitHub Enterprise base-URL support. The working tree has an unstaged modification to [`.github/workflows/openwiki-update.yml`](../.github/workflows/openwiki-update.yml); [operations and testing](./operations/testing.md) records it as working-tree state rather than committed application behavior.
+The repository is currently at commit `4a2e6863d5210e6c4072f5cd140807f10b2eca7c`, a merge titled “Fix session revocation and idle session timeout.” This checkout is shallow, so the previous recorded head `6683685b73168f102e4544103bbed68855791f0d` is not reachable for an incremental range. The current change adds per-request JWT validation, app-owned session timestamps, explicit client activity reporting, and `User.sessionsRevokedAt`; the architecture and operations pages describe the affected runtime and verification behavior. The working tree is clean.
 
 ## Backlog
 
