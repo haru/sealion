@@ -35,7 +35,26 @@ The root layout composes MUI, `next-intl`, global styling, and the application s
 
 [`src/lib/auth/auth.ts`](../../src/lib/auth/auth.ts) builds the full Auth.js runtime configuration. Local credentials use bcrypt and reject pending, suspended, or passwordless users as appropriate. Enabled external providers are loaded from database configuration through [`src/services/auth-provider/`](../../src/services/auth-provider/).
 
-The dynamic provider decision is recorded in [ADR 0002](../../docs/adr/0002-dynamic-auth-provider-loading.md): provider records are cached for 30 seconds and admin writes invalidate the cache. [ADR 0003](../../docs/adr/0003-reuse-authjs-account-table.md) explains why external links use Auth.js `Account` rows and why automatic dangerous email linking is not enabled. Session JWT claims carry user identity, role, and Gravatar preference; password changes are periodically rechecked to invalidate stale sessions.
+The dynamic provider decision is recorded in [ADR 0002](../../docs/adr/0002-dynamic-auth-provider-loading.md): provider records are cached for 30 seconds and admin writes invalidate the cache. [ADR 0003](../../docs/adr/0003-reuse-authjs-account-table.md) explains why external links use Auth.js `Account` rows and why automatic dangerous email linking is not enabled. Session JWT claims carry user identity, role, Gravatar preference, and app-owned `authTime`/`lastActivityAt` values. The JWT callback validates the authoritative user row on every invocation, so status changes, password changes, administrator revocation, and idle timeout invalidate the session without trusting rolling Auth.js `iat`/`exp` claims.
+
+```mermaid
+sequenceDiagram
+    participant Browser
+    participant Auth as Auth.js JWT callback
+    participant DB as Prisma User and AuthSettings
+    participant Tracker as SessionActivityTracker
+    Browser->>Auth: auth() or session fetch
+    Auth->>DB: load user state and idle timeout
+    Auth->>Auth: evaluate app-owned time claims
+    Auth-->>Browser: session or null
+    Tracker->>Auth: update({ activity: true }) on throttled input
+    Auth->>DB: revalidate and refresh lastActivityAt
+    Auth-->>Browser: updated session or null
+```
+
+Caption: Each session check uses current user state; only explicit throttled input extends the idle timer.
+
+A rejected session returns `null`, never `{}`. The client tracker listens for keyboard, pointer-down, wheel, and touch input at most once per 60 seconds and refreshes the router when Auth.js reports that the session ended.
 
 ## Persistence and security boundaries
 

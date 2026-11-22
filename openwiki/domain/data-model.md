@@ -22,6 +22,7 @@ erDiagram
         string id
         string role
         string status
+        datetime sessionsRevokedAt
     }
     ISSUE_PROVIDER {
         string type
@@ -53,6 +54,8 @@ Completing an issue is not a local status transition: [`src/app/api/issues/[id]/
 
 ## Identity and administration
 
-`User` has `USER` or `ADMIN` role and `PENDING`, `ACTIVE`, or `SUSPENDED` status. `BoardSettings` stores field visibility and sort order per user. `AuthProvider` stores runtime-configured Google, GitHub, Microsoft Entra, or generic OIDC settings; `AuthSettings` controls signup, verification, and session timeout; `SmtpSettings` supports verification and password-reset mail. Their secrets are encrypted. Auth.js `Account`, `Session`, and `VerificationToken` support authentication and account linking.
+`User` has `USER` or `ADMIN` role and `PENDING`, `ACTIVE`, or `SUSPENDED` status. `sessionsRevokedAt` is a nullable timestamp used by the per-request JWT validation to reject tokens issued before administrator revocation or an account security change; promotion or reactivation does not revive an older token. `BoardSettings` stores field visibility and sort order per user. `AuthProvider` stores runtime-configured Google, GitHub, Microsoft Entra, or generic OIDC settings; `AuthSettings` controls signup, verification, and idle session timeout; `SmtpSettings` supports verification and password-reset mail. Their secrets are encrypted. Auth.js `Account`, `Session`, and `VerificationToken` support authentication and account linking.
+
+The [architecture overview](../architecture/overview.md) explains how this user state is checked on every session callback, while the [operations and testing guide](../operations/testing.md) identifies the integration and E2E coverage for revocation and idle timeout.
 
 For the runtime consequences of these relations, see the [architecture overview](../architecture/overview.md). For board interaction and completion behavior, see [synchronization workflows](../workflows/synchronization.md).

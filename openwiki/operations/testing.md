@@ -21,7 +21,7 @@ For schema work, run `npx prisma migrate status` before `npx prisma migrate dev`
 | Integration | `tests/integration/` | API/session/Prisma behavior and synchronization orchestration |
 | E2E | `tests/e2e/` | setup, dashboard, providers/projects, Today, admin, account, and OIDC flows |
 
-Jest uses V8 coverage and a global 95% line threshold. Playwright starts `npm run dev`, runs Chromium, uses one worker in CI, and retains traces on first retry. The practical verification matrix is: targeted unit tests for libraries/providers; integration tests for API ownership and schema behavior; E2E for visible workflows; lint and build for all consequential changes.
+Jest uses V8 coverage and a global 95% line threshold. Playwright starts `npm run dev`, runs Chromium, uses one worker in CI, and retains traces on first retry. The practical verification matrix is: targeted unit tests for libraries/providers; integration tests for API ownership, session validity, and schema behavior; E2E for visible workflows; lint and build for all consequential changes. Session-security changes should include [`tests/integration/auth/session-revocation.test.ts`](../../tests/integration/auth/session-revocation.test.ts) and [`tests/e2e/flows/session-revocation.spec.ts`](../../tests/e2e/flows/session-revocation.spec.ts), which cover per-request revocation, status/password changes, idle timeout, and continued activity.
 
 The [synchronization workflow](../workflows/synchronization.md) and [provider integrations](../integrations/providers.md) identify the highest-risk behavioral cases.
 
@@ -29,13 +29,14 @@ The [synchronization workflow](../workflows/synchronization.md) and [provider in
 
 `.github/workflows/ci.yml` runs lint, Jest/coverage, and build on Node 22. Container publishing builds AMD64 and ARM64 images on version tags or manual dispatch. Release automation tags from `package.json`, publishes images, creates a prerelease, and backmerges `main` to `develop`. Contributors are directed to submit PRs against `develop`; direct PRs to `main` are restricted by workflow policy.
 
-At this initialization, `git status --short` reports an unstaged modification to [`.github/workflows/openwiki-update.yml`](../../.github/workflows/openwiki-update.yml). Its current workflow runs daily at 08:00 UTC or manually, installs OpenWiki 0.2.5 with Mermaid/jsdom validation, and opens an `openwiki/update` pull request. The uncommitted workflow switches to OpenRouter model `z-ai/glm-5.2` and adds LangSmith variables; do not treat those details as committed application behavior.
+[`.github/workflows/openwiki-update.yml`](../../.github/workflows/openwiki-update.yml) runs daily at 08:00 UTC or manually, installs OpenWiki 0.2.5 with Mermaid/jsdom validation, and opens an `openwiki/update` pull request. It uses the configured OpenRouter model and LangSmith variables from the workflow; keep credentials out of source control.
 
 ## Operational watch-outs
 
 - Sync is fire-and-forget and in-process; a `202` response is not completion.
 - Successful empty provider responses are destructive by design.
 - Middleware does not authorize ordinary API routes; handlers must do so.
+- Auth.js JWT validation performs a user and timeout lookup on every session callback and fails closed if those reads fail; a `null` callback result ends the session.
 - Node versions differ between the Docker image and CI; validate runtime-sensitive upgrades.
 - Never read or document `.env` or live credentials; use `.env.example` and variable names only.
 
